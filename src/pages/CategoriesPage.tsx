@@ -4,8 +4,25 @@ import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Plus, Edit, Trash2, X } from 'lucide-react'
+import { Plus, Edit, Trash2, X, GripVertical } from 'lucide-react'
 import type { Category } from '../types/database'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 export default function CategoriesPage() {
   const { t } = useLanguage()
@@ -16,9 +33,15 @@ export default function CategoriesPage() {
   const [formData, setFormData] = useState({
     name_th: '',
     name_en: '',
-    parent_id: '',
-    sort_order: 0
+    parent_id: ''
   })
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
   useEffect(() => {
     fetchCategories()
@@ -45,11 +68,16 @@ export default function CategoriesPage() {
     e.preventDefault()
     
     try {
+      // Calculate next sort_order
+      const maxSortOrder = categories.length > 0 
+        ? Math.max(...categories.map(c => c.sort_order))
+        : 0
+      
       const categoryData = {
         name_th: formData.name_th,
         name_en: formData.name_en,
         parent_id: formData.parent_id || null,
-        sort_order: formData.sort_order
+        sort_order: editingCategory ? editingCategory.sort_order : maxSortOrder + 1
       }
 
       if (editingCategory) {
@@ -82,8 +110,7 @@ export default function CategoriesPage() {
     setFormData({
       name_th: category.name_th,
       name_en: category.name_en,
-      parent_id: category.parent_id || '',
-      sort_order: category.sort_order
+      parent_id: category.parent_id || ''
     })
     setShowModal(true)
   }
@@ -131,10 +158,39 @@ export default function CategoriesPage() {
     setFormData({
       name_th: '',
       name_en: '',
-      parent_id: '',
-      sort_order: 0
+      parent_id: ''
     })
     setEditingCategory(null)
+  }
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (over && active.id !== over.id) {
+      const oldIndex = categories.findIndex((cat) => cat.id === active.id)
+      const newIndex = categories.findIndex((cat) => cat.id === over.id)
+
+      const newCategories = arrayMove(categories, oldIndex, newIndex)
+      setCategories(newCategories)
+
+      // Update sort_order in database
+      try {
+        const updates = newCategories.map((cat, index) => ({
+          id: cat.id,
+          sort_order: index
+        }))
+
+        for (const update of updates) {
+          await supabase
+            .from('categories')
+            .update({ sort_order: update.sort_order })
+            .eq('id', update.id)
+        }
+      } catch (error) {
+        console.error('Error updating sort order:', error)
+        fetchCategories() // Reload on error
+      }
+    }
   }
 
   const handleCloseModal = () => {
@@ -164,59 +220,46 @@ export default function CategoriesPage() {
             <p className="text-sm mt-2">{t('categories.addCategoryPrompt')}</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('categories.nameTh')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('categories.nameEn')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('categories.sortOrder')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('categories.actions')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {categories.map((category) => (
-                  <tr key={category.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {category.name_th}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {category.name_en}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {category.sort_order}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                      <Button 
-                        variant="secondary" 
-                        size="sm"
-                        onClick={() => handleEdit(category)}
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        {t('categories.edit')}
-                      </Button>
-                      <Button 
-                        variant="secondary" 
-                        size="sm"
-                        onClick={() => handleDelete(category.id)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        {t('categories.delete')}
-                      </Button>
-                    </td>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 w-12"></th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('categories.nameTh')}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('categories.nameEn')}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('categories.actions')}
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  <SortableContext
+                    items={categories.map(c => c.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {categories.map((category) => (
+                      <SortableRow
+                        key={category.id}
+                        category={category}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        t={t}
+                      />
+                    ))}
+                  </SortableContext>
+                </tbody>
+              </table>
+            </div>
+          </DndContext>
         )}
       </Card>
 
@@ -271,14 +314,6 @@ export default function CategoriesPage() {
                 </select>
               </div>
 
-              <Input
-                label={t('categories.sortOrder')}
-                type="number"
-                value={formData.sort_order}
-                onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
-                required
-              />
-
               <div className="flex gap-3 pt-4">
                 <Button type="submit" variant="primary" className="flex-1">
                   {t('common.save')}
@@ -297,5 +332,71 @@ export default function CategoriesPage() {
         </div>
       )}
     </div>
+  )
+}
+
+// Sortable Row Component
+function SortableRow({ 
+  category, 
+  onEdit, 
+  onDelete, 
+  t 
+}: { 
+  category: Category
+  onEdit: (category: Category) => void
+  onDelete: (id: string) => void
+  t: (key: string) => string
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: category.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <tr ref={setNodeRef} style={style} className={isDragging ? 'bg-blue-50' : ''}>
+      <td className="px-4 py-4 whitespace-nowrap">
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
+        >
+          <GripVertical className="h-5 w-5" />
+        </div>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+        {category.name_th}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        {category.name_en}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+        <Button 
+          variant="secondary" 
+          size="sm"
+          onClick={() => onEdit(category)}
+        >
+          <Edit className="h-4 w-4 mr-1" />
+          {t('categories.edit')}
+        </Button>
+        <Button 
+          variant="secondary" 
+          size="sm"
+          onClick={() => onDelete(category.id)}
+        >
+          <Trash2 className="h-4 w-4 mr-1" />
+          {t('categories.delete')}
+        </Button>
+      </td>
+    </tr>
   )
 }
