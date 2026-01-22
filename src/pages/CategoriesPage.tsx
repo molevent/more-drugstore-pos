@@ -92,6 +92,20 @@ export default function CategoriesPage() {
     if (!confirm(t('categories.confirmDelete'))) return
     
     try {
+      // First check if category has products
+      const { data: products, error: checkError } = await supabase
+        .from('products')
+        .select('id')
+        .eq('category_id', id)
+      
+      if (checkError) throw checkError
+      
+      if (products && products.length > 0) {
+        alert(t('categories.hasProducts').replace('{count}', products.length.toString()))
+        return
+      }
+      
+      // If no products, proceed with deletion
       const { error } = await supabase
         .from('categories')
         .delete()
@@ -102,7 +116,14 @@ export default function CategoriesPage() {
       fetchCategories()
     } catch (error: any) {
       console.error('Error deleting category:', error)
-      alert(error.message)
+      // Check if error is from trigger
+      if (error.message?.includes('products are using this category')) {
+        const match = error.message.match(/(\d+) products/)
+        const count = match ? match[1] : 'some'
+        alert(t('categories.hasProducts').replace('{count}', count))
+      } else {
+        alert(error.message)
+      }
     }
   }
 

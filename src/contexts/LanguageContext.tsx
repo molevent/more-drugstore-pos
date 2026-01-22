@@ -78,6 +78,7 @@ const translations: Record<Language, Record<string, string>> = {
     'categories.deleteSuccess': 'ลบหมวดหมู่สำเร็จ',
     'categories.saveSuccess': 'บันทึกหมวดหมู่สำเร็จ',
     'categories.modalTitle': 'จัดการหมวดหมู่',
+    'categories.hasProducts': 'ไม่สามารถลบหมวดหมู่นี้ได้: มีสินค้า {count} รายการที่ใช้หมวดหมู่นี้อยู่',
     
     // Products
     'products.title': 'สินค้า',
@@ -186,6 +187,7 @@ const translations: Record<Language, Record<string, string>> = {
     'categories.deleteSuccess': 'Category deleted successfully',
     'categories.saveSuccess': 'Category saved successfully',
     'categories.modalTitle': 'Manage Category',
+    'categories.hasProducts': 'Cannot delete this category: {count} products are using this category',
     
     // Products
     'products.title': 'Products',
