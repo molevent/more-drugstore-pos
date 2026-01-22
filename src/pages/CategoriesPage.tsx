@@ -200,9 +200,9 @@ export default function CategoriesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">{t('categories.title')}</h1>
-        <Button variant="primary" onClick={() => setShowModal(true)}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('categories.title')}</h1>
+        <Button variant="primary" onClick={() => setShowModal(true)} className="w-full sm:w-auto">
           <Plus className="h-5 w-5 mr-2" />
           {t('categories.addCategory')}
         </Button>
@@ -262,6 +262,16 @@ export default function CategoriesPage() {
           </DndContext>
         )}
       </Card>
+
+      {/* Make table responsive on mobile */}
+      <style>{`
+        @media (max-width: 640px) {
+          .overflow-x-auto {
+            margin-left: -1rem;
+            margin-right: -1rem;
+          }
+        }
+      `}</style>
 
       {/* Modal */}
       {showModal && (

@@ -9,7 +9,7 @@ export default function SettingsPage() {
   
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">{t('settings.title')}</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">{t('settings.title')}</h1>
 
       <div className="space-y-6">
         <Card title="ข้อมูลร้าน">

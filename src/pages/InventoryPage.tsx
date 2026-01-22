@@ -8,8 +8,8 @@ export default function InventoryPage() {
   
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">{t('inventory.title')}</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('inventory.title')}</h1>
         <Button variant="primary">
           <RefreshCw className="h-5 w-5 mr-2" />
           {t('inventory.comingSoon')}

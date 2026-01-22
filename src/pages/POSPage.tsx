@@ -109,9 +109,9 @@ export default function POSPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">ขายสินค้า (POS)</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">ขายสินค้า (POS)</h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2">
           <Card title="สแกนบาร์โค้ด">
             <form onSubmit={handleBarcodeSubmit} className="mb-6">

@@ -42,6 +42,15 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      
+      {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } lg:translate-x-0`}>
@@ -101,10 +110,8 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </div>
 
-      <div className={`lg:pl-64 flex flex-col flex-1 transition-all duration-300 ${
-        sidebarOpen ? 'pl-64' : 'pl-0'
-      }`}>
-        <header className="lg:hidden bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+      <div className="lg:pl-64 flex flex-col flex-1">
+        <header className="lg:hidden bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
           <div className="flex items-center justify-between h-16 px-4">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -117,7 +124,7 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </header>
 
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4 sm:p-6">
           {children}
         </main>
       </div>
