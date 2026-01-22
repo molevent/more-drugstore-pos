@@ -24,7 +24,10 @@ export const useProductStore = create<ProductState>((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select(`
+          *,
+          category:categories(id, name_th, name_en)
+        `)
         .order('name_th')
       
       if (error) {

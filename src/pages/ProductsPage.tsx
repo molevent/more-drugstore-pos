@@ -88,7 +88,7 @@ export default function ProductsPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {product.category_id || t('products.noCategory')}
+                      {(product as any).category?.name_th || t('products.noCategory')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       ฿{product.base_price.toFixed(2)}
