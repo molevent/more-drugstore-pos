@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import POSPage from './pages/POSPage'
+import CategoriesPage from './pages/CategoriesPage'
 import ProductsPage from './pages/ProductsPage'
 import InventoryPage from './pages/InventoryPage'
 import ReportsPage from './pages/ReportsPage'
@@ -24,6 +25,7 @@ function App() {
                   <Routes>
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/pos" element={<POSPage />} />
+                    <Route path="/categories" element={<CategoriesPage />} />
                     <Route path="/products" element={<ProductsPage />} />
                     <Route path="/inventory" element={<InventoryPage />} />
                     <Route path="/reports" element={<ReportsPage />} />

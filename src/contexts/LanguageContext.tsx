@@ -17,6 +17,7 @@ const translations: Record<Language, Record<string, string>> = {
     // Navigation
     'nav.dashboard': 'แดชบอร์ด',
     'nav.pos': 'ขายสินค้า (POS)',
+    'nav.categories': 'หมวดหมู่',
     'nav.products': 'สินค้า',
     'nav.inventory': 'คลังสินค้า',
     'nav.reports': 'รายงาน',
@@ -56,6 +57,27 @@ const translations: Record<Language, Record<string, string>> = {
     'pos.checkout': 'ชำระเงิน',
     'pos.quantity': 'จำนวน',
     'pos.remove': 'ลบ',
+    
+    // Categories
+    'categories.title': 'หมวดหมู่สินค้า',
+    'categories.addCategory': 'เพิ่มหมวดหมู่',
+    'categories.editCategory': 'แก้ไขหมวดหมู่',
+    'categories.deleteCategory': 'ลบหมวดหมู่',
+    'categories.nameTh': 'ชื่อภาษาไทย',
+    'categories.nameEn': 'ชื่อภาษาอังกฤษ',
+    'categories.parentCategory': 'หมวดหมู่หลัก',
+    'categories.noParent': 'ไม่มีหมวดหมู่หลัก',
+    'categories.sortOrder': 'ลำดับการแสดง',
+    'categories.actions': 'จัดการ',
+    'categories.edit': 'แก้ไข',
+    'categories.delete': 'ลบ',
+    'categories.noCategories': 'ไม่พบหมวดหมู่',
+    'categories.addCategoryPrompt': 'กรุณาเพิ่มหมวดหมู่สินค้า',
+    'categories.loading': 'กำลังโหลดหมวดหมู่...',
+    'categories.confirmDelete': 'คุณแน่ใจหรือไม่ที่จะลบหมวดหมู่นี้?',
+    'categories.deleteSuccess': 'ลบหมวดหมู่สำเร็จ',
+    'categories.saveSuccess': 'บันทึกหมวดหมู่สำเร็จ',
+    'categories.modalTitle': 'จัดการหมวดหมู่',
     
     // Products
     'products.title': 'สินค้า',
@@ -103,6 +125,7 @@ const translations: Record<Language, Record<string, string>> = {
     // Navigation
     'nav.dashboard': 'Dashboard',
     'nav.pos': 'Point of Sale',
+    'nav.categories': 'Categories',
     'nav.products': 'Products',
     'nav.inventory': 'Inventory',
     'nav.reports': 'Reports',
@@ -142,6 +165,27 @@ const translations: Record<Language, Record<string, string>> = {
     'pos.checkout': 'Checkout',
     'pos.quantity': 'Quantity',
     'pos.remove': 'Remove',
+    
+    // Categories
+    'categories.title': 'Product Categories',
+    'categories.addCategory': 'Add Category',
+    'categories.editCategory': 'Edit Category',
+    'categories.deleteCategory': 'Delete Category',
+    'categories.nameTh': 'Thai Name',
+    'categories.nameEn': 'English Name',
+    'categories.parentCategory': 'Parent Category',
+    'categories.noParent': 'No Parent',
+    'categories.sortOrder': 'Sort Order',
+    'categories.actions': 'Actions',
+    'categories.edit': 'Edit',
+    'categories.delete': 'Delete',
+    'categories.noCategories': 'No categories found',
+    'categories.addCategoryPrompt': 'Please add product categories',
+    'categories.loading': 'Loading categories...',
+    'categories.confirmDelete': 'Are you sure you want to delete this category?',
+    'categories.deleteSuccess': 'Category deleted successfully',
+    'categories.saveSuccess': 'Category saved successfully',
+    'categories.modalTitle': 'Manage Category',
     
     // Products
     'products.title': 'Products',
