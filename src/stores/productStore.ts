@@ -25,9 +25,14 @@ export const useProductStore = create<ProductState>((set, get) => ({
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .order('name')
+        .order('name_th')
       
-      if (error) throw error
+      if (error) {
+        console.error('Error fetching products:', error)
+        throw error
+      }
+      
+      console.log('Fetched products:', data)
       set({ products: data || [], loading: false })
     } catch (error) {
       console.error('Error fetching products:', error)
