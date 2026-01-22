@@ -108,7 +108,7 @@ export default function ProductsPage() {
       if (imageFile) {
         const fileExt = imageFile.name.split('.').pop()
         const fileName = `${Date.now()}.${fileExt}`
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('products')
           .upload(fileName, imageFile)
         
