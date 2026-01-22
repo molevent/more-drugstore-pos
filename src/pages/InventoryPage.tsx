@@ -1,0 +1,63 @@
+import Card from '../components/common/Card'
+import Button from '../components/common/Button'
+import { AlertTriangle, RefreshCw } from 'lucide-react'
+
+export default function InventoryPage() {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">คลังสินค้า</h1>
+        <Button variant="primary">
+          <RefreshCw className="h-5 w-5 mr-2" />
+          ซิงค์กับ ZortOut
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <Card>
+          <div className="flex items-center">
+            <div className="bg-blue-500 p-3 rounded-lg">
+              <AlertTriangle className="h-6 w-6 text-white" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">สินค้าใกล้หมด</p>
+              <p className="text-2xl font-bold text-gray-900">0</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="flex items-center">
+            <div className="bg-green-500 p-3 rounded-lg">
+              <AlertTriangle className="h-6 w-6 text-white" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">สินค้าคงเหลือ</p>
+              <p className="text-2xl font-bold text-gray-900">0</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="flex items-center">
+            <div className="bg-red-500 p-3 rounded-lg">
+              <AlertTriangle className="h-6 w-6 text-white" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">สินค้าหมด</p>
+              <p className="text-2xl font-bold text-gray-900">0</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <Card title="รายการสินค้าใกล้หมด">
+        <div className="text-center py-12 text-gray-500">
+          <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+          <p>ไม่มีสินค้าที่ใกล้หมด</p>
+          <p className="text-sm mt-2">ระบบจะแจ้งเตือนเมื่อสินค้าใกล้หมด</p>
+        </div>
+      </Card>
+    </div>
+  )
+}
