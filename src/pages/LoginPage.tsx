@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
-import { Pill } from 'lucide-react'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -33,9 +32,11 @@ export default function LoginPage() {
       <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="flex justify-center mb-6">
-            <div className="bg-blue-600 p-4 rounded-full">
-              <Pill className="h-12 w-12 text-white" />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="More Drug Store Logo" 
+              className="h-32 w-32 object-contain"
+            />
           </div>
           
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-2">

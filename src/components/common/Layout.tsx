@@ -37,11 +37,15 @@ export default function Layout() {
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } lg:translate-x-0`}>
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between h-16 px-6 bg-blue-600 text-white">
-            <h1 className="text-xl font-bold">More Drug Store</h1>
+          <div className="flex items-center justify-between h-20 px-6 bg-white border-b border-gray-200">
+            <img 
+              src="/logo.png" 
+              alt="More Drug Store" 
+              className="h-16 w-auto object-contain"
+            />
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden"
+              className="lg:hidden text-gray-600 hover:text-gray-900"
             >
               <X className="h-6 w-6" />
             </button>
