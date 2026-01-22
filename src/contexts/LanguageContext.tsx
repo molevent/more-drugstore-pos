@@ -28,8 +28,13 @@ const translations: Record<Language, Record<string, string>> = {
     'login.subtitle': 'ระบบขายหน้าร้านสำหรับร้านขายยา',
     'login.email': 'อีเมล',
     'login.password': 'รหัสผ่าน',
+    'login.rememberMe': 'จดจำข้อมูลการเข้าสู่ระบบ',
+    'login.showPassword': 'แสดงรหัสผ่าน',
+    'login.hidePassword': 'ซ่อนรหัสผ่าน',
     'login.submit': 'เข้าสู่ระบบ',
     'login.footer': 'ติดต่อผู้ดูแลระบบหากต้องการรีเซ็ตรหัสผ่านใหม่',
+    'login.invalidCredentials': 'อีเมลหรือรหัสผ่านไม่ถูกต้อง',
+    'login.error': 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',
     
     // Dashboard
     'dashboard.welcome': 'ยินดีต้อนรับ',
@@ -88,8 +93,13 @@ const translations: Record<Language, Record<string, string>> = {
     'login.subtitle': 'Pharmacy Point of Sale System',
     'login.email': 'Email',
     'login.password': 'Password',
+    'login.rememberMe': 'Remember me',
+    'login.showPassword': 'Show password',
+    'login.hidePassword': 'Hide password',
     'login.submit': 'Sign In',
     'login.footer': 'Contact administrator to reset your password',
+    'login.invalidCredentials': 'Invalid email or password',
+    'login.error': 'Login failed. Please try again',
     
     // Dashboard
     'dashboard.welcome': 'Welcome',
