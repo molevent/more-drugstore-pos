@@ -8,30 +8,35 @@ import ReportsPage from './pages/ReportsPage'
 import SettingsPage from './pages/SettingsPage'
 import AuthGuard from './components/auth/AuthGuard'
 import Layout from './components/common/Layout'
+import { LanguageProvider } from './contexts/LanguageContext'
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route
-          path="/"
-          element={
-            <AuthGuard>
-              <Layout />
-            </AuthGuard>
-          }
-        >
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="pos" element={<POSPage />} />
-          <Route path="products" element={<ProductsPage />} />
-          <Route path="inventory" element={<InventoryPage />} />
-          <Route path="reports" element={<ReportsPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <LanguageProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/*"
+            element={
+              <AuthGuard>
+                <Layout>
+                  <Routes>
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/pos" element={<POSPage />} />
+                    <Route path="/products" element={<ProductsPage />} />
+                    <Route path="/inventory" element={<InventoryPage />} />
+                    <Route path="/reports" element={<ReportsPage />} />
+                    <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  </Routes>
+                </Layout>
+              </AuthGuard>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
+    </LanguageProvider>
   )
 }
 

@@ -1,4 +1,5 @@
-import { Outlet, Link, useLocation } from 'react-router-dom'
+import { ReactNode } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { 
   LayoutDashboard, 
   ShoppingCart, 
@@ -12,19 +13,26 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
+import { useLanguage } from '../../contexts/LanguageContext'
+import LanguageSwitcher from './LanguageSwitcher'
 
-export default function Layout() {
+interface LayoutProps {
+  children: ReactNode
+}
+
+export default function Layout({ children }: LayoutProps) {
   const location = useLocation()
   const { user, signOut } = useAuthStore()
+  const { t } = useLanguage()
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   const navigation = [
-    { name: 'แดชบอร์ด', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'ขายสินค้า (POS)', href: '/pos', icon: ShoppingCart },
-    { name: 'สินค้า', href: '/products', icon: Package },
-    { name: 'คลังสินค้า', href: '/inventory', icon: Warehouse },
-    { name: 'รายงาน', href: '/reports', icon: FileText },
-    { name: 'ตั้งค่า', href: '/settings', icon: Settings },
+    { name: t('nav.dashboard'), href: '/dashboard', icon: LayoutDashboard },
+    { name: t('nav.pos'), href: '/pos', icon: ShoppingCart },
+    { name: t('nav.products'), href: '/products', icon: Package },
+    { name: t('nav.inventory'), href: '/inventory', icon: Warehouse },
+    { name: t('nav.reports'), href: '/reports', icon: FileText },
+    { name: t('nav.settings'), href: '/settings', icon: Settings },
   ]
 
   const handleSignOut = async () => {
@@ -74,18 +82,19 @@ export default function Layout() {
           </div>
 
           <div className="border-t border-gray-200 p-4">
-            <div className="flex items-center mb-3">
+            <div className="flex items-center justify-between mb-3">
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-900">{user?.full_name}</p>
                 <p className="text-xs text-gray-500">{user?.role}</p>
               </div>
+              <LanguageSwitcher />
             </div>
             <button
               onClick={handleSignOut}
-              className="flex items-center w-full px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
-              <LogOut className="h-5 w-5 mr-3" />
-              ออกจากระบบ
+              <LogOut className="h-4 w-4 mr-3" />
+              {t('nav.logout')}
             </button>
           </div>
         </div>
@@ -94,7 +103,7 @@ export default function Layout() {
       <div className={`lg:pl-64 flex flex-col flex-1 transition-all duration-300 ${
         sidebarOpen ? 'pl-64' : 'pl-0'
       }`}>
-        <header className="bg-white shadow-sm lg:hidden">
+        <header className="lg:hidden bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
           <div className="flex items-center justify-between h-16 px-4">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -103,12 +112,12 @@ export default function Layout() {
               <Menu className="h-6 w-6" />
             </button>
             <h1 className="text-lg font-semibold text-gray-900">More Drug Store</h1>
-            <div className="w-6"></div>
+            <LanguageSwitcher />
           </div>
         </header>
 
         <main className="flex-1 p-6">
-          <Outlet />
+          {children}
         </main>
       </div>
     </div>

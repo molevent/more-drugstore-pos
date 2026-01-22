@@ -1,12 +1,15 @@
 import { useState, FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
+import { useLanguage } from '../contexts/LanguageContext'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
+import LanguageSwitcher from '../components/common/LanguageSwitcher'
 
 export default function LoginPage() {
   const navigate = useNavigate()
   const { signIn } = useAuthStore()
+  const { t } = useLanguage()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -31,6 +34,10 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 px-4">
       <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="flex justify-end mb-4">
+            <LanguageSwitcher />
+          </div>
+          
           <div className="flex justify-center mb-6">
             <img 
               src="/logo.png" 
@@ -40,10 +47,10 @@ export default function LoginPage() {
           </div>
           
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-2">
-            More Drug Store
+            {t('login.title')}
           </h2>
           <p className="text-center text-gray-600 mb-8">
-            ระบบขายหน้าร้านสำหรับร้านขายยา
+            {t('login.subtitle')}
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
