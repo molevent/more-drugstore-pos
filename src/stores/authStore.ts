@@ -26,13 +26,29 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (error) throw error
     
     if (data.user) {
-      const { data: userData } = await supabase
+      // Try to fetch user profile, but don't fail if it doesn't exist
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('id', data.user.id)
         .single()
       
-      set({ user: userData, loading: false })
+      if (userData) {
+        set({ user: userData, loading: false })
+      } else {
+        // If no profile exists, create a basic user object from auth data
+        console.error('User profile not found:', userError)
+        const basicUser = {
+          id: data.user.id,
+          email: data.user.email || '',
+          full_name: data.user.email?.split('@')[0] || 'User',
+          role: 'cashier' as const,
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+        set({ user: basicUser, loading: false })
+      }
     }
   },
   
@@ -45,26 +61,54 @@ export const useAuthStore = create<AuthState>((set) => ({
     const { data: { session } } = await supabase.auth.getSession()
     
     if (session?.user) {
-      const { data: userData } = await supabase
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('id', session.user.id)
         .single()
       
-      set({ user: userData, loading: false })
+      if (userData) {
+        set({ user: userData, loading: false })
+      } else {
+        console.error('User profile not found during init:', userError)
+        const basicUser = {
+          id: session.user.id,
+          email: session.user.email || '',
+          full_name: session.user.email?.split('@')[0] || 'User',
+          role: 'cashier' as const,
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+        set({ user: basicUser, loading: false })
+      }
     } else {
       set({ loading: false })
     }
     
     supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        const { data: userData } = await supabase
+        const { data: userData, error: userError } = await supabase
           .from('users')
           .select('*')
           .eq('id', session.user.id)
           .single()
         
-        set({ user: userData })
+        if (userData) {
+          set({ user: userData })
+        } else {
+          console.error('User profile not found during auth change:', userError)
+          const basicUser = {
+            id: session.user.id,
+            email: session.user.email || '',
+            full_name: session.user.email?.split('@')[0] || 'User',
+            role: 'cashier' as const,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+          set({ user: basicUser })
+        }
       } else {
         set({ user: null })
       }

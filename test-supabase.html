@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Supabase Connection</title>
+</head>
+<body>
+    <h1>Supabase Connection Test</h1>
+    <button onclick="testConnection()">Test Connection</button>
+    <button onclick="testLogin()">Test Login</button>
+    <div id="result"></div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
+        const supabaseUrl = 'https://tqbonqjabeavlwjvrpqx.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxYm9ucWphYmVhdmx3anZycHF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwNzIwMTIsImV4cCI6MjA4NDY0ODAxMn0.2S7x2AtSVMu6-zXFum7lhgjGEatvtn29a6vyd2dwxW0'
+        
+        const supabase = createClient(supabaseUrl, supabaseKey)
+
+        window.testConnection = async () => {
+            const result = document.getElementById('result')
+            result.innerHTML = 'Testing connection...'
+            
+            try {
+                const { data, error } = await supabase.from('products').select('count')
+                if (error) {
+                    result.innerHTML = `<pre style="color: red;">Error: ${JSON.stringify(error, null, 2)}</pre>`
+                } else {
+                    result.innerHTML = `<pre style="color: green;">✅ Connection successful!\nData: ${JSON.stringify(data, null, 2)}</pre>`
+                }
+            } catch (err) {
+                result.innerHTML = `<pre style="color: red;">Exception: ${err.message}</pre>`
+            }
+        }
+
+        window.testLogin = async () => {
+            const result = document.getElementById('result')
+            const email = prompt('Enter email:', 'admin@moredrug.com')
+            const password = prompt('Enter password:')
+            
+            result.innerHTML = 'Testing login...'
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                })
+                
+                if (error) {
+                    result.innerHTML = `<pre style="color: red;">Login Error: ${JSON.stringify(error, null, 2)}</pre>`
+                } else {
+                    result.innerHTML = `<pre style="color: green;">✅ Login successful!\nUser: ${JSON.stringify(data.user, null, 2)}</pre>`
+                }
+            } catch (err) {
+                result.innerHTML = `<pre style="color: red;">Exception: ${err.message}</pre>`
+            }
+        }
+    </script>
+</body>
+</html>
