@@ -1,15 +1,18 @@
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
+import { useLanguage } from '../contexts/LanguageContext'
 import { Download, Calendar } from 'lucide-react'
 
 export default function ReportsPage() {
+  const { t } = useLanguage()
+  
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">รายงาน</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{t('reports.title')}</h1>
         <Button variant="primary">
           <Download className="h-5 w-5 mr-2" />
-          ส่งออก CSV
+          {t('reports.comingSoon')}
         </Button>
       </div>
 

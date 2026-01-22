@@ -37,11 +37,15 @@ const translations: Record<Language, Record<string, string>> = {
     'login.error': 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',
     
     // Dashboard
+    'dashboard.title': 'แดชบอร์ด',
     'dashboard.welcome': 'ยินดีต้อนรับ',
-    'dashboard.totalSales': 'ยอดขายรวม',
+    'dashboard.todaySales': 'ยอดขายวันนี้',
+    'dashboard.salesCount': 'รายการขาย',
     'dashboard.totalProducts': 'สินค้าทั้งหมด',
     'dashboard.lowStock': 'สินค้าใกล้หมด',
-    'dashboard.todayRevenue': 'รายได้วันนี้',
+    'dashboard.recentSales': 'ยอดขายล่าสุด',
+    'dashboard.noSalesData': 'ยังไม่มีข้อมูลการขาย',
+    'dashboard.noLowStock': 'ไม่มีสินค้าที่ใกล้หมด',
     
     // POS
     'pos.title': 'ขายสินค้า (POS)',
@@ -54,15 +58,32 @@ const translations: Record<Language, Record<string, string>> = {
     'pos.remove': 'ลบ',
     
     // Products
-    'products.title': 'จัดการสินค้า',
-    'products.search': 'ค้นหาสินค้า...',
+    'products.title': 'สินค้า',
+    'products.addProduct': 'เพิ่มสินค้า',
+    'products.search': 'ค้นหาสินค้า (ชื่อ, บาร์โค้ด)',
+    'products.barcode': 'บาร์โค้ด',
     'products.name': 'ชื่อสินค้า',
-    'products.sku': 'รหัสสินค้า',
     'products.category': 'หมวดหมู่',
     'products.price': 'ราคา',
     'products.stock': 'คงเหลือ',
     'products.actions': 'จัดการ',
+    'products.edit': 'แก้ไข',
     'products.noCategory': 'ไม่มีหมวดหมู่',
+    'products.noProducts': 'ไม่พบสินค้า',
+    'products.addProductPrompt': 'กรุณาเพิ่มสินค้าในระบบ',
+    'products.loading': 'กำลังโหลดสินค้า...',
+    
+    // Inventory
+    'inventory.title': 'คลังสินค้า',
+    'inventory.comingSoon': 'เร็วๆ นี้',
+    
+    // Reports
+    'reports.title': 'รายงาน',
+    'reports.comingSoon': 'เร็วๆ นี้',
+    
+    // Settings
+    'settings.title': 'ตั้งค่า',
+    'settings.comingSoon': 'เร็วๆ นี้',
     
     // Common
     'common.loading': 'กำลังโหลด...',
@@ -102,11 +123,15 @@ const translations: Record<Language, Record<string, string>> = {
     'login.error': 'Login failed. Please try again',
     
     // Dashboard
+    'dashboard.title': 'Dashboard',
     'dashboard.welcome': 'Welcome',
-    'dashboard.totalSales': 'Total Sales',
+    'dashboard.todaySales': 'Today\'s Sales',
+    'dashboard.salesCount': 'Sales Count',
     'dashboard.totalProducts': 'Total Products',
     'dashboard.lowStock': 'Low Stock Items',
-    'dashboard.todayRevenue': 'Today\'s Revenue',
+    'dashboard.recentSales': 'Recent Sales',
+    'dashboard.noSalesData': 'No sales data yet',
+    'dashboard.noLowStock': 'No low stock items',
     
     // POS
     'pos.title': 'Point of Sale',
@@ -119,15 +144,32 @@ const translations: Record<Language, Record<string, string>> = {
     'pos.remove': 'Remove',
     
     // Products
-    'products.title': 'Product Management',
-    'products.search': 'Search products...',
+    'products.title': 'Products',
+    'products.addProduct': 'Add Product',
+    'products.search': 'Search products (name, barcode)',
+    'products.barcode': 'Barcode',
     'products.name': 'Product Name',
-    'products.sku': 'SKU',
     'products.category': 'Category',
     'products.price': 'Price',
     'products.stock': 'Stock',
     'products.actions': 'Actions',
+    'products.edit': 'Edit',
     'products.noCategory': 'No Category',
+    'products.noProducts': 'No products found',
+    'products.addProductPrompt': 'Please add products to the system',
+    'products.loading': 'Loading products...',
+    
+    // Inventory
+    'inventory.title': 'Inventory',
+    'inventory.comingSoon': 'Coming Soon',
+    
+    // Reports
+    'reports.title': 'Reports',
+    'reports.comingSoon': 'Coming Soon',
+    
+    // Settings
+    'settings.title': 'Settings',
+    'settings.comingSoon': 'Coming Soon',
     
     // Common
     'common.loading': 'Loading...',

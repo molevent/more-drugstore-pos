@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useProductStore } from '../stores/productStore'
+import { useLanguage } from '../contexts/LanguageContext'
 import Card from '../components/common/Card'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
@@ -7,6 +8,7 @@ import { Search, Plus } from 'lucide-react'
 
 export default function ProductsPage() {
   const { loading, searchTerm, setSearchTerm, fetchProducts, getFilteredProducts } = useProductStore()
+  const { t } = useLanguage()
 
   useEffect(() => {
     fetchProducts()
@@ -17,10 +19,10 @@ export default function ProductsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">สินค้า</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{t('products.title')}</h1>
         <Button variant="primary">
           <Plus className="h-5 w-5 mr-2" />
-          เพิ่มสินค้า
+          {t('products.addProduct')}
         </Button>
       </div>
 
@@ -32,7 +34,7 @@ export default function ProductsPage() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="ค้นหาสินค้า (ชื่อ, บาร์โค้ด)"
+              placeholder={t('products.search')}
               className="pl-10"
             />
           </div>
@@ -41,12 +43,12 @@ export default function ProductsPage() {
         {loading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">กำลังโหลดสินค้า...</p>
+            <p className="mt-4 text-gray-600">{t('products.loading')}</p>
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
-            <p>ไม่พบสินค้า</p>
-            <p className="text-sm mt-2">กรุณาเพิ่มสินค้าในระบบ</p>
+            <p>{t('products.noProducts')}</p>
+            <p className="text-sm mt-2">{t('products.addProductPrompt')}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -54,22 +56,22 @@ export default function ProductsPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    บาร์โค้ด
+                    {t('products.barcode')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ชื่อสินค้า
+                    {t('products.name')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    หมวดหมู่
+                    {t('products.category')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ราคา
+                    {t('products.price')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    คงเหลือ
+                    {t('products.stock')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    จัดการ
+                    {t('products.actions')}
                   </th>
                 </tr>
               </thead>
@@ -86,7 +88,7 @@ export default function ProductsPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {product.category_id || 'ไม่มีหมวดหมู่'}
+                      {product.category_id || t('products.noCategory')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       ฿{product.base_price.toFixed(2)}
@@ -104,7 +106,7 @@ export default function ProductsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <Button variant="secondary" size="sm">
-                        แก้ไข
+                        {t('products.edit')}
                       </Button>
                     </td>
                   </tr>

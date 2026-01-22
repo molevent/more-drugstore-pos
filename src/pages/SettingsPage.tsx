@@ -1,12 +1,15 @@
 import Card from '../components/common/Card'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
+import { useLanguage } from '../contexts/LanguageContext'
 import { Save } from 'lucide-react'
 
 export default function SettingsPage() {
+  const { t } = useLanguage()
+  
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">ตั้งค่า</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-6">{t('settings.title')}</h1>
 
       <div className="space-y-6">
         <Card title="ข้อมูลร้าน">

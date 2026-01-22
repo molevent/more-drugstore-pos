@@ -1,31 +1,33 @@
 import { useAuthStore } from '../stores/authStore'
+import { useLanguage } from '../contexts/LanguageContext'
 import Card from '../components/common/Card'
 import { TrendingUp, Package, AlertTriangle, DollarSign } from 'lucide-react'
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
+  const { t } = useLanguage()
 
   const stats = [
     {
-      name: 'ยอดขายวันนี้',
+      name: t('dashboard.todaySales'),
       value: '฿0',
       icon: DollarSign,
       color: 'bg-green-500',
     },
     {
-      name: 'รายการขาย',
+      name: t('dashboard.salesCount'),
       value: '0',
       icon: TrendingUp,
       color: 'bg-blue-500',
     },
     {
-      name: 'สินค้าทั้งหมด',
+      name: t('dashboard.totalProducts'),
       value: '0',
       icon: Package,
       color: 'bg-purple-500',
     },
     {
-      name: 'สินค้าใกล้หมด',
+      name: t('dashboard.lowStock'),
       value: '0',
       icon: AlertTriangle,
       color: 'bg-red-500',
@@ -35,9 +37,9 @@ export default function DashboardPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">แดชบอร์ด</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{t('dashboard.title')}</h1>
         <p className="text-gray-600 mt-1">
-          ยินดีต้อนรับ, {user?.full_name} ({user?.role})
+          {t('dashboard.welcome')}, {user?.full_name} ({user?.role})
         </p>
       </div>
 
@@ -58,12 +60,12 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card title="ยอดขายล่าสุด">
-          <p className="text-gray-500 text-center py-8">ยังไม่มีข้อมูลการขาย</p>
+        <Card title={t('dashboard.recentSales')}>
+          <p className="text-gray-500 text-center py-8">{t('dashboard.noSalesData')}</p>
         </Card>
 
-        <Card title="สินค้าใกล้หมด">
-          <p className="text-gray-500 text-center py-8">ไม่มีสินค้าที่ใกล้หมด</p>
+        <Card title={t('dashboard.lowStock')}>
+          <p className="text-gray-500 text-center py-8">{t('dashboard.noLowStock')}</p>
         </Card>
       </div>
     </div>
