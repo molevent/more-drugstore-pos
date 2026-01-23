@@ -5,24 +5,29 @@ const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/
 
 interface PatientInfo {
   age: number
-  pregnant: boolean
+  gender?: string
+  weight?: number
+  height?: number
+  pregnant?: boolean
+  breastfeeding?: boolean
   allergies: string
-  currentMeds: string
+  currentMedications?: string
   chronicConditions: string
   symptomDuration: string
-  symptoms: string
 }
 
 interface DrugRecommendation {
-  productId: string
+  productId?: string
   name: string
+  type?: string
   reason: string
   dosage: string
-  warnings: string
-  confidence: number
+  warnings?: string
+  confidence?: number
+  product?: any
 }
 
-export async function analyzeSymptoms(patientInfo: PatientInfo): Promise<DrugRecommendation[]> {
+export async function analyzeSymptoms(symptoms: string, patientInfo: PatientInfo): Promise<DrugRecommendation[]> {
   if (!GEMINI_API_KEY) {
     throw new Error('VITE_GEMINI_API_KEY is not set in environment variables')
   }
@@ -61,13 +66,14 @@ export async function analyzeSymptoms(patientInfo: PatientInfo): Promise<DrugRec
 
 ข้อมูลผู้ป่วย:
 - อายุ: ${patientInfo.age} ปี
-- ท้อง/ให้นมบุตร: ${patientInfo.pregnant ? 'ใช่' : 'ไม่ใช่'}
+- เพศ: ${patientInfo.gender || 'ไม่ระบุ'}
+- ท้อง/ให้นมบุตร: ${patientInfo.pregnant || patientInfo.breastfeeding ? 'ใช่' : 'ไม่ใช่'}
 - แพ้ยา: ${patientInfo.allergies || 'ไม่มี'}
-- กำลังกินยา: ${patientInfo.currentMeds || 'ไม่มี'}
+- กำลังกินยา: ${patientInfo.currentMedications || 'ไม่มี'}
 - โรคประจำตัว: ${patientInfo.chronicConditions || 'ไม่มี'}
 - มีอาการมา: ${patientInfo.symptomDuration}
 
-อาการ: ${patientInfo.symptoms}
+อาการ: ${symptoms}
 
 รายการยาที่มีในร้าน:
 ${productList.map((p, i) => `${i + 1}. ${p.name} (${p.category}) - ${p.description || 'ไม่มีรายละเอียด'}`).join('\n')}

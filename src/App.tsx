@@ -3,7 +3,8 @@ import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import POSPage from './pages/POSPage'
 import CategoriesPage from './pages/CategoriesPage'
-import AISymptomCheckerWizard from './pages/AISymptomCheckerWizard'
+import AISymptomCheckerForm from './pages/AISymptomCheckerForm'
+import ConsultationHistoryPage from './pages/ConsultationHistoryPage'
 import ProductsPage from './pages/ProductsPage'
 import InventoryPage from './pages/InventoryPage'
 import ReportsPage from './pages/ReportsPage'
@@ -26,7 +27,8 @@ function App() {
                   <Routes>
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/pos" element={<POSPage />} />
-                    <Route path="/ai-symptom-checker" element={<AISymptomCheckerWizard />} />
+                    <Route path="/ai-symptom-checker" element={<AISymptomCheckerForm />} />
+                    <Route path="/consultation-history" element={<ConsultationHistoryPage />} />
                     <Route path="/categories" element={<CategoriesPage />} />
                     <Route path="/products" element={<ProductsPage />} />
                     <Route path="/inventory" element={<InventoryPage />} />

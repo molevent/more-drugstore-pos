@@ -31,6 +31,7 @@ export default function Layout({ children }: LayoutProps) {
     { name: t('nav.dashboard'), href: '/dashboard', icon: LayoutDashboard },
     { name: t('nav.pos'), href: '/pos', icon: ShoppingCart },
     { name: t('nav.aiSymptomChecker'), href: '/ai-symptom-checker', icon: Brain },
+    { name: 'ประวัติการปรึกษา', href: '/consultation-history', icon: FileText },
     { name: t('nav.categories'), href: '/categories', icon: Package },
     { name: t('nav.products'), href: '/products', icon: Package },
     { name: t('nav.inventory'), href: '/inventory', icon: Warehouse },
