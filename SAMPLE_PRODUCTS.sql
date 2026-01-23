@@ -4,13 +4,13 @@
 -- รันใน Supabase SQL Editor
 
 -- 1. สร้างหมวดหมู่ก่อน (ถ้ายังไม่มี)
-INSERT INTO categories (name_th, name_en, sort_order, is_active)
+INSERT INTO categories (name_th, name_en, sort_order)
 VALUES 
-  ('ยาแก้ปวด-ลดไข้', 'Pain Relief & Fever', 1, true),
-  ('ยาแก้แพ้', 'Antihistamine', 2, true),
-  ('ยาแก้ไอ-ขับเสมหะ', 'Cough & Cold', 3, true),
-  ('ยาทาแก้ปวด', 'Topical Pain Relief', 4, true),
-  ('วิตามิน', 'Vitamins', 5, true)
+  ('ยาแก้ปวด-ลดไข้', 'Pain Relief & Fever', 1),
+  ('ยาแก้แพ้', 'Antihistamine', 2),
+  ('ยาแก้ไอ-ขับเสมหะ', 'Cough & Cold', 3),
+  ('ยาทาแก้ปวด', 'Topical Pain Relief', 4),
+  ('วิตามิน', 'Vitamins', 5)
 ON CONFLICT (name_th) DO NOTHING;
 
 -- 2. เพิ่มสินค้าตัวอย่าง
