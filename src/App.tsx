@@ -5,6 +5,8 @@ import POSPage from './pages/POSPage'
 import CategoriesPage from './pages/CategoriesPage'
 import AISymptomCheckerForm from './pages/AISymptomCheckerForm'
 import ConsultationHistoryPage from './pages/ConsultationHistoryPage'
+import StockManagementPage from './pages/StockManagementPage'
+import MedicineLabelPage from './pages/MedicineLabelPage'
 import ProductsPage from './pages/ProductsPage'
 import InventoryPage from './pages/InventoryPage'
 import ReportsPage from './pages/ReportsPage'
@@ -29,6 +31,8 @@ function App() {
                     <Route path="/pos" element={<POSPage />} />
                     <Route path="/ai-symptom-checker" element={<AISymptomCheckerForm />} />
                     <Route path="/consultation-history" element={<ConsultationHistoryPage />} />
+                    <Route path="/stock-management" element={<StockManagementPage />} />
+                    <Route path="/medicine-labels" element={<MedicineLabelPage />} />
                     <Route path="/categories" element={<CategoriesPage />} />
                     <Route path="/products" element={<ProductsPage />} />
                     <Route path="/inventory" element={<InventoryPage />} />

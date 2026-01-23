@@ -1,0 +1,683 @@
+import { useState, useEffect } from 'react'
+import { supabase } from '../services/supabase'
+import Card from '../components/common/Card'
+import Button from '../components/common/Button'
+import { Package, Plus, History, Search, Edit } from 'lucide-react'
+
+interface Product {
+  id: string
+  name_th: string
+  name_en: string
+  barcode: string
+  stock_quantity: number
+  min_stock_level: number
+  reorder_point: number
+  unit_of_measure: string
+  location: string
+}
+
+interface StockBatch {
+  id: string
+  product_id: string
+  batch_number: string
+  lot_number: string
+  expiry_date: string
+  quantity: number
+  supplier: string
+  is_active: boolean
+}
+
+interface StockMovement {
+  id: string
+  product_id: string
+  movement_type: string
+  quantity: number
+  quantity_before: number
+  quantity_after: number
+  reason: string
+  notes: string
+  movement_date: string
+  created_by: string
+}
+
+export default function StockManagementPage() {
+  const [products, setProducts] = useState<Product[]>([])
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [batches, setBatches] = useState<StockBatch[]>([])
+  const [movements, setMovements] = useState<StockMovement[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [showAdjustModal, setShowAdjustModal] = useState(false)
+  const [showBatchModal, setShowBatchModal] = useState(false)
+  const [adjustmentData, setAdjustmentData] = useState({
+    type: 'adjustment' as string,
+    quantity: 0,
+    reason: '',
+    notes: ''
+  })
+  const [batchData, setBatchData] = useState({
+    batch_number: '',
+    lot_number: '',
+    expiry_date: '',
+    quantity: 0,
+    supplier: '',
+    cost_per_unit: 0
+  })
+
+  useEffect(() => {
+    fetchProducts()
+  }, [])
+
+  useEffect(() => {
+    if (selectedProduct) {
+      fetchBatches(selectedProduct.id)
+      fetchMovements(selectedProduct.id)
+    }
+  }, [selectedProduct])
+
+  const fetchProducts = async () => {
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('name_th')
+
+      if (error) throw error
+      setProducts(data || [])
+    } catch (error) {
+      console.error('Error fetching products:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchBatches = async (productId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('stock_batches')
+        .select('*')
+        .eq('product_id', productId)
+        .eq('is_active', true)
+        .order('expiry_date')
+
+      if (error) throw error
+      setBatches(data || [])
+    } catch (error) {
+      console.error('Error fetching batches:', error)
+    }
+  }
+
+  const fetchMovements = async (productId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('stock_movements')
+        .select('*')
+        .eq('product_id', productId)
+        .order('movement_date', { ascending: false })
+        .limit(20)
+
+      if (error) throw error
+      setMovements(data || [])
+    } catch (error) {
+      console.error('Error fetching movements:', error)
+    }
+  }
+
+  const handleStockAdjustment = async () => {
+    if (!selectedProduct) return
+
+    try {
+      const { data: userData } = await supabase.auth.getUser()
+      
+      const quantityChange = adjustmentData.type === 'purchase' || adjustmentData.type === 'return' 
+        ? adjustmentData.quantity 
+        : -adjustmentData.quantity
+
+      const newQuantity = selectedProduct.stock_quantity + quantityChange
+
+      // บันทึกการเคลื่อนไหวสต็อก
+      const { error: movementError } = await supabase
+        .from('stock_movements')
+        .insert({
+          product_id: selectedProduct.id,
+          movement_type: adjustmentData.type,
+          quantity: quantityChange,
+          quantity_before: selectedProduct.stock_quantity,
+          quantity_after: newQuantity,
+          reason: adjustmentData.reason,
+          notes: adjustmentData.notes,
+          created_by: userData?.user?.id
+        })
+
+      if (movementError) throw movementError
+
+      // อัพเดตจำนวนสต็อก
+      const { error: updateError } = await supabase
+        .from('products')
+        .update({ stock_quantity: newQuantity })
+        .eq('id', selectedProduct.id)
+
+      if (updateError) throw updateError
+
+      // รีเฟรชข้อมูล
+      await fetchProducts()
+      await fetchMovements(selectedProduct.id)
+      
+      setShowAdjustModal(false)
+      setAdjustmentData({
+        type: 'adjustment',
+        quantity: 0,
+        reason: '',
+        notes: ''
+      })
+    } catch (error) {
+      console.error('Error adjusting stock:', error)
+      alert('เกิดข้อผิดพลาดในการปรับสต็อก')
+    }
+  }
+
+  const handleAddBatch = async () => {
+    if (!selectedProduct) return
+
+    try {
+      const { data: userData } = await supabase.auth.getUser()
+
+      // เพิ่ม batch ใหม่
+      const { error: batchError } = await supabase
+        .from('stock_batches')
+        .insert({
+          product_id: selectedProduct.id,
+          batch_number: batchData.batch_number,
+          lot_number: batchData.lot_number,
+          expiry_date: batchData.expiry_date,
+          quantity: batchData.quantity,
+          supplier: batchData.supplier,
+          cost_per_unit: batchData.cost_per_unit,
+          created_by: userData?.user?.id
+        })
+
+      if (batchError) throw batchError
+
+      // บันทึกการรับสินค้าเข้า
+      const newQuantity = selectedProduct.stock_quantity + batchData.quantity
+
+      const { error: movementError } = await supabase
+        .from('stock_movements')
+        .insert({
+          product_id: selectedProduct.id,
+          movement_type: 'purchase',
+          quantity: batchData.quantity,
+          quantity_before: selectedProduct.stock_quantity,
+          quantity_after: newQuantity,
+          unit_cost: batchData.cost_per_unit,
+          total_cost: batchData.quantity * batchData.cost_per_unit,
+          reason: `รับสินค้า Batch: ${batchData.batch_number}`,
+          notes: `Supplier: ${batchData.supplier}`,
+          created_by: userData?.user?.id
+        })
+
+      if (movementError) throw movementError
+
+      // รีเฟรชข้อมูล
+      await fetchProducts()
+      await fetchBatches(selectedProduct.id)
+      await fetchMovements(selectedProduct.id)
+      
+      setShowBatchModal(false)
+      setBatchData({
+        batch_number: '',
+        lot_number: '',
+        expiry_date: '',
+        quantity: 0,
+        supplier: '',
+        cost_per_unit: 0
+      })
+    } catch (error) {
+      console.error('Error adding batch:', error)
+      alert('เกิดข้อผิดพลาดในการเพิ่ม Batch')
+    }
+  }
+
+  const filteredProducts = products.filter(product =>
+    product.name_th?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.name_en?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.barcode?.includes(searchTerm)
+  )
+
+  const getStockStatus = (product: Product) => {
+    if (product.stock_quantity <= product.min_stock_level) {
+      return { color: 'text-red-600 bg-red-50', text: 'วิกฤต' }
+    } else if (product.stock_quantity <= product.reorder_point) {
+      return { color: 'text-yellow-600 bg-yellow-50', text: 'ต่ำ' }
+    }
+    return { color: 'text-green-600 bg-green-50', text: 'ปกติ' }
+  }
+
+  const getMovementTypeLabel = (type: string) => {
+    const types: Record<string, string> = {
+      purchase: 'รับเข้า',
+      sale: 'ขายออก',
+      adjustment: 'ปรับยอด',
+      return: 'รับคืน',
+      supplier_return: 'คืนซัพพลายเออร์',
+      expired: 'หมดอายุ',
+      damaged: 'เสียหาย',
+      transfer: 'โอนย้าย'
+    }
+    return types[type] || type
+  }
+
+  const getDaysUntilExpiry = (expiryDate: string) => {
+    const today = new Date()
+    const expiry = new Date(expiryDate)
+    const diffTime = expiry.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays
+  }
+
+  return (
+    <div>
+      <div className="mb-6">
+        <div className="flex items-center gap-3 mb-2">
+          <Package className="h-8 w-8 text-blue-600" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">จัดการสต็อก</h1>
+        </div>
+        <p className="text-gray-600">ปรับยอดสต็อก, จัดการ Batch และติดตามการเคลื่อนไหว</p>
+      </div>
+
+      {/* Search Bar */}
+      <Card className="mb-6">
+        <div className="flex items-center gap-3">
+          <Search className="h-5 w-5 text-gray-400" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="ค้นหาด้วยชื่อสินค้า หรือบาร์โค้ด..."
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Products List */}
+        <Card>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">รายการสินค้า</h2>
+          
+          {loading ? (
+            <p className="text-center text-gray-600">กำลังโหลด...</p>
+          ) : (
+            <div className="space-y-2 max-h-[600px] overflow-y-auto">
+              {filteredProducts.map((product) => {
+                const status = getStockStatus(product)
+                return (
+                  <div
+                    key={product.id}
+                    onClick={() => setSelectedProduct(product)}
+                    className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                      selectedProduct?.id === product.id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900">{product.name_th}</h3>
+                        <p className="text-sm text-gray-600">{product.barcode}</p>
+                        <div className="flex items-center gap-4 mt-2">
+                          <span className="text-sm text-gray-600">
+                            คงเหลือ: <strong>{product.stock_quantity}</strong> {product.unit_of_measure}
+                          </span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.color}`}>
+                            {status.text}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </Card>
+
+        {/* Product Details */}
+        {selectedProduct ? (
+          <div className="space-y-6">
+            {/* Stock Info */}
+            <Card>
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">{selectedProduct.name_th}</h2>
+                  <p className="text-sm text-gray-600">{selectedProduct.barcode}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setShowAdjustModal(true)}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    ปรับสต็อก
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setShowBatchModal(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    เพิ่ม Batch
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">คงเหลือ</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {selectedProduct.stock_quantity} {selectedProduct.unit_of_measure}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">ตำแหน่ง</p>
+                  <p className="font-medium text-gray-900">{selectedProduct.location || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">จุดสั่งซื้อ</p>
+                  <p className="font-medium text-gray-900">{selectedProduct.reorder_point}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">ขั้นต่ำ</p>
+                  <p className="font-medium text-gray-900">{selectedProduct.min_stock_level}</p>
+                </div>
+              </div>
+            </Card>
+
+            {/* Batches */}
+            <Card>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Batch/Lot</h3>
+              {batches.length === 0 ? (
+                <p className="text-center text-gray-600">ไม่มีข้อมูล Batch</p>
+              ) : (
+                <div className="space-y-2">
+                  {batches.map((batch) => {
+                    const daysUntilExpiry = getDaysUntilExpiry(batch.expiry_date)
+                    return (
+                      <div key={batch.id} className="p-3 border border-gray-200 rounded-lg">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              Batch: {batch.batch_number}
+                            </p>
+                            {batch.lot_number && (
+                              <p className="text-sm text-gray-600">Lot: {batch.lot_number}</p>
+                            )}
+                            <p className="text-sm text-gray-600">
+                              จำนวน: {batch.quantity} | ซัพพลายเออร์: {batch.supplier || '-'}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-gray-600">หมดอายุ</p>
+                            <p className={`font-medium ${
+                              daysUntilExpiry <= 30 ? 'text-red-600' :
+                              daysUntilExpiry <= 90 ? 'text-yellow-600' :
+                              'text-gray-900'
+                            }`}>
+                              {new Date(batch.expiry_date).toLocaleDateString('th-TH')}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              ({daysUntilExpiry} วัน)
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </Card>
+
+            {/* Recent Movements */}
+            <Card>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                <History className="inline h-5 w-5 mr-2" />
+                ประวัติการเคลื่อนไหว
+              </h3>
+              {movements.length === 0 ? (
+                <p className="text-center text-gray-600">ไม่มีประวัติ</p>
+              ) : (
+                <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                  {movements.map((movement) => (
+                    <div key={movement.id} className="p-3 border border-gray-200 rounded-lg">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                            movement.quantity > 0 
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-red-100 text-red-700'
+                          }`}>
+                            {getMovementTypeLabel(movement.movement_type)}
+                          </span>
+                          <p className="text-sm text-gray-900 mt-1">
+                            {movement.quantity > 0 ? '+' : ''}{movement.quantity} {selectedProduct.unit_of_measure}
+                          </p>
+                          {movement.reason && (
+                            <p className="text-xs text-gray-600">{movement.reason}</p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-gray-600">
+                            {new Date(movement.movement_date).toLocaleDateString('th-TH')}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {movement.quantity_before} → {movement.quantity_after}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </div>
+        ) : (
+          <Card>
+            <div className="text-center py-12">
+              <Package className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-600">เลือกสินค้าเพื่อดูรายละเอียด</p>
+            </div>
+          </Card>
+        )}
+      </div>
+
+      {/* Stock Adjustment Modal */}
+      {showAdjustModal && selectedProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">ปรับยอดสต็อก</h3>
+            <p className="text-sm text-gray-600 mb-4">{selectedProduct.name_th}</p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">ประเภท</label>
+                <select
+                  value={adjustmentData.type}
+                  onChange={(e) => setAdjustmentData({...adjustmentData, type: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="adjustment">ปรับยอด</option>
+                  <option value="purchase">รับเข้า</option>
+                  <option value="return">รับคืน</option>
+                  <option value="damaged">เสียหาย</option>
+                  <option value="expired">หมดอายุ</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">จำนวน</label>
+                <input
+                  type="number"
+                  value={adjustmentData.quantity}
+                  onChange={(e) => setAdjustmentData({...adjustmentData, quantity: parseInt(e.target.value) || 0})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  min="0"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">เหตุผล</label>
+                <input
+                  type="text"
+                  value={adjustmentData.reason}
+                  onChange={(e) => setAdjustmentData({...adjustmentData, reason: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  placeholder="ระบุเหตุผล..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">หมายเหตุ</label>
+                <textarea
+                  value={adjustmentData.notes}
+                  onChange={(e) => setAdjustmentData({...adjustmentData, notes: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  rows={3}
+                  placeholder="หมายเหตุเพิ่มเติม..."
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <Button
+                variant="primary"
+                onClick={handleStockAdjustment}
+                disabled={adjustmentData.quantity === 0}
+              >
+                บันทึก
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowAdjustModal(false)
+                  setAdjustmentData({
+                    type: 'adjustment',
+                    quantity: 0,
+                    reason: '',
+                    notes: ''
+                  })
+                }}
+              >
+                ยกเลิก
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Add Batch Modal */}
+      {showBatchModal && selectedProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">เพิ่ม Batch ใหม่</h3>
+            <p className="text-sm text-gray-600 mb-4">{selectedProduct.name_th}</p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Batch Number *</label>
+                <input
+                  type="text"
+                  value={batchData.batch_number}
+                  onChange={(e) => setBatchData({...batchData, batch_number: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Lot Number</label>
+                <input
+                  type="text"
+                  value={batchData.lot_number}
+                  onChange={(e) => setBatchData({...batchData, lot_number: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">วันหมดอายุ *</label>
+                <input
+                  type="date"
+                  value={batchData.expiry_date}
+                  onChange={(e) => setBatchData({...batchData, expiry_date: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">จำนวน *</label>
+                <input
+                  type="number"
+                  value={batchData.quantity}
+                  onChange={(e) => setBatchData({...batchData, quantity: parseInt(e.target.value) || 0})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  min="1"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">ซัพพลายเออร์</label>
+                <input
+                  type="text"
+                  value={batchData.supplier}
+                  onChange={(e) => setBatchData({...batchData, supplier: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">ราคาต่อหน่วย</label>
+                <input
+                  type="number"
+                  value={batchData.cost_per_unit}
+                  onChange={(e) => setBatchData({...batchData, cost_per_unit: parseFloat(e.target.value) || 0})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <Button
+                variant="primary"
+                onClick={handleAddBatch}
+                disabled={!batchData.batch_number || !batchData.expiry_date || batchData.quantity === 0}
+              >
+                บันทึก
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowBatchModal(false)
+                  setBatchData({
+                    batch_number: '',
+                    lot_number: '',
+                    expiry_date: '',
+                    quantity: 0,
+                    supplier: '',
+                    cost_per_unit: 0
+                  })
+                }}
+              >
+                ยกเลิก
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+    </div>
+  )
+}
