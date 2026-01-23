@@ -4,7 +4,7 @@ import { analyzeSymptoms } from '../services/gemini'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Brain, AlertTriangle, Pill, ShoppingCart, Save } from 'lucide-react'
+import { Brain, AlertTriangle, Pill, ShoppingCart, Save, Loader2 } from 'lucide-react'
 
 interface ConsultationData {
   patientName: string
@@ -33,6 +33,7 @@ export default function AISymptomCheckerForm() {
   const [recommendations, setRecommendations] = useState<any[]>([])
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   
   const [consultationData, setConsultationData] = useState<ConsultationData>({
     patientName: '',
@@ -54,13 +55,47 @@ export default function AISymptomCheckerForm() {
     chiefComplaint: ''
   })
 
+  const validateForm = () => {
+    const errors: Record<string, string> = {}
+    
+    if (!consultationData.patientName.trim()) {
+      errors.patientName = 'กรุณากรอกชื่อผู้ป่วย'
+    }
+    if (!consultationData.chiefComplaint.trim()) {
+      errors.chiefComplaint = 'กรุณากรอกอาการสำคัญที่มาพบ'
+    }
+    if (!consultationData.symptoms.trim()) {
+      errors.symptoms = 'กรุณากรอกอาการเพิ่มเติม'
+    }
+    if (consultationData.age <= 0 || consultationData.age > 150) {
+      errors.age = 'กรุณากรอกอายุที่ถูกต้อง'
+    }
+    if (consultationData.weight <= 0 || consultationData.weight > 500) {
+      errors.weight = 'กรุณากรอกน้ำหนักที่ถูกต้อง'
+    }
+    if (consultationData.height <= 0 || consultationData.height > 300) {
+      errors.height = 'กรุณากรอกส่วนสูงที่ถูกต้อง'
+    }
+    
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
   const handleAnalyze = async () => {
+    // Validate form first
+    if (!validateForm()) {
+      setError('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน')
+      return
+    }
+
     setLoading(true)
     setError('')
     setSuccessMessage('')
+    setValidationErrors({})
 
     try {
-      const allSymptoms = consultationData.symptoms
+      // Combine chief complaint and symptoms
+      const allSymptoms = `${consultationData.chiefComplaint}\n${consultationData.symptoms}`
 
       const patientInfo = {
         age: consultationData.age,
@@ -75,6 +110,9 @@ export default function AISymptomCheckerForm() {
         symptomDuration: consultationData.symptomDuration
       }
 
+      console.log('Analyzing symptoms:', allSymptoms)
+      console.log('Patient info:', patientInfo)
+
       const result = await analyzeSymptoms(allSymptoms, patientInfo)
       setRecommendations(result || [])
 
@@ -83,6 +121,7 @@ export default function AISymptomCheckerForm() {
       
       setSuccessMessage('✅ วิเคราะห์และบันทึกข้อมูลเรียบร้อยแล้ว')
     } catch (err: any) {
+      console.error('Error analyzing symptoms:', err)
       setError(err.message || 'เกิดข้อผิดพลาดในการวิเคราะห์')
     } finally {
       setLoading(false)
@@ -123,14 +162,23 @@ export default function AISymptomCheckerForm() {
   }
 
   const handleSaveOnly = async () => {
+    // Validate at least patient name
+    if (!consultationData.patientName.trim()) {
+      setValidationErrors({ patientName: 'กรุณากรอกชื่อผู้ป่วย' })
+      setError('กรุณากรอกชื่อผู้ป่วย')
+      return
+    }
+
     setSaving(true)
     setError('')
     setSuccessMessage('')
+    setValidationErrors({})
     
     try {
       await saveConsultation([])
       setSuccessMessage('✅ บันทึกข้อมูลเรียบร้อยแล้ว')
     } catch (err: any) {
+      console.error('Error saving consultation:', err)
       setError('เกิดข้อผิดพลาดในการบันทึก')
     } finally {
       setSaving(false)
@@ -204,11 +252,21 @@ export default function AISymptomCheckerForm() {
                 <input
                   type="text"
                   value={consultationData.patientName}
-                  onChange={(e) => setConsultationData({...consultationData, patientName: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => {
+                    setConsultationData({...consultationData, patientName: e.target.value})
+                    if (validationErrors.patientName) {
+                      setValidationErrors({...validationErrors, patientName: ''})
+                    }
+                  }}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                    validationErrors.patientName ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="ชื่อ-นามสกุล"
                   required
                 />
+                {validationErrors.patientName && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.patientName}</p>
+                )}
               </div>
 
               <div>
@@ -227,10 +285,20 @@ export default function AISymptomCheckerForm() {
                 <input
                   type="number"
                   value={consultationData.age}
-                  onChange={(e) => setConsultationData({...consultationData, age: parseInt(e.target.value) || 0})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => {
+                    setConsultationData({...consultationData, age: parseInt(e.target.value) || 0})
+                    if (validationErrors.age) {
+                      setValidationErrors({...validationErrors, age: ''})
+                    }
+                  }}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                    validationErrors.age ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   required
                 />
+                {validationErrors.age && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.age}</p>
+                )}
               </div>
 
               <div>
@@ -262,10 +330,20 @@ export default function AISymptomCheckerForm() {
                 <input
                   type="number"
                   value={consultationData.weight}
-                  onChange={(e) => setConsultationData({...consultationData, weight: parseFloat(e.target.value) || 0})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => {
+                    setConsultationData({...consultationData, weight: parseFloat(e.target.value) || 0})
+                    if (validationErrors.weight) {
+                      setValidationErrors({...validationErrors, weight: ''})
+                    }
+                  }}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                    validationErrors.weight ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   required
                 />
+                {validationErrors.weight && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.weight}</p>
+                )}
               </div>
 
               <div>
@@ -273,10 +351,20 @@ export default function AISymptomCheckerForm() {
                 <input
                   type="number"
                   value={consultationData.height}
-                  onChange={(e) => setConsultationData({...consultationData, height: parseFloat(e.target.value) || 0})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => {
+                    setConsultationData({...consultationData, height: parseFloat(e.target.value) || 0})
+                    if (validationErrors.height) {
+                      setValidationErrors({...validationErrors, height: ''})
+                    }
+                  }}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                    validationErrors.height ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   required
                 />
+                {validationErrors.height && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.height}</p>
+                )}
               </div>
             </div>
 
@@ -435,24 +523,44 @@ export default function AISymptomCheckerForm() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">อาการสำคัญที่มาพบ (Chief Complaint) *</label>
                 <textarea
                   value={consultationData.chiefComplaint}
-                  onChange={(e) => setConsultationData({...consultationData, chiefComplaint: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => {
+                    setConsultationData({...consultationData, chiefComplaint: e.target.value})
+                    if (validationErrors.chiefComplaint) {
+                      setValidationErrors({...validationErrors, chiefComplaint: ''})
+                    }
+                  }}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                    validationErrors.chiefComplaint ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   rows={2}
                   placeholder="เช่น ปวดหัวมาก 2 วัน กินยาแล้วไม่ดีขึ้น"
                   required
                 />
+                {validationErrors.chiefComplaint && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.chiefComplaint}</p>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">อาการเพิ่มเติม *</label>
                 <textarea
                   value={consultationData.symptoms}
-                  onChange={(e) => setConsultationData({...consultationData, symptoms: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => {
+                    setConsultationData({...consultationData, symptoms: e.target.value})
+                    if (validationErrors.symptoms) {
+                      setValidationErrors({...validationErrors, symptoms: ''})
+                    }
+                  }}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                    validationErrors.symptoms ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   rows={4}
                   placeholder="อธิบายอาการอื่นๆ เพิ่มเติม..."
                   required
                 />
+                {validationErrors.symptoms && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.symptoms}</p>
+                )}
               </div>
 
               <div>
@@ -603,10 +711,15 @@ export default function AISymptomCheckerForm() {
             <Button
               variant="primary"
               onClick={handleAnalyze}
-              disabled={loading || saving || !consultationData.patientName || !consultationData.symptoms}
+              disabled={loading || saving}
               className="flex-1 min-w-[200px]"
             >
-              {loading ? 'กำลังวิเคราะห์...' : (
+              {loading ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  กำลังวิเคราะห์อาการ...
+                </>
+              ) : (
                 <>
                   <Brain className="h-5 w-5 mr-2" />
                   วิเคราะห์และบันทึก
@@ -617,10 +730,15 @@ export default function AISymptomCheckerForm() {
             <Button
               variant="secondary"
               onClick={handleSaveOnly}
-              disabled={loading || saving || !consultationData.patientName}
+              disabled={loading || saving}
               className="flex-1 min-w-[200px]"
             >
-              {saving ? 'กำลังบันทึก...' : (
+              {saving ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  กำลังบันทึก...
+                </>
+              ) : (
                 <>
                   <Save className="h-5 w-5 mr-2" />
                   บันทึกเท่านั้น

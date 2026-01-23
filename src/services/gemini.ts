@@ -32,7 +32,7 @@ export async function analyzeSymptoms(symptoms: string, patientInfo: PatientInfo
     throw new Error('VITE_GEMINI_API_KEY is not set in environment variables')
   }
 
-  // Fetch available products from database
+  // Fetch available products from database with medicine details
   const { data: products, error } = await supabase
     .from('products')
     .select(`
@@ -43,7 +43,16 @@ export async function analyzeSymptoms(symptoms: string, patientInfo: PatientInfo
       description_en,
       base_price,
       stock_quantity,
-      category:categories(name_th, name_en)
+      unit_of_measure,
+      is_prescription_required,
+      category:categories(name_th, name_en),
+      medicine_details (
+        dosage_form,
+        strength,
+        dosage_instructions,
+        warnings,
+        active_ingredients
+      )
     `)
     .eq('is_active', true)
     .gt('stock_quantity', 0)
@@ -53,13 +62,22 @@ export async function analyzeSymptoms(symptoms: string, patientInfo: PatientInfo
   }
 
   // Create product list for AI
-  const productList = products.map(p => ({
-    id: p.id,
-    name: p.name_th,
-    nameEn: p.name_en,
-    description: p.description_th,
-    category: (p as any).category?.name_th || 'ไม่มีหมวดหมู่'
-  }))
+  const productList = products.map(p => {
+    const medicine = (p as any).medicine_details?.[0]
+    return {
+      id: p.id,
+      name: p.name_th,
+      nameEn: p.name_en,
+      description: p.description_th,
+      category: (p as any).category?.name_th || 'ไม่มีหมวดหมู่',
+      dosageForm: medicine?.dosage_form || '',
+      strength: medicine?.strength || '',
+      dosageInstructions: medicine?.dosage_instructions || '',
+      warnings: medicine?.warnings || '',
+      activeIngredients: medicine?.active_ingredients || '',
+      isPrescriptionRequired: p.is_prescription_required || false
+    }
+  })
 
   // Build AI prompt
   const prompt = `คุณเป็นเภสัชกรผู้เชี่ยวชาญ กรุณาวิเคราะห์อาการและแนะนำยาที่เหมาะสมจากรายการสินค้าที่มีในร้าน
@@ -76,7 +94,15 @@ export async function analyzeSymptoms(symptoms: string, patientInfo: PatientInfo
 อาการ: ${symptoms}
 
 รายการยาที่มีในร้าน:
-${productList.map((p, i) => `${i + 1}. ${p.name} (${p.category}) - ${p.description || 'ไม่มีรายละเอียด'}`).join('\n')}
+${productList.map((p, i) => {
+  let details = `${i + 1}. ${p.name} (${p.category})`
+  if (p.strength) details += ` - ${p.strength}`
+  if (p.dosageForm) details += ` - ${p.dosageForm}`
+  if (p.activeIngredients) details += ` - ตัวยาสำคัญ: ${p.activeIngredients}`
+  if (p.description) details += ` - ${p.description}`
+  if (p.isPrescriptionRequired) details += ' [ต้องมีใบสั่งยา]'
+  return details
+}).join('\n')}
 
 กรุณาตอบในรูปแบบ JSON เท่านั้น โดยมีโครงสร้างดังนี้:
 {
