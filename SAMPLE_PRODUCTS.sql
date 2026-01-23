@@ -5,13 +5,24 @@
 
 -- 1. สร้างหมวดหมู่ก่อน (ถ้ายังไม่มี)
 INSERT INTO categories (name_th, name_en, sort_order)
-VALUES 
-  ('ยาแก้ปวด-ลดไข้', 'Pain Relief & Fever', 1),
-  ('ยาแก้แพ้', 'Antihistamine', 2),
-  ('ยาแก้ไอ-ขับเสมหะ', 'Cough & Cold', 3),
-  ('ยาทาแก้ปวด', 'Topical Pain Relief', 4),
-  ('วิตามิน', 'Vitamins', 5)
-ON CONFLICT (name_th) DO NOTHING;
+SELECT 'ยาแก้ปวด-ลดไข้', 'Pain Relief & Fever', 1
+WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name_th = 'ยาแก้ปวด-ลดไข้');
+
+INSERT INTO categories (name_th, name_en, sort_order)
+SELECT 'ยาแก้แพ้', 'Antihistamine', 2
+WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name_th = 'ยาแก้แพ้');
+
+INSERT INTO categories (name_th, name_en, sort_order)
+SELECT 'ยาแก้ไอ-ขับเสมหะ', 'Cough & Cold', 3
+WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name_th = 'ยาแก้ไอ-ขับเสมหะ');
+
+INSERT INTO categories (name_th, name_en, sort_order)
+SELECT 'ยาทาแก้ปวด', 'Topical Pain Relief', 4
+WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name_th = 'ยาทาแก้ปวด');
+
+INSERT INTO categories (name_th, name_en, sort_order)
+SELECT 'วิตามิน', 'Vitamins', 5
+WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name_th = 'วิตามิน');
 
 -- 2. เพิ่มสินค้าตัวอย่าง
 INSERT INTO products (
