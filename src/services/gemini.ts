@@ -133,6 +133,10 @@ ${productList.map((p, i) => {
 - แนะนำยาไม่เกิน 3 รายการ เรียงตาม confidence จากมากไปน้อย`
 
   try {
+    // Create abort controller for timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
@@ -150,8 +154,11 @@ ${productList.map((p, i) => {
           topP: 1,
           maxOutputTokens: 2048,
         }
-      })
+      }),
+      signal: controller.signal
     })
+
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       const errorData = await response.text()
@@ -236,6 +243,11 @@ ${productList.map((p, i) => {
 
   } catch (error: any) {
     console.error('Error in analyzeSymptoms:', error)
+    
+    // Handle timeout error
+    if (error.name === 'AbortError') {
+      throw new Error('การวิเคราะห์ใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง')
+    }
     
     // Re-throw with more user-friendly message if needed
     if (error.message?.includes('fetch')) {
