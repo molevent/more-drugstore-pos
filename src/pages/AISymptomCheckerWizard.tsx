@@ -326,9 +326,412 @@ export default function AISymptomCheckerWizard() {
     </div>
   )
 
-  if (currentStep > totalSteps) {
-    return renderResults()
+  const renderStepContent = () => {
+    if (currentStep > totalSteps) return renderResults()
+    if (currentStep === 1) return renderStep1PatientInfo()
+    if (currentStep === 2) return renderStep2VitalSigns()
+    if (currentStep === 3) return renderStep3Symptoms()
+    if (currentStep === 4) return renderStep4Duration()
+    if (currentStep === 5) return renderStep5Allergies()
+    if (currentStep === 6) return renderStep6ChronicConditions()
+    if (currentStep === 7) return renderStep7CurrentMedications()
+    return null
   }
+
+  const renderStep1PatientInfo = () => (
+    <div className="space-y-6">
+      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+        <h3 className="text-lg font-bold text-blue-900 mb-2">ขั้นตอนที่ 1: ข้อมูลผู้ป่วย</h3>
+        <p className="text-blue-700">กรุณากรอกข้อมูลพื้นฐานของผู้ป่วย</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">ชื่อผู้ป่วย</label>
+          <input
+            type="text"
+            value={consultationData.patientName}
+            onChange={(e) => setConsultationData({...consultationData, patientName: e.target.value})}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            placeholder="ชื่อ-นามสกุล"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">เบอร์โทรศัพท์</label>
+          <input
+            type="tel"
+            value={consultationData.patientPhone}
+            onChange={(e) => setConsultationData({...consultationData, patientPhone: e.target.value})}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            placeholder="08X-XXX-XXXX"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">อายุ (ปี)</label>
+          <input
+            type="number"
+            value={consultationData.age}
+            onChange={(e) => setConsultationData({...consultationData, age: parseInt(e.target.value) || 0})}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">เพศ</label>
+          <div className="flex gap-4">
+            {['male', 'female', 'other'].map(gender => (
+              <button
+                key={gender}
+                onClick={() => setConsultationData({...consultationData, gender: gender as any})}
+                className={`px-4 py-2 rounded-lg border transition-all ${
+                  consultationData.gender === gender
+                    ? 'bg-blue-500 text-white border-blue-500 shadow-lg scale-105'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                {gender === 'male' ? '👨 ชาย' : gender === 'female' ? '👩 หญิง' : '⚧ อื่นๆ'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">น้ำหนัก (กก.)</label>
+          <input
+            type="number"
+            value={consultationData.weight}
+            onChange={(e) => setConsultationData({...consultationData, weight: parseFloat(e.target.value) || 0})}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">ส่วนสูง (ซม.)</label>
+          <input
+            type="number"
+            value={consultationData.height}
+            onChange={(e) => setConsultationData({...consultationData, height: parseFloat(e.target.value) || 0})}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+
+      {consultationData.gender === 'female' && (
+        <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
+          <p className="text-sm font-medium text-pink-900 mb-3">🤰 สำหรับผู้หญิงเท่านั้น:</p>
+          <div className="space-y-3">
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={consultationData.pregnant}
+                onChange={(e) => setConsultationData({...consultationData, pregnant: e.target.checked})}
+                className="mr-3 h-5 w-5 text-pink-600"
+              />
+              <span className="text-gray-700">ตั้งครรภ์</span>
+            </label>
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={consultationData.breastfeeding}
+                onChange={(e) => setConsultationData({...consultationData, breastfeeding: e.target.checked})}
+                className="mr-3 h-5 w-5 text-pink-600"
+              />
+              <span className="text-gray-700">ให้นมบุตร</span>
+            </label>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
+  const renderStep2VitalSigns = () => (
+    <div className="space-y-6">
+      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+        <h3 className="text-lg font-bold text-blue-900 mb-2">ขั้นตอนที่ 2: สัญญาณชีพ</h3>
+        <p className="text-blue-700">บันทึกสัญญาณชีพของผู้ป่วย</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">อุณหภูมิ (°C)</label>
+          <input
+            type="number"
+            step="0.1"
+            value={consultationData.temperature}
+            onChange={(e) => setConsultationData({...consultationData, temperature: parseFloat(e.target.value) || 36.5})}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
+          <div className="mt-2 flex flex-wrap gap-2">
+            {[36.5, 37.0, 37.5, 38.0, 38.5, 39.0].map(temp => (
+              <button
+                key={temp}
+                onClick={() => setConsultationData({...consultationData, temperature: temp})}
+                className={`px-3 py-1 rounded text-sm transition-all ${
+                  temp === consultationData.temperature ? 'ring-2 ring-offset-1' : ''
+                } ${
+                  temp >= 37.5 
+                    ? temp >= 38.5
+                      ? 'bg-red-100 text-red-700 hover:bg-red-200' 
+                      : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                }`}
+              >
+                {temp}°
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">ความดันโลหิต (mmHg)</label>
+          <input
+            type="text"
+            value={consultationData.bloodPressure}
+            onChange={(e) => setConsultationData({...consultationData, bloodPressure: e.target.value})}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            placeholder="120/80"
+          />
+          <div className="mt-2 flex flex-wrap gap-2">
+            {['120/80', '130/85', '140/90'].map(bp => (
+              <button
+                key={bp}
+                onClick={() => setConsultationData({...consultationData, bloodPressure: bp})}
+                className={`px-3 py-1 rounded text-sm transition-all ${
+                  bp === consultationData.bloodPressure ? 'ring-2 ring-offset-1' : ''
+                } ${
+                  bp === '120/80' 
+                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                    : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                }`}
+              >
+                {bp}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">อัตราชีพจร (ครั้ง/นาที)</label>
+          <input
+            type="number"
+            value={consultationData.pulseRate}
+            onChange={(e) => setConsultationData({...consultationData, pulseRate: parseInt(e.target.value) || 72})}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
+          <div className="mt-2 flex flex-wrap gap-2">
+            {[60, 72, 80, 90, 100].map(pulse => (
+              <button
+                key={pulse}
+                onClick={() => setConsultationData({...consultationData, pulseRate: pulse})}
+                className={`px-3 py-1 rounded text-sm transition-all ${
+                  pulse === consultationData.pulseRate ? 'ring-2 ring-offset-1' : ''
+                } bg-green-100 text-green-700 hover:bg-green-200`}
+              >
+                {pulse}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {consultationData.weight > 0 && consultationData.height > 0 && (
+        <div className="bg-gray-50 rounded-lg p-4">
+          <p className="text-sm text-gray-600">
+            BMI: {(consultationData.weight / Math.pow(consultationData.height / 100, 2)).toFixed(1)}
+          </p>
+        </div>
+      )}
+    </div>
+  )
+
+  const renderStep3Symptoms = () => (
+    <div className="space-y-6">
+      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+        <h3 className="text-lg font-bold text-blue-900 mb-2">ขั้นตอนที่ 3: อาการสำคัญ</h3>
+        <p className="text-blue-700">อธิบายอาการที่ผู้ป่วยมา</p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">อาการสำคัญที่มาพบ</label>
+        <textarea
+          value={consultationData.chiefComplaint}
+          onChange={(e) => setConsultationData({...consultationData, chiefComplaint: e.target.value})}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          rows={3}
+          placeholder="เช่น ปวดหัวมาก 2 วัน กินยาแล้วไม่ดีขึ้น"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">อาการเพิ่มเติม</label>
+        <textarea
+          value={consultationData.symptoms}
+          onChange={(e) => setConsultationData({...consultationData, symptoms: e.target.value})}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          rows={4}
+          placeholder="อธิบายอาการอื่นๆ เพิ่มเติม..."
+        />
+      </div>
+    </div>
+  )
+
+  const renderStep4Duration = () => (
+    <div className="space-y-6">
+      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+        <h3 className="text-lg font-bold text-blue-900 mb-2">ขั้นตอนที่ 4: ระยะเวลาที่มีอาการ</h3>
+        <p className="text-blue-700">อาการเริ่มมาตั้งแต่เมื่อไหร่?</p>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: 'วันนี้', value: 'lessThan1Day', color: 'blue' },
+          { label: '1-3 วัน', value: '1to3Days', color: 'yellow' },
+          { label: '3-7 วัน', value: '3to7Days', color: 'orange' },
+          { label: '1 สัปดาห์+', value: 'moreThan1Week', color: 'red' }
+        ].map(option => (
+          <button
+            key={option.value}
+            onClick={() => setConsultationData({...consultationData, symptomDuration: option.value})}
+            className={`p-4 rounded-lg border-2 transition-all ${
+              consultationData.symptomDuration === option.value
+                ? 'border-blue-500 bg-blue-50 shadow-lg scale-105'
+                : 'border-gray-300 bg-white hover:bg-gray-50'
+            }`}
+          >
+            <p className="font-medium text-gray-900">{option.label}</p>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+
+  const renderStep5Allergies = () => (
+    <div className="space-y-6">
+      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+        <h3 className="text-lg font-bold text-blue-900 mb-2">ขั้นตอนที่ 5: ประวัติแพ้ยา</h3>
+        <p className="text-blue-700">มีประวัติแพ้ยาหรือไม่?</p>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
+        {[
+          { label: 'ไม่มี', value: 'ไม่มี' },
+          { label: 'เพนนิซิลลิน', value: 'แพ้เพนนิซิลลิน' },
+          { label: 'แอสไพริน', value: 'แพ้แอสไพริน' },
+          { label: 'ซัลฟา', value: 'แพ้ยากลุ่มซัลฟา' },
+          { label: 'NSAIDs', value: 'แพ้ยาแก้ปวด NSAIDs' }
+        ].map(option => (
+          <button
+            key={option.value}
+            onClick={() => setConsultationData({...consultationData, allergies: option.value})}
+            className={`px-4 py-2 rounded-lg border transition-all ${
+              consultationData.allergies === option.value
+                ? option.value === 'ไม่มี'
+                  ? 'bg-green-500 text-white'
+                  : 'bg-red-500 text-white'
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+
+      <input
+        type="text"
+        value={consultationData.allergies}
+        onChange={(e) => setConsultationData({...consultationData, allergies: e.target.value})}
+        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+        placeholder="พิมพ์ชื่อยาที่แพ้ (ถ้ามี)"
+      />
+    </div>
+  )
+
+  const renderStep6ChronicConditions = () => (
+    <div className="space-y-6">
+      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+        <h3 className="text-lg font-bold text-blue-900 mb-2">ขั้นตอนที่ 6: โรคประจำตัว</h3>
+        <p className="text-blue-700">มีโรคประจำตัวหรือไม่?</p>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
+        {[
+          { label: 'ไม่มี', value: 'ไม่มี' },
+          { label: 'เบาหวาน', value: 'เบาหวาน' },
+          { label: 'ความดัน', value: 'ความดันโลหิตสูง' },
+          { label: 'หัวใจ', value: 'โรคหัวใจ' },
+          { label: 'ไต', value: 'โรคไต' },
+          { label: 'ตับ', value: 'โรคตับ' },
+          { label: 'หอบหืด', value: 'หอบหืด' }
+        ].map(option => (
+          <button
+            key={option.value}
+            onClick={() => setConsultationData({...consultationData, chronicConditions: option.value})}
+            className={`px-4 py-2 rounded-lg border transition-all ${
+              consultationData.chronicConditions === option.value
+                ? option.value === 'ไม่มี'
+                  ? 'bg-green-500 text-white'
+                  : 'bg-orange-500 text-white'
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+
+      <input
+        type="text"
+        value={consultationData.chronicConditions}
+        onChange={(e) => setConsultationData({...consultationData, chronicConditions: e.target.value})}
+        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+        placeholder="พิมพ์โรคประจำตัว (ถ้ามี)"
+      />
+    </div>
+  )
+
+  const renderStep7CurrentMedications = () => (
+    <div className="space-y-6">
+      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+        <h3 className="text-lg font-bold text-blue-900 mb-2">ขั้นตอนที่ 7: ยาที่กินอยู่ปัจจุบัน</h3>
+        <p className="text-blue-700">กำลังกินยาอะไรอยู่บ้าง?</p>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
+        {[
+          { label: 'ไม่มี', value: 'ไม่มี' },
+          { label: 'ยาเบาหวาน', value: 'ยาเบาหวาน' },
+          { label: 'ยาความดัน', value: 'ยาความดัน' },
+          { label: 'ยาหัวใจ', value: 'ยาหัวใจ' },
+          { label: 'ยาละลายลิ่มเลือด', value: 'ยาละลายลิ่มเลือด' },
+          { label: 'ยาคุมกำเนิด', value: 'ยาคุมกำเนิด' }
+        ].map(option => (
+          <button
+            key={option.value}
+            onClick={() => setConsultationData({...consultationData, currentMedications: option.value})}
+            className={`px-4 py-2 rounded-lg border transition-all ${
+              consultationData.currentMedications === option.value
+                ? option.value === 'ไม่มี'
+                  ? 'bg-green-500 text-white'
+                  : 'bg-purple-500 text-white'
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+
+      <textarea
+        value={consultationData.currentMedications}
+        onChange={(e) => setConsultationData({...consultationData, currentMedications: e.target.value})}
+        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+        rows={3}
+        placeholder="พิมพ์ชื่อยาที่กินอยู่ (ถ้ามี)"
+      />
+    </div>
+  )
 
   return (
     <div>
@@ -350,10 +753,8 @@ export default function AISymptomCheckerWizard() {
       {renderStepIndicator()}
 
       <Card>
-        {/* Render step content dynamically - will be added in next part */}
         <div className="min-h-[400px]">
-          {/* Step content will be rendered here */}
-          <p className="text-center text-gray-500">Loading step content...</p>
+          {renderStepContent()}
         </div>
 
         <div className="flex justify-between mt-6 pt-4 border-t">
