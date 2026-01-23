@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import { ReactNode, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { 
   LayoutDashboard, 
@@ -10,7 +10,8 @@ import {
   LogOut,
   Menu,
   X,
-  Brain
+  Brain,
+  Printer
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -25,20 +26,66 @@ export default function Layout({ children }: LayoutProps) {
   const location = useLocation()
   const { user, signOut } = useAuthStore()
   const { t } = useLanguage()
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  
+  // Auto-collapse sidebar on mobile/tablet, open on desktop
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1024 // lg breakpoint
+    }
+    return false
+  })
 
-  const navigation = [
-    { name: t('nav.dashboard'), href: '/dashboard', icon: LayoutDashboard },
-    { name: t('nav.pos'), href: '/pos', icon: ShoppingCart },
-    { name: t('nav.aiSymptomChecker'), href: '/ai-symptom-checker', icon: Brain },
-    { name: 'ประวัติการปรึกษา', href: '/consultation-history', icon: FileText },
-    { name: 'จัดการสต็อก', href: '/stock-management', icon: Package },
-    { name: 'พิมพ์ฉลากยา', href: '/medicine-labels', icon: FileText },
-    { name: t('nav.categories'), href: '/categories', icon: Package },
-    { name: t('nav.products'), href: '/products', icon: Package },
-    { name: t('nav.inventory'), href: '/inventory', icon: Warehouse },
-    { name: t('nav.reports'), href: '/reports', icon: FileText },
-    { name: t('nav.settings'), href: '/settings', icon: Settings },
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setSidebarOpen(true)
+      } else {
+        setSidebarOpen(false)
+      }
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const navigationSections = [
+    {
+      title: 'หลัก',
+      items: [
+        { name: t('nav.dashboard'), href: '/dashboard', icon: LayoutDashboard },
+        { name: t('nav.pos'), href: '/pos', icon: ShoppingCart },
+      ]
+    },
+    {
+      title: 'AI & ปรึกษา',
+      items: [
+        { name: t('nav.aiSymptomChecker'), href: '/ai-symptom-checker', icon: Brain },
+        { name: 'ประวัติการปรึกษา', href: '/consultation-history', icon: FileText },
+      ]
+    },
+    {
+      title: 'จัดการสต็อก',
+      items: [
+        { name: 'จัดการสต็อก', href: '/stock-management', icon: Package },
+        { name: 'พิมพ์ฉลากยา', href: '/medicine-labels', icon: Printer },
+        { name: t('nav.inventory'), href: '/inventory', icon: Warehouse },
+      ]
+    },
+    {
+      title: 'สินค้า',
+      items: [
+        { name: t('nav.categories'), href: '/categories', icon: Package },
+        { name: t('nav.products'), href: '/products', icon: Package },
+      ]
+    },
+    {
+      title: 'อื่นๆ',
+      items: [
+        { name: t('nav.reports'), href: '/reports', icon: FileText },
+        { name: t('nav.settings'), href: '/settings', icon: Settings },
+      ]
+    }
   ]
 
   const handleSignOut = async () => {
@@ -75,24 +122,39 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           <div className="flex-1 overflow-y-auto py-4">
-            <nav className="px-3 space-y-1">
-              {navigation.map((item) => {
-                const isActive = location.pathname === item.href
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-blue-50 text-blue-600'
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <item.icon className="h-5 w-5 mr-3" />
-                    {item.name}
-                  </Link>
-                )
-              })}
+            <nav className="px-3 space-y-6">
+              {navigationSections.map((section, sectionIndex) => (
+                <div key={sectionIndex}>
+                  <h3 className="px-3 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    {section.title}
+                  </h3>
+                  <div className="space-y-1">
+                    {section.items.map((item) => {
+                      const isActive = location.pathname === item.href
+                      return (
+                        <Link
+                          key={item.name}
+                          to={item.href}
+                          onClick={() => {
+                            // Auto-close sidebar on mobile after clicking
+                            if (window.innerWidth < 1024) {
+                              setSidebarOpen(false)
+                            }
+                          }}
+                          className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                            isActive
+                              ? 'bg-blue-50 text-blue-600'
+                              : 'text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          <item.icon className="h-5 w-5 mr-3" />
+                          {item.name}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
             </nav>
           </div>
 
