@@ -29,7 +29,8 @@ interface DrugRecommendation {
 
 export async function analyzeSymptoms(symptoms: string, patientInfo: PatientInfo): Promise<DrugRecommendation[]> {
   if (!GEMINI_API_KEY) {
-    throw new Error('VITE_GEMINI_API_KEY is not set in environment variables')
+    console.error('Gemini API key is missing')
+    throw new Error('ไม่พบ API Key สำหรับ Gemini กรุณาตั้งค่า VITE_GEMINI_API_KEY ในไฟล์ .env')
   }
 
   // Fetch available products from database with medicine details
@@ -57,8 +58,13 @@ export async function analyzeSymptoms(symptoms: string, patientInfo: PatientInfo
     .eq('is_active', true)
     .gt('stock_quantity', 0)
 
-  if (error || !products) {
-    throw new Error('Failed to fetch products from database')
+  if (error) {
+    console.error('Database error:', error)
+    throw new Error('ไม่สามารถดึงข้อมูลสินค้าจากฐานข้อมูลได้: ' + error.message)
+  }
+  
+  if (!products || products.length === 0) {
+    throw new Error('ไม่พบสินค้าในฐานข้อมูล กรุณาเพิ่มสินค้าก่อนใช้งาน')
   }
 
   // Create product list for AI
@@ -148,23 +154,54 @@ ${productList.map((p, i) => {
     })
 
     if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.statusText}`)
+      const errorData = await response.text()
+      console.error('Gemini API error:', response.status, errorData)
+      
+      if (response.status === 400) {
+        throw new Error('ข้อมูลที่ส่งไม่ถูกต้อง กรุณาตรวจสอบข้อมูลผู้ป่วย')
+      } else if (response.status === 401 || response.status === 403) {
+        throw new Error('API Key ไม่ถูกต้องหรือหมดอายุ กรุณาตรวจสอบ VITE_GEMINI_API_KEY')
+      } else if (response.status === 429) {
+        throw new Error('ใช้งาน API เกินโควต้า กรุณาลองใหม่ภายหลัง')
+      } else if (response.status === 500 || response.status === 503) {
+        throw new Error('ระบบ AI ขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้ง')
+      } else {
+        throw new Error(`เกิดข้อผิดพลาดจาก Gemini API: ${response.status} ${response.statusText}`)
+      }
     }
 
     const data = await response.json()
-    const aiResponse = data.candidates[0]?.content?.parts[0]?.text
+    
+    // Check for API errors in response
+    if (data.error) {
+      console.error('Gemini API returned error:', data.error)
+      throw new Error(`Gemini API: ${data.error.message || 'เกิดข้อผิดพลาดไม่ทราบสาเหตุ'}`)
+    }
+    
+    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text
 
     if (!aiResponse) {
-      throw new Error('No response from AI')
+      console.error('No valid response from AI:', data)
+      throw new Error('ไม่ได้รับคำตอบจาก AI กรุณาลองใหม่อีกครั้ง')
     }
 
     // Parse JSON from AI response
+    console.log('AI Response:', aiResponse)
+    
+    // Try to extract JSON from the response
     const jsonMatch = aiResponse.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
-      throw new Error('Invalid AI response format')
+      console.error('Could not find JSON in AI response:', aiResponse)
+      throw new Error('รูปแบบคำตอบจาก AI ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง')
     }
 
-    const result = JSON.parse(jsonMatch[0])
+    let result
+    try {
+      result = JSON.parse(jsonMatch[0])
+    } catch (parseError) {
+      console.error('Failed to parse AI response as JSON:', jsonMatch[0], parseError)
+      throw new Error('ไม่สามารถแปลงคำตอบจาก AI ได้ กรุณาลองใหม่อีกครั้ง')
+    }
 
     // If should see doctor, return empty recommendations with warning
     if (result.shouldSeeDoctor) {
@@ -197,8 +234,14 @@ ${productList.map((p, i) => {
 
     return recommendations
 
-  } catch (error) {
-    console.error('Gemini API error:', error)
+  } catch (error: any) {
+    console.error('Error in analyzeSymptoms:', error)
+    
+    // Re-throw with more user-friendly message if needed
+    if (error.message?.includes('fetch')) {
+      throw new Error('ไม่สามารถเชื่อมต่อกับ Gemini API ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต')
+    }
+    
     throw error
   }
 }
