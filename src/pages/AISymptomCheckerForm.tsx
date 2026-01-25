@@ -1,10 +1,11 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { analyzeSymptoms } from '../services/gemini'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Brain, AlertTriangle, Pill, ShoppingCart, Save, Loader2 } from 'lucide-react'
+import { Brain, AlertTriangle, Pill, ShoppingCart, Save, Loader2, X, CheckCircle } from 'lucide-react'
 
 interface ConsultationData {
   patientName: string
@@ -28,9 +29,11 @@ interface ConsultationData {
 
 export default function AISymptomCheckerForm() {
   const { t } = useLanguage()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [recommendations, setRecommendations] = useState<any[]>([])
+  const [showRecommendationsModal, setShowRecommendationsModal] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
@@ -119,6 +122,8 @@ export default function AISymptomCheckerForm() {
       // Save to database
       await saveConsultation(result || [])
       
+      // Show recommendations modal
+      setShowRecommendationsModal(true)
       setSuccessMessage('✅ วิเคราะห์และบันทึกข้อมูลเรียบร้อยแล้ว')
     } catch (err: any) {
       console.error('Error analyzing symptoms:', err)
@@ -183,6 +188,24 @@ export default function AISymptomCheckerForm() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleAddToPOS = async () => {
+    // Get product IDs from recommendations
+    const productIds = recommendations
+      .filter(rec => rec.productId)
+      .map(rec => rec.productId)
+    
+    if (productIds.length === 0) {
+      setError('ไม่พบรายการยาที่สามารถเพิ่มไปยัง POS ได้')
+      return
+    }
+
+    // Store selected products in sessionStorage for POS page
+    sessionStorage.setItem('aiRecommendedProducts', JSON.stringify(productIds))
+    
+    // Navigate to POS page
+    navigate('/pos')
   }
 
   const resetForm = () => {
@@ -826,6 +849,124 @@ export default function AISymptomCheckerForm() {
             <Button variant="secondary" onClick={() => window.print()}>
               พิมพ์ผลการวิเคราะห์
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Recommendations Modal */}
+      {showRecommendationsModal && recommendations.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="h-6 w-6 text-green-500" />
+                <h2 className="text-xl font-bold text-gray-900">รายการยาที่แนะนำ</h2>
+              </div>
+              <button
+                onClick={() => setShowRecommendationsModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              {recommendations.map((rec, index) => (
+                <div
+                  key={index}
+                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
+                  {rec.shouldSeeDoctor ? (
+                    <div className="bg-red-50 border border-red-200 rounded p-4">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="h-6 w-6 text-red-600 flex-shrink-0" />
+                        <div>
+                          <p className="font-bold text-red-900 mb-2">⚠️ แนะนำให้พบแพทย์</p>
+                          <p className="text-sm text-red-800">{rec.reason || rec.name}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h3 className="font-bold text-lg text-gray-900 mb-1">
+                            {rec.name}
+                          </h3>
+                          {rec.product && (
+                            <p className="text-sm text-gray-600">
+                              {rec.product.name_th}
+                            </p>
+                          )}
+                        </div>
+                        {rec.confidence && (
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            rec.confidence === 'high' 
+                              ? 'bg-green-100 text-green-800'
+                              : rec.confidence === 'medium'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {rec.confidence === 'high' ? 'แนะนำสูง' : 
+                             rec.confidence === 'medium' ? 'แนะนำปานกลาง' : 'พิจารณา'}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="space-y-2 text-sm">
+                        <div>
+                          <p className="font-medium text-gray-700">📋 เหตุผล:</p>
+                          <p className="text-gray-600">{rec.reason}</p>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-700">💊 วิธีใช้:</p>
+                          <p className="text-gray-600">{rec.dosage}</p>
+                        </div>
+                        {rec.warnings && (
+                          <div className="bg-yellow-50 border border-yellow-200 rounded p-2 mt-2">
+                            <p className="font-medium text-yellow-800">⚠️ คำเตือน:</p>
+                            <p className="text-yellow-700">{rec.warnings}</p>
+                          </div>
+                        )}
+                        {rec.product && (
+                          <div className="mt-2 pt-2 border-t border-gray-200">
+                            <p className="text-gray-600">
+                              💰 ราคา: <span className="font-semibold">{rec.product.base_price} บาท</span>
+                            </p>
+                            <p className="text-gray-600">
+                              📦 คงเหลือ: <span className={rec.product.stock_quantity > 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                                {rec.product.stock_quantity} {rec.product.unit_of_measure || 'ชิ้น'}
+                              </span>
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex gap-3">
+              <Button
+                variant="primary"
+                onClick={handleAddToPOS}
+                className="flex-1"
+              >
+                <ShoppingCart className="h-5 w-5 mr-2" />
+                เพิ่มไปใน POS
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setShowRecommendationsModal(false)}
+                className="flex-1"
+              >
+                ปิด
+              </Button>
+            </div>
           </div>
         </div>
       )}
