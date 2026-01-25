@@ -957,6 +957,17 @@ export default function AISymptomCheckerForm() {
                                 {rec.product.stock_quantity} {rec.product.unit_of_measure || 'ชิ้น'}
                               </span>
                             </p>
+                            <button
+                              onClick={() => {
+                                sessionStorage.setItem('aiRecommendedProducts', JSON.stringify([rec.productId]))
+                                navigate('/pos')
+                              }}
+                              disabled={rec.product.stock_quantity <= 0}
+                              className="mt-3 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                            >
+                              <ShoppingCart className="h-4 w-4" />
+                              เพิ่มไปใน POS
+                            </button>
                           </div>
                         )}
                       </div>
