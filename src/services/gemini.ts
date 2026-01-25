@@ -228,16 +228,28 @@ ${productList.map((p, i) => {
     
     for (const rec of result.recommendations || []) {
       const product = products.find(p => p.id === rec.productId)
-      if (product) {
-        recommendations.push({
-          productId: rec.productId,
-          name: product.name_th,
-          reason: rec.reason,
-          dosage: rec.dosage,
-          warnings: rec.warnings,
-          confidence: rec.confidence
-        })
-      }
+      
+      recommendations.push({
+        productId: rec.productId || '',
+        name: rec.name || (product ? product.name_th : 'ยาที่แนะนำ'),
+        reason: rec.reason || '',
+        dosage: rec.dosage || '',
+        warnings: rec.warnings || '',
+        confidence: rec.confidence,
+        product: product || null
+      })
+    }
+
+    // If no recommendations, return a message
+    if (recommendations.length === 0) {
+      return [{
+        productId: '',
+        name: 'ไม่พบคำแนะนำยา',
+        reason: 'AI ไม่สามารถแนะนำยาได้ในขณะนี้ กรุณาปรึกษาเภสัชกรหรือแพทย์',
+        dosage: '',
+        warnings: '',
+        confidence: 0
+      }]
     }
 
     return recommendations
