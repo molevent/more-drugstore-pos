@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { FileText, Search, Calendar, User, Phone, Thermometer, Eye } from 'lucide-react'
+import { FileText, Search, Calendar, User, Phone, Thermometer, Eye, ShoppingCart, Pill } from 'lucide-react'
 
 interface Consultation {
   id: string
@@ -28,6 +29,7 @@ interface Consultation {
 }
 
 export default function ConsultationHistoryPage() {
+  const navigate = useNavigate()
   const [consultations, setConsultations] = useState<Consultation[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -86,6 +88,37 @@ export default function ConsultationHistoryPage() {
   const closeDetail = () => {
     setShowDetail(false)
     setSelectedConsultation(null)
+  }
+
+  const handleBuyAgain = (recommendations: any[]) => {
+    // Get product IDs from recommendations
+    const productIds = recommendations
+      .filter(rec => rec.productId && !rec.shouldSeeDoctor)
+      .map(rec => rec.productId)
+    
+    if (productIds.length === 0) {
+      alert('ไม่พบรายการยาที่สามารถเพิ่มไปยัง POS ได้')
+      return
+    }
+
+    // Store selected products in sessionStorage for POS page
+    sessionStorage.setItem('aiRecommendedProducts', JSON.stringify(productIds))
+    
+    // Navigate to POS page
+    navigate('/pos')
+  }
+
+  const handleBuySingleMedication = (recommendation: any) => {
+    if (!recommendation.productId || recommendation.shouldSeeDoctor) {
+      alert('ไม่สามารถเพิ่มยานี้ไปยัง POS ได้')
+      return
+    }
+
+    // Store single product in sessionStorage
+    sessionStorage.setItem('aiRecommendedProducts', JSON.stringify([recommendation.productId]))
+    
+    // Navigate to POS page
+    navigate('/pos')
   }
 
   if (showDetail && selectedConsultation) {
@@ -191,18 +224,52 @@ export default function ConsultationHistoryPage() {
           {/* AI Recommendations */}
           {selectedConsultation.ai_recommendations && Array.isArray(selectedConsultation.ai_recommendations) && selectedConsultation.ai_recommendations.length > 0 && (
             <Card>
-              <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b-2 border-yellow-500">
-                🎯 ยาที่แนะนำ
-              </h2>
+              <div className="flex items-center justify-between mb-4 pb-2 border-b-2 border-yellow-500">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <Pill className="h-6 w-6 text-yellow-600" />
+                  ยาที่แนะนำ
+                </h2>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => handleBuyAgain(selectedConsultation.ai_recommendations)}
+                >
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  ซื้อทั้งหมด
+                </Button>
+              </div>
               <div className="space-y-3">
                 {selectedConsultation.ai_recommendations.map((rec: any, index: number) => (
-                  <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                    <p className="font-bold text-gray-900 mb-2">{rec.name}</p>
-                    <p className="text-sm text-gray-600 mb-1"><strong>เหตุผล:</strong> {rec.reason}</p>
-                    <p className="text-sm text-gray-600"><strong>วิธีใช้:</strong> {rec.dosage}</p>
-                    {rec.warnings && (
-                      <p className="text-sm text-yellow-700 mt-2"><strong>คำเตือน:</strong> {rec.warnings}</p>
-                    )}
+                  <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <p className="font-bold text-gray-900 mb-2">{rec.name}</p>
+                        <p className="text-sm text-gray-600 mb-1"><strong>📋 เหตุผล:</strong> {rec.reason}</p>
+                        <p className="text-sm text-gray-600 mb-1"><strong>💊 วิธีใช้:</strong> {rec.dosage}</p>
+                        {rec.warnings && (
+                          <p className="text-sm text-yellow-700 mt-2 bg-yellow-50 p-2 rounded"><strong>⚠️ คำเตือน:</strong> {rec.warnings}</p>
+                        )}
+                        {rec.product && (
+                          <div className="mt-2 pt-2 border-t border-gray-300 text-sm text-gray-600">
+                            <p>💰 ราคา: <span className="font-semibold">{rec.product.base_price} บาท</span></p>
+                            <p>📦 คงเหลือ: <span className={rec.product.stock_quantity > 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                              {rec.product.stock_quantity} {rec.product.unit_of_measure || 'ชิ้น'}
+                            </span></p>
+                          </div>
+                        )}
+                      </div>
+                      {!rec.shouldSeeDoctor && rec.productId && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleBuySingleMedication(rec)}
+                          className="flex-shrink-0"
+                        >
+                          <ShoppingCart className="h-4 w-4 mr-1" />
+                          ซื้อเพิ่ม
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
