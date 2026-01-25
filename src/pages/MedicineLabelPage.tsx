@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Printer, Search, Package, Calendar, User, FileText } from 'lucide-react'
+import { Printer, Search, Package, User } from 'lucide-react'
 
 interface Product {
   id: string
@@ -38,12 +38,8 @@ interface MedicineDetails {
 interface LabelData {
   product_id: string
   patient_name: string
-  prescription_number: string
-  quantity: number
   dosage_instructions: string
   special_instructions: string
-  doctor_name: string
-  date: string
 }
 
 export default function MedicineLabelPage() {
@@ -54,12 +50,8 @@ export default function MedicineLabelPage() {
   const [labelData, setLabelData] = useState<LabelData>({
     product_id: '',
     patient_name: '',
-    prescription_number: '',
-    quantity: 1,
     dosage_instructions: '',
-    special_instructions: '',
-    doctor_name: '',
-    date: new Date().toISOString().split('T')[0]
+    special_instructions: ''
   })
   const [showPreview, setShowPreview] = useState(false)
 
@@ -137,8 +129,6 @@ export default function MedicineLabelPage() {
         .insert({
           product_id: selectedProduct.id,
           patient_name: labelData.patient_name,
-          prescription_number: labelData.prescription_number,
-          quantity: labelData.quantity,
           dosage_instructions: labelData.dosage_instructions,
           printed_data: labelData,
           printed_by: userData?.user?.id
@@ -252,35 +242,6 @@ export default function MedicineLabelPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <FileText className="inline h-4 w-4 mr-1" />
-                    เลขที่ใบสั่งยา
-                  </label>
-                  <input
-                    type="text"
-                    value={labelData.prescription_number}
-                    onChange={(e) => setLabelData({...labelData, prescription_number: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                    placeholder="RX-001"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Package className="inline h-4 w-4 mr-1" />
-                    จำนวน
-                  </label>
-                  <input
-                    type="number"
-                    value={labelData.quantity}
-                    onChange={(e) => setLabelData({...labelData, quantity: parseInt(e.target.value) || 1})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                    min="1"
-                  />
-                </div>
-              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">วิธีใช้ *</label>
@@ -337,31 +298,6 @@ export default function MedicineLabelPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">แพทย์ผู้สั่ง</label>
-                  <input
-                    type="text"
-                    value={labelData.doctor_name}
-                    onChange={(e) => setLabelData({...labelData, doctor_name: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                    placeholder="นพ...."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Calendar className="inline h-4 w-4 mr-1" />
-                    วันที่
-                  </label>
-                  <input
-                    type="date"
-                    value={labelData.date}
-                    onChange={(e) => setLabelData({...labelData, date: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-              </div>
 
               <div className="flex gap-3">
                 <Button
@@ -378,12 +314,8 @@ export default function MedicineLabelPage() {
                     setLabelData({
                       product_id: selectedProduct.id,
                       patient_name: '',
-                      prescription_number: '',
-                      quantity: 1,
                       dosage_instructions: '',
-                      special_instructions: '',
-                      doctor_name: '',
-                      date: new Date().toISOString().split('T')[0]
+                      special_instructions: ''
                     })
                   }}
                 >
@@ -422,23 +354,8 @@ export default function MedicineLabelPage() {
               </div>
 
               <div className="border-t-2 border-b-2 border-gray-800 py-3 mb-3">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <strong>ชื่อผู้ป่วย:</strong> {labelData.patient_name}
-                  </div>
-                  <div>
-                    <strong>วันที่:</strong> {new Date(labelData.date).toLocaleDateString('th-TH')}
-                  </div>
-                  {labelData.prescription_number && (
-                    <div>
-                      <strong>เลขที่ใบสั่งยา:</strong> {labelData.prescription_number}
-                    </div>
-                  )}
-                  {labelData.doctor_name && (
-                    <div>
-                      <strong>แพทย์:</strong> {labelData.doctor_name}
-                    </div>
-                  )}
+                <div className="text-sm">
+                  <strong>ชื่อผู้ป่วย:</strong> {labelData.patient_name}
                 </div>
               </div>
 
@@ -455,10 +372,6 @@ export default function MedicineLabelPage() {
               <div className="bg-gray-100 p-3 rounded mb-3">
                 <p className="font-bold mb-1">วิธีใช้:</p>
                 <p className="whitespace-pre-wrap">{labelData.dosage_instructions}</p>
-              </div>
-
-              <div className="mb-3">
-                <p><strong>จำนวน:</strong> {labelData.quantity} {selectedProduct.unit_of_measure}</p>
               </div>
 
               {labelData.special_instructions && (

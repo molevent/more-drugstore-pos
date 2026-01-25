@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { FileText, Search, Calendar, User, Phone, Thermometer, Eye, ShoppingCart, Pill } from 'lucide-react'
+import { FileText, Search, Calendar, User, Phone, Thermometer, Eye, ShoppingCart, Pill, Trash2 } from 'lucide-react'
 
 interface Consultation {
   id: string
@@ -119,6 +119,34 @@ export default function ConsultationHistoryPage() {
     
     // Navigate to POS page
     navigate('/pos')
+  }
+
+  const handleDelete = async (consultationId: string) => {
+    if (!confirm('คุณต้องการลบประวัติการปรึกษานี้ใช่หรือไม่?')) {
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('consultation_history')
+        .delete()
+        .eq('id', consultationId)
+
+      if (error) throw error
+
+      // Refresh the list
+      await fetchConsultations()
+      
+      // If viewing detail of deleted item, close it
+      if (selectedConsultation?.id === consultationId) {
+        closeDetail()
+      }
+
+      alert('ลบประวัติการปรึกษาเรียบร้อยแล้ว')
+    } catch (error) {
+      console.error('Error deleting consultation:', error)
+      alert('เกิดข้อผิดพลาดในการลบข้อมูล')
+    }
   }
 
   if (showDetail && selectedConsultation) {
@@ -301,6 +329,14 @@ export default function ConsultationHistoryPage() {
             </Button>
             <Button variant="secondary" onClick={() => window.print()}>
               พิมพ์
+            </Button>
+            <Button 
+              variant="secondary" 
+              onClick={() => handleDelete(selectedConsultation.id)}
+              className="ml-auto bg-red-50 text-red-600 hover:bg-red-100"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              ลบประวัติ
             </Button>
           </div>
         </div>
