@@ -4,17 +4,35 @@ import { useProductStore } from '../stores/productStore'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Scan, Trash2, ShoppingCart } from 'lucide-react'
+import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike } from 'lucide-react'
 import type { Product } from '../types/database'
+
+interface SavedOrder {
+  id: string
+  name: string
+  items: any[]
+  createdAt: Date
+  salesChannel: string
+}
+
+const SALES_CHANNELS = [
+  { id: 'walk-in', name: 'หน้าร้าน', icon: Store },
+  { id: 'grab', name: 'GRAB', icon: Bike },
+  { id: 'shopee', name: 'SHOPEE', icon: ShoppingCart },
+  { id: 'lineman', name: 'LINEMAN', icon: Bike },
+]
 
 export default function POSPage() {
   const [barcode, setBarcode] = useState('')
   const [searchResults, setSearchResults] = useState<Product[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(-1)
+  const [savedOrders, setSavedOrders] = useState<SavedOrder[]>([])
+  const [activeOrderId, setActiveOrderId] = useState<string | null>(null)
+  const [salesChannel, setSalesChannel] = useState('walk-in')
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const { items, addItem, removeItem, updateQuantity, clearCart, getTotal, getSubtotal } = useCartStore()
+  const { items, addItem, removeItem, updateQuantity, clearCart, getTotal, getSubtotal, setItems } = useCartStore()
   const { getProductByBarcode, products } = useProductStore()
 
   // Search products as user types
@@ -99,17 +117,127 @@ export default function POSPage() {
     }
   }
 
+  const handleSaveOrder = () => {
+    if (items.length === 0) {
+      alert('ไม่มีสินค้าในตะกร้า')
+      return
+    }
+
+    const orderName = prompt('ชื่อรายการ (เช่น คุณสมชาย):', `รายการ ${savedOrders.length + 1}`)
+    if (!orderName) return
+
+    const newOrder: SavedOrder = {
+      id: Date.now().toString(),
+      name: orderName,
+      items: [...items],
+      createdAt: new Date(),
+      salesChannel: salesChannel
+    }
+
+    setSavedOrders([...savedOrders, newOrder])
+    clearCart()
+    setSalesChannel('walk-in')
+    setActiveOrderId(null)
+    alert(`บันทึกรายการ "${orderName}" เรียบร้อยแล้ว`)
+  }
+
+  const handleLoadOrder = (order: SavedOrder) => {
+    if (items.length > 0) {
+      if (!confirm('มีสินค้าในตะกร้าอยู่ ต้องการบันทึกก่อนหรือไม่?')) {
+        return
+      }
+      handleSaveOrder()
+    }
+
+    setItems(order.items)
+    setSalesChannel(order.salesChannel)
+    setActiveOrderId(order.id)
+  }
+
+  const handleDeleteOrder = (orderId: string) => {
+    if (!confirm('ต้องการลบรายการนี้ใช่หรือไม่?')) return
+    
+    setSavedOrders(savedOrders.filter(o => o.id !== orderId))
+    if (activeOrderId === orderId) {
+      setActiveOrderId(null)
+    }
+  }
+
   const handleCheckout = () => {
     if (items.length === 0) {
       alert('กรุณาเพิ่มสินค้าในตะกร้า')
       return
     }
-    alert('ฟังก์ชันชำระเงินยังไม่พร้อมใช้งาน')
+
+    const channelName = SALES_CHANNELS.find(c => c.id === salesChannel)?.name || 'หน้าร้าน'
+    const confirmed = confirm(`ยืนยันการขายผ่าน ${channelName}\nยอดชำระ: ฿${getTotal().toFixed(2)}`)
+    
+    if (confirmed) {
+      // Remove from saved orders if it was a saved order
+      if (activeOrderId) {
+        setSavedOrders(savedOrders.filter(o => o.id !== activeOrderId))
+        setActiveOrderId(null)
+      }
+      
+      alert(`ขายสำเร็จ! ช่องทาง: ${channelName}`)
+      clearCart()
+      setSalesChannel('walk-in')
+    }
   }
 
   return (
     <div>
-      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">ขายสินค้า (POS)</h1>
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">ขายสินค้า (POS)</h1>
+        {items.length > 0 && (
+          <Button
+            variant="secondary"
+            onClick={handleSaveOrder}
+            className="flex items-center gap-2"
+          >
+            <Save className="h-4 w-4" />
+            บันทึกไว้ก่อน
+          </Button>
+        )}
+      </div>
+
+      {/* Saved Orders Tabs */}
+      {savedOrders.length > 0 && (
+        <div className="mb-4 bg-white rounded-lg shadow p-3">
+          <p className="text-sm font-medium text-gray-700 mb-2">รายการที่บันทึกไว้:</p>
+          <div className="flex flex-wrap gap-2">
+            {savedOrders.map((order) => (
+              <div
+                key={order.id}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${
+                  activeOrderId === order.id
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 bg-white hover:border-blue-300'
+                }`}
+              >
+                <button
+                  onClick={() => handleLoadOrder(order)}
+                  className="flex items-center gap-2 flex-1"
+                >
+                  <ShoppingCart className="h-4 w-4 text-gray-600" />
+                  <div className="text-left">
+                    <p className="font-medium text-sm text-gray-900">{order.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {order.items.length} รายการ • {SALES_CHANNELS.find(c => c.id === order.salesChannel)?.name}
+                    </p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => handleDeleteOrder(order.id)}
+                  className="text-red-500 hover:text-red-700 p-1"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2">
@@ -214,6 +342,32 @@ export default function POSPage() {
 
         <div>
           <Card title="สรุปรายการ">
+            {/* Sales Channel Selection */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                ช่องทางการขาย
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {SALES_CHANNELS.map((channel) => {
+                  const Icon = channel.icon
+                  return (
+                    <button
+                      key={channel.id}
+                      onClick={() => setSalesChannel(channel.id)}
+                      className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${
+                        salesChannel === channel.id
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span className="text-sm font-medium">{channel.name}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
             <div className="space-y-3 mb-6">
               <div className="flex justify-between text-gray-600">
                 <span>ยอดรวม</span>

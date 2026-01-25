@@ -7,6 +7,7 @@ interface CartState {
   removeItem: (productId: string) => void
   updateQuantity: (productId: string, quantity: number) => void
   updateDiscount: (productId: string, discount: number) => void
+  setItems: (items: CartItem[]) => void
   clearCart: () => void
   getTotal: () => number
   getSubtotal: () => number
@@ -61,6 +62,8 @@ export const useCartStore = create<CartState>((set, get) => ({
       ),
     })
   },
+  
+  setItems: (items) => set({ items }),
   
   clearCart: () => set({ items: [] }),
   
