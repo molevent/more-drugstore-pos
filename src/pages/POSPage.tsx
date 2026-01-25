@@ -33,17 +33,27 @@ export default function POSPage() {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const { items, addItem, removeItem, updateQuantity, clearCart, getTotal, getSubtotal, setItems } = useCartStore()
-  const { getProductByBarcode, products } = useProductStore()
+  const { getProductByBarcode, products, fetchProducts } = useProductStore()
+
+  // Load products on mount
+  useEffect(() => {
+    console.log('POS: Loading products...')
+    fetchProducts()
+  }, [])
 
   // Search products as user types
   useEffect(() => {
+    console.log('POS: Search triggered', { barcode, productsCount: products.length })
+    
     if (barcode.trim().length > 0) {
       const searchTerm = barcode.toLowerCase()
       const results = products.filter(p => 
-        p.barcode.toLowerCase().includes(searchTerm) ||
-        p.name_th.toLowerCase().includes(searchTerm) ||
+        p.barcode?.toLowerCase().includes(searchTerm) ||
+        p.name_th?.toLowerCase().includes(searchTerm) ||
         p.name_en?.toLowerCase().includes(searchTerm)
       ).slice(0, 10) // Limit to 10 results
+      
+      console.log('POS: Search results', { searchTerm, resultsCount: results.length })
       
       setSearchResults(results)
       setShowDropdown(results.length > 0)
@@ -258,7 +268,7 @@ export default function POSPage() {
                   
                   {/* Autocomplete Dropdown */}
                   {showDropdown && searchResults.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-80 overflow-y-auto">
+                    <div className="absolute z-[9999] w-full mt-1 bg-white border-2 border-blue-500 rounded-lg shadow-2xl max-h-80 overflow-y-auto">
                       {searchResults.map((product, index) => (
                         <div
                           key={product.id}
