@@ -31,6 +31,7 @@ export default function AISymptomCheckerForm() {
   const { t } = useLanguage()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+  const [loadingStatus, setLoadingStatus] = useState('')
   const [saving, setSaving] = useState(false)
   const [recommendations, setRecommendations] = useState<any[]>([])
   const [showRecommendationsModal, setShowRecommendationsModal] = useState(false)
@@ -92,6 +93,7 @@ export default function AISymptomCheckerForm() {
     }
 
     setLoading(true)
+    setLoadingStatus('🔍 กำลังตรวจสอบข้อมูล...')
     setError('')
     setSuccessMessage('')
     setValidationErrors({})
@@ -116,10 +118,12 @@ export default function AISymptomCheckerForm() {
       console.log('Analyzing symptoms:', allSymptoms)
       console.log('Patient info:', patientInfo)
 
+      setLoadingStatus('🤖 AI กำลังวิเคราะห์อาการ... (อาจใช้เวลา 10-30 วินาที)')
       const result = await analyzeSymptoms(allSymptoms, patientInfo)
       setRecommendations(result || [])
 
       // Save to database
+      setLoadingStatus('💾 กำลังบันทึกข้อมูล...')
       await saveConsultation(result || [])
       
       // Show recommendations modal
@@ -130,6 +134,7 @@ export default function AISymptomCheckerForm() {
       setError(err.message || 'เกิดข้อผิดพลาดในการวิเคราะห์')
     } finally {
       setLoading(false)
+      setLoadingStatus('')
     }
   }
 
@@ -259,6 +264,18 @@ export default function AISymptomCheckerForm() {
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-800">{error}</p>
+        </div>
+      )}
+
+      {loading && loadingStatus && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-3">
+            <Loader2 className="h-5 w-5 text-blue-600 animate-spin flex-shrink-0" />
+            <div>
+              <p className="text-blue-900 font-medium">{loadingStatus}</p>
+              <p className="text-sm text-blue-700 mt-1">กรุณารอสักครู่ ระบบกำลังประมวลผล...</p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -740,7 +757,7 @@ export default function AISymptomCheckerForm() {
               {loading ? (
                 <>
                   <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  กำลังวิเคราะห์อาการ...
+                  {loadingStatus || 'กำลังวิเคราะห์อาการ...'}
                 </>
               ) : (
                 <>
