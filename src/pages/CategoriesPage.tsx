@@ -270,53 +270,56 @@ export default function CategoriesPage() {
                     </div>
                   </div>
                   
-                  {/* Sub Categories - Horizontal Chips (Collapsible) */}
+                  {/* Sub Categories - Larger Horizontal Chips (Collapsible) */}
                   {children.length > 0 && isExpanded && (
-                    <div className="p-3 bg-gray-50 border-t border-gray-100">
-                      <p className="text-xs text-gray-500 mb-2 font-medium">หมวดหมู่ย่อย:</p>
-                      <div className="flex flex-wrap gap-2">
+                    <div className="p-4 bg-gray-50 border-t border-gray-100">
+                      <p className="text-sm text-gray-600 mb-3 font-medium">หมวดหมู่ย่อย:</p>
+                      <div className="flex flex-wrap gap-3">
                         {children.map((subCat) => {
                           const grandChildren = getSubCategories(subCat.id)
                           return (
-                            <div key={subCat.id} className="group relative">
-                              <button
-                                onClick={() => navigate(`/products?category=${subCat.id}`)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all shadow-sm"
-                              >
-                                <span className="font-medium">{subCat.name_th}</span>
-                                {grandChildren.length > 0 && (
-                                  <span className="text-xs text-gray-400">({grandChildren.length})</span>
-                                )}
-                              </button>
-                              {/* Hover actions */}
-                              <div className="absolute -top-1 -right-1 hidden group-hover:flex gap-0.5">
+                            <div key={subCat.id} className="group">
+                              <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-blue-300 transition-all overflow-hidden">
+                                {/* Main subcategory button */}
                                 <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleEdit(subCat)
-                                  }}
-                                  className="p-1 bg-white border border-gray-200 rounded-full text-gray-500 hover:text-blue-600 shadow-sm"
+                                  onClick={() => navigate(`/products?category=${subCat.id}`)}
+                                  className="px-4 py-3 text-left min-w-[120px]"
                                 >
-                                  <Edit className="h-2.5 w-2.5" />
+                                  <span className="font-medium text-gray-800 text-base">{subCat.name_th}</span>
+                                  {grandChildren.length > 0 && (
+                                    <span className="text-sm text-gray-500 ml-1">({grandChildren.length})</span>
+                                  )}
                                 </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleDelete(subCat.id)
-                                  }}
-                                  className="p-1 bg-white border border-gray-200 rounded-full text-gray-500 hover:text-red-600 shadow-sm"
-                                >
-                                  <Trash2 className="h-2.5 w-2.5" />
-                                </button>
+                                {/* Actions - always visible on mobile, hover on desktop */}
+                                <div className="flex border-l border-gray-100">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleEdit(subCat)
+                                    }}
+                                    className="p-3 text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleDelete(subCat.id)
+                                    }}
+                                    className="p-3 text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
                               </div>
                               {/* Grand Children Tags */}
                               {grandChildren.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mt-1.5 ml-1">
+                                <div className="flex flex-wrap gap-2 mt-2 ml-1">
                                   {grandChildren.map((grandChild) => (
                                     <button
                                       key={grandChild.id}
                                       onClick={() => navigate(`/products?category=${grandChild.id}`)}
-                                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 hover:bg-blue-100 text-xs text-gray-600 hover:text-blue-700 rounded transition-colors"
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-sm text-blue-700 hover:text-blue-800 rounded-lg transition-colors font-medium"
                                     >
                                       {grandChild.name_th}
                                     </button>
