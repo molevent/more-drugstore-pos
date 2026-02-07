@@ -57,6 +57,7 @@ interface ProductFormData {
   length_cm: number
   height_cm: number
   image_url: string
+  image_urls: string[]
   
   // 6. Sales Channels
   sell_on_pos: boolean
@@ -129,6 +130,7 @@ const initialFormData: ProductFormData = {
   length_cm: 0,
   height_cm: 0,
   image_url: '',
+  image_urls: [],
   sell_on_pos: true,
   sell_on_grab: false,
   sell_on_lineman: false,
