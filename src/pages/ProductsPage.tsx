@@ -579,79 +579,191 @@ export default function ProductsPage() {
         ) : (
           <div className="overflow-x-auto -mx-4 sm:mx-0">
             <div className="inline-block min-w-full align-middle">
-              <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('products.image')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('products.barcode')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('products.name')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('products.category')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('products.price')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('products.stock')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredProducts.map((product) => (
-                  <tr 
-                    key={product.id}
-                    onClick={() => handleEdit(product)}
-                    className="hover:bg-gray-50 cursor-pointer transition-colors"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {product.image_url ? (
-                        <img
-                          src={product.image_url}
-                          alt={product.name_th}
-                          className="h-12 w-12 object-cover rounded-lg border"
-                        />
-                      ) : (
-                        <div className="h-12 w-12 bg-gray-100 rounded-lg border flex items-center justify-center">
-                          <Package className="h-6 w-6 text-gray-400" />
+              {(() => {
+                // Check if current category has subcategories
+                const currentCategoryHasSubs = selectedCategory && selectedCategory !== 'uncategorized' && 
+                  categories.some(c => c.parent_id === selectedCategory)
+                
+                if (!currentCategoryHasSubs) {
+                  // Normal flat list view
+                  return (
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.image')}</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.barcode')}</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.name')}</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.category')}</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.price')}</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.stock')}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {filteredProducts.map((product) => (
+                          <tr key={product.id} onClick={() => handleEdit(product)} className="hover:bg-gray-50 cursor-pointer transition-colors">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {product.image_url ? (
+                                <img src={product.image_url} alt={product.name_th} className="h-12 w-12 object-cover rounded-lg border" />
+                              ) : (
+                                <div className="h-12 w-12 bg-gray-100 rounded-lg border flex items-center justify-center">
+                                  <Package className="h-6 w-6 text-gray-400" />
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.barcode}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm font-medium text-gray-900">{product.name_th}</div>
+                              {product.name_en && <div className="text-sm text-gray-500">{product.name_en}</div>}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{(product as any).category?.name_th || t('products.noCategory')}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">฿{product.base_price.toFixed(2)}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`text-sm ${product.stock_quantity <= product.min_stock_level ? 'text-red-600 font-medium' : 'text-gray-900'}`}>
+                                {product.stock_quantity}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )
+                }
+
+                // Grouped by subcategory view
+                const subCategories = categories.filter(c => c.parent_id === selectedCategory)
+                const productsBySubCat = new Map<string, Product[]>()
+                
+                // Initialize with subcategories
+                subCategories.forEach(sub => productsBySubCat.set(sub.id, []))
+                productsBySubCat.set('other', [])
+                
+                // Group products
+                filteredProducts.forEach(product => {
+                  const directSubCat = subCategories.find(sub => 
+                    product.category_id === sub.id || 
+                    categories.filter(c => c.parent_id === sub.id).some(grand => grand.id === product.category_id)
+                  )
+                  if (directSubCat) {
+                    const existing = productsBySubCat.get(directSubCat.id) || []
+                    existing.push(product)
+                    productsBySubCat.set(directSubCat.id, existing)
+                  } else {
+                    const other = productsBySubCat.get('other') || []
+                    other.push(product)
+                    productsBySubCat.set('other', other)
+                  }
+                })
+
+                return (
+                  <div className="space-y-6">
+                    {subCategories.map((subCat) => {
+                      const subProducts = productsBySubCat.get(subCat.id) || []
+                      if (subProducts.length === 0) return null
+                      
+                      return (
+                        <div key={subCat.id} className="border rounded-xl overflow-hidden">
+                          <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-3 border-b">
+                            <h3 className="font-semibold text-blue-900">{subCat.name_th}</h3>
+                            <p className="text-xs text-blue-600">{subProducts.length} รายการ</p>
+                          </div>
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.image')}</th>
+                                <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.barcode')}</th>
+                                <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.name')}</th>
+                                <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.category')}</th>
+                                <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.price')}</th>
+                                <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.stock')}</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {subProducts.map((product) => (
+                                <tr key={product.id} onClick={() => handleEdit(product)} className="hover:bg-gray-50 cursor-pointer transition-colors">
+                                  <td className="px-6 py-3 whitespace-nowrap">
+                                    {product.image_url ? (
+                                      <img src={product.image_url} alt={product.name_th} className="h-10 w-10 object-cover rounded-lg border" />
+                                    ) : (
+                                      <div className="h-10 w-10 bg-gray-100 rounded-lg border flex items-center justify-center">
+                                        <Package className="h-5 w-5 text-gray-400" />
+                                      </div>
+                                    )}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{product.barcode}</td>
+                                  <td className="px-6 py-3 whitespace-nowrap">
+                                    <div className="text-sm font-medium text-gray-900">{product.name_th}</div>
+                                    {product.name_en && <div className="text-sm text-gray-500">{product.name_en}</div>}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">{(product as any).category?.name_th || '-'}</td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900">฿{product.base_price.toFixed(2)}</td>
+                                  <td className="px-6 py-3 whitespace-nowrap">
+                                    <span className={`text-sm ${product.stock_quantity <= product.min_stock_level ? 'text-red-600 font-medium' : 'text-gray-900'}`}>
+                                      {product.stock_quantity}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {product.barcode}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{product.name_th}</div>
-                      {product.name_en && (
-                        <div className="text-sm text-gray-500">{product.name_en}</div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {(product as any).category?.name_th || t('products.noCategory')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ฿{product.base_price.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`text-sm ${
-                          product.stock_quantity <= product.min_stock_level
-                            ? 'text-red-600 font-medium'
-                            : 'text-gray-900'
-                        }`}
-                      >
-                        {product.stock_quantity}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      )
+                    })}
+                    
+                    {/* Other products not in any subcategory */}
+                    {(() => {
+                      const otherProducts = productsBySubCat.get('other') || []
+                      if (otherProducts.length === 0) return null
+                      return (
+                        <div className="border rounded-xl overflow-hidden">
+                          <div className="bg-gray-100 px-6 py-3 border-b">
+                            <h3 className="font-semibold text-gray-700">อื่นๆ</h3>
+                            <p className="text-xs text-gray-500">{otherProducts.length} รายการ</p>
+                          </div>
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.image')}</th>
+                                <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.barcode')}</th>
+                                <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.name')}</th>
+                                <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.category')}</th>
+                                <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.price')}</th>
+                                <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.stock')}</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {otherProducts.map((product) => (
+                                <tr key={product.id} onClick={() => handleEdit(product)} className="hover:bg-gray-50 cursor-pointer transition-colors">
+                                  <td className="px-6 py-3 whitespace-nowrap">
+                                    {product.image_url ? (
+                                      <img src={product.image_url} alt={product.name_th} className="h-10 w-10 object-cover rounded-lg border" />
+                                    ) : (
+                                      <div className="h-10 w-10 bg-gray-100 rounded-lg border flex items-center justify-center">
+                                        <Package className="h-5 w-5 text-gray-400" />
+                                      </div>
+                                    )}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{product.barcode}</td>
+                                  <td className="px-6 py-3 whitespace-nowrap">
+                                    <div className="text-sm font-medium text-gray-900">{product.name_th}</div>
+                                    {product.name_en && <div className="text-sm text-gray-500">{product.name_en}</div>}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">{(product as any).category?.name_th || '-'}</td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900">฿{product.base_price.toFixed(2)}</td>
+                                  <td className="px-6 py-3 whitespace-nowrap">
+                                    <span className={`text-sm ${product.stock_quantity <= product.min_stock_level ? 'text-red-600 font-medium' : 'text-gray-900'}`}>
+                                      {product.stock_quantity}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )
+                    })()}
+                  </div>
+                )
+              })()}
             </div>
           </div>
         )}
