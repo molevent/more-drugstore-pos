@@ -1220,28 +1220,16 @@ export default function ProductsPage() {
                       />
                     </div>
                     <div>
-                      <LabelWithTooltip label="Product Type (ประเภทสินค้า)" tooltip="เช่น สินค้าสำเร็จรูป (Finished Goods), บริการ" />
-                      <select
-                        value={formData.product_type}
-                        onChange={(e) => setFormData({ ...formData, product_type: e.target.value as 'finished_goods' | 'service' })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                      >
-                        <option value="finished_goods">สินค้าสำเร็จรูป (Finished Goods)</option>
-                        <option value="service">บริการ (Service)</option>
-                      </select>
+                      <label className="flex items-center gap-2 h-full py-2">
+                        <input
+                          type="checkbox"
+                          checked={formData.is_active}
+                          onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                          className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                        />
+                        <span className="text-sm text-gray-700">Active (ขาย) / Inactive (ระงับการขาย)</span>
+                      </label>
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={formData.is_active}
-                        onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                        className="h-4 w-4 text-blue-600 rounded border-gray-300"
-                      />
-                      <span className="text-sm text-gray-700">Active (ขาย) / Inactive (ระงับการขาย)</span>
-                    </label>
                   </div>
 
                   {/* Weight & Dimensions */}
