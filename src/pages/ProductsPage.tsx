@@ -628,50 +628,104 @@ export default function ProductsPage() {
                 // Grouped by subcategory view - only when NOT viewing pharmacy (or specific categories that need grouping)
                 const subCategories = categories.filter(c => c.parent_id === selectedCategory)
                 
-                // For Pharmacy category - show flat list like normal view but with subcategory column
+                // For Pharmacy category - group by subcategory name across both Prescription and OTC
                 const isPharmacyCategory = categories.find(c => c.id === selectedCategory)?.name_th === 'ยา'
                 
                 if (isPharmacyCategory) {
+                  // Get all descendants with their parent info
+                  const getAllDescendantsWithParent = (parentId: string) => {
+                    const result: { cat: Category; parentName: string }[] = []
+                    const children = categories.filter(c => c.parent_id === parentId)
+                    children.forEach(child => {
+                      const grandChildren = categories.filter(c => c.parent_id === child.id)
+                      if (grandChildren.length > 0) {
+                        grandChildren.forEach(gc => result.push({ cat: gc, parentName: child.name_th }))
+                      } else {
+                        result.push({ cat: child, parentName: child.name_th })
+                      }
+                    })
+                    return result
+                  }
+                  
+                  const descendantsWithParent = getAllDescendantsWithParent(selectedCategory)
+                  
+                  // Create a map of category ID to parent name (Prescription/OTC)
+                  const categoryToParentMap = new Map<string, string>()
+                  descendantsWithParent.forEach(({ cat, parentName }) => {
+                    categoryToParentMap.set(cat.id, parentName)
+                  })
+                  
+                  // Group products by the leaf category NAME (not ID)
+                  const productsByLeafCatName = new Map<string, { product: Product; parentType: string }[]>()
+                  
+                  filteredProducts.forEach(product => {
+                    const parentType = categoryToParentMap.get(product.category_id) || 'อื่นๆ'
+                    const leafCatName = (product as any).category?.name_th || 'ไม่ระบุหมวดหมู่'
+                    
+                    const existing = productsByLeafCatName.get(leafCatName) || []
+                    existing.push({ product, parentType })
+                    productsByLeafCatName.set(leafCatName, existing)
+                  })
+                  
+                  // Sort category names alphabetically
+                  const sortedCatNames = Array.from(productsByLeafCatName.keys()).sort()
+                  
                   return (
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.image')}</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.barcode')}</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.name')}</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.category')}</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.price')}</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.stock')}</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredProducts.map((product) => (
-                          <tr key={product.id} onClick={() => handleEdit(product)} className="hover:bg-gray-50 cursor-pointer transition-colors">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              {product.image_url ? (
-                                <img src={product.image_url} alt={product.name_th} className="h-12 w-12 object-cover rounded-lg border" />
-                              ) : (
-                                <div className="h-12 w-12 bg-gray-100 rounded-lg border flex items-center justify-center">
-                                  <Package className="h-6 w-6 text-gray-400" />
-                                </div>
-                              )}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.barcode}</td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm font-medium text-gray-900">{product.name_th}</div>
-                              {product.name_en && <div className="text-sm text-gray-500">{product.name_en}</div>}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{(product as any).category?.name_th || t('products.noCategory')}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">฿{product.base_price.toFixed(2)}</td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`text-sm ${product.stock_quantity <= product.min_stock_level ? 'text-red-600 font-medium' : 'text-gray-900'}`}>
-                                {product.stock_quantity}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <div className="space-y-6">
+                      {sortedCatNames.map((catName) => {
+                        const productsWithType = productsByLeafCatName.get(catName) || []
+                        if (productsWithType.length === 0) return null
+                        
+                        return (
+                          <div key={catName} className="border rounded-xl overflow-hidden">
+                            <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-3 border-b">
+                              <h3 className="font-semibold text-blue-900">{catName}</h3>
+                              <p className="text-xs text-blue-600">{productsWithType.length} รายการ</p>
+                            </div>
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.image')}</th>
+                                  <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.barcode')}</th>
+                                  <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.name')}</th>
+                                  <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.price')}</th>
+                                  <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.stock')}</th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {productsWithType.map(({ product, parentType }) => (
+                                  <tr key={product.id} onClick={() => handleEdit(product)} className="hover:bg-gray-50 cursor-pointer transition-colors">
+                                    <td className="px-6 py-3 whitespace-nowrap">
+                                      {product.image_url ? (
+                                        <img src={product.image_url} alt={product.name_th} className="h-10 w-10 object-cover rounded-lg border" />
+                                      ) : (
+                                        <div className="h-10 w-10 bg-gray-100 rounded-lg border flex items-center justify-center">
+                                          <Package className="h-5 w-5 text-gray-400" />
+                                        </div>
+                                      )}
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{product.barcode}</td>
+                                    <td className="px-6 py-3 whitespace-nowrap">
+                                      <div className="text-sm font-medium text-gray-900">{product.name_th}</div>
+                                      {product.name_en && <div className="text-sm text-gray-500">{product.name_en}</div>}
+                                      <div className={`text-xs mt-1 ${parentType.includes('ควบคุม') ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}`}>
+                                        {parentType.includes('ควบคุม') ? '🔒 ยาควบคุม' : '💊 ยาสามัญ'}
+                                      </div>
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900">฿{product.base_price.toFixed(2)}</td>
+                                    <td className="px-6 py-3 whitespace-nowrap">
+                                      <span className={`text-sm ${product.stock_quantity <= product.min_stock_level ? 'text-red-600 font-medium' : 'text-gray-900'}`}>
+                                        {product.stock_quantity}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )
+                      })}
+                    </div>
                   )
                 }
 
