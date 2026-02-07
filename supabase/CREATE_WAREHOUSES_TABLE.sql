@@ -35,9 +35,12 @@ CREATE TABLE IF NOT EXISTS stock_transfers (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Insert default main warehouse
-INSERT INTO warehouses (name, code, is_main, is_active)
-VALUES ('คลังหลัก', 'MAIN', true, true)
+-- Insert default warehouses
+INSERT INTO warehouses (name, code, is_main, is_active) VALUES
+  ('คลังสินค้าหลัก', 'MAIN', true, true),
+  ('คลังสินค้าสาขา 2', 'BRANCH2', false, true),
+  ('คลังสินค้า Fulfillment', 'FULFILLMENT', false, true),
+  ('คลังสินค้าเก่า/ชำรุด', 'DAMAGED', false, true)
 ON CONFLICT (code) DO NOTHING;
 
 -- Create indexes
