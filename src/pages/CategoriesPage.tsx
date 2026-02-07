@@ -4,7 +4,7 @@ import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Plus, Edit, Trash2, X, AlertCircle, Package } from 'lucide-react'
+import { Plus, Edit, Trash2, X, AlertCircle, Package, Pill, Stethoscope, Heart, Sparkles, UtensilsCrossed, Gift, ShoppingBag } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { Category } from '../types/database'
 
@@ -158,6 +158,19 @@ export default function CategoriesPage() {
     resetForm()
   }
 
+  // Get icon for main category based on name
+  const getCategoryIcon = (nameTh: string) => {
+    const name = nameTh.toLowerCase()
+    if (name.includes('ยา') || name.includes('medicine') || name.includes('drug')) return <Pill className="h-5 w-5 text-blue-600" />
+    if (name.includes('อุปกรณ์') || name.includes('equipment') || name.includes('medical')) return <Stethoscope className="h-5 w-5 text-green-600" />
+    if (name.includes('วิตามิน') || name.includes('vitamin') || name.includes('supplement')) return <Heart className="h-5 w-5 text-red-500" />
+    if (name.includes('ความงาม') || name.includes('beauty') || name.includes('cosmetic')) return <Sparkles className="h-5 w-5 text-purple-500" />
+    if (name.includes('ชีวิตคู่') || name.includes('sexual') || name.includes('health')) return <Heart className="h-5 w-5 text-pink-500" />
+    if (name.includes('อาหาร') || name.includes('food') || name.includes('beverage')) return <UtensilsCrossed className="h-5 w-5 text-orange-500" />
+    if (name.includes('ของฝาก') || name.includes('souvenir') || name.includes('gift')) return <Gift className="h-5 w-5 text-teal-500" />
+    return <ShoppingBag className="h-5 w-5 text-gray-500" />
+  }
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
@@ -200,9 +213,12 @@ export default function CategoriesPage() {
                     className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-white border-b cursor-pointer hover:bg-blue-100 transition-colors"
                     onClick={() => navigate(`/products?category=${mainCat.id}`)}
                   >
-                    <div className="flex-1">
-                      <h2 className="text-lg font-semibold text-gray-900">{mainCat.name_th}</h2>
-                      <p className="text-xs text-gray-500">{mainCat.name_en}</p>
+                    <div className="flex-1 flex items-center gap-3">
+                      {getCategoryIcon(mainCat.name_th)}
+                      <div>
+                        <h2 className="text-lg font-semibold text-gray-900">{mainCat.name_th}</h2>
+                        <p className="text-xs text-gray-500">{mainCat.name_en}</p>
+                      </div>
                     </div>
                     <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                       <button 
