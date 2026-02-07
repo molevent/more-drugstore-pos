@@ -57,7 +57,7 @@ export default function MedicineLabelPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'th' | 'en' | 'customize'>('th')
+  const [activeTab, setActiveTab] = useState<'th' | 'en' | 'customize' | 'barcode'>('th')
   const [labelData, setLabelData] = useState<LabelData>({
     product_id: '',
     dosage_instructions_th: '',
@@ -74,6 +74,12 @@ export default function MedicineLabelPage() {
     hospital_clinic: ''
   })
   const [showPreview, setShowPreview] = useState(false)
+  const [barcodeSize, setBarcodeSize] = useState<'small' | 'medium' | 'large' | 'custom'>('medium')
+  const [customBarcodeWidth, setCustomBarcodeWidth] = useState(50)
+  const [customBarcodeHeight, setCustomBarcodeHeight] = useState(30)
+  const [showProductName, setShowProductName] = useState(false)
+  const [showPrice, setShowPrice] = useState(false)
+  const [showBarcodePreview, setShowBarcodePreview] = useState(false)
 
   useEffect(() => {
     fetchProducts()
@@ -283,6 +289,17 @@ export default function MedicineLabelPage() {
                 >
                   ปรับแต่งเฉพาะบุคคล
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('barcode')}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'barcode'
+                      ? 'border-orange-500 text-orange-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  บาร์โค้ด
+                </button>
               </div>
 
               {/* Thai Tab */}
@@ -490,6 +507,174 @@ export default function MedicineLabelPage() {
                     >
                       ล้างข้อมูลส่วนบุคคล
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Barcode Tab */}
+              {activeTab === 'barcode' && (
+                <div className="space-y-4">
+                  <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-sm text-orange-700">พิมพ์บาร์โค้ดสำหรับสินค้า โดยไม่ต้องแสดงชื่อยา</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">ขนาดบาร์โค้ด</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setBarcodeSize('small')}
+                        className={`p-3 border rounded-lg text-center transition-colors ${
+                          barcodeSize === 'small'
+                            ? 'border-orange-500 bg-orange-50 text-orange-700'
+                            : 'border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="text-sm font-medium">เล็ก</div>
+                        <div className="text-xs text-gray-500">30x20 มม.</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBarcodeSize('medium')}
+                        className={`p-3 border rounded-lg text-center transition-colors ${
+                          barcodeSize === 'medium'
+                            ? 'border-orange-500 bg-orange-50 text-orange-700'
+                            : 'border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="text-sm font-medium">กลาง</div>
+                        <div className="text-xs text-gray-500">50x30 มม.</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBarcodeSize('large')}
+                        className={`p-3 border rounded-lg text-center transition-colors ${
+                          barcodeSize === 'large'
+                            ? 'border-orange-500 bg-orange-50 text-orange-700'
+                            : 'border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="text-sm font-medium">ใหญ่</div>
+                        <div className="text-xs text-gray-500">80x50 มม.</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBarcodeSize('custom')}
+                        className={`p-3 border rounded-lg text-center transition-colors ${
+                          barcodeSize === 'custom'
+                            ? 'border-orange-500 bg-orange-50 text-orange-700'
+                            : 'border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="text-sm font-medium">กำหนดเอง</div>
+                        <div className="text-xs text-gray-500">ปรับขนาดได้</div>
+                      </button>
+                    </div>
+                  </div>
+
+                  {barcodeSize === 'custom' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">กว้าง (มม.)</label>
+                        <input
+                          type="number"
+                          value={customBarcodeWidth}
+                          onChange={(e) => setCustomBarcodeWidth(parseInt(e.target.value) || 50)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                          min="20"
+                          max="150"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">สูง (มม.)</label>
+                        <input
+                          type="number"
+                          value={customBarcodeHeight}
+                          onChange={(e) => setCustomBarcodeHeight(parseInt(e.target.value) || 30)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                          min="15"
+                          max="100"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={showProductName}
+                        onChange={(e) => setShowProductName(e.target.checked)}
+                        className="h-4 w-4 text-orange-600 rounded"
+                      />
+                      <span className="text-sm text-gray-700">แสดงชื่อสินค้าใต้บาร์โค้ด</span>
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={showPrice}
+                        onChange={(e) => setShowPrice(e.target.checked)}
+                        className="h-4 w-4 text-orange-600 rounded"
+                      />
+                      <span className="text-sm text-gray-700">แสดงราคาใต้บาร์โค้ด</span>
+                    </label>
+                  </div>
+
+                  {/* Barcode Preview */}
+                  <div className="border border-gray-300 rounded-lg p-4 flex items-center justify-center bg-white">
+                    <div className="text-center">
+                      <svg className="mx-auto mb-2" width="150" height="60" viewBox="0 0 150 60">
+                        <rect x="0" y="0" width="2" height="40" fill="black"/>
+                        <rect x="4" y="0" width="1" height="40" fill="black"/>
+                        <rect x="7" y="0" width="3" height="40" fill="black"/>
+                        <rect x="12" y="0" width="2" height="40" fill="black"/>
+                        <rect x="16" y="0" width="1" height="40" fill="black"/>
+                        <rect x="20" y="0" width="4" height="40" fill="black"/>
+                        <rect x="26" y="0" width="2" height="40" fill="black"/>
+                        <rect x="30" y="0" width="1" height="40" fill="black"/>
+                        <rect x="34" y="0" width="3" height="40" fill="black"/>
+                        <rect x="40" y="0" width="2" height="40" fill="black"/>
+                        <rect x="44" y="0" width="1" height="40" fill="black"/>
+                        <rect x="48" y="0" width="4" height="40" fill="black"/>
+                        <rect x="54" y="0" width="2" height="40" fill="black"/>
+                        <rect x="60" y="0" width="1" height="40" fill="black"/>
+                        <rect x="64" y="0" width="3" height="40" fill="black"/>
+                        <rect x="70" y="0" width="2" height="40" fill="black"/>
+                        <rect x="76" y="0" width="1" height="40" fill="black"/>
+                        <rect x="80" y="0" width="4" height="40" fill="black"/>
+                        <rect x="86" y="0" width="2" height="40" fill="black"/>
+                        <rect x="92" y="0" width="1" height="40" fill="black"/>
+                        <rect x="96" y="0" width="3" height="40" fill="black"/>
+                        <rect x="102" y="0" width="2" height="40" fill="black"/>
+                        <rect x="108" y="0" width="1" height="40" fill="black"/>
+                        <rect x="112" y="0" width="4" height="40" fill="black"/>
+                        <rect x="118" y="0" width="2" height="40" fill="black"/>
+                        <rect x="124" y="0" width="1" height="40" fill="black"/>
+                        <rect x="130" y="0" width="3" height="40" fill="black"/>
+                        <rect x="136" y="0" width="2" height="40" fill="black"/>
+                      </svg>
+                      <div className="text-xs text-gray-600 font-mono">{selectedProduct?.barcode || 'XXXXXXXXXXXXX'}</div>
+                      {showProductName && (
+                        <div className="text-xs text-gray-800 mt-1 truncate max-w-[150px]">{selectedProduct?.name_th || 'ชื่อสินค้า'}</div>
+                      )}
+                      {showPrice && (
+                        <div className="text-xs text-orange-600 font-medium mt-1">฿{selectedProduct?.stock_quantity || '0.00'}</div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="primary"
+                      onClick={() => setShowBarcodePreview(true)}
+                      disabled={!selectedProduct}
+                    >
+                      <Printer className="h-4 w-4 mr-2" />
+                      พิมพ์บาร์โค้ด
+                    </Button>
                   </div>
                 </div>
               )}
