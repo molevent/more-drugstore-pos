@@ -181,7 +181,19 @@ export default function WarehouseManagementPage() {
   }
 
   const getWarehouseStock = (warehouseId: string) => {
-    return productStocks.filter(ps => ps.warehouse_id === warehouseId)
+    const stocks = productStocks.filter(ps => ps.warehouse_id === warehouseId)
+    if (stocks.length === 0 && warehouses.find(w => w.id === warehouseId)?.is_main) {
+      // Fallback: use products table data for main warehouse
+      return products.map(p => ({
+        id: `fallback-${p.id}`,
+        product_id: p.id,
+        warehouse_id: warehouseId,
+        quantity: p.stock_quantity,
+        min_stock_level: p.min_stock_level,
+        product: p
+      }))
+    }
+    return stocks
   }
 
   return (
