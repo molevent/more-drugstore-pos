@@ -179,8 +179,17 @@ export default function ProductsPage() {
       p.name_en?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.barcode.includes(searchTerm)
     
+    // Get all subcategory IDs for the selected category
+    const getAllSubCategoryIds = (parentId: string): string[] => {
+      const subCats = categories.filter(c => c.parent_id === parentId).map(c => c.id)
+      const grandChildren = subCats.flatMap(subId => getAllSubCategoryIds(subId))
+      return [...subCats, ...grandChildren]
+    }
+    
     const matchesCategory = !selectedCategory || 
-      (selectedCategory === 'uncategorized' ? !p.category_id : p.category_id === selectedCategory)
+      (selectedCategory === 'uncategorized' 
+        ? !p.category_id 
+        : p.category_id === selectedCategory || getAllSubCategoryIds(selectedCategory).includes(p.category_id || ''))
     
     const matchesStock = !stockFilter || 
       (stockFilter === 'low' && p.stock_quantity <= p.min_stock_level) ||
