@@ -43,18 +43,35 @@ interface LabelData {
   special_instructions_en: string
 }
 
+interface CustomizeData {
+  patient_name: string
+  doctor_name: string
+  date: string
+  custom_instructions: string
+  quantity: string
+  hospital_clinic: string
+}
+
 export default function MedicineLabelPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'th' | 'en'>('th')
+  const [activeTab, setActiveTab] = useState<'th' | 'en' | 'customize'>('th')
   const [labelData, setLabelData] = useState<LabelData>({
     product_id: '',
     dosage_instructions_th: '',
     special_instructions_th: '',
     dosage_instructions_en: '',
     special_instructions_en: ''
+  })
+  const [customizeData, setCustomizeData] = useState<CustomizeData>({
+    patient_name: '',
+    doctor_name: '',
+    date: new Date().toISOString().split('T')[0],
+    custom_instructions: '',
+    quantity: '',
+    hospital_clinic: ''
   })
   const [showPreview, setShowPreview] = useState(false)
 
@@ -255,6 +272,17 @@ export default function MedicineLabelPage() {
                 >
                   English
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('customize')}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'customize'
+                      ? 'border-purple-500 text-purple-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  ปรับแต่งเฉพาะบุคคล
+                </button>
               </div>
 
               {/* Thai Tab */}
@@ -373,6 +401,99 @@ export default function MedicineLabelPage() {
                 </div>
               )}
 
+              {/* Customize Tab - ปรับแต่งเฉพาะบุคคล */}
+              {activeTab === 'customize' && (
+                <div className="space-y-4">
+                  <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                    <p className="text-sm text-purple-700">กรอกข้อมูลเฉพาะบุคคลสำหรับฉลากยานี้</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">ชื่อผู้ป่วย *</label>
+                      <input
+                        type="text"
+                        value={customizeData.patient_name}
+                        onChange={(e) => setCustomizeData({...customizeData, patient_name: e.target.value})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        placeholder="ชื่อ-นามสกุล"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">วันที่</label>
+                      <input
+                        type="date"
+                        value={customizeData.date}
+                        onChange={(e) => setCustomizeData({...customizeData, date: e.target.value})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">ชื่อแพทย์</label>
+                      <input
+                        type="text"
+                        value={customizeData.doctor_name}
+                        onChange={(e) => setCustomizeData({...customizeData, doctor_name: e.target.value})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        placeholder="ชื่อแพทย์/ผู้สั่งยา"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">โรงพยาบาล/คลินิก</label>
+                      <input
+                        type="text"
+                        value={customizeData.hospital_clinic}
+                        onChange={(e) => setCustomizeData({...customizeData, hospital_clinic: e.target.value})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        placeholder="ชื่อสถานพยาบาล"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">จำนวน / ระยะเวลา</label>
+                    <input
+                      type="text"
+                      value={customizeData.quantity}
+                      onChange={(e) => setCustomizeData({...customizeData, quantity: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      placeholder="เช่น 7 วัน, 30 เม็ด"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">คำแนะนำเพิ่มเติม</label>
+                    <textarea
+                      value={customizeData.custom_instructions}
+                      onChange={(e) => setCustomizeData({...customizeData, custom_instructions: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      rows={3}
+                      placeholder="คำแนะนำเฉพาะสำหรับผู้ป่วยรายนี้"
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCustomizeData({
+                        patient_name: '',
+                        doctor_name: '',
+                        date: new Date().toISOString().split('T')[0],
+                        custom_instructions: '',
+                        quantity: '',
+                        hospital_clinic: ''
+                      })}
+                      className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-700"
+                    >
+                      ล้างข้อมูลส่วนบุคคล
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-3">
                 <Button
                   variant="primary"
@@ -428,6 +549,26 @@ export default function MedicineLabelPage() {
                 <p className="text-sm text-gray-600">โทร. 02-XXX-XXXX</p>
               </div>
 
+              {/* Personalized Information */}
+              {(customizeData.patient_name || customizeData.date || customizeData.doctor_name) && (
+                <div className="border-b border-gray-300 pb-3 mb-3">
+                  {customizeData.patient_name && (
+                    <p className="font-bold text-lg">คุณ{customizeData.patient_name}</p>
+                  )}
+                  <div className="flex flex-wrap gap-x-4 text-sm text-gray-600">
+                    {customizeData.date && (
+                      <span>วันที่: {new Date(customizeData.date).toLocaleDateString('th-TH')}</span>
+                    )}
+                    {customizeData.doctor_name && (
+                      <span>แพทย์: {customizeData.doctor_name}</span>
+                    )}
+                    {customizeData.hospital_clinic && (
+                      <span>{customizeData.hospital_clinic}</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="mb-3">
                 <h3 className="text-lg font-bold mb-1">{selectedProduct.name_th}</h3>
                 <p className="text-sm text-gray-600">{selectedProduct.name_en}</p>
@@ -447,6 +588,21 @@ export default function MedicineLabelPage() {
                   <p className="whitespace-pre-wrap text-gray-600 italic">{labelData.dosage_instructions_en}</p>
                 )}
               </div>
+
+              {/* Quantity */}
+              {customizeData.quantity && (
+                <div className="mb-3">
+                  <p className="font-bold">จำนวน: <span className="font-normal">{customizeData.quantity}</span></p>
+                </div>
+              )}
+
+              {/* Custom Instructions */}
+              {customizeData.custom_instructions && (
+                <div className="bg-yellow-50 border border-yellow-200 p-2 rounded mb-3">
+                  <p className="text-sm font-bold text-yellow-800">คำแนะนำเฉพาะ:</p>
+                  <p className="text-sm text-yellow-700">{customizeData.custom_instructions}</p>
+                </div>
+              )}
 
               {(labelData.special_instructions_th || labelData.special_instructions_en) && (
                 <div className="border border-red-300 bg-red-50 p-2 rounded mb-3">
