@@ -5,8 +5,8 @@ import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
-import Tooltip, { LabelWithTooltip } from '../components/common/Tooltip'
-import { Search, Plus, X, Filter, Upload, HelpCircle } from 'lucide-react'
+import { LabelWithTooltip } from '../components/common/Tooltip'
+import { Search, Plus, X, Filter, Upload } from 'lucide-react'
 import type { Product, Category } from '../types/database'
 
 // Extended form data with all new fields
