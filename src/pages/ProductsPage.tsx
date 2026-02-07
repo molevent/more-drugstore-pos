@@ -141,6 +141,20 @@ export default function ProductsPage() {
   const [imagePreview, setImagePreview] = useState('')
   const [activeTab, setActiveTab] = useState<'identification' | 'categorization' | 'financials' | 'inventory' | 'logistics' | 'channels'>('identification')
   const [formData, setFormData] = useState<ProductFormData>(initialFormData)
+  const [showSearchModal, setShowSearchModal] = useState(false)
+  const [searchFilters, setSearchFilters] = useState({
+    barcode: '',
+    sku: '',
+    name_th: '',
+    name_en: '',
+    brand: '',
+    minPrice: '',
+    maxPrice: '',
+    minStock: '',
+    maxStock: '',
+    hasExpiry: false,
+    activeOnly: true
+  })
 
   useEffect(() => {
     fetchProducts()
@@ -658,6 +672,18 @@ export default function ProductsPage() {
                         <option key={cat.id} value={cat.id}>{cat.name_th}</option>
                       ))}
                     </select>
+                    <div className="mt-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setShowSearchModal(true)}
+                        className="w-full"
+                      >
+                        <Search className="h-4 w-4 mr-2" />
+                        ค้นหารายละเอียดสินค้า
+                      </Button>
+                    </div>
                   </div>
 
                   <div>
@@ -1120,6 +1146,238 @@ export default function ProductsPage() {
           </div>
         </div>
       )}
+      {/* Search Modal */}
+      {showSearchModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">ค้นหารายละเอียดสินค้า</h2>
+              <button
+                onClick={() => setShowSearchModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Barcode</label>
+                  <input
+                    type="text"
+                    value={searchFilters.barcode}
+                    onChange={(e) => setSearchFilters({ ...searchFilters, barcode: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="รหัสบาร์โค้ด"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">SKU / Code</label>
+                  <input
+                    type="text"
+                    value={searchFilters.sku}
+                    onChange={(e) => setSearchFilters({ ...searchFilters, sku: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="รหัสสินค้า"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อสินค้า (ไทย)</label>
+                  <input
+                    type="text"
+                    value={searchFilters.name_th}
+                    onChange={(e) => setSearchFilters({ ...searchFilters, name_th: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="ชื่อภาษาไทย"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อสินค้า (อังกฤษ)</label>
+                  <input
+                    type="text"
+                    value={searchFilters.name_en}
+                    onChange={(e) => setSearchFilters({ ...searchFilters, name_en: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="ชื่อภาษาอังกฤษ"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ยี่ห้อ / Brand</label>
+                <input
+                  type="text"
+                  value={searchFilters.brand}
+                  onChange={(e) => setSearchFilters({ ...searchFilters, brand: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="เช่น GSK, Eucerin"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ราคาขั้นต่ำ</label>
+                  <input
+                    type="number"
+                    value={searchFilters.minPrice}
+                    onChange={(e) => setSearchFilters({ ...searchFilters, minPrice: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ราคาสูงสุด</label>
+                  <input
+                    type="number"
+                    value={searchFilters.maxPrice}
+                    onChange={(e) => setSearchFilters({ ...searchFilters, maxPrice: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="9999"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">สต็อกขั้นต่ำ</label>
+                  <input
+                    type="number"
+                    value={searchFilters.minStock}
+                    onChange={(e) => setSearchFilters({ ...searchFilters, minStock: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">สต็อกสูงสุด</label>
+                  <input
+                    type="number"
+                    value={searchFilters.maxStock}
+                    onChange={(e) => setSearchFilters({ ...searchFilters, maxStock: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="999"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={searchFilters.hasExpiry}
+                    onChange={(e) => setSearchFilters({ ...searchFilters, hasExpiry: e.target.checked })}
+                    className="h-4 w-4 text-blue-600 rounded"
+                  />
+                  <span className="text-sm text-gray-700">มีวันหมดอายุ</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={searchFilters.activeOnly}
+                    onChange={(e) => setSearchFilters({ ...searchFilters, activeOnly: e.target.checked })}
+                    className="h-4 w-4 text-blue-600 rounded"
+                  />
+                  <span className="text-sm text-gray-700">เฉพาะสินค้าที่ขายอยู่</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-6 border-t mt-6">
+              <Button 
+                type="button" 
+                variant="primary" 
+                className="flex-1"
+                onClick={() => {
+                  // Build search query from filters
+                  let query = supabase.from('products').select('*')
+                  
+                  if (searchFilters.barcode) {
+                    query = query.ilike('barcode', `%${searchFilters.barcode}%`)
+                  }
+                  if (searchFilters.sku) {
+                    query = query.ilike('sku', `%${searchFilters.sku}%`)
+                  }
+                  if (searchFilters.name_th) {
+                    query = query.ilike('name_th', `%${searchFilters.name_th}%`)
+                  }
+                  if (searchFilters.name_en) {
+                    query = query.ilike('name_en', `%${searchFilters.name_en}%`)
+                  }
+                  if (searchFilters.brand) {
+                    query = query.ilike('brand', `%${searchFilters.brand}%`)
+                  }
+                  if (searchFilters.minPrice) {
+                    query = query.gte('base_price', parseFloat(searchFilters.minPrice))
+                  }
+                  if (searchFilters.maxPrice) {
+                    query = query.lte('base_price', parseFloat(searchFilters.maxPrice))
+                  }
+                  if (searchFilters.minStock) {
+                    query = query.gte('stock_quantity', parseInt(searchFilters.minStock))
+                  }
+                  if (searchFilters.maxStock) {
+                    query = query.lte('stock_quantity', parseInt(searchFilters.maxStock))
+                  }
+                  if (searchFilters.hasExpiry) {
+                    query = query.not('expiry_date', 'is', null)
+                  }
+                  if (searchFilters.activeOnly) {
+                    query = query.eq('is_active', true)
+                  }
+
+                  query.then(({ data, error }) => {
+                    if (error) {
+                      alert('Error searching: ' + error.message)
+                    } else {
+                      // Update the product store with search results
+                      useProductStore.setState({ products: data || [] })
+                      setShowSearchModal(false)
+                    }
+                  })
+                }}
+              >
+                <Search className="h-4 w-4 mr-2" />
+                ค้นหา
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setSearchFilters({
+                    barcode: '',
+                    sku: '',
+                    name_th: '',
+                    name_en: '',
+                    brand: '',
+                    minPrice: '',
+                    maxPrice: '',
+                    minStock: '',
+                    maxStock: '',
+                    hasExpiry: false,
+                    activeOnly: true
+                  })
+                }}
+                className="flex-1"
+              >
+                ล้างตัวกรอง
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setShowSearchModal(false)}
+                className="flex-1"
+              >
+                ปิด
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
