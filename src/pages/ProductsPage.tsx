@@ -6,7 +6,7 @@ import Card from '../components/common/Card'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import { LabelWithTooltip } from '../components/common/Tooltip'
-import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft } from 'lucide-react'
+import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft, Printer } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import type { Product, Category } from '../types/database'
 
@@ -659,6 +659,12 @@ export default function ProductsPage() {
                         {formData.name_en && (
                           <div className="text-sm text-gray-600">{formData.name_en}</div>
                         )}
+                        {/* Active Ingredient - ตัวยาสำคัญ */}
+                        {formData.active_ingredient && (
+                          <div className="mt-2 text-sm font-medium text-indigo-700 bg-indigo-50 px-2 py-1 rounded inline-block">
+                            ตัวยาสำคัญ: {formData.active_ingredient}
+                          </div>
+                        )}
                       </div>
                       
                       <div className="grid grid-cols-2 gap-2">
@@ -757,11 +763,7 @@ export default function ProductsPage() {
                     )}
                   </div>
 
-                  {/* Active Ingredient - ตัวยาสำคัญ */}
-                  <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
-                    <div className="text-xs text-indigo-700 font-medium mb-1">ตัวยาสำคัญ (Active Ingredient)</div>
-                    <div className="text-sm font-medium text-indigo-900">{formData.active_ingredient || '-'}</div>
-                  </div>
+                  {/* Active Ingredient removed from here - moved to under product name */}
 
                   {/* Sales Channels Icons */}
                   <div className="bg-white rounded-lg p-3 border border-gray-200">
@@ -806,11 +808,36 @@ export default function ProductsPage() {
                     </div>
                   </div>
 
-                  {/* Status */}
-                  <div className="flex items-center gap-2">
+                  {/* Status and Print Label */}
+                  <div className="flex items-center gap-3">
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${formData.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                       {formData.is_active ? '✓ Active (ขาย)' : '✗ Inactive (ระงับ)'}
                     </span>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        // Navigate to medicine label page with product data
+                        const labelData = {
+                          product_name: formData.name_th,
+                          product_name_en: formData.name_en,
+                          barcode: formData.barcode,
+                          dosage: formData.packaging_size,
+                          active_ingredient: formData.active_ingredient,
+                          lot_number: formData.lot_number,
+                          expiry_date: formData.expiry_date
+                        }
+                        const queryParams = new URLSearchParams({
+                          data: JSON.stringify(labelData)
+                        }).toString()
+                        window.open(`/medicine-label?${queryParams}`, '_blank')
+                      }}
+                      className="flex items-center gap-1"
+                    >
+                      <Printer className="h-4 w-4" />
+                      พิมพ์ฉลาก
+                    </Button>
                   </div>
                 </div>
               )}
@@ -873,18 +900,6 @@ export default function ProductsPage() {
                       >
                         <option value="finished_goods">สินค้าสำเร็จรูป (Finished Goods)</option>
                         <option value="service">บริการ (Service)</option>
-                      </select>
-                    </div>
-                    <div>
-                      <LabelWithTooltip label="ประเภทการนับสต็อก" tooltip="กำหนดว่าสินค้านี้ต้องนับสต็อกหรือไม่" />
-                      <select
-                        value={formData.stock_tracking_type}
-                        onChange={(e) => setFormData({ ...formData, stock_tracking_type: e.target.value as 'tracked' | 'untracked' | 'service' })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                      >
-                        <option value="tracked">สินค้านับสต็อก</option>
-                        <option value="untracked">สินค้าไม่นับสต็อก</option>
-                        <option value="service">บริการ</option>
                       </select>
                     </div>
                   </div>
@@ -1239,7 +1254,21 @@ export default function ProductsPage() {
                   {inventorySubTab === 'general' && (
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">การจัดการสต็อก (Inventory & Tracking)</h3>
-                      
+
+                      {/* Stock Tracking Type */}
+                      <div>
+                        <LabelWithTooltip label="ประเภทการนับสต็อก" tooltip="กำหนดว่าสินค้านี้ต้องนับสต็อกหรือไม่" />
+                        <select
+                          value={formData.stock_tracking_type}
+                          onChange={(e) => setFormData({ ...formData, stock_tracking_type: e.target.value as 'tracked' | 'untracked' | 'service' })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        >
+                          <option value="tracked">สินค้านับสต็อก</option>
+                          <option value="untracked">สินค้าไม่นับสต็อก</option>
+                          <option value="service">บริการ</option>
+                        </select>
+                      </div>
+
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
                           <LabelWithTooltip label="Remaining Qty" tooltip="จำนวนสินค้าคงเหลือปัจจุบัน" required />
