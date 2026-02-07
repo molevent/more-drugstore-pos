@@ -104,6 +104,17 @@ export interface Product {
   price_consignment?: number
   price_website?: number
   
+  // 6.2 URLs for each channel
+  url_pos?: string
+  url_grab?: string
+  url_lineman?: string
+  url_lazada?: string
+  url_shopee?: string
+  url_line_shopping?: string
+  url_tiktok?: string
+  url_consignment?: string
+  url_website?: string
+  
   created_at: string
   updated_at: string
 }

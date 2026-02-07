@@ -6,7 +6,7 @@ import Card from '../components/common/Card'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import { LabelWithTooltip } from '../components/common/Tooltip'
-import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft, Printer } from 'lucide-react'
+import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft, Printer, ExternalLink } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import type { Product, Category } from '../types/database'
 
@@ -78,6 +78,17 @@ interface ProductFormData {
   price_tiktok: number
   price_consignment: number
   price_website: number
+  
+  // 6.2 URLs for each channel
+  url_pos: string
+  url_grab: string
+  url_lineman: string
+  url_lazada: string
+  url_shopee: string
+  url_line_shopping: string
+  url_tiktok: string
+  url_consignment: string
+  url_website: string
 }
 
 const initialFormData: ProductFormData = {
@@ -134,7 +145,17 @@ const initialFormData: ProductFormData = {
   price_line_shopping: 0,
   price_tiktok: 0,
   price_consignment: 0,
-  price_website: 0
+  price_website: 0,
+  // Channel URLs
+  url_pos: '',
+  url_grab: '',
+  url_lineman: '',
+  url_lazada: '',
+  url_shopee: '',
+  url_line_shopping: '',
+  url_tiktok: '',
+  url_consignment: '',
+  url_website: ''
 }
 
 export default function ProductsPage() {
@@ -272,7 +293,17 @@ export default function ProductsPage() {
       price_line_shopping: product.price_line_shopping || 0,
       price_tiktok: product.price_tiktok || 0,
       price_consignment: product.price_consignment || 0,
-      price_website: product.price_website || 0
+      price_website: product.price_website || 0,
+      // Channel URLs
+      url_pos: product.url_pos || '',
+      url_grab: product.url_grab || '',
+      url_lineman: product.url_lineman || '',
+      url_lazada: product.url_lazada || '',
+      url_shopee: product.url_shopee || '',
+      url_line_shopping: product.url_line_shopping || '',
+      url_tiktok: product.url_tiktok || '',
+      url_consignment: product.url_consignment || '',
+      url_website: product.url_website || ''
     })
     setImagePreview(product.image_url || '')
     setActiveTab('dashboard')
@@ -1470,204 +1501,339 @@ export default function ProductsPage() {
               {activeTab === 'channels' && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">ช่องทางการขาย (Sales Channels)</h3>
-                  <p className="text-sm text-gray-600">เลือกช่องทางที่ต้องการเปิดขาย และกำหนดราคาขายแยกตามช่องทาง (ถ้ามี)</p>
+                  <p className="text-sm text-gray-600">เลือกช่องทางที่ต้องการเปิดขาย กำหนดราคา และใส่ลิงก์สินค้า (คลิกไอคอนลิงก์เพื่อเปิดหน้าสินค้า)</p>
                   
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {/* POS */}
                     <div className="p-3 border rounded-lg">
-                      <label className="flex items-center gap-2 mb-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.sell_on_pos}
-                          onChange={(e) => setFormData({ ...formData, sell_on_pos: e.target.checked })}
-                          className="h-4 w-4 text-blue-600 rounded"
-                        />
-                        <span className="font-medium text-sm">หน้าร้าน</span>
-                      </label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={formData.sell_on_pos}
+                            onChange={(e) => setFormData({ ...formData, sell_on_pos: e.target.checked })}
+                            className="h-4 w-4 text-blue-600 rounded"
+                          />
+                          <span className="font-medium text-sm">หน้าร้าน</span>
+                        </label>
+                        {formData.url_pos && (
+                          <a href={formData.url_pos} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        )}
+                      </div>
                       <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
                       <input
                         type="number"
                         step="0.01"
                         value={formData.price_pos}
                         onChange={(e) => setFormData({ ...formData, price_pos: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
                         placeholder="0.00"
+                      />
+                      <div className="text-xs text-gray-500 mb-1">ลิงก์สินค้า</div>
+                      <input
+                        type="url"
+                        value={formData.url_pos}
+                        onChange={(e) => setFormData({ ...formData, url_pos: e.target.value })}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="https://..."
                       />
                     </div>
 
                     {/* GRAB */}
                     <div className="p-3 border rounded-lg">
-                      <label className="flex items-center gap-2 mb-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.sell_on_grab}
-                          onChange={(e) => setFormData({ ...formData, sell_on_grab: e.target.checked })}
-                          className="h-4 w-4 text-green-600 rounded"
-                        />
-                        <span className="font-medium text-sm">GRAB</span>
-                      </label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={formData.sell_on_grab}
+                            onChange={(e) => setFormData({ ...formData, sell_on_grab: e.target.checked })}
+                            className="h-4 w-4 text-green-600 rounded"
+                          />
+                          <span className="font-medium text-sm">GRAB</span>
+                        </label>
+                        {formData.url_grab && (
+                          <a href={formData.url_grab} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800">
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        )}
+                      </div>
                       <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
                       <input
                         type="number"
                         step="0.01"
                         value={formData.price_grab}
                         onChange={(e) => setFormData({ ...formData, price_grab: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
                         placeholder="0.00"
+                      />
+                      <div className="text-xs text-gray-500 mb-1">ลิงก์สินค้า</div>
+                      <input
+                        type="url"
+                        value={formData.url_grab}
+                        onChange={(e) => setFormData({ ...formData, url_grab: e.target.value })}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="https://..."
                       />
                     </div>
 
                     {/* LINEMAN */}
                     <div className="p-3 border rounded-lg">
-                      <label className="flex items-center gap-2 mb-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.sell_on_lineman}
-                          onChange={(e) => setFormData({ ...formData, sell_on_lineman: e.target.checked })}
-                          className="h-4 w-4 text-green-600 rounded"
-                        />
-                        <span className="font-medium text-sm">LINEMAN</span>
-                      </label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={formData.sell_on_lineman}
+                            onChange={(e) => setFormData({ ...formData, sell_on_lineman: e.target.checked })}
+                            className="h-4 w-4 text-green-600 rounded"
+                          />
+                          <span className="font-medium text-sm">LINEMAN</span>
+                        </label>
+                        {formData.url_lineman && (
+                          <a href={formData.url_lineman} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800">
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        )}
+                      </div>
                       <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
                       <input
                         type="number"
                         step="0.01"
                         value={formData.price_lineman}
                         onChange={(e) => setFormData({ ...formData, price_lineman: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
                         placeholder="0.00"
+                      />
+                      <div className="text-xs text-gray-500 mb-1">ลิงก์สินค้า</div>
+                      <input
+                        type="url"
+                        value={formData.url_lineman}
+                        onChange={(e) => setFormData({ ...formData, url_lineman: e.target.value })}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="https://..."
                       />
                     </div>
 
                     {/* LAZADA */}
                     <div className="p-3 border rounded-lg">
-                      <label className="flex items-center gap-2 mb-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.sell_on_lazada}
-                          onChange={(e) => setFormData({ ...formData, sell_on_lazada: e.target.checked })}
-                          className="h-4 w-4 text-orange-600 rounded"
-                        />
-                        <span className="font-medium text-sm">LAZADA</span>
-                      </label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={formData.sell_on_lazada}
+                            onChange={(e) => setFormData({ ...formData, sell_on_lazada: e.target.checked })}
+                            className="h-4 w-4 text-orange-600 rounded"
+                          />
+                          <span className="font-medium text-sm">LAZADA</span>
+                        </label>
+                        {formData.url_lazada && (
+                          <a href={formData.url_lazada} target="_blank" rel="noopener noreferrer" className="text-orange-600 hover:text-orange-800">
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        )}
+                      </div>
                       <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
                       <input
                         type="number"
                         step="0.01"
                         value={formData.price_lazada}
                         onChange={(e) => setFormData({ ...formData, price_lazada: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
                         placeholder="0.00"
+                      />
+                      <div className="text-xs text-gray-500 mb-1">ลิงก์สินค้า</div>
+                      <input
+                        type="url"
+                        value={formData.url_lazada}
+                        onChange={(e) => setFormData({ ...formData, url_lazada: e.target.value })}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="https://..."
                       />
                     </div>
 
                     {/* SHOPEE */}
                     <div className="p-3 border rounded-lg">
-                      <label className="flex items-center gap-2 mb-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.sell_on_shopee}
-                          onChange={(e) => setFormData({ ...formData, sell_on_shopee: e.target.checked })}
-                          className="h-4 w-4 text-orange-600 rounded"
-                        />
-                        <span className="font-medium text-sm">SHOPEE</span>
-                      </label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={formData.sell_on_shopee}
+                            onChange={(e) => setFormData({ ...formData, sell_on_shopee: e.target.checked })}
+                            className="h-4 w-4 text-orange-600 rounded"
+                          />
+                          <span className="font-medium text-sm">SHOPEE</span>
+                        </label>
+                        {formData.url_shopee && (
+                          <a href={formData.url_shopee} target="_blank" rel="noopener noreferrer" className="text-orange-600 hover:text-orange-800">
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        )}
+                      </div>
                       <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
                       <input
                         type="number"
                         step="0.01"
                         value={formData.price_shopee}
                         onChange={(e) => setFormData({ ...formData, price_shopee: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
                         placeholder="0.00"
+                      />
+                      <div className="text-xs text-gray-500 mb-1">ลิงก์สินค้า</div>
+                      <input
+                        type="url"
+                        value={formData.url_shopee}
+                        onChange={(e) => setFormData({ ...formData, url_shopee: e.target.value })}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="https://..."
                       />
                     </div>
 
                     {/* LINE SHOPPING */}
                     <div className="p-3 border rounded-lg">
-                      <label className="flex items-center gap-2 mb-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.sell_on_line_shopping}
-                          onChange={(e) => setFormData({ ...formData, sell_on_line_shopping: e.target.checked })}
-                          className="h-4 w-4 text-green-600 rounded"
-                        />
-                        <span className="font-medium text-sm">LINE SHOPPING</span>
-                      </label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={formData.sell_on_line_shopping}
+                            onChange={(e) => setFormData({ ...formData, sell_on_line_shopping: e.target.checked })}
+                            className="h-4 w-4 text-green-600 rounded"
+                          />
+                          <span className="font-medium text-sm">LINE SHOPPING</span>
+                        </label>
+                        {formData.url_line_shopping && (
+                          <a href={formData.url_line_shopping} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800">
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        )}
+                      </div>
                       <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
                       <input
                         type="number"
                         step="0.01"
                         value={formData.price_line_shopping}
                         onChange={(e) => setFormData({ ...formData, price_line_shopping: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
                         placeholder="0.00"
+                      />
+                      <div className="text-xs text-gray-500 mb-1">ลิงก์สินค้า</div>
+                      <input
+                        type="url"
+                        value={formData.url_line_shopping}
+                        onChange={(e) => setFormData({ ...formData, url_line_shopping: e.target.value })}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="https://..."
                       />
                     </div>
 
                     {/* TIKTOK */}
                     <div className="p-3 border rounded-lg">
-                      <label className="flex items-center gap-2 mb-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.sell_on_tiktok}
-                          onChange={(e) => setFormData({ ...formData, sell_on_tiktok: e.target.checked })}
-                          className="h-4 w-4 text-pink-600 rounded"
-                        />
-                        <span className="font-medium text-sm">TIKTOK</span>
-                      </label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={formData.sell_on_tiktok}
+                            onChange={(e) => setFormData({ ...formData, sell_on_tiktok: e.target.checked })}
+                            className="h-4 w-4 text-pink-600 rounded"
+                          />
+                          <span className="font-medium text-sm">TIKTOK</span>
+                        </label>
+                        {formData.url_tiktok && (
+                          <a href={formData.url_tiktok} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:text-pink-800">
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        )}
+                      </div>
                       <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
                       <input
                         type="number"
                         step="0.01"
                         value={formData.price_tiktok}
                         onChange={(e) => setFormData({ ...formData, price_tiktok: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
                         placeholder="0.00"
+                      />
+                      <div className="text-xs text-gray-500 mb-1">ลิงก์สินค้า</div>
+                      <input
+                        type="url"
+                        value={formData.url_tiktok}
+                        onChange={(e) => setFormData({ ...formData, url_tiktok: e.target.value })}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="https://..."
                       />
                     </div>
 
                     {/* CONSIGNMENT - ฝากขาย */}
                     <div className="p-3 border rounded-lg">
-                      <label className="flex items-center gap-2 mb-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.sell_on_consignment}
-                          onChange={(e) => setFormData({ ...formData, sell_on_consignment: e.target.checked })}
-                          className="h-4 w-4 text-purple-600 rounded"
-                        />
-                        <span className="font-medium text-sm">ฝากขาย (Consignment)</span>
-                      </label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={formData.sell_on_consignment}
+                            onChange={(e) => setFormData({ ...formData, sell_on_consignment: e.target.checked })}
+                            className="h-4 w-4 text-purple-600 rounded"
+                          />
+                          <span className="font-medium text-sm">ฝากขาย (Consignment)</span>
+                        </label>
+                        {formData.url_consignment && (
+                          <a href={formData.url_consignment} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:text-purple-800">
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        )}
+                      </div>
                       <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
                       <input
                         type="number"
                         step="0.01"
                         value={formData.price_consignment}
                         onChange={(e) => setFormData({ ...formData, price_consignment: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
                         placeholder="0.00"
+                      />
+                      <div className="text-xs text-gray-500 mb-1">ลิงก์สินค้า</div>
+                      <input
+                        type="url"
+                        value={formData.url_consignment}
+                        onChange={(e) => setFormData({ ...formData, url_consignment: e.target.value })}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="https://..."
                       />
                     </div>
 
                     {/* WEBSITE */}
                     <div className="p-3 border rounded-lg">
-                      <label className="flex items-center gap-2 mb-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.sell_on_website}
-                          onChange={(e) => setFormData({ ...formData, sell_on_website: e.target.checked })}
-                          className="h-4 w-4 text-blue-600 rounded"
-                        />
-                        <span className="font-medium text-sm">Website</span>
-                      </label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={formData.sell_on_website}
+                            onChange={(e) => setFormData({ ...formData, sell_on_website: e.target.checked })}
+                            className="h-4 w-4 text-blue-600 rounded"
+                          />
+                          <span className="font-medium text-sm">Website</span>
+                        </label>
+                        {formData.url_website && (
+                          <a href={formData.url_website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        )}
+                      </div>
                       <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
                       <input
                         type="number"
                         step="0.01"
                         value={formData.price_website}
                         onChange={(e) => setFormData({ ...formData, price_website: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
                         placeholder="0.00"
+                      />
+                      <div className="text-xs text-gray-500 mb-1">ลิงก์สินค้า</div>
+                      <input
+                        type="url"
+                        value={formData.url_website}
+                        onChange={(e) => setFormData({ ...formData, url_website: e.target.value })}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="https://..."
                       />
                     </div>
                   </div>
