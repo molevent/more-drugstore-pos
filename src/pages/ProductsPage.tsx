@@ -676,14 +676,6 @@ export default function ProductsPage() {
                           <div className="text-xs text-gray-500">SKU</div>
                           <div className="text-sm font-medium text-gray-900">{formData.sku || '-'}</div>
                         </div>
-                        <div className="bg-gray-50 rounded-lg p-2">
-                          <div className="text-xs text-gray-500">ประเภทสต็อก</div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {formData.stock_tracking_type === 'tracked' && 'สินค้านับสต็อก'}
-                            {formData.stock_tracking_type === 'untracked' && 'สินค้าไม่นับสต็อก'}
-                            {formData.stock_tracking_type === 'service' && 'บริการ'}
-                          </div>
-                        </div>
                       </div>
                     </div>
                   </div>
