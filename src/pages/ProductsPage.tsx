@@ -490,7 +490,11 @@ export default function ProductsPage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredProducts.map((product) => (
-                  <tr key={product.id}>
+                  <tr 
+                    key={product.id}
+                    onClick={() => handleEdit(product)}
+                    className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       {product.image_url ? (
                         <img
@@ -534,7 +538,7 @@ export default function ProductsPage() {
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => handleEdit(product)}
+                        onClick={(e) => { e.stopPropagation(); handleEdit(product); }}
                       >
                         {t('products.edit')}
                       </Button>
