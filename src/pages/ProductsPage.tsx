@@ -628,9 +628,10 @@ export default function ProductsPage() {
                 // Grouped by subcategory view - only when NOT viewing pharmacy (or specific categories that need grouping)
                 const subCategories = categories.filter(c => c.parent_id === selectedCategory)
                 
-                // For Pharmacy category - group by subcategory name across both Prescription and OTC
-                const selectedCatName = categories.find(c => c.id === selectedCategory)?.name_th || ''
-                const isPharmacyCategory = selectedCatName === 'ยา' || selectedCatName.startsWith('ยา ') || selectedCatName.startsWith('ยา(')
+                // For Pharmacy category - detect by structure (has children with 'ควบคุม' or 'สามัญ' in name)
+                const isPharmacyCategory = subCategories.some(sub => 
+                  sub.name_th.includes('ควบคุม') || sub.name_th.includes('สามัญ') || sub.name_th.includes('OTC')
+                )
                 
                 if (isPharmacyCategory) {
                   // Get all descendants with their parent info
