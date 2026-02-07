@@ -60,7 +60,7 @@ export default function MedicineLabelPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'th' | 'en' | 'customize' | 'barcode'>('th')
+  const [activeTab, setActiveTab] = useState<'th' | 'en' | 'customize' | 'barcode' | 'calculator'>('th')
   const [labelData, setLabelData] = useState<LabelData>({
     product_id: '',
     dosage_instructions_th: '',
@@ -87,6 +87,16 @@ export default function MedicineLabelPage() {
   const [lotNumber, setLotNumber] = useState('')
   const [expiryDate, setExpiryDate] = useState('')
   const [showBarcodePreview, setShowBarcodePreview] = useState(false)
+
+  // Dosage calculator states
+  const [dosageCalc, setDosageCalc] = useState({
+    patientWeight: '',
+    dosagePerKg: '',
+    frequency: '3',
+    calculatedDose: 0,
+    totalDose: 0,
+    age: ''
+  })
 
   useEffect(() => {
     fetchProducts()
@@ -306,6 +316,17 @@ export default function MedicineLabelPage() {
                   }`}
                 >
                   บาร์โค้ด
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('calculator')}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'calculator'
+                      ? 'border-green-500 text-green-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  คำนวณขนาดยา
                 </button>
               </div>
 
@@ -670,6 +691,123 @@ export default function MedicineLabelPage() {
                     <Printer className="h-4 w-4 mr-2" />
                     พิมพ์บาร์โค้ด
                   </Button>
+                </div>
+              )}
+
+              {/* Dosage Calculator Tab */}
+              {activeTab === 'calculator' && (
+                <div className="space-y-4">
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-700">คำนวณขนาดยาตามน้ำหนักตัว (mg/kg)</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">น้ำหนัก (kg)</label>
+                      <input
+                        type="number"
+                        value={dosageCalc.patientWeight}
+                        onChange={(e) => {
+                          const weight = e.target.value
+                          const dosePerKg = dosageCalc.dosagePerKg
+                          const calculated = weight && dosePerKg ? parseFloat(weight) * parseFloat(dosePerKg) : 0
+                          setDosageCalc({...dosageCalc, patientWeight: weight, calculatedDose: calculated})
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        placeholder="เช่น 50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">อายุ (ปี)</label>
+                      <input
+                        type="number"
+                        value={dosageCalc.age}
+                        onChange={(e) => setDosageCalc({...dosageCalc, age: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        placeholder="เช่น 30"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">ขนาดยา/กก (mg)</label>
+                      <input
+                        type="number"
+                        value={dosageCalc.dosagePerKg}
+                        onChange={(e) => {
+                          const dosePerKg = e.target.value
+                          const weight = dosageCalc.patientWeight
+                          const calculated = weight && dosePerKg ? parseFloat(weight) * parseFloat(dosePerKg) : 0
+                          setDosageCalc({...dosageCalc, dosagePerKg: dosePerKg, calculatedDose: calculated})
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        placeholder="เช่น 10"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">จำนวนครั้ง/วัน</label>
+                      <select
+                        value={dosageCalc.frequency}
+                        onChange={(e) => setDosageCalc({...dosageCalc, frequency: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      >
+                        <option value="1">1 ครั้ง/วัน</option>
+                        <option value="2">2 ครั้ง/วัน</option>
+                        <option value="3">3 ครั้ง/วัน</option>
+                        <option value="4">4 ครั้ง/วัน</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Result */}
+                  {dosageCalc.calculatedDose > 0 && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="text-center">
+                        <p className="text-sm text-blue-600 mb-1">ขนาดยาที่คำนวณได้</p>
+                        <p className="text-3xl font-bold text-blue-700">
+                          {dosageCalc.calculatedDose.toFixed(1)} mg
+                        </p>
+                        <p className="text-sm text-blue-600 mt-1">
+                          ({(dosageCalc.calculatedDose / parseInt(dosageCalc.frequency || '1')).toFixed(1)} mg/ครั้ง)
+                        </p>
+                        <p className="text-sm text-blue-600 mt-1">
+                          {dosageCalc.frequency} ครั้ง/วัน
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (dosageCalc.calculatedDose > 0) {
+                          const doseText = `รับประทานครั้งละ ${(dosageCalc.calculatedDose / parseInt(dosageCalc.frequency || '1')).toFixed(1)} mg วันละ ${dosageCalc.frequency} ครั้ง`
+                          setLabelData({...labelData, dosage_instructions_th: doseText})
+                          setActiveTab('th')
+                        }
+                      }}
+                      disabled={dosageCalc.calculatedDose === 0}
+                      className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-lg text-sm font-medium"
+                    >
+                      ใช้คำแนะนำนี้
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDosageCalc({
+                        patientWeight: '',
+                        dosagePerKg: '',
+                        frequency: '3',
+                        calculatedDose: 0,
+                        totalDose: 0,
+                        age: ''
+                      })}
+                      className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-700"
+                    >
+                      ล้าง
+                    </button>
+                  </div>
                 </div>
               )}
 
