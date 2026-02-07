@@ -483,9 +483,6 @@ export default function ProductsPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {t('products.stock')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('products.actions')}
-                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -533,15 +530,6 @@ export default function ProductsPage() {
                       >
                         {product.stock_quantity}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={(e) => { e.stopPropagation(); handleEdit(product); }}
-                      >
-                        {t('products.edit')}
-                      </Button>
                     </td>
                   </tr>
                 ))}
