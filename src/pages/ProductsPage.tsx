@@ -18,7 +18,6 @@ interface ProductFormData {
   name_th: string
   name_en: string
   product_type: 'finished_goods' | 'service'
-  brand: string
   is_active: boolean
   
   // 2. Categorization
@@ -81,7 +80,6 @@ const initialFormData: ProductFormData = {
   name_th: '',
   name_en: '',
   product_type: 'finished_goods',
-  brand: '',
   is_active: true,
   category_id: '',
   tags: '',
@@ -149,7 +147,6 @@ export default function ProductsPage() {
     sku: '',
     name_th: '',
     name_en: '',
-    brand: '',
     minPrice: '',
     maxPrice: '',
     minStock: '',
@@ -205,7 +202,6 @@ export default function ProductsPage() {
       name_th: product.name_th,
       name_en: product.name_en || '',
       product_type: product.product_type || 'finished_goods',
-      brand: product.brand || '',
       is_active: product.is_active,
       category_id: product.category_id || '',
       tags: product.tags?.join(', ') || '',
@@ -640,15 +636,6 @@ export default function ProductsPage() {
                         <option value="finished_goods">สินค้าสำเร็จรูป (Finished Goods)</option>
                         <option value="service">บริการ (Service)</option>
                       </select>
-                    </div>
-                    <div>
-                      <LabelWithTooltip label="Product Brand (ยี่ห้อ)" tooltip="เช่น GSK, Eucerin, Mega We Care" />
-                      <input
-                        type="text"
-                        value={formData.brand}
-                        onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
                     </div>
                   </div>
 
@@ -1310,17 +1297,6 @@ export default function ProductsPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ยี่ห้อ / Brand</label>
-                <input
-                  type="text"
-                  value={searchFilters.brand}
-                  onChange={(e) => setSearchFilters({ ...searchFilters, brand: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="เช่น GSK, Eucerin"
-                />
-              </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">ราคาขั้นต่ำ</label>
@@ -1410,9 +1386,6 @@ export default function ProductsPage() {
                   if (searchFilters.name_en) {
                     query = query.ilike('name_en', `%${searchFilters.name_en}%`)
                   }
-                  if (searchFilters.brand) {
-                    query = query.ilike('brand', `%${searchFilters.brand}%`)
-                  }
                   if (searchFilters.minPrice) {
                     query = query.gte('base_price', parseFloat(searchFilters.minPrice))
                   }
@@ -1455,7 +1428,6 @@ export default function ProductsPage() {
                     sku: '',
                     name_th: '',
                     name_en: '',
-                    brand: '',
                     minPrice: '',
                     maxPrice: '',
                     minStock: '',
