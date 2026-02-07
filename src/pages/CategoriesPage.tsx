@@ -4,25 +4,8 @@ import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Plus, Edit, Trash2, X, GripVertical } from 'lucide-react'
+import { Plus, Edit, Trash2, X } from 'lucide-react'
 import type { Category } from '../types/database'
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core'
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 
 export default function CategoriesPage() {
   const { t } = useLanguage()
@@ -35,13 +18,6 @@ export default function CategoriesPage() {
     name_en: '',
     parent_id: ''
   })
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  )
 
   useEffect(() => {
     fetchCategories()
@@ -163,34 +139,16 @@ export default function CategoriesPage() {
     setEditingCategory(null)
   }
 
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event
+  // Group categories by parent
+  const mainCategories = categories.filter(c => !c.parent_id)
+  const subCategories = categories.filter(c => c.parent_id)
 
-    if (over && active.id !== over.id) {
-      const oldIndex = categories.findIndex((cat) => cat.id === active.id)
-      const newIndex = categories.findIndex((cat) => cat.id === over.id)
+  const getSubCategories = (parentId: string) => {
+    return subCategories.filter(c => c.parent_id === parentId)
+  }
 
-      const newCategories = arrayMove(categories, oldIndex, newIndex)
-      setCategories(newCategories)
-
-      // Update sort_order in database
-      try {
-        const updates = newCategories.map((cat, index) => ({
-          id: cat.id,
-          sort_order: index
-        }))
-
-        for (const update of updates) {
-          await supabase
-            .from('categories')
-            .update({ sort_order: update.sort_order })
-            .eq('id', update.id)
-        }
-      } catch (error) {
-        console.error('Error updating sort order:', error)
-        fetchCategories() // Reload on error
-      }
-    }
+  const handleDragEnd = async () => {
+    // Drag-drop disabled for hierarchical view
   }
 
   const handleCloseModal = () => {
@@ -220,58 +178,103 @@ export default function CategoriesPage() {
             <p className="text-sm mt-2">{t('categories.addCategoryPrompt')}</p>
           </div>
         ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 w-12"></th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t('categories.nameTh')}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t('categories.nameEn')}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t('categories.actions')}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  <SortableContext
-                    items={categories.map(c => c.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    {categories.map((category) => (
-                      <SortableRow
-                        key={category.id}
-                        category={category}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                        t={t}
-                      />
-                    ))}
-                  </SortableContext>
-                </tbody>
-              </table>
-            </div>
-          </DndContext>
+          <div className="space-y-6">
+            {mainCategories.map((mainCat) => {
+              const children = getSubCategories(mainCat.id)
+              return (
+                <div key={mainCat.id} className="border rounded-xl overflow-hidden bg-white shadow-sm">
+                  {/* Main Category - Large Button Style */}
+                  <div className="flex items-center justify-between p-6 bg-gradient-to-r from-blue-50 to-white border-b">
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold text-gray-900">{mainCat.name_th}</h2>
+                      <p className="text-sm text-gray-500 mt-1">{mainCat.name_en}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="secondary" 
+                        size="sm"
+                        onClick={() => handleEdit(mainCat)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="secondary" 
+                        size="sm"
+                        onClick={() => handleDelete(mainCat.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Sub Categories */}
+                  {children.length > 0 && (
+                    <div className="p-4 bg-gray-50">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {children.map((subCat) => {
+                          const grandChildren = getSubCategories(subCat.id)
+                          return (
+                            <div key={subCat.id} className="bg-white rounded-lg border p-3 hover:shadow-md transition-shadow">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="font-semibold text-gray-900 text-sm truncate">{subCat.name_th}</h3>
+                                  <p className="text-xs text-gray-500 truncate">{subCat.name_en}</p>
+                                </div>
+                                <div className="flex gap-1 ml-2 flex-shrink-0">
+                                  <button 
+                                    onClick={() => handleEdit(subCat)}
+                                    className="p-1 text-gray-400 hover:text-blue-600"
+                                  >
+                                    <Edit className="h-3 w-3" />
+                                  </button>
+                                  <button 
+                                    onClick={() => handleDelete(subCat.id)}
+                                    className="p-1 text-gray-400 hover:text-red-600"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              </div>
+                              
+                              {/* Grand Children (Level 3) */}
+                              {grandChildren.length > 0 && (
+                                <div className="mt-2 pt-2 border-t border-gray-100">
+                                  <div className="flex flex-wrap gap-1">
+                                    {grandChildren.map((grandChild) => (
+                                      <span 
+                                        key={grandChild.id}
+                                        className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-xs text-gray-700"
+                                      >
+                                        {grandChild.name_th}
+                                        <button 
+                                          onClick={() => handleEdit(grandChild)}
+                                          className="text-gray-400 hover:text-blue-600"
+                                        >
+                                          <Edit className="h-2 w-2" />
+                                        </button>
+                                        <button 
+                                          onClick={() => handleDelete(grandChild.id)}
+                                          className="text-gray-400 hover:text-red-600"
+                                        >
+                                          <Trash2 className="h-2 w-2" />
+                                        </button>
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         )}
       </Card>
-
-      {/* Make table responsive on mobile */}
-      <style>{`
-        @media (max-width: 640px) {
-          .overflow-x-auto {
-            margin-left: -1rem;
-            margin-right: -1rem;
-          }
-        }
-      `}</style>
 
       {/* Modal */}
       {showModal && (
@@ -342,71 +345,5 @@ export default function CategoriesPage() {
         </div>
       )}
     </div>
-  )
-}
-
-// Sortable Row Component
-function SortableRow({ 
-  category, 
-  onEdit, 
-  onDelete, 
-  t 
-}: { 
-  category: Category
-  onEdit: (category: Category) => void
-  onDelete: (id: string) => void
-  t: (key: string) => string
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: category.id })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  }
-
-  return (
-    <tr ref={setNodeRef} style={style} className={isDragging ? 'bg-blue-50' : ''}>
-      <td className="px-4 py-4 whitespace-nowrap">
-        <div
-          {...attributes}
-          {...listeners}
-          className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
-        >
-          <GripVertical className="h-5 w-5" />
-        </div>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-        {category.name_th}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {category.name_en}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-        <Button 
-          variant="secondary" 
-          size="sm"
-          onClick={() => onEdit(category)}
-        >
-          <Edit className="h-4 w-4 mr-1" />
-          {t('categories.edit')}
-        </Button>
-        <Button 
-          variant="secondary" 
-          size="sm"
-          onClick={() => onDelete(category.id)}
-        >
-          <Trash2 className="h-4 w-4 mr-1" />
-          {t('categories.delete')}
-        </Button>
-      </td>
-    </tr>
   )
 }
