@@ -6,8 +6,8 @@ import Card from '../components/common/Card'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import { LabelWithTooltip } from '../components/common/Tooltip'
-import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft, Printer, ExternalLink } from 'lucide-react'
-import { useLocation } from 'react-router-dom'
+import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft, Printer, ExternalLink, ArrowLeft } from 'lucide-react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import type { Product, Category } from '../types/database'
 
 // Extended form data with all new fields
@@ -162,6 +162,7 @@ export default function ProductsPage() {
   const { loading, searchTerm, setSearchTerm, fetchProducts, products } = useProductStore()
   const { t } = useLanguage()
   const location = useLocation()
+  const navigate = useNavigate()
   const [showModal, setShowModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
@@ -399,7 +400,26 @@ export default function ProductsPage() {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('products.title')}</h1>
+        <div className="flex items-center gap-3">
+          {selectedCategory && (
+            <Button
+              variant="secondary"
+              onClick={() => navigate('/categories')}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              กลับ
+            </Button>
+          )}
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            {selectedCategory && selectedCategory !== 'uncategorized'
+              ? categories.find(c => c.id === selectedCategory)?.name_th || t('products.title')
+              : selectedCategory === 'uncategorized'
+                ? 'สินค้ายังไม่ตั้งหมวดหมู่'
+                : t('products.title')
+            }
+          </h1>
+        </div>
         <Button variant="primary" onClick={() => setShowModal(true)} className="w-full sm:w-auto">
           <Plus className="h-5 w-5 mr-2" />
           {t('products.addProduct')}
