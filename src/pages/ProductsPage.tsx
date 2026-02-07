@@ -18,6 +18,7 @@ interface ProductFormData {
   name_th: string
   name_en: string
   product_type: 'finished_goods' | 'service'
+  brand: string
   is_active: boolean
   stock_tracking_type: 'tracked' | 'untracked' | 'service'
   
@@ -97,6 +98,7 @@ const initialFormData: ProductFormData = {
   name_th: '',
   name_en: '',
   product_type: 'finished_goods',
+  brand: '',
   is_active: true,
   stock_tracking_type: 'tracked',
   category_id: '',
@@ -246,6 +248,7 @@ export default function ProductsPage() {
       name_th: product.name_th,
       name_en: product.name_en || '',
       product_type: product.product_type || 'finished_goods',
+      brand: product.brand || '',
       is_active: product.is_active,
       stock_tracking_type: product.stock_tracking_type || 'tracked',
       category_id: product.category_id || '',
@@ -349,6 +352,7 @@ export default function ProductsPage() {
         sku: formData.sku,
         name_th: formData.name_th,
         name_en: formData.name_en,
+        brand: formData.brand,
         is_active: formData.is_active,
         category_id: formData.category_id || null,
         base_price: formData.base_price,
@@ -589,6 +593,7 @@ export default function ProductsPage() {
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.image')}</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.barcode')}</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.name')}</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ยี่ห้อ</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.category')}</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.price')}</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.stock')}</th>
@@ -611,6 +616,7 @@ export default function ProductsPage() {
                               <div className="text-sm font-medium text-gray-900">{product.name_th}</div>
                               {product.name_en && <div className="text-sm text-gray-500">{product.name_en}</div>}
                             </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{product.brand || '-'}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{(product as any).category?.name_th || t('products.noCategory')}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">฿{product.base_price.toFixed(2)}</td>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -990,6 +996,13 @@ export default function ProductsPage() {
                           <div className="text-sm font-medium text-gray-900">{formData.sku || '-'}</div>
                         </div>
                       </div>
+                      
+                      {formData.brand && (
+                        <div className="bg-gray-50 rounded-lg p-2">
+                          <div className="text-xs text-gray-500">ยี่ห้อ</div>
+                          <div className="text-sm font-medium text-gray-900">{formData.brand}</div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1196,6 +1209,16 @@ export default function ProductsPage() {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <LabelWithTooltip label="Brand (ยี่ห้อ)" tooltip="ยี่ห้อสินค้า เช่น GSK, Pfizer, หรือผู้ผลิตในประเทศ" />
+                      <input
+                        type="text"
+                        value={formData.brand}
+                        onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="เช่น GSK, Unilever, ศิริราช"
+                      />
+                    </div>
                     <div>
                       <LabelWithTooltip label="Product Type (ประเภทสินค้า)" tooltip="เช่น สินค้าสำเร็จรูป (Finished Goods), บริการ" />
                       <select
