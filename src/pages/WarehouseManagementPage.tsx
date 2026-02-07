@@ -46,11 +46,13 @@ export default function WarehouseManagementPage() {
     quantity: 1,
     notes: ''
   })
+  const [lastActivityDates, setLastActivityDates] = useState<Record<string, string>>({})
 
   useEffect(() => {
     fetchWarehouses()
     fetchProducts()
     fetchProductStocks()
+    fetchLastActivityDates()
   }, [])
 
   const fetchWarehouses = async () => {
@@ -78,6 +80,42 @@ export default function WarehouseManagementPage() {
       if (data) setProductStocks(data)
     } catch (err) {
       console.error('Exception fetching product stocks:', err)
+    }
+  }
+
+  const fetchLastActivityDates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('stock_transfers')
+        .select('from_warehouse_id, to_warehouse_id, transfer_date')
+        .order('transfer_date', { ascending: false })
+      
+      if (error) {
+        console.error('Error fetching last activity dates:', error)
+        return
+      }
+      
+      const dates: Record<string, string> = {}
+      
+      data?.forEach((transfer: any) => {
+        const date = transfer.transfer_date
+        
+        if (transfer.from_warehouse_id) {
+          if (!dates[transfer.from_warehouse_id] || new Date(date) > new Date(dates[transfer.from_warehouse_id])) {
+            dates[transfer.from_warehouse_id] = date
+          }
+        }
+        
+        if (transfer.to_warehouse_id) {
+          if (!dates[transfer.to_warehouse_id] || new Date(date) > new Date(dates[transfer.to_warehouse_id])) {
+            dates[transfer.to_warehouse_id] = date
+          }
+        }
+      })
+      
+      setLastActivityDates(dates)
+    } catch (err) {
+      console.error('Exception fetching last activity dates:', err)
     }
   }
 
@@ -272,6 +310,13 @@ export default function WarehouseManagementPage() {
                 </div>
               </div>
             </div>
+            
+            {/* Last Activity Date */}
+            {lastActivityDates[warehouse.id] && (
+              <div className="mt-3 pt-3 border-t text-xs text-gray-400">
+                เคลื่อนไหวล่าสุด: {new Date(lastActivityDates[warehouse.id]).toLocaleDateString('th-TH')}
+              </div>
+            )}
           </Card>
         ))}
       </div>
