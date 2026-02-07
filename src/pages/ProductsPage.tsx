@@ -175,8 +175,8 @@ export default function ProductsPage() {
   const [minPrice, setMinPrice] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
   const [showFilters, setShowFilters] = useState(false)
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState('')
+  const [imageFiles, setImageFiles] = useState<(File | null)[]>(Array(9).fill(null))
+  const [imagePreviews, setImagePreviews] = useState<string[]>(Array(9).fill(''))
   const [activeTab, setActiveTab] = useState<'dashboard' | 'identification' | 'categorization' | 'financials' | 'inventory' | 'logistics' | 'channels'>('dashboard')
   const [inventorySubTab, setInventorySubTab] = useState<'general' | 'warehouse'>('general')
   const [formData, setFormData] = useState<ProductFormData>(initialFormData)
@@ -281,6 +281,7 @@ export default function ProductsPage() {
       length_cm: product.length_cm || 0,
       height_cm: product.height_cm || 0,
       image_url: product.image_url || '',
+      image_urls: product.image_urls || [],
       sell_on_pos: product.sell_on_pos ?? true,
       sell_on_grab: product.sell_on_grab || false,
       sell_on_lineman: product.sell_on_lineman || false,
@@ -311,42 +312,66 @@ export default function ProductsPage() {
       url_consignment: product.url_consignment || '',
       url_website: product.url_website || ''
     })
-    setImagePreview(product.image_url || '')
+    setImagePreviews(product.image_urls?.slice(0, 9).concat(Array(9 - (product.image_urls?.length || 0)).fill('')) || Array(9).fill(''))
     setActiveTab('dashboard')
     setShowModal(true)
   }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      setImageFile(file)
+      const newFiles = [...imageFiles]
+      newFiles[index] = file
+      setImageFiles(newFiles)
+      
       const reader = new FileReader()
       reader.onloadend = () => {
-        setImagePreview(reader.result as string)
+        const newPreviews = [...imagePreviews]
+        newPreviews[index] = reader.result as string
+        setImagePreviews(newPreviews)
       }
       reader.readAsDataURL(file)
     }
   }
 
+  const handleRemoveImage = (index: number) => {
+    const newFiles = [...imageFiles]
+    newFiles[index] = null
+    setImageFiles(newFiles)
+    
+    const newPreviews = [...imagePreviews]
+    newPreviews[index] = ''
+    setImagePreviews(newPreviews)
+    
+    // Also update formData image_urls
+    const newUrls = [...(formData.image_urls || [])]
+    newUrls[index] = ''
+    setFormData({ ...formData, image_urls: newUrls.filter(url => url) })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      let imageUrl = formData.image_url
+      let imageUrls: string[] = [...(formData.image_urls || [])]
 
-      if (imageFile) {
-        const fileExt = imageFile.name.split('.').pop()
-        const fileName = `${Date.now()}.${fileExt}`
-        const { error: uploadError } = await supabase.storage
-          .from('products')
-          .upload(fileName, imageFile)
-        
-        if (uploadError) throw uploadError
-        
-        const { data: { publicUrl } } = supabase.storage
-          .from('products')
-          .getPublicUrl(fileName)
-        
-        imageUrl = publicUrl
+      // Upload new images
+      for (let i = 0; i < imageFiles.length; i++) {
+        const file = imageFiles[i]
+        if (file) {
+          const fileExt = file.name.split('.').pop()
+          const fileName = `${Date.now()}_${i}.${fileExt}`
+          const { error: uploadError } = await supabase.storage
+            .from('products')
+            .upload(fileName, file)
+          
+          if (uploadError) throw uploadError
+          
+          const { data: { publicUrl } } = supabase.storage
+            .from('products')
+            .getPublicUrl(fileName)
+          
+          imageUrls[i] = publicUrl
+        }
       }
 
       const productData = {
@@ -362,7 +387,8 @@ export default function ProductsPage() {
         unit: formData.unit,
         stock_quantity: formData.stock_quantity,
         min_stock_level: formData.min_stock_level,
-        image_url: imageUrl
+        image_url: imageUrls[0] || '',
+        image_urls: imageUrls.filter(url => url)
       }
 
       if (editingProduct) {
@@ -391,8 +417,8 @@ export default function ProductsPage() {
   const resetForm = () => {
     setFormData(initialFormData)
     setEditingProduct(null)
-    setImageFile(null)
-    setImagePreview('')
+    setImageFiles(Array(9).fill(null))
+    setImagePreviews(Array(9).fill(''))
     setActiveTab('dashboard')
   }
 
@@ -959,9 +985,9 @@ export default function ProductsPage() {
                   <div className="flex flex-col sm:flex-row gap-4">
                     {/* Image Section */}
                     <div className="flex-shrink-0">
-                      {imagePreview ? (
+                      {imagePreviews[0] ? (
                         <img
-                          src={imagePreview}
+                          src={imagePreviews[0]}
                           alt={formData.name_th}
                           className="h-32 w-32 object-cover rounded-xl border-2 border-gray-200 shadow-sm"
                         />
@@ -1733,7 +1759,9 @@ export default function ProductsPage() {
                         value={formData.image_url}
                         onChange={(e) => {
                           setFormData({ ...formData, image_url: e.target.value })
-                          setImagePreview(e.target.value)
+                          const newPreviews = [...imagePreviews]
+                          newPreviews[0] = e.target.value
+                          setImagePreviews(newPreviews)
                         }}
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="https://example.com/image.jpg"
@@ -1745,7 +1773,9 @@ export default function ProductsPage() {
                           size="sm"
                           onClick={() => {
                             setFormData({ ...formData, image_url: '' })
-                            setImagePreview('')
+                            const newPreviews = [...imagePreviews]
+                            newPreviews[0] = ''
+                            setImagePreviews(newPreviews)
                           }}
                         >
                           <X className="h-4 w-4" />
@@ -1767,26 +1797,39 @@ export default function ProductsPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       อัปโหลดรูปภาพ (อัปโหลดได้สูงสุด 9 รูป)
                     </label>
-                    <div className="flex items-center gap-4 flex-wrap">
-                      {imagePreview && (
-                        <img
-                          src={imagePreview}
-                          alt="Preview"
-                          className="h-20 w-20 object-cover rounded-lg border"
-                        />
-                      )}
-                      <label className="cursor-pointer">
-                        <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300">
-                          <Upload className="h-5 w-5 text-gray-600" />
-                          <span className="text-sm text-gray-700">{t('products.uploadImage')}</span>
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+                      {Array.from({ length: 9 }).map((_, index) => (
+                        <div key={index} className="relative">
+                          {imagePreviews[index] ? (
+                            <div className="relative group">
+                              <img
+                                src={imagePreviews[index]}
+                                alt={`Preview ${index + 1}`}
+                                className="h-20 w-20 object-cover rounded-lg border"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveImage(index)}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <label className="cursor-pointer">
+                              <div className="h-20 w-20 bg-gray-100 hover:bg-gray-200 rounded-lg border border-dashed border-gray-300 flex items-center justify-center">
+                                <Upload className="h-6 w-6 text-gray-400" />
+                              </div>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleImageChange(index, e)}
+                                className="hidden"
+                              />
+                            </label>
+                          )}
                         </div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageChange}
-                          className="hidden"
-                        />
-                      </label>
+                      ))}
                     </div>
                   </div>
                 </div>
