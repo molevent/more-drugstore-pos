@@ -520,247 +520,156 @@ export default function MedicineLabelPage() {
 
               {/* Barcode Tab */}
               {activeTab === 'barcode' && (
-                <div className="space-y-4">
-                  <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                    <p className="text-sm text-orange-700">พิมพ์บาร์โค้ดสำหรับสินค้า โดยไม่ต้องแสดงชื่อยา</p>
+                <div className="space-y-5">
+                  {/* Header */}
+                  <div className="p-3 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-lg flex items-center gap-2">
+                    <Printer className="h-5 w-5 text-orange-600" />
+                    <p className="text-sm text-orange-800 font-medium">ตั้งค่าฉลากบาร์โค้ด</p>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">ขนาดบาร์โค้ด</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setBarcodeSize('small')}
-                        className={`p-3 border rounded-lg text-center transition-colors ${
-                          barcodeSize === 'small'
-                            ? 'border-orange-500 bg-orange-50 text-orange-700'
-                            : 'border-gray-200 hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className="text-sm font-medium">เล็ก</div>
-                        <div className="text-xs text-gray-500">30x20 มม.</div>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setBarcodeSize('medium')}
-                        className={`p-3 border rounded-lg text-center transition-colors ${
-                          barcodeSize === 'medium'
-                            ? 'border-orange-500 bg-orange-50 text-orange-700'
-                            : 'border-gray-200 hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className="text-sm font-medium">กลาง</div>
-                        <div className="text-xs text-gray-500">50x30 มม.</div>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setBarcodeSize('large')}
-                        className={`p-3 border rounded-lg text-center transition-colors ${
-                          barcodeSize === 'large'
-                            ? 'border-orange-500 bg-orange-50 text-orange-700'
-                            : 'border-gray-200 hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className="text-sm font-medium">ใหญ่</div>
-                        <div className="text-xs text-gray-500">80x50 มม.</div>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setBarcodeSize('custom')}
-                        className={`p-3 border rounded-lg text-center transition-colors ${
-                          barcodeSize === 'custom'
-                            ? 'border-orange-500 bg-orange-50 text-orange-700'
-                            : 'border-gray-200 hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className="text-sm font-medium">กำหนดเอง</div>
-                        <div className="text-xs text-gray-500">ปรับขนาดได้</div>
-                      </button>
+                  {/* Section 1: Label Size */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold text-gray-700">1. ขนาดฉลาก</h4>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[
+                        { key: 'small', label: 'เล็ก', size: '30×20' },
+                        { key: 'medium', label: 'กลาง', size: '50×30' },
+                        { key: 'large', label: 'ใหญ่', size: '80×50' },
+                        { key: 'custom', label: 'กำหนดเอง', size: '-' }
+                      ].map((opt) => (
+                        <button
+                          key={opt.key}
+                          type="button"
+                          onClick={() => setBarcodeSize(opt.key as any)}
+                          className={`p-2 border-2 rounded-lg text-center transition-all ${
+                            barcodeSize === opt.key
+                              ? 'border-orange-500 bg-orange-50'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="text-sm font-medium">{opt.label}</div>
+                          <div className="text-xs text-gray-500">{opt.size}</div>
+                        </button>
+                      ))}
                     </div>
-                  </div>
-
-                  {barcodeSize === 'custom' && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">กว้าง (มม.)</label>
+                    {barcodeSize === 'custom' && (
+                      <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 rounded-lg">
                         <input
                           type="number"
                           value={customBarcodeWidth}
                           onChange={(e) => setCustomBarcodeWidth(parseInt(e.target.value) || 50)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                          min="20"
-                          max="150"
+                          className="w-full px-3 py-2 border rounded-lg text-sm"
+                          placeholder="กว้าง (มม.)"
                         />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">สูง (มม.)</label>
                         <input
                           type="number"
                           value={customBarcodeHeight}
                           onChange={(e) => setCustomBarcodeHeight(parseInt(e.target.value) || 30)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                          min="15"
-                          max="100"
+                          className="w-full px-3 py-2 border rounded-lg text-sm"
+                          placeholder="สูง (มม.)"
                         />
                       </div>
+                    )}
+                  </div>
+
+                  {/* Section 2: Display Options */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold text-gray-700">2. ข้อมูลที่แสดง</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {[
+                        { checked: showBarcodeInfo, onChange: setShowBarcodeInfo, label: 'ข้อมูลร้าน วัน เวลา', color: 'blue' },
+                        { checked: showProductName, onChange: setShowProductName, label: 'ชื่อสินค้า', color: 'orange' },
+                        { checked: showPrice, onChange: setShowPrice, label: 'ราคาขาย', color: 'green' },
+                        { checked: showCostPrice, onChange: setShowCostPrice, label: 'ราคาทุน (สำหรับพนักงาน)', color: 'red' }
+                      ].map((opt, idx) => (
+                        <label key={idx} className="flex items-center gap-2 p-2 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                          <input
+                            type="checkbox"
+                            checked={opt.checked}
+                            onChange={(e) => opt.onChange(e.target.checked)}
+                            className="h-4 w-4 rounded"
+                          />
+                          <span className="text-sm text-gray-700">{opt.label}</span>
+                        </label>
+                      ))}
                     </div>
-                  )}
-
-                  <div>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={showProductName}
-                        onChange={(e) => setShowProductName(e.target.checked)}
-                        className="h-4 w-4 text-orange-600 rounded"
-                      />
-                      <span className="text-sm text-gray-700">แสดงชื่อสินค้าใต้บาร์โค้ด</span>
-                    </label>
                   </div>
 
-                  <div>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={showPrice}
-                        onChange={(e) => setShowPrice(e.target.checked)}
-                        className="h-4 w-4 text-orange-600 rounded"
-                      />
-                      <span className="text-sm text-gray-700">แสดงราคาใต้บาร์โค้ด</span>
-                    </label>
-                  </div>
-
-                  <div>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={showCostPrice}
-                        onChange={(e) => setShowCostPrice(e.target.checked)}
-                        className="h-4 w-4 text-red-600 rounded"
-                      />
-                      <span className="text-sm text-gray-700">แสดงราคาทุน (สำหรับพนักงาน)</span>
-                    </label>
-                  </div>
-
-                  <div>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={showBarcodeInfo}
-                        onChange={(e) => setShowBarcodeInfo(e.target.checked)}
-                        className="h-4 w-4 text-blue-600 rounded"
-                      />
-                      <span className="text-sm text-gray-700">แสดงข้อมูลร้าน วัน เวลา</span>
-                    </label>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-200">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Lot Number / Serial No.</label>
+                  {/* Section 3: Product Info */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold text-gray-700">3. ข้อมูลสินค้า (ถ้ามี)</h4>
+                    <div className="grid grid-cols-2 gap-3">
                       <input
                         type="text"
                         value={lotNumber}
                         onChange={(e) => setLotNumber(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                        placeholder="เช่น LOT123456"
+                        className="w-full px-3 py-2 border rounded-lg text-sm"
+                        placeholder="Lot Number"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">วันหมดอายุ</label>
                       <input
                         type="date"
                         value={expiryDate}
                         onChange={(e) => setExpiryDate(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        className="w-full px-3 py-2 border rounded-lg text-sm"
                       />
                     </div>
                   </div>
 
-                  {/* Barcode Preview */}
-                  <div className="border border-gray-300 rounded-lg p-4 bg-white">
-                    <div className="text-center">
-                      {/* Store Info Header */}
-                      {showBarcodeInfo && (
-                        <div className="border-b border-gray-200 pb-2 mb-2">
-                          <div className="text-xs font-bold text-gray-800">MORE DRUGSTORE</div>
-                          <div className="text-xs text-gray-500">{new Date().toLocaleDateString('th-TH')} {new Date().toLocaleTimeString('th-TH', {hour: '2-digit', minute: '2-digit'})}</div>
+                  {/* Section 4: Preview */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-gray-700">4. ตัวอย่างฉลาก</h4>
+                    <div className="border-2 border-dashed border-orange-300 rounded-xl p-5 bg-white">
+                      <div className="text-center max-w-[180px] mx-auto">
+                        {showBarcodeInfo && (
+                          <div className="border-b border-gray-200 pb-1.5 mb-2">
+                            <div className="text-xs font-bold text-gray-800">MORE DRUGSTORE</div>
+                            <div className="text-[10px] text-gray-500">{new Date().toLocaleDateString('th-TH')} {new Date().toLocaleTimeString('th-TH', {hour: '2-digit', minute: '2-digit'})}</div>
+                          </div>
+                        )}
+
+                        <div className="text-sm font-bold text-gray-800 truncate">{selectedProduct?.name_th || 'ชื่อสินค้า'}</div>
+
+                        {selectedProduct?.sku && (
+                          <div className="text-[10px] text-gray-500">SKU: {selectedProduct.sku}</div>
+                        )}
+
+                        <svg className="mx-auto my-1" width="130" height="40" viewBox="0 0 130 40">
+                          {[0,4,7,12,16,20,26,30,34,40,44,48,54,60,64,70,76,80,86,92,96,102,108,112,118,124,130].map((x, i) => (
+                            <rect key={i} x={x} y="0" width={[2,1,3,2,1,4,2,1,3,2,1,4,2,1,3,2,1,4,2,1,3,2,1,4,2,1,3][i] || 2} height="32" fill="black"/>
+                          ))}
+                        </svg>
+
+                        <div className="text-[10px] text-gray-600 font-mono tracking-wider">{selectedProduct?.barcode || 'XXXXXXXXXXXXX'}</div>
+
+                        {(lotNumber || expiryDate) && (
+                          <div className="flex justify-center gap-2 text-[10px] text-gray-500 mt-1">
+                            {lotNumber && <span>Lot: {lotNumber}</span>}
+                            {expiryDate && <span>EXP: {new Date(expiryDate).toLocaleDateString('th-TH', {year: '2-digit', month: '2-digit', day: '2-digit'})}</span>}
+                          </div>
+                        )}
+
+                        <div className="flex justify-center gap-2 mt-1.5">
+                          {showPrice && (
+                            <span className="text-xs font-bold text-green-600">฿{selectedProduct?.base_price?.toFixed(2) || '0.00'}</span>
+                          )}
+                          {showCostPrice && (
+                            <span className="text-[10px] text-red-500">ทุน: ฿{selectedProduct?.cost_price?.toFixed(2) || '0.00'}</span>
+                          )}
                         </div>
-                      )}
-
-                      {/* Product Name */}
-                      <div className="text-sm font-bold text-gray-800 mb-1 truncate">{selectedProduct?.name_th || 'ชื่อสินค้า'}</div>
-
-                      {/* SKU */}
-                      {selectedProduct?.sku && (
-                        <div className="text-xs text-gray-500 mb-2">SKU: {selectedProduct.sku}</div>
-                      )}
-
-                      {/* Barcode SVG */}
-                      <svg className="mx-auto mb-1" width="150" height="50" viewBox="0 0 150 50">
-                        <rect x="0" y="0" width="2" height="40" fill="black"/>
-                        <rect x="4" y="0" width="1" height="40" fill="black"/>
-                        <rect x="7" y="0" width="3" height="40" fill="black"/>
-                        <rect x="12" y="0" width="2" height="40" fill="black"/>
-                        <rect x="16" y="0" width="1" height="40" fill="black"/>
-                        <rect x="20" y="0" width="4" height="40" fill="black"/>
-                        <rect x="26" y="0" width="2" height="40" fill="black"/>
-                        <rect x="30" y="0" width="1" height="40" fill="black"/>
-                        <rect x="34" y="0" width="3" height="40" fill="black"/>
-                        <rect x="40" y="0" width="2" height="40" fill="black"/>
-                        <rect x="44" y="0" width="1" height="40" fill="black"/>
-                        <rect x="48" y="0" width="4" height="40" fill="black"/>
-                        <rect x="54" y="0" width="2" height="40" fill="black"/>
-                        <rect x="60" y="0" width="1" height="40" fill="black"/>
-                        <rect x="64" y="0" width="3" height="40" fill="black"/>
-                        <rect x="70" y="0" width="2" height="40" fill="black"/>
-                        <rect x="76" y="0" width="1" height="40" fill="black"/>
-                        <rect x="80" y="0" width="4" height="40" fill="black"/>
-                        <rect x="86" y="0" width="2" height="40" fill="black"/>
-                        <rect x="92" y="0" width="1" height="40" fill="black"/>
-                        <rect x="96" y="0" width="3" height="40" fill="black"/>
-                        <rect x="102" y="0" width="2" height="40" fill="black"/>
-                        <rect x="108" y="0" width="1" height="40" fill="black"/>
-                        <rect x="112" y="0" width="4" height="40" fill="black"/>
-                        <rect x="118" y="0" width="2" height="40" fill="black"/>
-                        <rect x="124" y="0" width="1" height="40" fill="black"/>
-                        <rect x="130" y="0" width="3" height="40" fill="black"/>
-                        <rect x="136" y="0" width="2" height="40" fill="black"/>
-                      </svg>
-
-                      {/* Barcode Number */}
-                      <div className="text-xs text-gray-600 font-mono mb-2">{selectedProduct?.barcode || 'XXXXXXXXXXXXX'}</div>
-
-                      {/* Lot Number & Expiry */}
-                      {(lotNumber || expiryDate) && (
-                        <div className="text-xs text-gray-500 mt-1 space-y-1">
-                          {lotNumber && <div>Lot: {lotNumber}</div>}
-                          {expiryDate && <div>Exp: {new Date(expiryDate).toLocaleDateString('th-TH')}</div>}
-                        </div>
-                      )}
-
-                      {/* Optional Info */}
-                      {showProductName && (
-                        <div className="text-xs text-gray-800 mt-1 truncate max-w-[150px]">{selectedProduct?.name_th || 'ชื่อสินค้า'}</div>
-                      )}
-                      {showPrice && (
-                        <div className="text-xs text-orange-600 font-medium mt-1">฿{selectedProduct?.base_price?.toFixed(2) || '0.00'}</div>
-                      )}
-                      {showCostPrice && (
-                        <div className="text-xs text-red-600 font-medium mt-1">ทุน: ฿{selectedProduct?.cost_price?.toFixed(2) || '0.00'}</div>
-                      )}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <Button
-                      variant="primary"
-                      onClick={() => setShowBarcodePreview(true)}
-                      disabled={!selectedProduct}
-                    >
-                      <Printer className="h-4 w-4 mr-2" />
-                      พิมพ์บาร์โค้ด
-                    </Button>
-                  </div>
+                  {/* Print Button */}
+                  <Button
+                    variant="primary"
+                    onClick={() => setShowBarcodePreview(true)}
+                    disabled={!selectedProduct}
+                    className="w-full"
+                  >
+                    <Printer className="h-4 w-4 mr-2" />
+                    พิมพ์บาร์โค้ด
+                  </Button>
                 </div>
               )}
 
