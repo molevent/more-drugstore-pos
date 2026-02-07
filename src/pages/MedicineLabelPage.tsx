@@ -86,7 +86,6 @@ export default function MedicineLabelPage() {
   const [showBarcodeInfo, setShowBarcodeInfo] = useState(true)
   const [lotNumber, setLotNumber] = useState('')
   const [expiryDate, setExpiryDate] = useState('')
-  const [showBarcodePreview, setShowBarcodePreview] = useState(false)
 
   // Dosage calculator states
   const [dosageCalc, setDosageCalc] = useState({
@@ -684,7 +683,7 @@ export default function MedicineLabelPage() {
                   {/* Print Button */}
                   <Button
                     variant="primary"
-                    onClick={() => setShowBarcodePreview(true)}
+                    onClick={() => setShowPreview(true)}
                     disabled={!selectedProduct}
                     className="w-full"
                   >

@@ -4,7 +4,7 @@ import { useProductStore } from '../stores/productStore'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Filter, Package, Receipt } from 'lucide-react'
+import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Package, Receipt } from 'lucide-react'
 import type { Product } from '../types/database'
 import { supabase } from '../services/supabase'
 

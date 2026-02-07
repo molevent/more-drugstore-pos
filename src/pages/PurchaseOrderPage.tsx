@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useLanguage } from '../contexts/LanguageContext'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { FileText, Plus, Edit, Trash2, X, Search, Filter, CheckCircle, Clock, Package, AlertCircle } from 'lucide-react'
+import { FileText, Plus, Trash2, X, Search, CheckCircle, Package, AlertCircle } from 'lucide-react'
 import type { Product } from '../types/database'
 
 interface PurchaseOrder {
@@ -24,22 +23,6 @@ interface PurchaseOrder {
   created_at: string
 }
 
-interface PurchaseOrderItem {
-  id: string
-  purchase_order_id: string
-  product_id: string
-  product?: Product
-  quantity: number
-  unit_price: number
-  discount_percent: number
-  discount_amount: number
-  tax_percent: number
-  tax_amount: number
-  total_amount: number
-  received_quantity: number
-  notes: string
-}
-
 interface Warehouse {
   id: string
   name: string
@@ -47,14 +30,12 @@ interface Warehouse {
 }
 
 export default function PurchaseOrderPage() {
-  const { t } = useLanguage()
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [warehouses, setWarehouses] = useState<Warehouse[]>([])
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [showItemModal, setShowItemModal] = useState(false)
-  const [editingPO, setEditingPO] = useState<PurchaseOrder | null>(null)
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null)
   const [statusFilter, setStatusFilter] = useState('')
   const [searchTerm, setSearchTerm] = useState('')

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useLanguage } from '../contexts/LanguageContext'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -26,11 +25,9 @@ interface ProductStock {
 }
 
 export default function WarehouseManagementPage() {
-  const { t } = useLanguage()
   const [warehouses, setWarehouses] = useState<WarehouseType[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [productStocks, setProductStocks] = useState<ProductStock[]>([])
-  const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [showTransferModal, setShowTransferModal] = useState(false)
   const [editingWarehouse, setEditingWarehouse] = useState<WarehouseType | null>(null)

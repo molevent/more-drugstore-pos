@@ -115,6 +115,18 @@ export interface Product {
   url_consignment?: string
   url_website?: string
   
+  // 8. Alerts
+  alert_out_of_stock?: boolean
+  alert_out_of_stock_message?: string
+  alert_low_stock?: boolean
+  alert_low_stock_message?: string
+  alert_expiry?: boolean
+  alert_expiry_message?: string
+  alert_expiry_days?: number
+  alert_custom?: boolean
+  alert_custom_title?: string
+  alert_custom_message?: string
+  
   created_at: string
   updated_at: string
 }

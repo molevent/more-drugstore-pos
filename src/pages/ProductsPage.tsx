@@ -6,7 +6,7 @@ import Card from '../components/common/Card'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import { LabelWithTooltip } from '../components/common/Tooltip'
-import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft, Printer, ExternalLink, ArrowLeft, Bell } from 'lucide-react'
+import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft, Printer, ExternalLink, ArrowLeft } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { Product, Category } from '../types/database'
 
@@ -810,7 +810,7 @@ export default function ProductsPage() {
                                 </tr>
                               </thead>
                               <tbody className="bg-white divide-y divide-gray-200">
-                                {productsWithType.map(({ product, parentType }) => (
+                                {productsWithType.map(({ product }) => (
                                   <tr key={product.id} onClick={() => handleEdit(product)} className="hover:bg-gray-50 cursor-pointer transition-colors">
                                     <td className="px-6 py-3 whitespace-nowrap">
                                       {product.image_url ? (

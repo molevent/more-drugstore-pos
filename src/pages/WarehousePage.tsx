@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useLanguage } from '../contexts/LanguageContext'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
-import { Warehouse, Package, AlertTriangle, TrendingDown, Plus } from 'lucide-react'
+import { Warehouse, Package, AlertTriangle, TrendingDown } from 'lucide-react'
 import type { Product } from '../types/database'
 
 export default function WarehousePage() {
-  const { t } = useLanguage()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
 
