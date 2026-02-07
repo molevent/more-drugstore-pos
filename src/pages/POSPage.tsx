@@ -4,7 +4,7 @@ import { useProductStore } from '../stores/productStore'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search } from 'lucide-react'
+import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Filter, Package } from 'lucide-react'
 import type { Product } from '../types/database'
 import { supabase } from '../services/supabase'
 
@@ -46,6 +46,9 @@ export default function POSPage() {
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false)
   const customerDropdownRef = useRef<HTMLDivElement>(null)
   
+  // Product filter states
+  const [showStockOnly, setShowStockOnly] = useState(false)
+  
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const { items, addItem, removeItem, updateQuantity, clearCart, getTotal, getSubtotal, setItems } = useCartStore()
@@ -61,17 +64,24 @@ export default function POSPage() {
 
   // Search products as user types
   useEffect(() => {
-    console.log('POS: Search triggered', { barcode, productsCount: products.length })
+    console.log('POS: Search triggered', { barcode, productsCount: products.length, showStockOnly })
     
     if (barcode.trim().length > 0) {
       const searchTerm = barcode.toLowerCase()
-      const results = products.filter(p => 
+      let results = products.filter(p => 
         p.barcode?.toLowerCase().includes(searchTerm) ||
         p.name_th?.toLowerCase().includes(searchTerm) ||
         p.name_en?.toLowerCase().includes(searchTerm)
-      ).slice(0, 10) // Limit to 10 results
+      )
       
-      console.log('POS: Search results', { searchTerm, resultsCount: results.length })
+      // Apply stock filter if enabled
+      if (showStockOnly) {
+        results = results.filter(p => (p.stock_quantity || 0) > 0)
+      }
+      
+      results = results.slice(0, 10) // Limit to 10 results
+      
+      console.log('POS: Search results', { searchTerm, resultsCount: results.length, showStockOnly })
       
       setSearchResults(results)
       setShowDropdown(results.length > 0)
@@ -80,7 +90,7 @@ export default function POSPage() {
       setSearchResults([])
       setShowDropdown(false)
     }
-  }, [barcode, products])
+  }, [barcode, products, showStockOnly])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -313,6 +323,24 @@ export default function POSPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2">
           <Card title="สแกนบาร์โค้ด">
+            {/* Filter Options */}
+            <div className="mb-3 flex items-center gap-2">
+              <button
+                onClick={() => setShowStockOnly(!showStockOnly)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                  showStockOnly
+                    ? 'bg-green-100 text-green-700 border border-green-300'
+                    : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
+                }`}
+              >
+                <Package className="h-4 w-4" />
+                {showStockOnly ? 'เฉพาะสินค้ามี stock' : 'แสดงทั้งหมด'}
+              </button>
+              {showStockOnly && (
+                <span className="text-xs text-green-600">กรอง: สินค้าคงเหลือ {'>'} 0</span>
+              )}
+            </div>
+
             <form onSubmit={handleBarcodeSubmit} className="mb-6">
               <div className="flex gap-2">
                 <div className="flex-1 relative" ref={dropdownRef}>
