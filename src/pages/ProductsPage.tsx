@@ -630,7 +630,7 @@ export default function ProductsPage() {
                 
                 // For Pharmacy category - group by subcategory name across both Prescription and OTC
                 const selectedCatName = categories.find(c => c.id === selectedCategory)?.name_th || ''
-                const isPharmacyCategory = selectedCatName === 'ยา' || selectedCatName.startsWith('ยา ')
+                const isPharmacyCategory = selectedCatName === 'ยา' || selectedCatName.startsWith('ยา ') || selectedCatName.startsWith('ยา(')
                 
                 if (isPharmacyCategory) {
                   // Get all descendants with their parent info
