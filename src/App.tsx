@@ -9,7 +9,7 @@ import StockManagementPage from './pages/StockManagementPage'
 import MedicineLabelPage from './pages/MedicineLabelPage'
 import ProductsPage from './pages/ProductsPage'
 import InventoryPage from './pages/InventoryPage'
-import WarehousePage from './pages/WarehousePage'
+import WarehouseManagementPage from './pages/WarehouseManagementPage'
 import ReportsPage from './pages/ReportsPage'
 import SettingsPage from './pages/SettingsPage'
 import AuthGuard from './components/auth/AuthGuard'
@@ -37,7 +37,7 @@ function App() {
                     <Route path="/categories" element={<CategoriesPage />} />
                     <Route path="/products" element={<ProductsPage />} />
                     <Route path="/inventory" element={<InventoryPage />} />
-                    <Route path="/warehouse" element={<WarehousePage />} />
+                    <Route path="/warehouse-management" element={<WarehouseManagementPage />} />
                     <Route path="/reports" element={<ReportsPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
