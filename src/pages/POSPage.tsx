@@ -4,8 +4,9 @@ import { useProductStore } from '../stores/productStore'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike } from 'lucide-react'
+import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search } from 'lucide-react'
 import type { Product } from '../types/database'
+import { supabase } from '../services/supabase'
 
 interface SavedOrder {
   id: string
@@ -13,6 +14,13 @@ interface SavedOrder {
   items: any[]
   createdAt: Date
   salesChannel: string
+}
+
+interface Contact {
+  id: string
+  name: string
+  type: 'buyer' | 'seller' | 'both'
+  phone?: string
 }
 
 const SALES_CHANNELS = [
@@ -30,15 +38,25 @@ export default function POSPage() {
   const [savedOrders, setSavedOrders] = useState<SavedOrder[]>([])
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null)
   const [salesChannel, setSalesChannel] = useState('walk-in')
+  
+  // Customer search states
+  const [customerSearch, setCustomerSearch] = useState('')
+  const [selectedCustomer, setSelectedCustomer] = useState<Contact | null>(null)
+  const [customerResults, setCustomerResults] = useState<Contact[]>([])
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false)
+  const customerDropdownRef = useRef<HTMLDivElement>(null)
+  
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const { items, addItem, removeItem, updateQuantity, clearCart, getTotal, getSubtotal, setItems } = useCartStore()
   const { getProductByBarcode, products, fetchProducts } = useProductStore()
 
-  // Load products on mount
+  // Load products and customers on mount
   useEffect(() => {
     console.log('POS: Loading products...')
     fetchProducts()
+    // Load default customer
+    setSelectedCustomer({ id: 'default', name: 'ลูกค้าทั่วไป', type: 'buyer' })
   }, [])
 
   // Search products as user types
@@ -70,10 +88,53 @@ export default function POSPage() {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowDropdown(false)
       }
+      if (customerDropdownRef.current && !customerDropdownRef.current.contains(event.target as Node)) {
+        setShowCustomerDropdown(false)
+      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // Search customers as user types
+  useEffect(() => {
+    const searchCustomers = async () => {
+      if (customerSearch.trim().length > 0) {
+        try {
+          const { data, error } = await supabase
+            .from('contacts')
+            .select('*')
+            .or(`name.ilike.%${customerSearch}%,phone.ilike.%${customerSearch}%`)
+            .in('type', ['buyer', 'both'])
+            .limit(10)
+          
+          if (error) throw error
+          setCustomerResults(data || [])
+          setShowCustomerDropdown((data || []).length > 0)
+        } catch (error) {
+          console.error('Error searching customers:', error)
+          setCustomerResults([])
+        }
+      } else {
+        setCustomerResults([])
+        setShowCustomerDropdown(false)
+      }
+    }
+
+    const timeoutId = setTimeout(searchCustomers, 300)
+    return () => clearTimeout(timeoutId)
+  }, [customerSearch])
+
+  const handleSelectCustomer = (customer: Contact) => {
+    setSelectedCustomer(customer)
+    setCustomerSearch('')
+    setShowCustomerDropdown(false)
+  }
+
+  const handleClearCustomer = () => {
+    setSelectedCustomer({ id: 'default', name: 'ลูกค้าทั่วไป', type: 'buyer' })
+    setCustomerSearch('')
+  }
 
   const handleBarcodeSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -352,6 +413,69 @@ export default function POSPage() {
 
         <div>
           <Card title="สรุปรายการ">
+            {/* Customer Selection */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                ลูกค้า
+              </label>
+              <div className="relative" ref={customerDropdownRef}>
+                {selectedCustomer && selectedCustomer.id !== 'default' ? (
+                  <div className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                    <User className="h-4 w-4 text-blue-600" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-blue-900 truncate">{selectedCustomer.name}</p>
+                      {selectedCustomer.phone && (
+                        <p className="text-xs text-blue-600">{selectedCustomer.phone}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={handleClearCustomer}
+                      className="text-blue-400 hover:text-blue-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={customerSearch}
+                      onChange={(e) => setCustomerSearch(e.target.value)}
+                      placeholder="พิมพ์ชื่อลูกค้า (ลูกค้าทั่วไป)"
+                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                  </div>
+                )}
+
+                {/* Customer Dropdown */}
+                {showCustomerDropdown && customerResults.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {customerResults.map((customer) => (
+                      <div
+                        key={customer.id}
+                        onClick={() => handleSelectCustomer(customer)}
+                        className="px-3 py-2 cursor-pointer hover:bg-blue-50 border-b border-gray-100 last:border-b-0"
+                      >
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-gray-400" />
+                          <div className="flex-1">
+                            <p className="font-medium text-sm text-gray-900">{customer.name}</p>
+                            {customer.phone && (
+                              <p className="text-xs text-gray-500">{customer.phone}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {selectedCustomer?.id === 'default' && (
+                <p className="text-xs text-gray-500 mt-1">ค่าเริ่มต้น: ลูกค้าทั่วไป</p>
+              )}
+            </div>
+
             {/* Sales Channel Selection */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
