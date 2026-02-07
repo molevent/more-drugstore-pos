@@ -471,21 +471,34 @@ export default function POSPage() {
                 items.map((item) => (
                   <div
                     key={item.product.id}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
                   >
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-900">{item.product.name_th}</h3>
+                    {/* Product Image */}
+                    {item.product.image_url ? (
+                      <img
+                        src={item.product.image_url}
+                        alt={item.product.name_th}
+                        className="h-14 w-14 object-cover rounded-lg border flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="h-14 w-14 bg-gray-200 rounded-lg border flex items-center justify-center flex-shrink-0">
+                        <Package className="h-6 w-6 text-gray-400" />
+                      </div>
+                    )}
+                    
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-900 truncate">{item.product.name_th}</h3>
                       <p className="text-sm text-gray-500">฿{item.product.base_price.toFixed(2)}</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <Input
                         type="number"
                         min="1"
                         value={item.quantity}
                         onChange={(e) => updateQuantity(item.product.id, parseInt(e.target.value))}
-                        className="w-20 text-center"
+                        className="w-16 text-center"
                       />
-                      <span className="font-medium text-gray-900 w-24 text-right">
+                      <span className="font-medium text-gray-900 w-20 text-right">
                         ฿{(item.product.base_price * item.quantity).toFixed(2)}
                       </span>
                       <Button
