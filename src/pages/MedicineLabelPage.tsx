@@ -84,6 +84,8 @@ export default function MedicineLabelPage() {
   const [showPrice, setShowPrice] = useState(false)
   const [showCostPrice, setShowCostPrice] = useState(false)
   const [showBarcodeInfo, setShowBarcodeInfo] = useState(true)
+  const [lotNumber, setLotNumber] = useState('')
+  const [expiryDate, setExpiryDate] = useState('')
   const [showBarcodePreview, setShowBarcodePreview] = useState(false)
 
   useEffect(() => {
@@ -652,6 +654,28 @@ export default function MedicineLabelPage() {
                     </label>
                   </div>
 
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-200">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Lot Number / Serial No.</label>
+                      <input
+                        type="text"
+                        value={lotNumber}
+                        onChange={(e) => setLotNumber(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        placeholder="เช่น LOT123456"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">วันหมดอายุ</label>
+                      <input
+                        type="date"
+                        value={expiryDate}
+                        onChange={(e) => setExpiryDate(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      />
+                    </div>
+                  </div>
+
                   {/* Barcode Preview */}
                   <div className="border border-gray-300 rounded-lg p-4 bg-white">
                     <div className="text-center">
@@ -705,6 +729,14 @@ export default function MedicineLabelPage() {
 
                       {/* Barcode Number */}
                       <div className="text-xs text-gray-600 font-mono mb-2">{selectedProduct?.barcode || 'XXXXXXXXXXXXX'}</div>
+
+                      {/* Lot Number & Expiry */}
+                      {(lotNumber || expiryDate) && (
+                        <div className="text-xs text-gray-500 mt-1 space-y-1">
+                          {lotNumber && <div>Lot: {lotNumber}</div>}
+                          {expiryDate && <div>Exp: {new Date(expiryDate).toLocaleDateString('th-TH')}</div>}
+                        </div>
+                      )}
 
                       {/* Optional Info */}
                       {showProductName && (
