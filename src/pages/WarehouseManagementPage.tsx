@@ -253,7 +253,7 @@ export default function WarehouseManagementPage() {
 
             {/* Stock Summary */}
             <div className="mt-4 pt-4 border-t">
-              <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="grid grid-cols-3 gap-2 text-sm">
                 <div className="bg-gray-50 rounded p-2">
                   <div className="text-gray-500">จำนวนสินค้า</div>
                   <div className="font-semibold">{getWarehouseStock(warehouse.id).length} รายการ</div>
@@ -262,6 +262,12 @@ export default function WarehouseManagementPage() {
                   <div className="text-gray-500">สต็อกรวม</div>
                   <div className="font-semibold">
                     {getWarehouseStock(warehouse.id).reduce((sum, ps) => sum + ps.quantity, 0)} ชิ้น
+                  </div>
+                </div>
+                <div className="bg-green-50 rounded p-2">
+                  <div className="text-green-600">มูลค่า</div>
+                  <div className="font-semibold text-green-700">
+                    ฿{getWarehouseStock(warehouse.id).reduce((sum, ps) => sum + (ps.quantity * (ps.product?.cost_price || 0)), 0).toLocaleString()}
                   </div>
                 </div>
               </div>
