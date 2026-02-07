@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Printer, Search, Package, User } from 'lucide-react'
+import { Printer, Search, Package } from 'lucide-react'
 
 interface Product {
   id: string
@@ -37,7 +37,6 @@ interface MedicineDetails {
 
 interface LabelData {
   product_id: string
-  patient_name: string
   dosage_instructions: string
   special_instructions: string
 }
@@ -49,7 +48,6 @@ export default function MedicineLabelPage() {
   const [loading, setLoading] = useState(true)
   const [labelData, setLabelData] = useState<LabelData>({
     product_id: '',
-    patient_name: '',
     dosage_instructions: '',
     special_instructions: ''
   })
@@ -115,7 +113,7 @@ export default function MedicineLabelPage() {
   }
 
   const handlePrintLabel = async () => {
-    if (!selectedProduct || !labelData.patient_name) {
+    if (!selectedProduct || !labelData.dosage_instructions) {
       alert('กรุณากรอกข้อมูลให้ครบถ้วน')
       return
     }
@@ -128,7 +126,6 @@ export default function MedicineLabelPage() {
         .from('printed_labels')
         .insert({
           product_id: selectedProduct.id,
-          patient_name: labelData.patient_name,
           dosage_instructions: labelData.dosage_instructions,
           printed_data: labelData,
           printed_by: userData?.user?.id
@@ -228,22 +225,6 @@ export default function MedicineLabelPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <User className="inline h-4 w-4 mr-1" />
-                  ชื่อผู้ป่วย *
-                </label>
-                <input
-                  type="text"
-                  value={labelData.patient_name}
-                  onChange={(e) => setLabelData({...labelData, patient_name: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="ชื่อ-นามสกุล"
-                  required
-                />
-              </div>
-
-
-              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">วิธีใช้ *</label>
                 <textarea
                   value={labelData.dosage_instructions}
@@ -303,7 +284,7 @@ export default function MedicineLabelPage() {
                 <Button
                   variant="primary"
                   onClick={() => setShowPreview(true)}
-                  disabled={!labelData.patient_name || !labelData.dosage_instructions}
+                  disabled={!labelData.dosage_instructions}
                 >
                   <Printer className="h-4 w-4 mr-2" />
                   ดูตัวอย่าง
@@ -313,7 +294,6 @@ export default function MedicineLabelPage() {
                   onClick={() => {
                     setLabelData({
                       product_id: selectedProduct.id,
-                      patient_name: '',
                       dosage_instructions: '',
                       special_instructions: ''
                     })
@@ -351,12 +331,6 @@ export default function MedicineLabelPage() {
               <div className="text-center mb-4">
                 <h2 className="text-xl font-bold">ร้านขายยา MORE DRUGSTORE</h2>
                 <p className="text-sm text-gray-600">โทร. 02-XXX-XXXX</p>
-              </div>
-
-              <div className="border-t-2 border-b-2 border-gray-800 py-3 mb-3">
-                <div className="text-sm">
-                  <strong>ชื่อผู้ป่วย:</strong> {labelData.patient_name}
-                </div>
               </div>
 
               <div className="mb-3">
