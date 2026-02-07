@@ -4,7 +4,7 @@ import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Plus, Edit, Trash2, X, AlertCircle, Package, Pill, Stethoscope, Heart, Sparkles, UtensilsCrossed, Gift, ShoppingBag } from 'lucide-react'
+import { Plus, Edit, Trash2, X, AlertCircle, Package, Pill, Stethoscope, Heart, Sparkles, UtensilsCrossed, Gift, ShoppingBag, ChevronDown, ChevronRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { Category } from '../types/database'
 
@@ -15,6 +15,7 @@ export default function CategoriesPage() {
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
   const [formData, setFormData] = useState({
     name_th: '',
     name_en: '',
@@ -171,6 +172,20 @@ export default function CategoriesPage() {
     return <ShoppingBag className="h-5 w-5 text-gray-500" />
   }
 
+  // Toggle category expansion
+  const toggleCategory = (categoryId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId)
+      } else {
+        newSet.add(categoryId)
+      }
+      return newSet
+    })
+  }
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
@@ -203,24 +218,43 @@ export default function CategoriesPage() {
             <p className="text-sm mt-2">{t('categories.addCategoryPrompt')}</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {mainCategories.map((mainCat) => {
               const children = getSubCategories(mainCat.id)
+              const isExpanded = expandedCategories.has(mainCat.id)
               return (
                 <div key={mainCat.id} className="border rounded-xl overflow-hidden bg-white shadow-sm">
-                  {/* Main Category - Smaller Clickable Button Style */}
-                  <div 
-                    className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-white border-b cursor-pointer hover:bg-blue-100 transition-colors"
-                    onClick={() => navigate(`/products?category=${mainCat.id}`)}
-                  >
-                    <div className="flex-1 flex items-center gap-3">
+                  {/* Main Category Header */}
+                  <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-white border-b">
+                    <div 
+                      className="flex-1 flex items-center gap-3 cursor-pointer"
+                      onClick={() => navigate(`/products?category=${mainCat.id}`)}
+                    >
                       {getCategoryIcon(mainCat.name_th)}
                       <div>
                         <h2 className="text-lg font-semibold text-gray-900">{mainCat.name_th}</h2>
                         <p className="text-xs text-gray-500">{mainCat.name_en}</p>
                       </div>
+                      {children.length > 0 && (
+                        <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                          {children.length}
+                        </span>
+                      )}
                     </div>
-                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-1">
+                      {children.length > 0 && (
+                        <button
+                          onClick={(e) => toggleCategory(mainCat.id, e)}
+                          className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-100 rounded transition-colors"
+                          title={isExpanded ? "ซ่อนหมวดหมู่ย่อย" : "แสดงหมวดหมู่ย่อย"}
+                        >
+                          {isExpanded ? (
+                            <ChevronDown className="h-5 w-5" />
+                          ) : (
+                            <ChevronRight className="h-5 w-5" />
+                          )}
+                        </button>
+                      )}
                       <button 
                         className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-100 rounded"
                         onClick={() => handleEdit(mainCat)}
@@ -236,74 +270,57 @@ export default function CategoriesPage() {
                     </div>
                   </div>
                   
-                  {/* Sub Categories */}
-                  {children.length > 0 && (
-                    <div className="p-3 bg-gray-50">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {/* Sub Categories - Horizontal Chips (Collapsible) */}
+                  {children.length > 0 && isExpanded && (
+                    <div className="p-3 bg-gray-50 border-t border-gray-100">
+                      <p className="text-xs text-gray-500 mb-2 font-medium">หมวดหมู่ย่อย:</p>
+                      <div className="flex flex-wrap gap-2">
                         {children.map((subCat) => {
                           const grandChildren = getSubCategories(subCat.id)
                           return (
-                            <div 
-                              key={subCat.id} 
-                              className="bg-white rounded-lg border p-2 hover:shadow-md transition-shadow cursor-pointer"
-                              onClick={() => navigate(`/products?category=${subCat.id}`)}
-                            >
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1 min-w-0">
-                                  <h3 className="font-medium text-gray-900 text-sm truncate">{subCat.name_th}</h3>
-                                  <p className="text-xs text-gray-500 truncate">{subCat.name_en}</p>
-                                </div>
-                                <div className="flex gap-1 ml-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                                  <button 
-                                    onClick={() => handleEdit(subCat)}
-                                    className="p-1 text-gray-400 hover:text-blue-600"
-                                  >
-                                    <Edit className="h-3 w-3" />
-                                  </button>
-                                  <button 
-                                    onClick={() => handleDelete(subCat.id)}
-                                    className="p-1 text-gray-400 hover:text-red-600"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </button>
-                                </div>
+                            <div key={subCat.id} className="group relative">
+                              <button
+                                onClick={() => navigate(`/products?category=${subCat.id}`)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all shadow-sm"
+                              >
+                                <span className="font-medium">{subCat.name_th}</span>
+                                {grandChildren.length > 0 && (
+                                  <span className="text-xs text-gray-400">({grandChildren.length})</span>
+                                )}
+                              </button>
+                              {/* Hover actions */}
+                              <div className="absolute -top-1 -right-1 hidden group-hover:flex gap-0.5">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleEdit(subCat)
+                                  }}
+                                  className="p-1 bg-white border border-gray-200 rounded-full text-gray-500 hover:text-blue-600 shadow-sm"
+                                >
+                                  <Edit className="h-2.5 w-2.5" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDelete(subCat.id)
+                                  }}
+                                  className="p-1 bg-white border border-gray-200 rounded-full text-gray-500 hover:text-red-600 shadow-sm"
+                                >
+                                  <Trash2 className="h-2.5 w-2.5" />
+                                </button>
                               </div>
-                              
-                              {/* Grand Children (Level 3) */}
+                              {/* Grand Children Tags */}
                               {grandChildren.length > 0 && (
-                                <div className="mt-2 pt-2 border-t border-gray-100">
-                                  <div className="flex flex-wrap gap-1">
-                                    {grandChildren.map((grandChild) => (
-                                      <span 
-                                        key={grandChild.id}
-                                        className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-xs text-gray-700 cursor-pointer hover:bg-blue-100"
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          navigate(`/products?category=${grandChild.id}`)
-                                        }}
-                                      >
-                                        {grandChild.name_th}
-                                        <button 
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                            handleEdit(grandChild)
-                                          }}
-                                          className="text-gray-400 hover:text-blue-600"
-                                        >
-                                          <Edit className="h-2 w-2" />
-                                        </button>
-                                        <button 
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                            handleDelete(grandChild.id)
-                                          }}
-                                          className="text-gray-400 hover:text-red-600"
-                                        >
-                                          <Trash2 className="h-2 w-2" />
-                                        </button>
-                                      </span>
-                                    ))}
-                                  </div>
+                                <div className="flex flex-wrap gap-1 mt-1.5 ml-1">
+                                  {grandChildren.map((grandChild) => (
+                                    <button
+                                      key={grandChild.id}
+                                      onClick={() => navigate(`/products?category=${grandChild.id}`)}
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 hover:bg-blue-100 text-xs text-gray-600 hover:text-blue-700 rounded transition-colors"
+                                    >
+                                      {grandChild.name_th}
+                                    </button>
+                                  ))}
                                 </div>
                               )}
                             </div>
