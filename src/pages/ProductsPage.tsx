@@ -6,7 +6,7 @@ import Card from '../components/common/Card'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import { LabelWithTooltip } from '../components/common/Tooltip'
-import { Search, Plus, X, Filter, Upload } from 'lucide-react'
+import { Search, Plus, X, Filter, Upload, AlertCircle } from 'lucide-react'
 import type { Product, Category } from '../types/database'
 
 // Extended form data with all new fields
@@ -172,7 +172,8 @@ export default function ProductsPage() {
       p.name_en?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.barcode.includes(searchTerm)
     
-    const matchesCategory = !selectedCategory || p.category_id === selectedCategory
+    const matchesCategory = !selectedCategory || 
+      (selectedCategory === 'uncategorized' ? !p.category_id : p.category_id === selectedCategory)
     
     const matchesStock = !stockFilter || 
       (stockFilter === 'low' && p.stock_quantity <= p.min_stock_level) ||
@@ -672,16 +673,29 @@ export default function ProductsPage() {
                         <option key={cat.id} value={cat.id}>{cat.name_th}</option>
                       ))}
                     </select>
-                    <div className="mt-2">
+                    <div className="mt-2 flex gap-2">
                       <Button
                         type="button"
                         variant="secondary"
                         size="sm"
                         onClick={() => setShowSearchModal(true)}
-                        className="w-full"
+                        className="flex-1"
                       >
                         <Search className="h-4 w-4 mr-2" />
                         ค้นหารายละเอียดสินค้า
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="danger"
+                        size="sm"
+                        onClick={() => {
+                          setShowModal(false)
+                          setSelectedCategory('uncategorized')
+                        }}
+                        className="flex-1"
+                      >
+                        <AlertCircle className="h-4 w-4 mr-2" />
+                        สินค้ายังไม่ตั้งหมวดหมู่
                       </Button>
                     </div>
                   </div>
