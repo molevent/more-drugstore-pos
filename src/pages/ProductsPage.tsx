@@ -625,8 +625,57 @@ export default function ProductsPage() {
                   )
                 }
 
-                // Grouped by subcategory view
+                // Grouped by subcategory view - only when NOT viewing pharmacy (or specific categories that need grouping)
                 const subCategories = categories.filter(c => c.parent_id === selectedCategory)
+                
+                // For Pharmacy category - show flat list like normal view but with subcategory column
+                const isPharmacyCategory = categories.find(c => c.id === selectedCategory)?.name_th === 'ยา'
+                
+                if (isPharmacyCategory) {
+                  return (
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.image')}</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.barcode')}</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.name')}</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.category')}</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.price')}</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.stock')}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {filteredProducts.map((product) => (
+                          <tr key={product.id} onClick={() => handleEdit(product)} className="hover:bg-gray-50 cursor-pointer transition-colors">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {product.image_url ? (
+                                <img src={product.image_url} alt={product.name_th} className="h-12 w-12 object-cover rounded-lg border" />
+                              ) : (
+                                <div className="h-12 w-12 bg-gray-100 rounded-lg border flex items-center justify-center">
+                                  <Package className="h-6 w-6 text-gray-400" />
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.barcode}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm font-medium text-gray-900">{product.name_th}</div>
+                              {product.name_en && <div className="text-sm text-gray-500">{product.name_en}</div>}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{(product as any).category?.name_th || t('products.noCategory')}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">฿{product.base_price.toFixed(2)}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`text-sm ${product.stock_quantity <= product.min_stock_level ? 'text-red-600 font-medium' : 'text-gray-900'}`}>
+                                {product.stock_quantity}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )
+                }
+
+                // For other categories with subcategories - keep grouped view
                 const productsBySubCat = new Map<string, Product[]>()
                 
                 // Initialize with subcategories
