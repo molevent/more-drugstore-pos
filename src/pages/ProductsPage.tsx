@@ -1807,7 +1807,10 @@ export default function ProductsPage() {
                             onChange={(e) => setFormData({ ...formData, sell_on_pos: e.target.checked })}
                             className="h-4 w-4 text-blue-600 rounded"
                           />
-                          <span className="font-medium text-sm">หน้าร้าน</span>
+                          <div className="flex items-center gap-1.5">
+                            <Store className="h-4 w-4 text-blue-600" />
+                            <span className="font-medium text-sm">หน้าร้าน</span>
+                          </div>
                         </label>
                         <div className="flex items-center gap-1">
                           <button
@@ -1849,7 +1852,12 @@ export default function ProductsPage() {
                             onChange={(e) => setFormData({ ...formData, sell_on_grab: e.target.checked })}
                             className="h-4 w-4 text-green-600 rounded"
                           />
-                          <span className="font-medium text-sm">GRAB</span>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-4 h-4 bg-green-500 rounded flex items-center justify-center">
+                              <span className="text-white text-[8px] font-bold">G</span>
+                            </div>
+                            <span className="font-medium text-sm">GRAB</span>
+                          </div>
                         </label>
                         <div className="flex items-center gap-1">
                           <button
@@ -1891,7 +1899,12 @@ export default function ProductsPage() {
                             onChange={(e) => setFormData({ ...formData, sell_on_lineman: e.target.checked })}
                             className="h-4 w-4 text-green-600 rounded"
                           />
-                          <span className="font-medium text-sm">LINEMAN</span>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-4 h-4 bg-green-500 rounded flex items-center justify-center">
+                              <span className="text-white text-[8px] font-bold">L</span>
+                            </div>
+                            <span className="font-medium text-sm">LINEMAN</span>
+                          </div>
                         </label>
                         <div className="flex items-center gap-1">
                           <button
@@ -1933,7 +1946,12 @@ export default function ProductsPage() {
                             onChange={(e) => setFormData({ ...formData, sell_on_lazada: e.target.checked })}
                             className="h-4 w-4 text-orange-600 rounded"
                           />
-                          <span className="font-medium text-sm">LAZADA</span>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-4 h-4 bg-orange-500 rounded flex items-center justify-center">
+                              <span className="text-white text-[8px] font-bold">Lz</span>
+                            </div>
+                            <span className="font-medium text-sm">LAZADA</span>
+                          </div>
                         </label>
                         <div className="flex items-center gap-1">
                           <button
@@ -1975,7 +1993,10 @@ export default function ProductsPage() {
                             onChange={(e) => setFormData({ ...formData, sell_on_shopee: e.target.checked })}
                             className="h-4 w-4 text-orange-600 rounded"
                           />
-                          <span className="font-medium text-sm">SHOPEE</span>
+                          <div className="flex items-center gap-1.5">
+                            <ShoppingCart className="h-4 w-4 text-orange-600" />
+                            <span className="font-medium text-sm">SHOPEE</span>
+                          </div>
                         </label>
                         <div className="flex items-center gap-1">
                           <button
@@ -2017,7 +2038,10 @@ export default function ProductsPage() {
                             onChange={(e) => setFormData({ ...formData, sell_on_line_shopping: e.target.checked })}
                             className="h-4 w-4 text-green-600 rounded"
                           />
-                          <span className="font-medium text-sm">LINE SHOPPING</span>
+                          <div className="flex items-center gap-1.5">
+                            <MessageCircle className="h-4 w-4 text-green-600" />
+                            <span className="font-medium text-sm">LINE SHOPPING</span>
+                          </div>
                         </label>
                         <div className="flex items-center gap-1">
                           <button
@@ -2059,7 +2083,10 @@ export default function ProductsPage() {
                             onChange={(e) => setFormData({ ...formData, sell_on_tiktok: e.target.checked })}
                             className="h-4 w-4 text-pink-600 rounded"
                           />
-                          <span className="font-medium text-sm">TIKTOK</span>
+                          <div className="flex items-center gap-1.5">
+                            <Video className="h-4 w-4 text-pink-600" />
+                            <span className="font-medium text-sm">TIKTOK</span>
+                          </div>
                         </label>
                         <div className="flex items-center gap-1">
                           <button
@@ -2101,7 +2128,12 @@ export default function ProductsPage() {
                             onChange={(e) => setFormData({ ...formData, sell_on_consignment: e.target.checked })}
                             className="h-4 w-4 text-purple-600 rounded"
                           />
-                          <span className="font-medium text-sm">ฝากขาย (Consignment)</span>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-4 h-4 bg-purple-500 rounded flex items-center justify-center">
+                              <span className="text-white text-[8px] font-bold">C</span>
+                            </div>
+                            <span className="font-medium text-sm">ฝากขาย</span>
+                          </div>
                         </label>
                         <div className="flex items-center gap-1">
                           <button
@@ -2143,7 +2175,10 @@ export default function ProductsPage() {
                             onChange={(e) => setFormData({ ...formData, sell_on_website: e.target.checked })}
                             className="h-4 w-4 text-blue-600 rounded"
                           />
-                          <span className="font-medium text-sm">Website</span>
+                          <div className="flex items-center gap-1.5">
+                            <Globe className="h-4 w-4 text-blue-600" />
+                            <span className="font-medium text-sm">Website</span>
+                          </div>
                         </label>
                         <div className="flex items-center gap-1">
                           <button
