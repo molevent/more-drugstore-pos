@@ -19,6 +19,7 @@ interface ProductFormData {
   name_en: string
   product_type: 'finished_goods' | 'service'
   is_active: boolean
+  stock_tracking_type: 'tracked' | 'untracked' | 'service'
   
   // 2. Categorization
   category_id: string
@@ -86,6 +87,7 @@ const initialFormData: ProductFormData = {
   name_en: '',
   product_type: 'finished_goods',
   is_active: true,
+  stock_tracking_type: 'tracked',
   category_id: '',
   tags: '',
   indications: '',
@@ -223,6 +225,7 @@ export default function ProductsPage() {
       name_en: product.name_en || '',
       product_type: product.product_type || 'finished_goods',
       is_active: product.is_active,
+      stock_tracking_type: product.stock_tracking_type || 'tracked',
       category_id: product.category_id || '',
       tags: product.tags?.join(', ') || '',
       indications: product.indications || '',
@@ -667,6 +670,14 @@ export default function ProductsPage() {
                           <div className="text-xs text-gray-500">SKU</div>
                           <div className="text-sm font-medium text-gray-900">{formData.sku || '-'}</div>
                         </div>
+                        <div className="bg-gray-50 rounded-lg p-2">
+                          <div className="text-xs text-gray-500">ประเภทสต็อก</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {formData.stock_tracking_type === 'tracked' && 'สินค้านับสต็อก'}
+                            {formData.stock_tracking_type === 'untracked' && 'สินค้าไม่นับสต็อก'}
+                            {formData.stock_tracking_type === 'service' && 'บริการ'}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -862,6 +873,18 @@ export default function ProductsPage() {
                       >
                         <option value="finished_goods">สินค้าสำเร็จรูป (Finished Goods)</option>
                         <option value="service">บริการ (Service)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <LabelWithTooltip label="ประเภทการนับสต็อก" tooltip="กำหนดว่าสินค้านี้ต้องนับสต็อกหรือไม่" />
+                      <select
+                        value={formData.stock_tracking_type}
+                        onChange={(e) => setFormData({ ...formData, stock_tracking_type: e.target.value as 'tracked' | 'untracked' | 'service' })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      >
+                        <option value="tracked">สินค้านับสต็อก</option>
+                        <option value="untracked">สินค้าไม่นับสต็อก</option>
+                        <option value="service">บริการ</option>
                       </select>
                     </div>
                   </div>

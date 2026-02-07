@@ -42,6 +42,9 @@ export interface Product {
   brand?: string
   is_active: boolean
   
+  // Stock tracking type
+  stock_tracking_type?: 'tracked' | 'untracked' | 'service'
+  
   // 2. หมวดหมู่และการจัดกลุ่ม (Categorization)
   category_id?: string
   tags?: string[]
