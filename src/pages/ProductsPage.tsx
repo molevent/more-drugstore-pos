@@ -426,6 +426,53 @@ export default function ProductsPage() {
         </Button>
       </div>
 
+      {/* Subcategories Section - Show when viewing by category */}
+      {selectedCategory && selectedCategory !== 'uncategorized' && (
+        <div className="mb-4">
+          {(() => {
+            const subCats = categories.filter(c => c.parent_id === selectedCategory)
+            if (subCats.length === 0) return null
+            return (
+              <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+                <p className="text-sm font-medium text-gray-600 mb-3">หมวดหมู่ย่อย:</p>
+                <div className="flex flex-wrap gap-2">
+                  {subCats.map((subCat) => {
+                    const grandChildren = categories.filter(c => c.parent_id === subCat.id)
+                    return (
+                      <div key={subCat.id} className="group">
+                        <button
+                          onClick={() => navigate(`/products?category=${subCat.id}`)}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 rounded-lg text-sm font-medium text-blue-700 hover:text-blue-800 transition-all"
+                        >
+                          {subCat.name_th}
+                          {grandChildren.length > 0 && (
+                            <span className="text-xs text-blue-500">({grandChildren.length})</span>
+                          )}
+                        </button>
+                        {/* Grand children tags */}
+                        {grandChildren.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1 ml-1">
+                            {grandChildren.map((grandChild) => (
+                              <button
+                                key={grandChild.id}
+                                onClick={() => navigate(`/products?category=${grandChild.id}`)}
+                                className="px-2 py-1 bg-gray-100 hover:bg-blue-50 text-xs text-gray-600 hover:text-blue-700 rounded transition-colors"
+                              >
+                                {grandChild.name_th}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
+        </div>
+      )}
+
       <Card>
         <div className="mb-6 space-y-4">
           <div className="flex gap-2">
