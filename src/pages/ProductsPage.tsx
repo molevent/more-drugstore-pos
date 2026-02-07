@@ -629,7 +629,7 @@ export default function ProductsPage() {
                 const subCategories = categories.filter(c => c.parent_id === selectedCategory)
                 
                 // For Pharmacy category - group by subcategory name across both Prescription and OTC
-                const isPharmacyCategory = categories.find(c => c.id === selectedCategory)?.name_th === 'ยา'
+                const isPharmacyCategory = categories.find(c => c.id === selectedCategory)?.name_th?.includes('ยา')
                 
                 if (isPharmacyCategory) {
                   // Get all descendants with their parent info
