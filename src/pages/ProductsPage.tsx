@@ -1834,7 +1834,7 @@ export default function ProductsPage() {
                         step="0.01"
                         value={formData.price_pos}
                         onChange={(e) => setFormData({ ...formData, price_pos: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         placeholder="0.00"
                       />
                     </div>
@@ -1876,7 +1876,7 @@ export default function ProductsPage() {
                         step="0.01"
                         value={formData.price_grab}
                         onChange={(e) => setFormData({ ...formData, price_grab: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         placeholder="0.00"
                       />
                     </div>
@@ -1918,7 +1918,7 @@ export default function ProductsPage() {
                         step="0.01"
                         value={formData.price_lineman}
                         onChange={(e) => setFormData({ ...formData, price_lineman: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         placeholder="0.00"
                       />
                     </div>
@@ -1960,7 +1960,7 @@ export default function ProductsPage() {
                         step="0.01"
                         value={formData.price_lazada}
                         onChange={(e) => setFormData({ ...formData, price_lazada: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         placeholder="0.00"
                       />
                     </div>
@@ -2002,7 +2002,7 @@ export default function ProductsPage() {
                         step="0.01"
                         value={formData.price_shopee}
                         onChange={(e) => setFormData({ ...formData, price_shopee: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         placeholder="0.00"
                       />
                     </div>
@@ -2044,7 +2044,7 @@ export default function ProductsPage() {
                         step="0.01"
                         value={formData.price_line_shopping}
                         onChange={(e) => setFormData({ ...formData, price_line_shopping: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         placeholder="0.00"
                       />
                     </div>
@@ -2086,7 +2086,7 @@ export default function ProductsPage() {
                         step="0.01"
                         value={formData.price_tiktok}
                         onChange={(e) => setFormData({ ...formData, price_tiktok: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         placeholder="0.00"
                       />
                     </div>
@@ -2128,7 +2128,7 @@ export default function ProductsPage() {
                         step="0.01"
                         value={formData.price_consignment}
                         onChange={(e) => setFormData({ ...formData, price_consignment: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         placeholder="0.00"
                       />
                     </div>
@@ -2170,7 +2170,7 @@ export default function ProductsPage() {
                         step="0.01"
                         value={formData.price_website}
                         onChange={(e) => setFormData({ ...formData, price_website: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         placeholder="0.00"
                       />
                     </div>
