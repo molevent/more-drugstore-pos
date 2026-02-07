@@ -1809,11 +1809,24 @@ export default function ProductsPage() {
                           />
                           <span className="font-medium text-sm">หน้าร้าน</span>
                         </label>
-                        {formData.url_pos && (
-                          <a href={formData.url_pos} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const url = prompt('ลิงก์สินค้า:', formData.url_pos)
+                              if (url !== null) setFormData({ ...formData, url_pos: url })
+                            }}
+                            className={`p-1 rounded hover:bg-gray-100 ${formData.url_pos ? 'text-blue-600' : 'text-gray-400'}`}
+                            title={formData.url_pos ? 'แก้ไขลิงก์' : 'เพิ่มลิงก์'}
+                          >
                             <ExternalLink className="h-4 w-4" />
-                          </a>
-                        )}
+                          </button>
+                          {formData.url_pos && (
+                            <a href={formData.url_pos} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-gray-100">
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          )}
+                        </div>
                       </div>
                       <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
                       <input
@@ -1821,16 +1834,8 @@ export default function ProductsPage() {
                         step="0.01"
                         value={formData.price_pos}
                         onChange={(e) => setFormData({ ...formData, price_pos: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
-                        placeholder="0.00"
-                      />
-                      <div className="text-xs text-gray-500 mb-1">ลิงก์สินค้า</div>
-                      <input
-                        type="url"
-                        value={formData.url_pos}
-                        onChange={(e) => setFormData({ ...formData, url_pos: e.target.value })}
                         className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="https://..."
+                        placeholder="0.00"
                       />
                     </div>
 
@@ -1846,11 +1851,24 @@ export default function ProductsPage() {
                           />
                           <span className="font-medium text-sm">GRAB</span>
                         </label>
-                        {formData.url_grab && (
-                          <a href={formData.url_grab} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800">
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const url = prompt('ลิงก์สินค้า:', formData.url_grab)
+                              if (url !== null) setFormData({ ...formData, url_grab: url })
+                            }}
+                            className={`p-1 rounded hover:bg-gray-100 ${formData.url_grab ? 'text-green-600' : 'text-gray-400'}`}
+                            title={formData.url_grab ? 'แก้ไขลิงก์' : 'เพิ่มลิงก์'}
+                          >
                             <ExternalLink className="h-4 w-4" />
-                          </a>
-                        )}
+                          </button>
+                          {formData.url_grab && (
+                            <a href={formData.url_grab} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800 p-1 rounded hover:bg-gray-100">
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          )}
+                        </div>
                       </div>
                       <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
                       <input
@@ -1858,16 +1876,8 @@ export default function ProductsPage() {
                         step="0.01"
                         value={formData.price_grab}
                         onChange={(e) => setFormData({ ...formData, price_grab: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
-                        placeholder="0.00"
-                      />
-                      <div className="text-xs text-gray-500 mb-1">ลิงก์สินค้า</div>
-                      <input
-                        type="url"
-                        value={formData.url_grab}
-                        onChange={(e) => setFormData({ ...formData, url_grab: e.target.value })}
                         className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="https://..."
+                        placeholder="0.00"
                       />
                     </div>
 
@@ -1883,11 +1893,24 @@ export default function ProductsPage() {
                           />
                           <span className="font-medium text-sm">LINEMAN</span>
                         </label>
-                        {formData.url_lineman && (
-                          <a href={formData.url_lineman} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800">
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const url = prompt('ลิงก์สินค้า:', formData.url_lineman)
+                              if (url !== null) setFormData({ ...formData, url_lineman: url })
+                            }}
+                            className={`p-1 rounded hover:bg-gray-100 ${formData.url_lineman ? 'text-green-600' : 'text-gray-400'}`}
+                            title={formData.url_lineman ? 'แก้ไขลิงก์' : 'เพิ่มลิงก์'}
+                          >
                             <ExternalLink className="h-4 w-4" />
-                          </a>
-                        )}
+                          </button>
+                          {formData.url_lineman && (
+                            <a href={formData.url_lineman} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800 p-1 rounded hover:bg-gray-100">
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          )}
+                        </div>
                       </div>
                       <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
                       <input
@@ -1895,16 +1918,8 @@ export default function ProductsPage() {
                         step="0.01"
                         value={formData.price_lineman}
                         onChange={(e) => setFormData({ ...formData, price_lineman: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
-                        placeholder="0.00"
-                      />
-                      <div className="text-xs text-gray-500 mb-1">ลิงก์สินค้า</div>
-                      <input
-                        type="url"
-                        value={formData.url_lineman}
-                        onChange={(e) => setFormData({ ...formData, url_lineman: e.target.value })}
                         className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="https://..."
+                        placeholder="0.00"
                       />
                     </div>
 
@@ -1920,11 +1935,24 @@ export default function ProductsPage() {
                           />
                           <span className="font-medium text-sm">LAZADA</span>
                         </label>
-                        {formData.url_lazada && (
-                          <a href={formData.url_lazada} target="_blank" rel="noopener noreferrer" className="text-orange-600 hover:text-orange-800">
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const url = prompt('ลิงก์สินค้า:', formData.url_lazada)
+                              if (url !== null) setFormData({ ...formData, url_lazada: url })
+                            }}
+                            className={`p-1 rounded hover:bg-gray-100 ${formData.url_lazada ? 'text-orange-600' : 'text-gray-400'}`}
+                            title={formData.url_lazada ? 'แก้ไขลิงก์' : 'เพิ่มลิงก์'}
+                          >
                             <ExternalLink className="h-4 w-4" />
-                          </a>
-                        )}
+                          </button>
+                          {formData.url_lazada && (
+                            <a href={formData.url_lazada} target="_blank" rel="noopener noreferrer" className="text-orange-600 hover:text-orange-800 p-1 rounded hover:bg-gray-100">
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          )}
+                        </div>
                       </div>
                       <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
                       <input
@@ -1932,16 +1960,8 @@ export default function ProductsPage() {
                         step="0.01"
                         value={formData.price_lazada}
                         onChange={(e) => setFormData({ ...formData, price_lazada: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
-                        placeholder="0.00"
-                      />
-                      <div className="text-xs text-gray-500 mb-1">ลิงก์สินค้า</div>
-                      <input
-                        type="url"
-                        value={formData.url_lazada}
-                        onChange={(e) => setFormData({ ...formData, url_lazada: e.target.value })}
                         className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="https://..."
+                        placeholder="0.00"
                       />
                     </div>
 
@@ -1957,11 +1977,24 @@ export default function ProductsPage() {
                           />
                           <span className="font-medium text-sm">SHOPEE</span>
                         </label>
-                        {formData.url_shopee && (
-                          <a href={formData.url_shopee} target="_blank" rel="noopener noreferrer" className="text-orange-600 hover:text-orange-800">
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const url = prompt('ลิงก์สินค้า:', formData.url_shopee)
+                              if (url !== null) setFormData({ ...formData, url_shopee: url })
+                            }}
+                            className={`p-1 rounded hover:bg-gray-100 ${formData.url_shopee ? 'text-orange-600' : 'text-gray-400'}`}
+                            title={formData.url_shopee ? 'แก้ไขลิงก์' : 'เพิ่มลิงก์'}
+                          >
                             <ExternalLink className="h-4 w-4" />
-                          </a>
-                        )}
+                          </button>
+                          {formData.url_shopee && (
+                            <a href={formData.url_shopee} target="_blank" rel="noopener noreferrer" className="text-orange-600 hover:text-orange-800 p-1 rounded hover:bg-gray-100">
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          )}
+                        </div>
                       </div>
                       <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
                       <input
@@ -1969,16 +2002,8 @@ export default function ProductsPage() {
                         step="0.01"
                         value={formData.price_shopee}
                         onChange={(e) => setFormData({ ...formData, price_shopee: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
-                        placeholder="0.00"
-                      />
-                      <div className="text-xs text-gray-500 mb-1">ลิงก์สินค้า</div>
-                      <input
-                        type="url"
-                        value={formData.url_shopee}
-                        onChange={(e) => setFormData({ ...formData, url_shopee: e.target.value })}
                         className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="https://..."
+                        placeholder="0.00"
                       />
                     </div>
 
@@ -1994,11 +2019,24 @@ export default function ProductsPage() {
                           />
                           <span className="font-medium text-sm">LINE SHOPPING</span>
                         </label>
-                        {formData.url_line_shopping && (
-                          <a href={formData.url_line_shopping} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800">
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const url = prompt('ลิงก์สินค้า:', formData.url_line_shopping)
+                              if (url !== null) setFormData({ ...formData, url_line_shopping: url })
+                            }}
+                            className={`p-1 rounded hover:bg-gray-100 ${formData.url_line_shopping ? 'text-green-600' : 'text-gray-400'}`}
+                            title={formData.url_line_shopping ? 'แก้ไขลิงก์' : 'เพิ่มลิงก์'}
+                          >
                             <ExternalLink className="h-4 w-4" />
-                          </a>
-                        )}
+                          </button>
+                          {formData.url_line_shopping && (
+                            <a href={formData.url_line_shopping} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800 p-1 rounded hover:bg-gray-100">
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          )}
+                        </div>
                       </div>
                       <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
                       <input
@@ -2006,16 +2044,8 @@ export default function ProductsPage() {
                         step="0.01"
                         value={formData.price_line_shopping}
                         onChange={(e) => setFormData({ ...formData, price_line_shopping: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
-                        placeholder="0.00"
-                      />
-                      <div className="text-xs text-gray-500 mb-1">ลิงก์สินค้า</div>
-                      <input
-                        type="url"
-                        value={formData.url_line_shopping}
-                        onChange={(e) => setFormData({ ...formData, url_line_shopping: e.target.value })}
                         className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="https://..."
+                        placeholder="0.00"
                       />
                     </div>
 
@@ -2031,11 +2061,24 @@ export default function ProductsPage() {
                           />
                           <span className="font-medium text-sm">TIKTOK</span>
                         </label>
-                        {formData.url_tiktok && (
-                          <a href={formData.url_tiktok} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:text-pink-800">
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const url = prompt('ลิงก์สินค้า:', formData.url_tiktok)
+                              if (url !== null) setFormData({ ...formData, url_tiktok: url })
+                            }}
+                            className={`p-1 rounded hover:bg-gray-100 ${formData.url_tiktok ? 'text-pink-600' : 'text-gray-400'}`}
+                            title={formData.url_tiktok ? 'แก้ไขลิงก์' : 'เพิ่มลิงก์'}
+                          >
                             <ExternalLink className="h-4 w-4" />
-                          </a>
-                        )}
+                          </button>
+                          {formData.url_tiktok && (
+                            <a href={formData.url_tiktok} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:text-pink-800 p-1 rounded hover:bg-gray-100">
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          )}
+                        </div>
                       </div>
                       <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
                       <input
@@ -2043,16 +2086,8 @@ export default function ProductsPage() {
                         step="0.01"
                         value={formData.price_tiktok}
                         onChange={(e) => setFormData({ ...formData, price_tiktok: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
-                        placeholder="0.00"
-                      />
-                      <div className="text-xs text-gray-500 mb-1">ลิงก์สินค้า</div>
-                      <input
-                        type="url"
-                        value={formData.url_tiktok}
-                        onChange={(e) => setFormData({ ...formData, url_tiktok: e.target.value })}
                         className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="https://..."
+                        placeholder="0.00"
                       />
                     </div>
 
@@ -2068,11 +2103,24 @@ export default function ProductsPage() {
                           />
                           <span className="font-medium text-sm">ฝากขาย (Consignment)</span>
                         </label>
-                        {formData.url_consignment && (
-                          <a href={formData.url_consignment} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:text-purple-800">
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const url = prompt('ลิงก์สินค้า:', formData.url_consignment)
+                              if (url !== null) setFormData({ ...formData, url_consignment: url })
+                            }}
+                            className={`p-1 rounded hover:bg-gray-100 ${formData.url_consignment ? 'text-purple-600' : 'text-gray-400'}`}
+                            title={formData.url_consignment ? 'แก้ไขลิงก์' : 'เพิ่มลิงก์'}
+                          >
                             <ExternalLink className="h-4 w-4" />
-                          </a>
-                        )}
+                          </button>
+                          {formData.url_consignment && (
+                            <a href={formData.url_consignment} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:text-purple-800 p-1 rounded hover:bg-gray-100">
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          )}
+                        </div>
                       </div>
                       <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
                       <input
@@ -2080,16 +2128,8 @@ export default function ProductsPage() {
                         step="0.01"
                         value={formData.price_consignment}
                         onChange={(e) => setFormData({ ...formData, price_consignment: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
-                        placeholder="0.00"
-                      />
-                      <div className="text-xs text-gray-500 mb-1">ลิงก์สินค้า</div>
-                      <input
-                        type="url"
-                        value={formData.url_consignment}
-                        onChange={(e) => setFormData({ ...formData, url_consignment: e.target.value })}
                         className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="https://..."
+                        placeholder="0.00"
                       />
                     </div>
 
@@ -2105,11 +2145,24 @@ export default function ProductsPage() {
                           />
                           <span className="font-medium text-sm">Website</span>
                         </label>
-                        {formData.url_website && (
-                          <a href={formData.url_website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const url = prompt('ลิงก์สินค้า:', formData.url_website)
+                              if (url !== null) setFormData({ ...formData, url_website: url })
+                            }}
+                            className={`p-1 rounded hover:bg-gray-100 ${formData.url_website ? 'text-blue-600' : 'text-gray-400'}`}
+                            title={formData.url_website ? 'แก้ไขลิงก์' : 'เพิ่มลิงก์'}
+                          >
                             <ExternalLink className="h-4 w-4" />
-                          </a>
-                        )}
+                          </button>
+                          {formData.url_website && (
+                            <a href={formData.url_website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-gray-100">
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          )}
+                        </div>
                       </div>
                       <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
                       <input
@@ -2117,16 +2170,8 @@ export default function ProductsPage() {
                         step="0.01"
                         value={formData.price_website}
                         onChange={(e) => setFormData({ ...formData, price_website: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
-                        placeholder="0.00"
-                      />
-                      <div className="text-xs text-gray-500 mb-1">ลิงก์สินค้า</div>
-                      <input
-                        type="url"
-                        value={formData.url_website}
-                        onChange={(e) => setFormData({ ...formData, url_website: e.target.value })}
                         className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="https://..."
+                        placeholder="0.00"
                       />
                     </div>
                   </div>
