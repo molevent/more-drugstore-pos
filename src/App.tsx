@@ -12,6 +12,7 @@ import InventoryPage from './pages/InventoryPage'
 import WarehouseManagementPage from './pages/WarehouseManagementPage'
 import PurchaseOrderPage from './pages/PurchaseOrderPage'
 import ReportsPage from './pages/ReportsPage'
+import ContactsPage from './pages/ContactsPage'
 import SettingsPage from './pages/SettingsPage'
 import AuthGuard from './components/auth/AuthGuard'
 import Layout from './components/common/Layout'
@@ -41,6 +42,7 @@ function App() {
                     <Route path="/warehouse-management" element={<WarehouseManagementPage />} />
                     <Route path="/purchase-orders" element={<PurchaseOrderPage />} />
                     <Route path="/reports" element={<ReportsPage />} />
+                    <Route path="/contacts" element={<ContactsPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   </Routes>
