@@ -9,8 +9,11 @@ interface Product {
   name_th: string
   name_en: string
   barcode: string
+  sku?: string
   stock_quantity: number
   unit_of_measure: string
+  base_price?: number
+  cost_price?: number
   medicine_details?: MedicineDetails
 }
 
@@ -79,6 +82,8 @@ export default function MedicineLabelPage() {
   const [customBarcodeHeight, setCustomBarcodeHeight] = useState(30)
   const [showProductName, setShowProductName] = useState(false)
   const [showPrice, setShowPrice] = useState(false)
+  const [showCostPrice, setShowCostPrice] = useState(false)
+  const [showBarcodeInfo, setShowBarcodeInfo] = useState(true)
   const [showBarcodePreview, setShowBarcodePreview] = useState(false)
 
   useEffect(() => {
@@ -623,10 +628,51 @@ export default function MedicineLabelPage() {
                     </label>
                   </div>
 
+                  <div>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={showCostPrice}
+                        onChange={(e) => setShowCostPrice(e.target.checked)}
+                        className="h-4 w-4 text-red-600 rounded"
+                      />
+                      <span className="text-sm text-gray-700">แสดงราคาทุน (สำหรับพนักงาน)</span>
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={showBarcodeInfo}
+                        onChange={(e) => setShowBarcodeInfo(e.target.checked)}
+                        className="h-4 w-4 text-blue-600 rounded"
+                      />
+                      <span className="text-sm text-gray-700">แสดงข้อมูลร้าน วัน เวลา</span>
+                    </label>
+                  </div>
+
                   {/* Barcode Preview */}
-                  <div className="border border-gray-300 rounded-lg p-4 flex items-center justify-center bg-white">
+                  <div className="border border-gray-300 rounded-lg p-4 bg-white">
                     <div className="text-center">
-                      <svg className="mx-auto mb-2" width="150" height="60" viewBox="0 0 150 60">
+                      {/* Store Info Header */}
+                      {showBarcodeInfo && (
+                        <div className="border-b border-gray-200 pb-2 mb-2">
+                          <div className="text-xs font-bold text-gray-800">MORE DRUGSTORE</div>
+                          <div className="text-xs text-gray-500">{new Date().toLocaleDateString('th-TH')} {new Date().toLocaleTimeString('th-TH', {hour: '2-digit', minute: '2-digit'})}</div>
+                        </div>
+                      )}
+
+                      {/* Product Name */}
+                      <div className="text-sm font-bold text-gray-800 mb-1 truncate">{selectedProduct?.name_th || 'ชื่อสินค้า'}</div>
+
+                      {/* SKU */}
+                      {selectedProduct?.sku && (
+                        <div className="text-xs text-gray-500 mb-2">SKU: {selectedProduct.sku}</div>
+                      )}
+
+                      {/* Barcode SVG */}
+                      <svg className="mx-auto mb-1" width="150" height="50" viewBox="0 0 150 50">
                         <rect x="0" y="0" width="2" height="40" fill="black"/>
                         <rect x="4" y="0" width="1" height="40" fill="black"/>
                         <rect x="7" y="0" width="3" height="40" fill="black"/>
@@ -656,12 +702,19 @@ export default function MedicineLabelPage() {
                         <rect x="130" y="0" width="3" height="40" fill="black"/>
                         <rect x="136" y="0" width="2" height="40" fill="black"/>
                       </svg>
-                      <div className="text-xs text-gray-600 font-mono">{selectedProduct?.barcode || 'XXXXXXXXXXXXX'}</div>
+
+                      {/* Barcode Number */}
+                      <div className="text-xs text-gray-600 font-mono mb-2">{selectedProduct?.barcode || 'XXXXXXXXXXXXX'}</div>
+
+                      {/* Optional Info */}
                       {showProductName && (
                         <div className="text-xs text-gray-800 mt-1 truncate max-w-[150px]">{selectedProduct?.name_th || 'ชื่อสินค้า'}</div>
                       )}
                       {showPrice && (
-                        <div className="text-xs text-orange-600 font-medium mt-1">฿{selectedProduct?.stock_quantity || '0.00'}</div>
+                        <div className="text-xs text-orange-600 font-medium mt-1">฿{selectedProduct?.base_price?.toFixed(2) || '0.00'}</div>
+                      )}
+                      {showCostPrice && (
+                        <div className="text-xs text-red-600 font-medium mt-1">ทุน: ฿{selectedProduct?.cost_price?.toFixed(2) || '0.00'}</div>
                       )}
                     </div>
                   </div>
