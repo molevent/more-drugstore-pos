@@ -4,7 +4,7 @@ import { useProductStore } from '../stores/productStore'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Filter, Package } from 'lucide-react'
+import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Filter, Package, Receipt } from 'lucide-react'
 import type { Product } from '../types/database'
 import { supabase } from '../services/supabase'
 
@@ -260,9 +260,73 @@ export default function POSPage() {
         setActiveOrderId(null)
       }
       
-      alert(`ขายสำเร็จ! ช่องทาง: ${channelName}`)
+      // Show print receipt confirmation
+      const printReceipt = confirm(`ขายสำเร็จ! ช่องทาง: ${channelName}\n\nต้องการพิมพ์ใบเสร็จรับเงินหรือไม่?`)
+      if (printReceipt) {
+        handlePrintReceipt()
+      }
+      
       clearCart()
       setSalesChannel('walk-in')
+    }
+  }
+
+  const handlePrintReceipt = () => {
+    // Generate receipt content
+    const receiptContent = `
+      <div style="font-family: monospace; width: 80mm; padding: 10px;">
+        <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
+          <h2 style="margin: 0; font-size: 18px;">MORE DRUGSTORE</h2>
+          <p style="margin: 5px 0; font-size: 12px;">ใบเสร็จรับเงิน / Receipt</p>
+          <p style="margin: 5px 0; font-size: 11px;">${new Date().toLocaleString('th-TH')}</p>
+        </div>
+        
+        <div style="margin-bottom: 10px;">
+          <p style="margin: 3px 0; font-size: 11px;">ลูกค้า: ${selectedCustomer?.name || 'ลูกค้าทั่วไป'}</p>
+          <p style="margin: 3px 0; font-size: 11px;">ช่องทาง: ${SALES_CHANNELS.find(c => c.id === salesChannel)?.name || 'หน้าร้าน'}</p>
+        </div>
+        
+        <div style="border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
+          ${items.map(item => `
+            <div style="display: flex; justify-content: space-between; margin: 5px 0; font-size: 12px;">
+              <span>${item.product.name_th} x${item.quantity}</span>
+              <span>฿${(item.product.base_price * item.quantity).toFixed(2)}</span>
+            </div>
+          `).join('')}
+        </div>
+        
+        <div style="text-align: right; margin-bottom: 10px;">
+          <p style="margin: 3px 0; font-size: 12px;">ยอดรวม: ฿${getSubtotal().toFixed(2)}</p>
+          <p style="margin: 3px 0; font-size: 12px;">ส่วนลด: ฿0.00</p>
+          <p style="margin: 5px 0; font-size: 16px; font-weight: bold;">ยอดชำระ: ฿${getTotal().toFixed(2)}</p>
+        </div>
+        
+        <div style="text-align: center; border-top: 1px dashed #000; padding-top: 10px; font-size: 11px;">
+          <p style="margin: 5px 0;">ขอบคุณที่ใช้บริการ</p>
+          <p style="margin: 5px 0;">Thank you for your purchase</p>
+        </div>
+      </div>
+    `
+    
+    // Open print window
+    const printWindow = window.open('', '_blank')
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>ใบเสร็จรับเงิน - MORE DRUGSTORE</title>
+            <style>
+              @media print {
+                body { margin: 0; }
+                * { -webkit-print-color-adjust: exact !important; }
+              }
+            </style>
+          </head>
+          <body>${receiptContent}</body>
+        </html>
+      `)
+      printWindow.document.close()
+      printWindow.print()
     }
   }
 
@@ -556,6 +620,16 @@ export default function POSPage() {
                 disabled={items.length === 0}
               >
                 ชำระเงิน
+              </Button>
+              <Button
+                variant="secondary"
+                size="lg"
+                className="w-full"
+                onClick={handlePrintReceipt}
+                disabled={items.length === 0}
+              >
+                <Receipt className="h-5 w-5 mr-2" />
+                พิมพ์ใบเสร็จ
               </Button>
               <Button
                 variant="secondary"
