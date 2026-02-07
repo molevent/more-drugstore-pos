@@ -1084,43 +1084,43 @@ export default function ProductsPage() {
                   {/* Active Ingredient removed from here - moved to under product name */}
 
                   {/* Sales Channels Icons */}
-                  <div className="bg-white rounded-lg p-3 border border-gray-200">
-                    <div className="text-xs text-gray-500 mb-2">ช่องทางการขาย</div>
-                    <div className="flex flex-wrap gap-3">
-                      <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm ${formData.sell_on_pos ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
-                        <Store className="h-4 w-4" />
+                  <div className="bg-white rounded-lg p-2 border border-gray-200">
+                    <div className="text-xs text-gray-500 mb-1">ช่องทางการขาย</div>
+                    <div className="flex flex-nowrap gap-1.5 overflow-x-auto">
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_pos ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
+                        <Store className="h-3.5 w-3.5" />
                         <span>หน้าร้าน</span>
                       </div>
-                      <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm ${formData.sell_on_grab ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
-                        <ShoppingCart className="h-4 w-4" />
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_grab ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                        <ShoppingCart className="h-3.5 w-3.5" />
                         <span>Grab</span>
                       </div>
-                      <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm ${formData.sell_on_lineman ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
-                        <Truck className="h-4 w-4" />
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_lineman ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                        <Truck className="h-3.5 w-3.5" />
                         <span>Lineman</span>
                       </div>
-                      <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm ${formData.sell_on_lazada ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-400'}`}>
-                        <Globe className="h-4 w-4" />
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_lazada ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-400'}`}>
+                        <Globe className="h-3.5 w-3.5" />
                         <span>Lazada</span>
                       </div>
-                      <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm ${formData.sell_on_shopee ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-400'}`}>
-                        <ShoppingCart className="h-4 w-4" />
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_shopee ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-400'}`}>
+                        <ShoppingCart className="h-3.5 w-3.5" />
                         <span>Shopee</span>
                       </div>
-                      <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm ${formData.sell_on_line_shopping ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
-                        <MessageCircle className="h-4 w-4" />
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_line_shopping ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                        <MessageCircle className="h-3.5 w-3.5" />
                         <span>LINE</span>
                       </div>
-                      <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm ${formData.sell_on_tiktok ? 'bg-black bg-opacity-10 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
-                        <Video className="h-4 w-4" />
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_tiktok ? 'bg-black bg-opacity-10 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
+                        <Video className="h-3.5 w-3.5" />
                         <span>TikTok</span>
                       </div>
-                      <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm ${formData.sell_on_consignment ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-400'}`}>
-                        <ShoppingCart className="h-4 w-4" />
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_consignment ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-400'}`}>
+                        <ShoppingCart className="h-3.5 w-3.5" />
                         <span>ฝากขาย</span>
                       </div>
-                      <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm ${formData.sell_on_website ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
-                        <Globe className="h-4 w-4" />
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_website ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
+                        <Globe className="h-3.5 w-3.5" />
                         <span>Website</span>
                       </div>
                     </div>
