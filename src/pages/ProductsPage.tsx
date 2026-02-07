@@ -771,7 +771,7 @@ export default function ProductsPage() {
                     <div className="flex flex-wrap gap-3">
                       <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm ${formData.sell_on_pos ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
                         <Store className="h-4 w-4" />
-                        <span>POS</span>
+                        <span>หน้าร้าน</span>
                       </div>
                       <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm ${formData.sell_on_grab ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
                         <ShoppingCart className="h-4 w-4" />
@@ -1490,7 +1490,7 @@ export default function ProductsPage() {
                           onChange={(e) => setFormData({ ...formData, sell_on_pos: e.target.checked })}
                           className="h-4 w-4 text-blue-600 rounded"
                         />
-                        <span className="font-medium text-sm">หน้าร้าน (POS)</span>
+                        <span className="font-medium text-sm">หน้าร้าน</span>
                       </label>
                       <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
                       <input
