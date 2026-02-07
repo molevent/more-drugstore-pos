@@ -47,6 +47,7 @@ export interface Product {
   tags?: string[]
   indications?: string
   usage_instructions?: string
+  active_ingredient?: string
   internal_notes?: string
   description_th?: string
   description_en?: string

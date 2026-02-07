@@ -25,6 +25,7 @@ interface ProductFormData {
   tags: string
   indications: string
   usage_instructions: string
+  active_ingredient: string
   internal_notes: string
   description_th: string
   description_en: string
@@ -85,6 +86,7 @@ const initialFormData: ProductFormData = {
   tags: '',
   indications: '',
   usage_instructions: '',
+  active_ingredient: '',
   internal_notes: '',
   description_th: '',
   description_en: '',
@@ -217,6 +219,7 @@ export default function ProductsPage() {
       tags: product.tags?.join(', ') || '',
       indications: product.indications || '',
       usage_instructions: product.usage_instructions || '',
+      active_ingredient: product.active_ingredient || '',
       internal_notes: product.internal_notes || '',
       description_th: product.description_th || '',
       description_en: product.description_en || '',
@@ -731,6 +734,14 @@ export default function ProductsPage() {
                     )}
                   </div>
 
+                  {/* Active Ingredient - ตัวยาสำคัญ */}
+                  {formData.active_ingredient && (
+                    <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
+                      <div className="text-xs text-indigo-700 font-medium mb-1">ตัวยาสำคัญ (Active Ingredient)</div>
+                      <div className="text-sm font-medium text-indigo-900">{formData.active_ingredient}</div>
+                    </div>
+                  )}
+
                   {/* Sales Channels Icons */}
                   <div className="bg-white rounded-lg p-3 border border-gray-200">
                     <div className="text-xs text-gray-500 mb-2">ช่องทางการขาย</div>
@@ -1002,6 +1013,17 @@ export default function ProductsPage() {
                       onChange={(e) => setFormData({ ...formData, usage_instructions: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       rows={2}
+                    />
+                  </div>
+
+                  <div>
+                    <LabelWithTooltip label="ตัวยาสำคัญ (Active Ingredient)" tooltip="สำหรับสินค้ากลุ่มยา เช่น Paracetamol 500mg" />
+                    <input
+                      type="text"
+                      value={formData.active_ingredient}
+                      onChange={(e) => setFormData({ ...formData, active_ingredient: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="เช่น Paracetamol 500mg, Ibuprofen 200mg"
                     />
                   </div>
 
