@@ -162,10 +162,12 @@ export default function ProductsPage() {
     fetchProducts()
     fetchCategories()
     
-    // Check URL query parameter for uncategorized filter
+    // Check URL query parameter for filters
     const params = new URLSearchParams(location.search)
     if (params.get('filter') === 'uncategorized') {
       setSelectedCategory('uncategorized')
+    } else if (params.get('category')) {
+      setSelectedCategory(params.get('category') || '')
     }
   }, [fetchProducts, location.search])
 

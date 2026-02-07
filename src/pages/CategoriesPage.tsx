@@ -190,49 +190,54 @@ export default function CategoriesPage() {
             <p className="text-sm mt-2">{t('categories.addCategoryPrompt')}</p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {mainCategories.map((mainCat) => {
               const children = getSubCategories(mainCat.id)
               return (
                 <div key={mainCat.id} className="border rounded-xl overflow-hidden bg-white shadow-sm">
-                  {/* Main Category - Large Button Style */}
-                  <div className="flex items-center justify-between p-6 bg-gradient-to-r from-blue-50 to-white border-b">
+                  {/* Main Category - Smaller Clickable Button Style */}
+                  <div 
+                    className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-white border-b cursor-pointer hover:bg-blue-100 transition-colors"
+                    onClick={() => navigate(`/products?category=${mainCat.id}`)}
+                  >
                     <div className="flex-1">
-                      <h2 className="text-2xl font-bold text-gray-900">{mainCat.name_th}</h2>
-                      <p className="text-sm text-gray-500 mt-1">{mainCat.name_en}</p>
+                      <h2 className="text-lg font-semibold text-gray-900">{mainCat.name_th}</h2>
+                      <p className="text-xs text-gray-500">{mainCat.name_en}</p>
                     </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="secondary" 
-                        size="sm"
+                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                      <button 
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-100 rounded"
                         onClick={() => handleEdit(mainCat)}
                       >
                         <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="secondary" 
-                        size="sm"
+                      </button>
+                      <button 
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-100 rounded"
                         onClick={() => handleDelete(mainCat.id)}
                       >
                         <Trash2 className="h-4 w-4" />
-                      </Button>
+                      </button>
                     </div>
                   </div>
                   
                   {/* Sub Categories */}
                   {children.length > 0 && (
-                    <div className="p-4 bg-gray-50">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="p-3 bg-gray-50">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                         {children.map((subCat) => {
                           const grandChildren = getSubCategories(subCat.id)
                           return (
-                            <div key={subCat.id} className="bg-white rounded-lg border p-3 hover:shadow-md transition-shadow">
+                            <div 
+                              key={subCat.id} 
+                              className="bg-white rounded-lg border p-2 hover:shadow-md transition-shadow cursor-pointer"
+                              onClick={() => navigate(`/products?category=${subCat.id}`)}
+                            >
                               <div className="flex items-start justify-between">
                                 <div className="flex-1 min-w-0">
-                                  <h3 className="font-semibold text-gray-900 text-sm truncate">{subCat.name_th}</h3>
+                                  <h3 className="font-medium text-gray-900 text-sm truncate">{subCat.name_th}</h3>
                                   <p className="text-xs text-gray-500 truncate">{subCat.name_en}</p>
                                 </div>
-                                <div className="flex gap-1 ml-2 flex-shrink-0">
+                                <div className="flex gap-1 ml-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                                   <button 
                                     onClick={() => handleEdit(subCat)}
                                     className="p-1 text-gray-400 hover:text-blue-600"
@@ -255,17 +260,27 @@ export default function CategoriesPage() {
                                     {grandChildren.map((grandChild) => (
                                       <span 
                                         key={grandChild.id}
-                                        className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-xs text-gray-700"
+                                        className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-xs text-gray-700 cursor-pointer hover:bg-blue-100"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          navigate(`/products?category=${grandChild.id}`)
+                                        }}
                                       >
                                         {grandChild.name_th}
                                         <button 
-                                          onClick={() => handleEdit(grandChild)}
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleEdit(grandChild)
+                                          }}
                                           className="text-gray-400 hover:text-blue-600"
                                         >
                                           <Edit className="h-2 w-2" />
                                         </button>
                                         <button 
-                                          onClick={() => handleDelete(grandChild.id)}
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleDelete(grandChild.id)
+                                          }}
                                           className="text-gray-400 hover:text-red-600"
                                         >
                                           <Trash2 className="h-2 w-2" />
