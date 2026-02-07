@@ -656,7 +656,13 @@ export default function ProductsPage() {
                   
                   filteredProducts.forEach(product => {
                     const catId = product.category_id
-                    const parentType = catId ? categoryToParentMap.get(catId) || 'อื่นๆ' : 'อื่นๆ'
+                    const parentName = catId ? categoryToParentMap.get(catId) || 'อื่นๆ' : 'อื่นๆ'
+                    // Determine if it's prescription or OTC based on parent name
+                    const parentType = parentName.includes('ควบคุม') || parentName.includes('Prescription')
+                      ? 'ยาควบคุม' 
+                      : parentName.includes('สามัญ') || parentName.includes('OTC')
+                        ? 'ยาสามัญ'
+                        : parentName
                     const leafCatName = (product as any).category?.name_th || 'ไม่ระบุหมวดหมู่'
                     
                     const existing = productsByLeafCatName.get(leafCatName) || []
