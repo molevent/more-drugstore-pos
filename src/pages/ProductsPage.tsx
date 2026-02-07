@@ -139,7 +139,8 @@ export default function ProductsPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState('')
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'identification' | 'categorization' | 'financials' | 'inventory' | 'warehouse_stock' | 'logistics' | 'channels'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'identification' | 'categorization' | 'financials' | 'inventory' | 'logistics' | 'channels'>('dashboard')
+  const [inventorySubTab, setInventorySubTab] = useState<'general' | 'warehouse'>('general')
   const [formData, setFormData] = useState<ProductFormData>(initialFormData)
   const [showSearchModal, setShowSearchModal] = useState(false)
   const [searchFilters, setSearchFilters] = useState({
@@ -592,13 +593,6 @@ export default function ProductsPage() {
                 className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'inventory' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
                 4. สต็อก
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('warehouse_stock')}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'warehouse_stock' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-              >
-                สต็อกตามคลัง
               </button>
               <button
                 type="button"
@@ -1113,136 +1107,158 @@ export default function ProductsPage() {
               {/* Tab 4: Inventory */}
               {activeTab === 'inventory' && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">การจัดการสต็อก (Inventory & Tracking)</h3>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <LabelWithTooltip label="Remaining Qty" tooltip="จำนวนสินค้าคงเหลือปัจจุบัน" required />
-                      <input
-                        type="number"
-                        value={formData.stock_quantity}
-                        onChange={(e) => setFormData({ ...formData, stock_quantity: parseInt(e.target.value) || 0 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <LabelWithTooltip label="จำนวนขั้นต่ำ (Min Stock)" tooltip="จุดแจ้งเตือนเมื่อของใกล้หมด" required />
-                      <input
-                        type="number"
-                        value={formData.min_stock_level}
-                        onChange={(e) => setFormData({ ...formData, min_stock_level: parseInt(e.target.value) || 0 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <LabelWithTooltip label="Opening Stock Date" tooltip="วันที่ตั้งต้นยอดยกมา (ค.ศ.)" />
-                      <input
-                        type="date"
-                        value={formData.opening_stock_date}
-                        onChange={(e) => setFormData({ ...formData, opening_stock_date: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <LabelWithTooltip label="วันหมดอายุ (Expiry Date)" tooltip="วันหมดอายุของสินค้า Lot ปัจจุบัน" />
-                      <input
-                        type="date"
-                        value={formData.expiry_date}
-                        onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <LabelWithTooltip label="Serial / Lot Number" tooltip="เลขที่ผลิตของสินค้า" />
-                      <input
-                        type="text"
-                        value={formData.lot_number}
-                        onChange={(e) => setFormData({ ...formData, lot_number: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <LabelWithTooltip label="ปริมาณ" tooltip="ขนาดบรรจุ (เช่น 10 เม็ด, 500 มล.)" />
-                    <input
-                      type="text"
-                      value={formData.packaging_size}
-                      onChange={(e) => setFormData({ ...formData, packaging_size: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="เช่น 10 เม็ด, 500 มล."
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Tab: Warehouse Stock */}
-              {activeTab === 'warehouse_stock' && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">สต็อกตามคลัง (Stock by Warehouse)</h3>
-                  
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <p className="text-sm text-blue-700">
-                      แสดงจำนวนสินค้าที่มีอยู่ในแต่ละคลัง สินค้าจะถูก default ไว้ที่คลังหลัก สามารถย้ายสินค้าได้ที่เมนู คลังสินค้า → โอนสินค้า
-                    </p>
-                  </div>
-
-                  {/* TODO: Load actual warehouse stock data from Supabase */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Main Warehouse */}
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Warehouse className="h-5 w-5 text-blue-600" />
-                        <span className="font-semibold text-blue-800">คลังสินค้าหลัก</span>
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">หลัก</span>
-                      </div>
-                      <div className="text-3xl font-bold text-blue-700">{formData.stock_quantity}</div>
-                      <div className="text-sm text-gray-600">{formData.unit}</div>
-                    </div>
-
-                    {/* Other warehouses - placeholder until data is loaded */}
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Warehouse className="h-5 w-5 text-gray-500" />
-                        <span className="font-semibold text-gray-700">คลังสินค้าสาขา 2</span>
-                      </div>
-                      <div className="text-3xl font-bold text-gray-600">0</div>
-                      <div className="text-sm text-gray-500">{formData.unit}</div>
-                    </div>
-
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Warehouse className="h-5 w-5 text-gray-500" />
-                        <span className="font-semibold text-gray-700">คลังสินค้า Fulfillment</span>
-                      </div>
-                      <div className="text-3xl font-bold text-gray-600">0</div>
-                      <div className="text-sm text-gray-500">{formData.unit}</div>
-                    </div>
-
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Warehouse className="h-5 w-5 text-gray-500" />
-                        <span className="font-semibold text-gray-700">คลังสินค้าเก่า/ชำรุด</span>
-                      </div>
-                      <div className="text-3xl font-bold text-gray-600">0</div>
-                      <div className="text-sm text-gray-500">{formData.unit}</div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 text-center">
-                    <a 
-                      href="/warehouse-management" 
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                  {/* Sub-tabs for Inventory */}
+                  <div className="flex gap-2 mb-4 border-b border-gray-200 pb-2">
+                    <button
+                      type="button"
+                      onClick={() => setInventorySubTab('general')}
+                      className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${inventorySubTab === 'general' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                     >
-                      <ArrowRightLeft className="h-4 w-4" />
-                      ไปที่หน้าโอนสินค้าระหว่างคลัง
-                    </a>
+                      สต็อกทั่วไป
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInventorySubTab('warehouse')}
+                      className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${inventorySubTab === 'warehouse' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                    >
+                      สต็อกตามคลัง
+                    </button>
                   </div>
+
+                  {/* Sub-tab: General Stock */}
+                  {inventorySubTab === 'general' && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">การจัดการสต็อก (Inventory & Tracking)</h3>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <LabelWithTooltip label="Remaining Qty" tooltip="จำนวนสินค้าคงเหลือปัจจุบัน" required />
+                          <input
+                            type="number"
+                            value={formData.stock_quantity}
+                            onChange={(e) => setFormData({ ...formData, stock_quantity: parseInt(e.target.value) || 0 })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <LabelWithTooltip label="จำนวนขั้นต่ำ (Min Stock)" tooltip="จุดแจ้งเตือนเมื่อของใกล้หมด" required />
+                          <input
+                            type="number"
+                            value={formData.min_stock_level}
+                            onChange={(e) => setFormData({ ...formData, min_stock_level: parseInt(e.target.value) || 0 })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <LabelWithTooltip label="Opening Stock Date" tooltip="วันที่ตั้งต้นยอดยกมา (ค.ศ.)" />
+                          <input
+                            type="date"
+                            value={formData.opening_stock_date}
+                            onChange={(e) => setFormData({ ...formData, opening_stock_date: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <LabelWithTooltip label="วันหมดอายุ (Expiry Date)" tooltip="วันหมดอายุของสินค้า Lot ปัจจุบัน" />
+                          <input
+                            type="date"
+                            value={formData.expiry_date}
+                            onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <LabelWithTooltip label="Serial / Lot Number" tooltip="เลขที่ผลิตของสินค้า" />
+                          <input
+                            type="text"
+                            value={formData.lot_number}
+                            onChange={(e) => setFormData({ ...formData, lot_number: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <LabelWithTooltip label="ปริมาณ" tooltip="ขนาดบรรจุ (เช่น 10 เม็ด, 500 มล.)" />
+                        <input
+                          type="text"
+                          value={formData.packaging_size}
+                          onChange={(e) => setFormData({ ...formData, packaging_size: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="เช่น 10 เม็ด, 500 มล."
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sub-tab: Warehouse Stock */}
+                  {inventorySubTab === 'warehouse' && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">สต็อกตามคลัง (Stock by Warehouse)</h3>
+                      
+                      <div className="bg-blue-50 rounded-lg p-4">
+                        <p className="text-sm text-blue-700">
+                          แสดงจำนวนสินค้าที่มีอยู่ในแต่ละคลัง สินค้าจะถูก default ไว้ที่คลังหลัก สามารถย้ายสินค้าได้ที่เมนู คลังสินค้า → โอนสินค้า
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Main Warehouse */}
+                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Warehouse className="h-5 w-5 text-blue-600" />
+                            <span className="font-semibold text-blue-800">คลังสินค้าหลัก</span>
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">หลัก</span>
+                          </div>
+                          <div className="text-3xl font-bold text-blue-700">{formData.stock_quantity}</div>
+                          <div className="text-sm text-gray-600">{formData.unit}</div>
+                        </div>
+
+                        {/* Other warehouses - placeholder until data is loaded */}
+                        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Warehouse className="h-5 w-5 text-gray-500" />
+                            <span className="font-semibold text-gray-700">คลังสินค้าสาขา 2</span>
+                          </div>
+                          <div className="text-3xl font-bold text-gray-600">0</div>
+                          <div className="text-sm text-gray-500">{formData.unit}</div>
+                        </div>
+
+                        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Warehouse className="h-5 w-5 text-gray-500" />
+                            <span className="font-semibold text-gray-700">คลังสินค้า Fulfillment</span>
+                          </div>
+                          <div className="text-3xl font-bold text-gray-600">0</div>
+                          <div className="text-sm text-gray-500">{formData.unit}</div>
+                        </div>
+
+                        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Warehouse className="h-5 w-5 text-gray-500" />
+                            <span className="font-semibold text-gray-700">คลังสินค้าเก่า/ชำรุด</span>
+                          </div>
+                          <div className="text-3xl font-bold text-gray-600">0</div>
+                          <div className="text-sm text-gray-500">{formData.unit}</div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 text-center">
+                        <a 
+                          href="/warehouse-management" 
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                        >
+                          <ArrowRightLeft className="h-4 w-4" />
+                          ไปที่หน้าโอนสินค้าระหว่างคลัง
+                        </a>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
