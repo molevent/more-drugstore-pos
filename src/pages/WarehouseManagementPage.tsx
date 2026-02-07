@@ -64,8 +64,21 @@ export default function WarehouseManagementPage() {
   }
 
   const fetchProductStocks = async () => {
-    const { data } = await supabase.from('product_stock').select('*, product:products(*)')
-    if (data) setProductStocks(data)
+    try {
+      const { data, error } = await supabase
+        .from('product_stock')
+        .select('*, product:products(*)')
+      
+      if (error) {
+        console.error('Error fetching product stocks:', error)
+        return
+      }
+      
+      console.log('Product stocks fetched:', data)
+      if (data) setProductStocks(data)
+    } catch (err) {
+      console.error('Exception fetching product stocks:', err)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
