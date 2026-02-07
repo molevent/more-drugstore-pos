@@ -289,7 +289,6 @@ export default function ProductsPage() {
         sku: formData.sku,
         name_th: formData.name_th,
         name_en: formData.name_en,
-        product_type: formData.product_type,
         is_active: formData.is_active,
         category_id: formData.category_id || null,
         base_price: formData.base_price,
