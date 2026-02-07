@@ -256,7 +256,7 @@ export default function ProductsPage() {
       price_tiktok: product.price_tiktok || 0
     })
     setImagePreview(product.image_url || '')
-    setActiveTab('identification')
+    setActiveTab('dashboard')
     setShowModal(true)
   }
 
@@ -336,7 +336,7 @@ export default function ProductsPage() {
     setEditingProduct(null)
     setImageFile(null)
     setImagePreview('')
-    setActiveTab('identification')
+    setActiveTab('dashboard')
   }
 
   const clearFilters = () => {
@@ -571,7 +571,7 @@ export default function ProductsPage() {
                 onClick={() => setActiveTab('dashboard')}
                 className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'dashboard' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
-                0. Dashboard
+                📊 Dashboard
               </button>
               <button
                 type="button"
