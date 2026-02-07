@@ -617,7 +617,7 @@ export default function ProductsPage() {
                 onClick={() => setActiveTab('logistics')}
                 className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'logistics' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
-                5. โลจิสติกส์
+                5. รูปภาพ
               </button>
               <button
                 type="button"
@@ -899,6 +899,53 @@ export default function ProductsPage() {
                       />
                       <span className="text-sm text-gray-700">Active (ขาย) / Inactive (ระงับการขาย)</span>
                     </label>
+                  </div>
+
+                  {/* Weight & Dimensions */}
+                  <div className="border-t pt-4 mt-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">ขนาดและน้ำหนัก (สำหรับคำนวณค่าขนส่ง)</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      <div>
+                        <LabelWithTooltip label="น้ำหนัก (กรัม)" tooltip="สำหรับคำนวณค่าขนส่งออนไลน์" />
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={formData.weight_grams}
+                          onChange={(e) => setFormData({ ...formData, weight_grams: parseFloat(e.target.value) || 0 })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <LabelWithTooltip label="กว้าง (ซม.)" tooltip="ความกว้าง (เซนติเมตร)" />
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={formData.width_cm}
+                          onChange={(e) => setFormData({ ...formData, width_cm: parseFloat(e.target.value) || 0 })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <LabelWithTooltip label="ยาว (ซม.)" tooltip="ความยาว (เซนติเมตร)" />
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={formData.length_cm}
+                          onChange={(e) => setFormData({ ...formData, length_cm: parseFloat(e.target.value) || 0 })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <LabelWithTooltip label="สูง (ซม.)" tooltip="ความสูง (เซนติเมตร)" />
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={formData.height_cm}
+                          onChange={(e) => setFormData({ ...formData, height_cm: parseFloat(e.target.value) || 0 })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1325,57 +1372,53 @@ export default function ProductsPage() {
                 </div>
               )}
 
-              {/* Tab 5: Logistics */}
+              {/* Tab 5: Media & Photo */}
               {activeTab === 'logistics' && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">โลจิสติกส์และรูปภาพ (Logistics & Media)</h3>
-                  
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div>
-                      <LabelWithTooltip label="น้ำหนัก (กรัม)" tooltip="สำหรับคำนวณค่าขนส่งออนไลน์" />
+                  <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">รูปภาพ (Media & Photo)</h3>
+
+                  {/* Image URL Input */}
+                  <div>
+                    <LabelWithTooltip label="ลิงก์รูปภาพสินค้า (Image URL)" tooltip="ใส่ลิงก์รูปภาพจากแหล่งอื่น (เช่น Google Drive, Dropbox)" />
+                    <div className="flex gap-2">
                       <input
-                        type="number"
-                        step="0.01"
-                        value={formData.weight_grams}
-                        onChange={(e) => setFormData({ ...formData, weight_grams: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        type="url"
+                        value={formData.image_url}
+                        onChange={(e) => {
+                          setFormData({ ...formData, image_url: e.target.value })
+                          setImagePreview(e.target.value)
+                        }}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="https://example.com/image.jpg"
                       />
+                      {formData.image_url && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => {
+                            setFormData({ ...formData, image_url: '' })
+                            setImagePreview('')
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
-                    <div>
-                      <LabelWithTooltip label="กว้าง (ซม.)" tooltip="ความกว้าง (เซนติเมตร)" />
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={formData.width_cm}
-                        onChange={(e) => setFormData({ ...formData, width_cm: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <LabelWithTooltip label="ยาว (ซม.)" tooltip="ความยาว (เซนติเมตร)" />
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={formData.length_cm}
-                        onChange={(e) => setFormData({ ...formData, length_cm: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <LabelWithTooltip label="สูง (ซม.)" tooltip="ความสูง (เซนติเมตร)" />
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={formData.height_cm}
-                        onChange={(e) => setFormData({ ...formData, height_cm: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
+                    <p className="text-xs text-gray-500 mt-1">คัดลอกลิงก์รูปภาพจากแหล่งอื่นมาวางได้เลย</p>
                   </div>
 
+                  {/* OR Divider */}
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 border-t"></div>
+                    <span className="text-sm text-gray-500">หรือ</span>
+                    <div className="flex-1 border-t"></div>
+                  </div>
+
+                  {/* Image Upload */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      รูปภาพสินค้า (อัปโหลดได้สูงสุด 9 รูป)
+                      อัปโหลดรูปภาพ (อัปโหลดได้สูงสุด 9 รูป)
                     </label>
                     <div className="flex items-center gap-4 flex-wrap">
                       {imagePreview && (
