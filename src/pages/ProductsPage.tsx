@@ -1794,9 +1794,41 @@ export default function ProductsPage() {
 
                   {/* Image Upload */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      อัปโหลดรูปภาพ (อัปโหลดได้สูงสุด 9 รูป)
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        อัปโหลดรูปภาพ (อัปโหลดได้สูงสุด 9 รูป)
+                      </label>
+                      <label className="cursor-pointer">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 rounded-lg text-sm text-blue-700 font-medium">
+                          <Upload className="h-4 w-4" />
+                          <span>เลือกหลายรูป</span>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files || [])
+                            const emptySlots = imagePreviews.map((p, i) => p ? -1 : i).filter(i => i !== -1)
+                            files.slice(0, emptySlots.length).forEach((file, idx) => {
+                              const slotIndex = emptySlots[idx]
+                              const newFiles = [...imageFiles]
+                              newFiles[slotIndex] = file
+                              setImageFiles(newFiles)
+                              
+                              const reader = new FileReader()
+                              reader.onloadend = () => {
+                                const newPreviews = [...imagePreviews]
+                                newPreviews[slotIndex] = reader.result as string
+                                setImagePreviews(newPreviews)
+                              }
+                              reader.readAsDataURL(file)
+                            })
+                          }}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
                     <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                       {Array.from({ length: 9 }).map((_, index) => (
                         <div key={index} className="relative">
