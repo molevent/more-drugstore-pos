@@ -69,7 +69,6 @@ export default function Layout({ children }: LayoutProps) {
       items: [
         { name: 'จัดการสต็อก', href: '/stock-management', icon: Package },
         { name: 'พิมพ์ฉลากยา', href: '/medicine-labels', icon: Printer },
-        { name: t('nav.inventory'), href: '/inventory', icon: Warehouse },
       ]
     },
     {
