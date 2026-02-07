@@ -735,12 +735,10 @@ export default function ProductsPage() {
                   </div>
 
                   {/* Active Ingredient - ตัวยาสำคัญ */}
-                  {formData.active_ingredient && (
-                    <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
-                      <div className="text-xs text-indigo-700 font-medium mb-1">ตัวยาสำคัญ (Active Ingredient)</div>
-                      <div className="text-sm font-medium text-indigo-900">{formData.active_ingredient}</div>
-                    </div>
-                  )}
+                  <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
+                    <div className="text-xs text-indigo-700 font-medium mb-1">ตัวยาสำคัญ (Active Ingredient)</div>
+                    <div className="text-sm font-medium text-indigo-900">{formData.active_ingredient || '-'}</div>
+                  </div>
 
                   {/* Sales Channels Icons */}
                   <div className="bg-white rounded-lg p-3 border border-gray-200">
