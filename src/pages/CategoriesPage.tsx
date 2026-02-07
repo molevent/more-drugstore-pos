@@ -4,11 +4,13 @@ import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Plus, Edit, Trash2, X } from 'lucide-react'
+import { Plus, Edit, Trash2, X, AlertCircle, Package } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import type { Category } from '../types/database'
 
 export default function CategoriesPage() {
   const { t } = useLanguage()
+  const navigate = useNavigate()
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
@@ -160,10 +162,20 @@ export default function CategoriesPage() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('categories.title')}</h1>
-        <Button variant="primary" onClick={() => setShowModal(true)} className="w-full sm:w-auto">
-          <Plus className="h-5 w-5 mr-2" />
-          {t('categories.addCategory')}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="danger" 
+            onClick={() => navigate('/products?filter=uncategorized')}
+            className="w-full sm:w-auto"
+          >
+            <AlertCircle className="h-5 w-5 mr-2" />
+            สินค้ายังไม่ตั้งหมวดหมู่
+          </Button>
+          <Button variant="primary" onClick={() => setShowModal(true)} className="w-full sm:w-auto">
+            <Plus className="h-5 w-5 mr-2" />
+            {t('categories.addCategory')}
+          </Button>
+        </div>
       </div>
 
       <Card>

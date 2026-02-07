@@ -6,7 +6,8 @@ import Card from '../components/common/Card'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import { LabelWithTooltip } from '../components/common/Tooltip'
-import { Search, Plus, X, Filter, Upload, AlertCircle } from 'lucide-react'
+import { Search, Plus, X, Filter, Upload } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
 import type { Product, Category } from '../types/database'
 
 // Extended form data with all new fields
@@ -129,6 +130,7 @@ const initialFormData: ProductFormData = {
 export default function ProductsPage() {
   const { loading, searchTerm, setSearchTerm, fetchProducts, products } = useProductStore()
   const { t } = useLanguage()
+  const location = useLocation()
   const [showModal, setShowModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
@@ -159,7 +161,13 @@ export default function ProductsPage() {
   useEffect(() => {
     fetchProducts()
     fetchCategories()
-  }, [fetchProducts])
+    
+    // Check URL query parameter for uncategorized filter
+    const params = new URLSearchParams(location.search)
+    if (params.get('filter') === 'uncategorized') {
+      setSelectedCategory('uncategorized')
+    }
+  }, [fetchProducts, location.search])
 
   const fetchCategories = async () => {
     const { data } = await supabase.from('categories').select('*').order('sort_order')
@@ -673,29 +681,16 @@ export default function ProductsPage() {
                         <option key={cat.id} value={cat.id}>{cat.name_th}</option>
                       ))}
                     </select>
-                    <div className="mt-2 flex gap-2">
+                    <div className="mt-2">
                       <Button
                         type="button"
                         variant="secondary"
                         size="sm"
                         onClick={() => setShowSearchModal(true)}
-                        className="flex-1"
+                        className="w-full"
                       >
                         <Search className="h-4 w-4 mr-2" />
                         ค้นหารายละเอียดสินค้า
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="danger"
-                        size="sm"
-                        onClick={() => {
-                          setShowModal(false)
-                          setSelectedCategory('uncategorized')
-                        }}
-                        className="flex-1"
-                      >
-                        <AlertCircle className="h-4 w-4 mr-2" />
-                        สินค้ายังไม่ตั้งหมวดหมู่
                       </Button>
                     </div>
                   </div>
