@@ -6,7 +6,7 @@ import Card from '../components/common/Card'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import { LabelWithTooltip } from '../components/common/Tooltip'
-import { Search, Plus, X, Filter, Upload } from 'lucide-react'
+import { Search, Plus, X, Filter, Upload, Package } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import type { Product, Category } from '../types/database'
 
@@ -466,6 +466,9 @@ export default function ProductsPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t('products.image')}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {t('products.barcode')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -488,6 +491,19 @@ export default function ProductsPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredProducts.map((product) => (
                   <tr key={product.id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {product.image_url ? (
+                        <img
+                          src={product.image_url}
+                          alt={product.name_th}
+                          className="h-12 w-12 object-cover rounded-lg border"
+                        />
+                      ) : (
+                        <div className="h-12 w-12 bg-gray-100 rounded-lg border flex items-center justify-center">
+                          <Package className="h-6 w-6 text-gray-400" />
+                        </div>
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {product.barcode}
                     </td>
