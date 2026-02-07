@@ -621,7 +621,6 @@ export default function ProductsPage() {
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.image')}</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.barcode')}</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.name')}</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ยี่ห้อ</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.category')}</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.price')}</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.stock')}</th>
@@ -644,7 +643,6 @@ export default function ProductsPage() {
                               <div className="text-sm font-medium text-gray-900">{product.name_th}</div>
                               {product.name_en && <div className="text-sm text-gray-500">{product.name_en}</div>}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{product.brand || '-'}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{(product as any).category?.name_th || t('products.noCategory')}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">฿{product.base_price.toFixed(2)}</td>
                             <td className="px-6 py-4 whitespace-nowrap">
