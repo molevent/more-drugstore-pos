@@ -37,8 +37,10 @@ interface MedicineDetails {
 
 interface LabelData {
   product_id: string
-  dosage_instructions: string
-  special_instructions: string
+  dosage_instructions_th: string
+  special_instructions_th: string
+  dosage_instructions_en: string
+  special_instructions_en: string
 }
 
 export default function MedicineLabelPage() {
@@ -46,10 +48,13 @@ export default function MedicineLabelPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<'th' | 'en'>('th')
   const [labelData, setLabelData] = useState<LabelData>({
     product_id: '',
-    dosage_instructions: '',
-    special_instructions: ''
+    dosage_instructions_th: '',
+    special_instructions_th: '',
+    dosage_instructions_en: '',
+    special_instructions_en: ''
   })
   const [showPreview, setShowPreview] = useState(false)
 
@@ -85,8 +90,10 @@ export default function MedicineLabelPage() {
         setLabelData(prev => ({
           ...prev,
           product_id: selectedProduct.id,
-          dosage_instructions: fullInstructions,
-          special_instructions: details.special_instructions || ''
+          dosage_instructions_th: fullInstructions,
+          special_instructions_th: details.special_instructions || '',
+          dosage_instructions_en: '',
+          special_instructions_en: ''
         }))
       }
     }
@@ -113,7 +120,7 @@ export default function MedicineLabelPage() {
   }
 
   const handlePrintLabel = async () => {
-    if (!selectedProduct || !labelData.dosage_instructions) {
+    if (!selectedProduct || (!labelData.dosage_instructions_th && !labelData.dosage_instructions_en)) {
       alert('กรุณากรอกข้อมูลให้ครบถ้วน')
       return
     }
@@ -126,7 +133,7 @@ export default function MedicineLabelPage() {
         .from('printed_labels')
         .insert({
           product_id: selectedProduct.id,
-          dosage_instructions: labelData.dosage_instructions,
+          dosage_instructions: labelData.dosage_instructions_th || labelData.dosage_instructions_en,
           printed_data: labelData,
           printed_by: userData?.user?.id
         })
@@ -224,67 +231,153 @@ export default function MedicineLabelPage() {
                 )}
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">วิธีใช้ *</label>
-                <textarea
-                  value={labelData.dosage_instructions}
-                  onChange={(e) => setLabelData({...labelData, dosage_instructions: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  rows={3}
-                  placeholder="เช่น รับประทานครั้งละ 1 เม็ด วันละ 3 ครั้ง หลังอาหาร"
-                  required
-                />
-                {selectedProduct.medicine_details && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setLabelData({...labelData, dosage_instructions: 'ครั้งละ 1 เม็ด วันละ 3 ครั้ง หลังอาหาร'})}
-                      className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
-                    >
-                      1x3 หลังอาหาร
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setLabelData({...labelData, dosage_instructions: 'ครั้งละ 1 เม็ด วันละ 2 ครั้ง เช้า-เย็น'})}
-                      className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
-                    >
-                      1x2 เช้า-เย็น
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setLabelData({...labelData, dosage_instructions: 'ครั้งละ 1 เม็ด ก่อนนอน'})}
-                      className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
-                    >
-                      ก่อนนอน
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setLabelData({...labelData, dosage_instructions: 'เมื่อมีอาการ'})}
-                      className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
-                    >
-                      เมื่อมีอาการ
-                    </button>
+              {/* Tabs */}
+              <div className="flex border-b border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('th')}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'th'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  ภาษาไทย
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('en')}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'en'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  English
+                </button>
+              </div>
+
+              {/* Thai Tab */}
+              {activeTab === 'th' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">วิธีใช้ *</label>
+                    <textarea
+                      value={labelData.dosage_instructions_th}
+                      onChange={(e) => setLabelData({...labelData, dosage_instructions_th: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      rows={3}
+                      placeholder="เช่น รับประทานครั้งละ 1 เม็ด วันละ 3 ครั้ง หลังอาหาร"
+                    />
+                    {selectedProduct.medicine_details && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setLabelData({...labelData, dosage_instructions_th: 'ครั้งละ 1 เม็ด วันละ 3 ครั้ง หลังอาหาร'})}
+                          className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+                        >
+                          1x3 หลังอาหาร
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLabelData({...labelData, dosage_instructions_th: 'ครั้งละ 1 เม็ด วันละ 2 ครั้ง เช้า-เย็น'})}
+                          className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+                        >
+                          1x2 เช้า-เย็น
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLabelData({...labelData, dosage_instructions_th: 'ครั้งละ 1 เม็ด ก่อนนอน'})}
+                          className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+                        >
+                          ก่อนนอน
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLabelData({...labelData, dosage_instructions_th: 'เมื่อมีอาการ'})}
+                          className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+                        >
+                          เมื่อมีอาการ
+                        </button>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">คำเตือน/ข้อควรระวัง</label>
-                <textarea
-                  value={labelData.special_instructions}
-                  onChange={(e) => setLabelData({...labelData, special_instructions: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  rows={2}
-                  placeholder="เช่น ห้ามดื่มแอลกอฮอล์, เก็บในตู้เย็น"
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">คำเตือน/ข้อควรระวัง</label>
+                    <textarea
+                      value={labelData.special_instructions_th}
+                      onChange={(e) => setLabelData({...labelData, special_instructions_th: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      rows={2}
+                      placeholder="เช่น ห้ามดื่มแอลกอฮอล์, เก็บในตู้เย็น"
+                    />
+                  </div>
+                </div>
+              )}
 
+              {/* English Tab */}
+              {activeTab === 'en' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Dosage Instructions *</label>
+                    <textarea
+                      value={labelData.dosage_instructions_en}
+                      onChange={(e) => setLabelData({...labelData, dosage_instructions_en: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      rows={3}
+                      placeholder="e.g., Take 1 tablet 3 times daily after meals"
+                    />
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setLabelData({...labelData, dosage_instructions_en: 'Take 1 tablet 3 times daily after meals'})}
+                        className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+                      >
+                        1x3 after meals
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLabelData({...labelData, dosage_instructions_en: 'Take 1 tablet twice daily morning and evening'})}
+                        className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+                      >
+                        1x2 morning-evening
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLabelData({...labelData, dosage_instructions_en: 'Take 1 tablet at bedtime'})}
+                        className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+                      >
+                        At bedtime
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLabelData({...labelData, dosage_instructions_en: 'Take as needed'})}
+                        className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+                      >
+                        As needed
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Warnings/Precautions</label>
+                    <textarea
+                      value={labelData.special_instructions_en}
+                      onChange={(e) => setLabelData({...labelData, special_instructions_en: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      rows={2}
+                      placeholder="e.g., Avoid alcohol, store in refrigerator"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="flex gap-3">
                 <Button
                   variant="primary"
                   onClick={() => setShowPreview(true)}
-                  disabled={!labelData.dosage_instructions}
+                  disabled={!labelData.dosage_instructions_th && !labelData.dosage_instructions_en}
                 >
                   <Printer className="h-4 w-4 mr-2" />
                   ดูตัวอย่าง
@@ -294,8 +387,10 @@ export default function MedicineLabelPage() {
                   onClick={() => {
                     setLabelData({
                       product_id: selectedProduct.id,
-                      dosage_instructions: '',
-                      special_instructions: ''
+                      dosage_instructions_th: '',
+                      special_instructions_th: '',
+                      dosage_instructions_en: '',
+                      special_instructions_en: ''
                     })
                   }}
                 >
@@ -344,14 +439,24 @@ export default function MedicineLabelPage() {
               </div>
 
               <div className="bg-gray-100 p-3 rounded mb-3">
-                <p className="font-bold mb-1">วิธีใช้:</p>
-                <p className="whitespace-pre-wrap">{labelData.dosage_instructions}</p>
+                <p className="font-bold mb-1">วิธีใช้ / Dosage:</p>
+                {labelData.dosage_instructions_th && (
+                  <p className="whitespace-pre-wrap mb-2">{labelData.dosage_instructions_th}</p>
+                )}
+                {labelData.dosage_instructions_en && (
+                  <p className="whitespace-pre-wrap text-gray-600 italic">{labelData.dosage_instructions_en}</p>
+                )}
               </div>
 
-              {labelData.special_instructions && (
-                <div className="border border-red-300 bg-red-50 p-2 rounded">
-                  <p className="text-sm font-bold text-red-700">คำเตือน:</p>
-                  <p className="text-sm text-red-600">{labelData.special_instructions}</p>
+              {(labelData.special_instructions_th || labelData.special_instructions_en) && (
+                <div className="border border-red-300 bg-red-50 p-2 rounded mb-3">
+                  <p className="text-sm font-bold text-red-700">คำเตือน / Warnings:</p>
+                  {labelData.special_instructions_th && (
+                    <p className="text-sm text-red-600">{labelData.special_instructions_th}</p>
+                  )}
+                  {labelData.special_instructions_en && (
+                    <p className="text-sm text-red-600 italic">{labelData.special_instructions_en}</p>
+                  )}
                 </div>
               )}
 

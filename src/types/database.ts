@@ -33,20 +33,69 @@ export interface Category {
 
 export interface Product {
   id: string
+  // 1. ข้อมูลการระบุตัวตน (Identification)
   barcode: string
   sku: string
   name_th: string
   name_en: string
+  product_type: 'finished_goods' | 'service'
+  brand?: string
+  is_active: boolean
+  
+  // 2. หมวดหมู่และการจัดกลุ่ม (Categorization)
+  category_id?: string
+  tags?: string[]
+  indications?: string
+  usage_instructions?: string
+  internal_notes?: string
   description_th?: string
   description_en?: string
-  category_id?: string
+  
+  // 3. การตั้งราคาและบัญชี (Financials)
   base_price: number
   cost_price: number
+  purchase_price_excl_vat?: number
+  cost_per_unit?: number
+  selling_price_excl_vat?: number
+  selling_price_incl_vat?: number
+  original_price?: number
+  wholesale_price?: number
+  unit: string
+  
+  // 4. การจัดการสต็อก (Inventory & Tracking)
   stock_quantity: number
   min_stock_level: number
-  unit: string
+  opening_stock_date?: string
+  expiry_date?: string
+  lot_number?: string
+  packaging_size?: string
+  
+  // 5. โลจิสติกส์และรูปภาพ (Logistics & Media)
+  weight_grams?: number
+  width_cm?: number
+  length_cm?: number
+  height_cm?: number
   image_url?: string
-  is_active: boolean
+  image_urls?: string[]
+  
+  // 6. ช่องทางการขาย (Sales Channels)
+  sell_on_pos: boolean
+  sell_on_grab: boolean
+  sell_on_lineman: boolean
+  sell_on_lazada: boolean
+  sell_on_shopee: boolean
+  sell_on_line_shopping: boolean
+  sell_on_tiktok: boolean
+  
+  // 6.1 ราคาขายแยกตามช่องทาง (Channel-specific Prices)
+  price_pos?: number
+  price_grab?: number
+  price_lineman?: number
+  price_lazada?: number
+  price_shopee?: number
+  price_line_shopping?: number
+  price_tiktok?: number
+  
   created_at: string
   updated_at: string
 }
