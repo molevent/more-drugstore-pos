@@ -87,6 +87,8 @@ export interface Product {
   sell_on_shopee: boolean
   sell_on_line_shopping: boolean
   sell_on_tiktok: boolean
+  sell_on_consignment: boolean
+  sell_on_website: boolean
   
   // 6.1 ราคาขายแยกตามช่องทาง (Channel-specific Prices)
   price_pos?: number
@@ -96,6 +98,8 @@ export interface Product {
   price_shopee?: number
   price_line_shopping?: number
   price_tiktok?: number
+  price_consignment?: number
+  price_website?: number
   
   created_at: string
   updated_at: string

@@ -64,6 +64,8 @@ interface ProductFormData {
   sell_on_shopee: boolean
   sell_on_line_shopping: boolean
   sell_on_tiktok: boolean
+  sell_on_consignment: boolean
+  sell_on_website: boolean
   
   // 6.1 ราคาขายแยกตามช่องทาง (Channel-specific Prices)
   price_pos: number
@@ -73,6 +75,8 @@ interface ProductFormData {
   price_shopee: number
   price_line_shopping: number
   price_tiktok: number
+  price_consignment: number
+  price_website: number
 }
 
 const initialFormData: ProductFormData = {
@@ -117,6 +121,8 @@ const initialFormData: ProductFormData = {
   sell_on_shopee: false,
   sell_on_line_shopping: false,
   sell_on_tiktok: false,
+  sell_on_consignment: false,
+  sell_on_website: false,
   // Channel prices
   price_pos: 0,
   price_grab: 0,
@@ -124,7 +130,9 @@ const initialFormData: ProductFormData = {
   price_lazada: 0,
   price_shopee: 0,
   price_line_shopping: 0,
-  price_tiktok: 0
+  price_tiktok: 0,
+  price_consignment: 0,
+  price_website: 0
 }
 
 export default function ProductsPage() {
@@ -250,6 +258,8 @@ export default function ProductsPage() {
       sell_on_shopee: product.sell_on_shopee || false,
       sell_on_line_shopping: product.sell_on_line_shopping || false,
       sell_on_tiktok: product.sell_on_tiktok || false,
+      sell_on_consignment: product.sell_on_consignment || false,
+      sell_on_website: product.sell_on_website || false,
       // Channel prices
       price_pos: product.price_pos || 0,
       price_grab: product.price_grab || 0,
@@ -257,7 +267,9 @@ export default function ProductsPage() {
       price_lazada: product.price_lazada || 0,
       price_shopee: product.price_shopee || 0,
       price_line_shopping: product.price_line_shopping || 0,
-      price_tiktok: product.price_tiktok || 0
+      price_tiktok: product.price_tiktok || 0,
+      price_consignment: product.price_consignment || 0,
+      price_website: product.price_website || 0
     })
     setImagePreview(product.image_url || '')
     setActiveTab('dashboard')
@@ -771,6 +783,14 @@ export default function ProductsPage() {
                       <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm ${formData.sell_on_tiktok ? 'bg-black bg-opacity-10 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
                         <Video className="h-4 w-4" />
                         <span>TikTok</span>
+                      </div>
+                      <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm ${formData.sell_on_consignment ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-400'}`}>
+                        <ShoppingCart className="h-4 w-4" />
+                        <span>ฝากขาย</span>
+                      </div>
+                      <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm ${formData.sell_on_website ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
+                        <Globe className="h-4 w-4" />
+                        <span>Website</span>
                       </div>
                     </div>
                   </div>
@@ -1515,6 +1535,50 @@ export default function ProductsPage() {
                         step="0.01"
                         value={formData.price_tiktok}
                         onChange={(e) => setFormData({ ...formData, price_tiktok: parseFloat(e.target.value) || 0 })}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="0.00"
+                      />
+                    </div>
+
+                    {/* CONSIGNMENT - ฝากขาย */}
+                    <div className="p-3 border rounded-lg">
+                      <label className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          checked={formData.sell_on_consignment}
+                          onChange={(e) => setFormData({ ...formData, sell_on_consignment: e.target.checked })}
+                          className="h-4 w-4 text-purple-600 rounded"
+                        />
+                        <span className="font-medium text-sm">ฝากขาย (Consignment)</span>
+                      </label>
+                      <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={formData.price_consignment}
+                        onChange={(e) => setFormData({ ...formData, price_consignment: parseFloat(e.target.value) || 0 })}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="0.00"
+                      />
+                    </div>
+
+                    {/* WEBSITE */}
+                    <div className="p-3 border rounded-lg">
+                      <label className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          checked={formData.sell_on_website}
+                          onChange={(e) => setFormData({ ...formData, sell_on_website: e.target.checked })}
+                          className="h-4 w-4 text-blue-600 rounded"
+                        />
+                        <span className="font-medium text-sm">Website</span>
+                      </label>
+                      <div className="text-xs text-gray-500 mb-1">ราคาขาย (฿)</div>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={formData.price_website}
+                        onChange={(e) => setFormData({ ...formData, price_website: parseFloat(e.target.value) || 0 })}
                         className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="0.00"
                       />
