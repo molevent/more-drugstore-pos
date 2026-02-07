@@ -44,7 +44,7 @@ export function LabelWithTooltip({ label, tooltip, required }: LabelWithTooltipP
   const [isVisible, setIsVisible] = useState(false)
 
   return (
-    <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-1">
+    <label className="relative flex items-center gap-1 text-sm font-medium text-gray-700 mb-1">
       {label}
       {required && <span className="text-red-500">*</span>}
       <button
@@ -59,9 +59,9 @@ export function LabelWithTooltip({ label, tooltip, required }: LabelWithTooltipP
       </button>
       
       {isVisible && (
-        <div className="absolute z-50 left-full ml-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg shadow-lg w-56 break-words">
+        <div className="absolute z-50 left-full ml-2 px-3 py-2 bg-white text-gray-800 text-xs rounded-lg shadow-lg border border-blue-300 w-56 break-words">
           {tooltip}
-          <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 w-2 h-2 bg-gray-800 rotate-45"></div>
+          <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 w-2 h-2 bg-white border-l border-b border-blue-300 rotate-45"></div>
         </div>
       )}
     </label>

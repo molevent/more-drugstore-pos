@@ -6,7 +6,7 @@ import Card from '../components/common/Card'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import { LabelWithTooltip } from '../components/common/Tooltip'
-import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft, Printer, ExternalLink, ArrowLeft } from 'lucide-react'
+import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft, Printer, ExternalLink, ArrowLeft, Bell } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { Product, Category } from '../types/database'
 
@@ -91,6 +91,18 @@ interface ProductFormData {
   url_tiktok: string
   url_consignment: string
   url_website: string
+
+  // 8. Alerts
+  alert_out_of_stock: boolean
+  alert_out_of_stock_message: string
+  alert_low_stock: boolean
+  alert_low_stock_message: string
+  alert_expiry: boolean
+  alert_expiry_message: string
+  alert_expiry_days: number
+  alert_custom: boolean
+  alert_custom_title: string
+  alert_custom_message: string
 }
 
 const initialFormData: ProductFormData = {
@@ -159,7 +171,18 @@ const initialFormData: ProductFormData = {
   url_line_shopping: '',
   url_tiktok: '',
   url_consignment: '',
-  url_website: ''
+  url_website: '',
+  // 8. Alerts
+  alert_out_of_stock: false,
+  alert_out_of_stock_message: '',
+  alert_low_stock: false,
+  alert_low_stock_message: '',
+  alert_expiry: false,
+  alert_expiry_message: '',
+  alert_expiry_days: 30,
+  alert_custom: false,
+  alert_custom_title: '',
+  alert_custom_message: ''
 }
 
 export default function ProductsPage() {
@@ -177,8 +200,11 @@ export default function ProductsPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [imageFiles, setImageFiles] = useState<(File | null)[]>(Array(9).fill(null))
   const [imagePreviews, setImagePreviews] = useState<string[]>(Array(9).fill(''))
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'identification' | 'categorization' | 'financials' | 'inventory' | 'logistics' | 'channels'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'identification' | 'categorization' | 'financials' | 'inventory' | 'logistics' | 'channels' | 'movements' | 'alerts'>('dashboard')
   const [inventorySubTab, setInventorySubTab] = useState<'general' | 'warehouse'>('general')
+  const [movementHistory, setMovementHistory] = useState<any[]>([])
+  const [movementLoading, setMovementLoading] = useState(false)
+  const [showCategoryTable, setShowCategoryTable] = useState(true)
   const [formData, setFormData] = useState<ProductFormData>(initialFormData)
   const [showSearchModal, setShowSearchModal] = useState(false)
   const [searchFilters, setSearchFilters] = useState({
@@ -310,10 +336,22 @@ export default function ProductsPage() {
       url_line_shopping: product.url_line_shopping || '',
       url_tiktok: product.url_tiktok || '',
       url_consignment: product.url_consignment || '',
-      url_website: product.url_website || ''
+      url_website: product.url_website || '',
+      // 8. Alerts
+      alert_out_of_stock: product.alert_out_of_stock || false,
+      alert_out_of_stock_message: product.alert_out_of_stock_message || '',
+      alert_low_stock: product.alert_low_stock || false,
+      alert_low_stock_message: product.alert_low_stock_message || '',
+      alert_expiry: product.alert_expiry || false,
+      alert_expiry_message: product.alert_expiry_message || '',
+      alert_expiry_days: product.alert_expiry_days || 30,
+      alert_custom: product.alert_custom || false,
+      alert_custom_title: product.alert_custom_title || '',
+      alert_custom_message: product.alert_custom_message || ''
     })
     setImagePreviews(product.image_urls?.slice(0, 9).concat(Array(9 - (product.image_urls?.length || 0)).fill('')) || Array(9).fill(''))
     setActiveTab('dashboard')
+    setShowCategoryTable(!product.category_id) // Collapse if has category
     setShowModal(true)
   }
 
@@ -347,6 +385,48 @@ export default function ProductsPage() {
     const newUrls = [...(formData.image_urls || [])]
     newUrls[index] = ''
     setFormData({ ...formData, image_urls: newUrls.filter(url => url) })
+  }
+
+  const fetchMovementHistory = async (productId: string) => {
+    setMovementLoading(true)
+    try {
+      // Fetch stock transfers for this product
+      const { data: transfers, error } = await supabase
+        .from('stock_transfers')
+        .select(`
+          *,
+          from_warehouse:warehouses!from_warehouse_id(name),
+          to_warehouse:warehouses!to_warehouse_id(name)
+        `)
+        .eq('product_id', productId)
+        .order('transfer_date', { ascending: false })
+        .limit(50)
+      
+      if (error) {
+        console.error('Error fetching movement history:', error)
+        setMovementHistory([])
+        return
+      }
+      
+      // Transform data for display
+      const movements = transfers?.map((t: any) => ({
+        id: t.id,
+        date: t.transfer_date,
+        type: t.transfer_type === 'in' ? 'ซื้อเข้า' : t.transfer_type === 'out' ? 'ขายออก' : 'โอนย้าย',
+        quantity: t.quantity,
+        from: t.from_warehouse?.name || '-',
+        to: t.to_warehouse?.name || '-',
+        partner: t.partner_name || '-',
+        notes: t.notes || ''
+      })) || []
+      
+      setMovementHistory(movements)
+    } catch (err) {
+      console.error('Exception fetching movement history:', err)
+      setMovementHistory([])
+    } finally {
+      setMovementLoading(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -420,6 +500,7 @@ export default function ProductsPage() {
     setImageFiles(Array(9).fill(null))
     setImagePreviews(Array(9).fill(''))
     setActiveTab('dashboard')
+    setShowCategoryTable(true)
   }
 
   const clearFilters = () => {
@@ -744,9 +825,6 @@ export default function ProductsPage() {
                                     <td className="px-6 py-3 whitespace-nowrap">
                                       <div className="text-sm font-medium text-gray-900">{product.name_th}</div>
                                       {product.name_en && <div className="text-sm text-gray-500">{product.name_en}</div>}
-                                      <div className={`text-xs mt-1 ${parentType.includes('ควบคุม') ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}`}>
-                                        {parentType.includes('ควบคุม') ? '🔒 ยาควบคุม' : '💊 ยาสามัญ'}
-                                      </div>
                                     </td>
                                     <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900">฿{product.base_price.toFixed(2)}</td>
                                     <td className="px-6 py-3 whitespace-nowrap">
@@ -970,6 +1048,25 @@ export default function ProductsPage() {
                 className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'channels' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
                 6. ช่องทางขาย
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('movements')
+                  if (editingProduct) {
+                    fetchMovementHistory(editingProduct.id)
+                  }
+                }}
+                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'movements' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              >
+                7. รายการเคลื่อนไหว
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('alerts')}
+                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'alerts' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              >
+                8. การแจ้งเตือน
               </button>
             </div>
 
@@ -1207,7 +1304,14 @@ export default function ProductsPage() {
                       <input
                         type="text"
                         value={formData.barcode}
-                        onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                        onChange={(e) => {
+                          const barcode = e.target.value
+                          setFormData({ 
+                            ...formData, 
+                            barcode,
+                            sku: formData.sku || barcode // Auto-fill SKU if empty
+                          })
+                        }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
@@ -1253,7 +1357,9 @@ export default function ProductsPage() {
                           onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
                           className="h-4 w-4 text-blue-600 rounded border-gray-300"
                         />
-                        <span className="text-sm text-gray-700">Active (ขาย) / Inactive (ระงับการขาย)</span>
+                        <span className={`text-sm font-medium ${formData.is_active ? 'text-green-700' : 'text-red-600'}`}>
+                          {formData.is_active ? '✓ Active (ขายอยู่)' : '✗ Inactive (ระงับการขาย)'}
+                        </span>
                       </label>
                     </div>
                   </div>
@@ -1315,104 +1421,169 @@ export default function ProductsPage() {
                   <div>
                     <LabelWithTooltip label="Category (หมวดสินค้า)" tooltip="เลือกหมวดหมู่จากตาราง" />
                     
-                    {/* Hierarchical Category Table - Compact */}
-                    <div className="border rounded-lg overflow-hidden max-h-80 overflow-y-auto">
-                      <table className="w-full text-sm">
-                        <thead className="bg-gray-100 sticky top-0">
-                          <tr>
-                            <th className="px-2 py-1.5 text-left font-medium text-gray-700 w-1/3 border-r">หมวดหลัก</th>
-                            <th className="px-2 py-1.5 text-left font-medium text-gray-700">หมวดย่อย</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                          {categories.filter(c => !c.parent_id).map((mainCat) => {
-                            const subCats = categories.filter(c => c.parent_id === mainCat.id)
-                            const isMainSelected = formData.category_id === mainCat.id
-                            
-                            return (
-                              <tr key={mainCat.id} className={isMainSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}>
-                                <td className="px-2 py-2 align-top border-r">
-                                  <label className="flex items-center gap-1.5 cursor-pointer">
-                                    <input
-                                      type="radio"
-                                      name="category"
-                                      value={mainCat.id}
-                                      checked={isMainSelected}
-                                      onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                                      className="h-3.5 w-3.5 text-blue-600"
-                                    />
-                                    <span className={`text-sm font-medium ${isMainSelected ? 'text-blue-700' : 'text-gray-900'}`}>
-                                      {mainCat.name_th}
+                    {/* Selected Category Display - Collapsed View */}
+                    {formData.category_id && !showCategoryTable && (
+                      <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {(() => {
+                              const selectedCat = categories.find(c => c.id === formData.category_id)
+                              if (!selectedCat) return null
+                              
+                              // Find parent chain
+                              const parentChain: Category[] = []
+                              let current = selectedCat
+                              while (current.parent_id) {
+                                const parent = categories.find(c => c.id === current.parent_id)
+                                if (parent) {
+                                  parentChain.unshift(parent)
+                                  current = parent
+                                } else {
+                                  break
+                                }
+                              }
+                              
+                              return (
+                                <>
+                                  {parentChain.map((cat, idx) => (
+                                    <span key={cat.id} className="inline-flex items-center gap-1">
+                                      <span className="px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded-md font-medium">
+                                        {cat.name_th}
+                                      </span>
+                                      {idx < parentChain.length && (
+                                        <span className="text-gray-400">›</span>
+                                      )}
                                     </span>
-                                  </label>
-                                </td>
-                                <td className="px-2 py-2">
-                                  {subCats.length > 0 ? (
-                                    <div className="flex flex-wrap gap-x-3 gap-y-1">
-                                      {subCats.map((subCat) => {
-                                        const grandChildren = categories.filter(c => c.parent_id === subCat.id)
-                                        const isSubSelected = formData.category_id === subCat.id
-                                        
-                                        return (
-                                          <div key={subCat.id} className="flex flex-col">
-                                            <label className={`flex items-center gap-1 cursor-pointer text-xs ${isSubSelected ? 'text-blue-700 font-medium bg-blue-100 rounded px-1' : 'text-gray-700'}`}>
-                                              <input
-                                                type="radio"
-                                                name="category"
-                                                value={subCat.id}
-                                                checked={isSubSelected}
-                                                onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                                                className="h-3 w-3 text-blue-600"
-                                              />
-                                              {subCat.name_th}
-                                            </label>
-                                            
-                                            {/* Grand Children - inline */}
-                                            {grandChildren.length > 0 && (
-                                              <div className="flex flex-wrap gap-x-2 ml-4 mt-0.5">
-                                                {grandChildren.map((grandChild) => {
-                                                  const isGrandSelected = formData.category_id === grandChild.id
-                                                  return (
-                                                    <label 
-                                                      key={grandChild.id} 
-                                                      className={`flex items-center gap-1 cursor-pointer text-xs ${isGrandSelected ? 'text-blue-600 font-medium bg-blue-100 rounded px-1' : 'text-gray-500'}`}
-                                                    >
-                                                      <input
-                                                        type="radio"
-                                                        name="category"
-                                                        value={grandChild.id}
-                                                        checked={isGrandSelected}
-                                                        onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                                                        className="h-2.5 w-2.5 text-blue-600"
-                                                      />
-                                                      {grandChild.name_th}
-                                                    </label>
-                                                  )
-                                                })}
-                                              </div>
-                                            )}
-                                          </div>
-                                        )
-                                      })}
-                                    </div>
-                                  ) : (
-                                    <span className="text-gray-400 text-xs">-</span>
-                                  )}
-                                </td>
-                              </tr>
-                            )
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                                  ))}
+                                  <span className="px-3 py-1.5 bg-blue-100 text-blue-700 text-sm rounded-md font-semibold">
+                                    {selectedCat.name_th}
+                                  </span>
+                                </>
+                              )
+                            })()}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setShowCategoryTable(true)}
+                            className="text-sm text-blue-600 hover:text-blue-800 font-medium px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"
+                          >
+                            เปลี่ยนหมวดหมู่
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     
-                    {/* Selected Category Display */}
-                    {formData.category_id && (
-                      <div className="mt-2 p-2 bg-blue-50 rounded text-sm">
-                        <span className="text-gray-600">เลือก:</span>{' '}
-                        <span className="font-medium text-blue-700">
-                          {categories.find(c => c.id === formData.category_id)?.name_th}
-                        </span>
+                    {/* Hierarchical Category Table - Expandable */}
+                    {showCategoryTable && (
+                      <div className="border rounded-lg overflow-hidden max-h-80 overflow-y-auto mt-2">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-100 sticky top-0">
+                            <tr>
+                              <th className="px-2 py-1.5 text-left font-medium text-gray-700 w-1/3 border-r">หมวดหลัก</th>
+                              <th className="px-2 py-1.5 text-left font-medium text-gray-700">หมวดย่อย</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {categories.filter(c => !c.parent_id).map((mainCat) => {
+                              const subCats = categories.filter(c => c.parent_id === mainCat.id)
+                              const isMainSelected = formData.category_id === mainCat.id
+                              
+                              return (
+                                <tr key={mainCat.id} className={isMainSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}>
+                                  <td className="px-2 py-2 align-top border-r">
+                                    <label className="flex items-center gap-1.5 cursor-pointer">
+                                      <input
+                                        type="radio"
+                                        name="category"
+                                        value={mainCat.id}
+                                        checked={isMainSelected}
+                                        onChange={(e) => {
+                                          setFormData({ ...formData, category_id: e.target.value })
+                                          setShowCategoryTable(false)
+                                        }}
+                                        className="h-3.5 w-3.5 text-blue-600"
+                                      />
+                                      <span className={`text-sm font-medium ${isMainSelected ? 'text-blue-700' : 'text-gray-900'}`}>
+                                        {mainCat.name_th}
+                                      </span>
+                                    </label>
+                                  </td>
+                                  <td className="px-2 py-2">
+                                    {subCats.length > 0 ? (
+                                      <div className="flex flex-wrap gap-x-3 gap-y-1">
+                                        {subCats.map((subCat) => {
+                                          const grandChildren = categories.filter(c => c.parent_id === subCat.id)
+                                          const isSubSelected = formData.category_id === subCat.id
+                                          
+                                          return (
+                                            <div key={subCat.id} className="flex flex-col">
+                                              <label className={`flex items-center gap-1 cursor-pointer text-xs ${isSubSelected ? 'text-blue-700 font-medium bg-blue-100 rounded px-1' : 'text-gray-700'}`}>
+                                                <input
+                                                  type="radio"
+                                                  name="category"
+                                                  value={subCat.id}
+                                                  checked={isSubSelected}
+                                                  onChange={(e) => {
+                                                    setFormData({ ...formData, category_id: e.target.value })
+                                                    setShowCategoryTable(false)
+                                                  }}
+                                                  className="h-3 w-3 text-blue-600"
+                                                />
+                                                {subCat.name_th}
+                                              </label>
+                                              
+                                              {/* Grand Children - inline */}
+                                              {grandChildren.length > 0 && (
+                                                <div className="flex flex-wrap gap-x-2 ml-4 mt-0.5">
+                                                  {grandChildren.map((grandChild) => {
+                                                    const isGrandSelected = formData.category_id === grandChild.id
+                                                    return (
+                                                      <label 
+                                                        key={grandChild.id} 
+                                                        className={`flex items-center gap-1 cursor-pointer text-xs ${isGrandSelected ? 'text-blue-600 font-medium bg-blue-100 rounded px-1' : 'text-gray-500'}`}
+                                                      >
+                                                        <input
+                                                          type="radio"
+                                                          name="category"
+                                                          value={grandChild.id}
+                                                          checked={isGrandSelected}
+                                                          onChange={(e) => {
+                                                            setFormData({ ...formData, category_id: e.target.value })
+                                                            setShowCategoryTable(false)
+                                                          }}
+                                                          className="h-2.5 w-2.5 text-blue-600"
+                                                        />
+                                                        {grandChild.name_th}
+                                                      </label>
+                                                    )
+                                                  })}
+                                                </div>
+                                              )}
+                                            </div>
+                                          )
+                                        })}
+                                      </div>
+                                    ) : (
+                                      <span className="text-gray-400 text-xs">-</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                        {/* Cancel button */}
+                        {formData.category_id && (
+                          <div className="px-3 py-2 bg-gray-50 border-t text-center">
+                            <button
+                              type="button"
+                              onClick={() => setShowCategoryTable(false)}
+                              className="text-sm text-gray-600 hover:text-gray-800 font-medium"
+                            >
+                              ปิดเมนู (ไม่เปลี่ยนหมวดหมู่)
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                     
@@ -2284,6 +2455,201 @@ export default function ProductsPage() {
                         placeholder="0.00"
                       />
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 7: Movement History */}
+              {activeTab === 'movements' && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">รายการเคลื่อนไหว (Movement History)</h3>
+                  <p className="text-sm text-gray-600">ประวัติการซื้อเข้า ขายออก และโอนย้ายสินค้า</p>
+                  
+                  {movementLoading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <p className="mt-2 text-gray-600">กำลังโหลด...</p>
+                    </div>
+                  ) : movementHistory.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>ไม่มีประวัติการเคลื่อนไหว</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">วันที่</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ประเภท</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">จำนวน</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ต้นทาง</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ปลายทาง</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">คู่ค้า/ลูกค้า</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">หมายเหตุ</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {movementHistory.map((movement) => (
+                            <tr key={movement.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                {new Date(movement.date).toLocaleDateString('th-TH')}
+                              </td>
+                              <td className="px-4 py-2 whitespace-nowrap text-sm">
+                                <span className={`px-2 py-1 rounded-full text-xs ${
+                                  movement.type === 'ซื้อเข้า' ? 'bg-green-100 text-green-700' :
+                                  movement.type === 'ขายออก' ? 'bg-red-100 text-red-700' :
+                                  'bg-blue-100 text-blue-700'
+                                }`}>
+                                  {movement.type}
+                                </span>
+                              </td>
+                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                {movement.quantity}
+                              </td>
+                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{movement.from}</td>
+                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{movement.to}</td>
+                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{movement.partner}</td>
+                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{movement.notes}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Tab 8: Alerts */}
+              {activeTab === 'alerts' && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">การแจ้งเตือน (Alerts)</h3>
+                  <p className="text-sm text-gray-600">ตั้งค่าการแจ้งเตือนที่จะแสดงเมื่อขายสินค้านี้ (POS)</p>
+                  
+                  {/* Alert: Out of Stock */}
+                  <div className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="alert_out_of_stock"
+                        checked={formData.alert_out_of_stock || false}
+                        onChange={(e) => setFormData({ ...formData, alert_out_of_stock: e.target.checked })}
+                        className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                      />
+                      <label htmlFor="alert_out_of_stock" className="font-medium text-gray-800">
+                        แจ้งเตือนเมื่อสินค้าหมด (Out of Stock)
+                      </label>
+                    </div>
+                    {formData.alert_out_of_stock && (
+                      <div className="ml-6 space-y-2">
+                        <label className="block text-sm text-gray-600">ข้อความแจ้งเตือน:</label>
+                        <input
+                          type="text"
+                          value={formData.alert_out_of_stock_message || 'สินค้านี้ขายหมดแล้ว (จำนวนคงเหลือ = 0)'}
+                          onChange={(e) => setFormData({ ...formData, alert_out_of_stock_message: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="สินค้านี้ขายหมดแล้ว (จำนวนคงเหลือ = 0)"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Alert: Low Stock */}
+                  <div className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="alert_low_stock"
+                        checked={formData.alert_low_stock || false}
+                        onChange={(e) => setFormData({ ...formData, alert_low_stock: e.target.checked })}
+                        className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                      />
+                      <label htmlFor="alert_low_stock" className="font-medium text-gray-800">
+                        แจ้งเตือนเมื่อสินค้าใกล้หมด (Low Stock)
+                      </label>
+                    </div>
+                    {formData.alert_low_stock && (
+                      <div className="ml-6 space-y-2">
+                        <label className="block text-sm text-gray-600">ข้อความแจ้งเตือน:</label>
+                        <input
+                          type="text"
+                          value={formData.alert_low_stock_message || 'สินค้านี้ใกล้หมด กรุณาเติมสต็อก'}
+                          onChange={(e) => setFormData({ ...formData, alert_low_stock_message: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="สินค้านี้ใกล้หมด กรุณาเติมสต็อก"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Alert: Expiry */}
+                  <div className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="alert_expiry"
+                        checked={formData.alert_expiry || false}
+                        onChange={(e) => setFormData({ ...formData, alert_expiry: e.target.checked })}
+                        className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                      />
+                      <label htmlFor="alert_expiry" className="font-medium text-gray-800">
+                        แจ้งเตือนเมื่อสินค้าใกล้หมดอายุ
+                      </label>
+                    </div>
+                    {formData.alert_expiry && (
+                      <div className="ml-6 space-y-2">
+                        <label className="block text-sm text-gray-600">ข้อความแจ้งเตือน:</label>
+                        <input
+                          type="text"
+                          value={formData.alert_expiry_message || 'สินค้านี้ใกล้หมดอายุ กรุณาตรวจสอบ'}
+                          onChange={(e) => setFormData({ ...formData, alert_expiry_message: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="สินค้านี้ใกล้หมดอายุ กรุณาตรวจสอบ"
+                        />
+                        <label className="block text-sm text-gray-600">แจ้งเตือนก่อนหมดอายุ (วัน):</label>
+                        <input
+                          type="number"
+                          value={formData.alert_expiry_days || 30}
+                          onChange={(e) => setFormData({ ...formData, alert_expiry_days: parseInt(e.target.value) || 30 })}
+                          className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Alert: Custom */}
+                  <div className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="alert_custom"
+                        checked={formData.alert_custom || false}
+                        onChange={(e) => setFormData({ ...formData, alert_custom: e.target.checked })}
+                        className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                      />
+                      <label htmlFor="alert_custom" className="font-medium text-gray-800">
+                        แจ้งเตือนทั่วไป (Custom Alert)
+                      </label>
+                    </div>
+                    {formData.alert_custom && (
+                      <div className="ml-6 space-y-2">
+                        <label className="block text-sm text-gray-600">หัวข้อแจ้งเตือน:</label>
+                        <input
+                          type="text"
+                          value={formData.alert_custom_title || ''}
+                          onChange={(e) => setFormData({ ...formData, alert_custom_title: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="เช่น ยาควบคุมพิเศษ"
+                        />
+                        <label className="block text-sm text-gray-600">ข้อความแจ้งเตือน:</label>
+                        <textarea
+                          value={formData.alert_custom_message || ''}
+                          onChange={(e) => setFormData({ ...formData, alert_custom_message: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          rows={2}
+                          placeholder="ข้อความที่จะแสดงเมื่อขายสินค้านี้"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
