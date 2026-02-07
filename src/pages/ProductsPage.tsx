@@ -629,7 +629,8 @@ export default function ProductsPage() {
                 const subCategories = categories.filter(c => c.parent_id === selectedCategory)
                 
                 // For Pharmacy category - group by subcategory name across both Prescription and OTC
-                const isPharmacyCategory = categories.find(c => c.id === selectedCategory)?.name_th?.includes('ยา')
+                const selectedCatName = categories.find(c => c.id === selectedCategory)?.name_th || ''
+                const isPharmacyCategory = selectedCatName === 'ยา' || selectedCatName.startsWith('ยา ')
                 
                 if (isPharmacyCategory) {
                   // Get all descendants with their parent info
@@ -659,7 +660,7 @@ export default function ProductsPage() {
                   const productsByLeafCatName = new Map<string, { product: Product; parentType: string }[]>()
                   
                   filteredProducts.forEach(product => {
-                    const parentType = categoryToParentMap.get(product.category_id) || 'อื่นๆ'
+                    const parentType = product.category_id ? categoryToParentMap.get(product.category_id) || 'อื่นๆ' : 'อื่นๆ'
                     const leafCatName = (product as any).category?.name_th || 'ไม่ระบุหมวดหมู่'
                     
                     const existing = productsByLeafCatName.get(leafCatName) || []
