@@ -634,34 +634,29 @@ export default function ProductsPage() {
                 )
                 
                 if (isPharmacyCategory) {
-                  // Get all descendants with their parent info
-                  const getAllDescendantsWithParent = (parentId: string) => {
-                    const result: { cat: Category; parentName: string }[] = []
-                    const children = categories.filter(c => c.parent_id === parentId)
-                    children.forEach(child => {
-                      const grandChildren = categories.filter(c => c.parent_id === child.id)
-                      if (grandChildren.length > 0) {
-                        grandChildren.forEach(gc => result.push({ cat: gc, parentName: child.name_th }))
-                      } else {
-                        result.push({ cat: child, parentName: child.name_th })
-                      }
-                    })
-                    return result
-                  }
-                  
-                  const descendantsWithParent = getAllDescendantsWithParent(selectedCategory)
-                  
-                  // Create a map of category ID to parent name (Prescription/OTC)
+                  // Build a map from leaf category ID -> parent type (ยาควบคุม/ยาสามัญ)
                   const categoryToParentMap = new Map<string, string>()
-                  descendantsWithParent.forEach(({ cat, parentName }) => {
-                    categoryToParentMap.set(cat.id, parentName)
+                  
+                  subCategories.forEach(subCat => {
+                    // Get grandchildren of this subcategory
+                    const grandChildren = categories.filter(c => c.parent_id === subCat.id)
+                    if (grandChildren.length > 0) {
+                      // Map each grandchild to its parent's name
+                      grandChildren.forEach(gc => {
+                        categoryToParentMap.set(gc.id, subCat.name_th)
+                      })
+                    } else {
+                      // This is a leaf category itself
+                      categoryToParentMap.set(subCat.id, subCat.name_th)
+                    }
                   })
                   
-                  // Group products by the leaf category NAME (not ID)
+                  // Group products by leaf category name
                   const productsByLeafCatName = new Map<string, { product: Product; parentType: string }[]>()
                   
                   filteredProducts.forEach(product => {
-                    const parentType = product.category_id ? categoryToParentMap.get(product.category_id) || 'อื่นๆ' : 'อื่นๆ'
+                    const catId = product.category_id
+                    const parentType = catId ? categoryToParentMap.get(catId) || 'อื่นๆ' : 'อื่นๆ'
                     const leafCatName = (product as any).category?.name_th || 'ไม่ระบุหมวดหมู่'
                     
                     const existing = productsByLeafCatName.get(leafCatName) || []
