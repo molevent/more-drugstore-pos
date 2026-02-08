@@ -6,7 +6,7 @@ import Card from '../components/common/Card'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import { LabelWithTooltip } from '../components/common/Tooltip'
-import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft, Printer, ExternalLink, ArrowLeft, Bell } from 'lucide-react'
+import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft, Printer, ExternalLink, ArrowLeft, Bell, LayoutDashboard, Fingerprint, FolderTree, DollarSign, Boxes, Image, Radio, AlertTriangle } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { Product, Category } from '../types/database'
 
@@ -1014,51 +1014,58 @@ export default function ProductsPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('dashboard')}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'dashboard' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'dashboard' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
-                Product Overview
+                <LayoutDashboard className="h-4 w-4" />
+                ภาพรวม
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('identification')}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'identification' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'identification' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
-                1. ระบุตัวตน
+                <Fingerprint className="h-4 w-4" />
+                ระบุตัวตน
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('categorization')}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'categorization' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'categorization' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
-                2. หมวดหมู่
+                <FolderTree className="h-4 w-4" />
+                หมวดหมู่
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('financials')}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'financials' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'financials' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
-                3. ราคา
+                <DollarSign className="h-4 w-4" />
+                ราคา
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('inventory')}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'inventory' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'inventory' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
-                4. สต็อก
+                <Boxes className="h-4 w-4" />
+                สต็อก
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('logistics')}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'logistics' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'logistics' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
-                5. รูปภาพ
+                <Image className="h-4 w-4" />
+                รูปภาพ
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('channels')}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'channels' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'channels' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
-                6. ช่องทางขาย
+                <Radio className="h-4 w-4" />
+                ช่องทางขาย
               </button>
               <button
                 type="button"
@@ -1068,16 +1075,18 @@ export default function ProductsPage() {
                     fetchMovementHistory(editingProduct.id)
                   }
                 }}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'movements' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'movements' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
-                7. รายการเคลื่อนไหว
+                <ArrowRightLeft className="h-4 w-4" />
+                เคลื่อนไหว
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('alerts')}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'alerts' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'alerts' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
-                8. การแจ้งเตือน
+                <AlertTriangle className="h-4 w-4" />
+                แจ้งเตือน
               </button>
             </div>
 
