@@ -80,6 +80,19 @@ export default function POSPage() {
   }>>([])
   const [showAlertHistory, setShowAlertHistory] = useState(false)
   
+  // Recent sales states
+  const [recentSales, setRecentSales] = useState<Array<{
+    id: string
+    order_number: string
+    customer_name?: string
+    total: number
+    platform_id: string
+    created_at: string
+    item_count: number
+  }>>([])
+  const [showRecentSales, setShowRecentSales] = useState(false)
+  const [loadingRecentSales, setLoadingRecentSales] = useState(false)
+  
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const { items, addItem, removeItem, updateQuantity, clearCart, getTotal, getSubtotal, setItems, setSalesChannel: setCartSalesChannel } = useCartStore()
@@ -586,6 +599,109 @@ export default function POSPage() {
     fetchAlertLogs()
   }, [])
 
+  // Fetch recent sales
+  const fetchRecentSales = async () => {
+    setLoadingRecentSales(true)
+    try {
+      // Fetch recent orders with item count
+      const { data: orders, error } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          order_number,
+          customer_name,
+          total,
+          platform_id,
+          created_at,
+          order_items(count)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(20)
+
+      if (error) {
+        console.error('Error fetching recent sales:', error)
+        return
+      }
+
+      const formattedSales = orders?.map((order: any) => ({
+        id: order.id,
+        order_number: order.order_number,
+        customer_name: order.customer_name,
+        total: order.total,
+        platform_id: order.platform_id,
+        created_at: order.created_at,
+        item_count: order.order_items?.[0]?.count || 0
+      })) || []
+
+      setRecentSales(formattedSales)
+    } catch (err) {
+      console.error('Exception fetching recent sales:', err)
+    } finally {
+      setLoadingRecentSales(false)
+    }
+  }
+
+  // Load sale to cart (re-order)
+  const handleLoadSale = async (orderId: string) => {
+    try {
+      // Fetch order items
+      const { data: orderItems, error } = await supabase
+        .from('order_items')
+        .select(`
+          *,
+          product:products(*)
+        `)
+        .eq('order_id', orderId)
+
+      if (error) {
+        console.error('Error fetching order items:', error)
+        alert('ไม่สามารถโหลดรายการขายได้')
+        return
+      }
+
+      if (!orderItems || orderItems.length === 0) {
+        alert('ไม่พบรายการสินค้าในออเดอร์นี้')
+        return
+      }
+
+      // Clear current cart
+      clearCart()
+
+      // Add items to cart
+      let addedCount = 0
+      for (const item of orderItems) {
+        if (item.product) {
+          addItem(item.product, item.quantity)
+          addedCount++
+        }
+      }
+
+      alert(`โหลดรายการขายสำเร็จ เพิ่มสินค้า ${addedCount} รายการ`)
+      setShowRecentSales(false)
+    } catch (err) {
+      console.error('Exception loading sale:', err)
+      alert('เกิดข้อผิดพลาดในการโหลดรายการขาย')
+    }
+  }
+
+  // Format date for display
+  const formatSaleDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleString('th-TH', {
+      day: 'numeric',
+      month: 'short',
+      year: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  // Get platform name
+  const getPlatformName = (platformId: string) => {
+    const channel = SALES_CHANNELS.find(c => c.id === platformId)
+    return channel?.name || platformId
+  }
+
   // Format date for display
   const formatAlertDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -787,6 +903,17 @@ export default function POSPage() {
                 {savedAlertLogs.filter(log => !log.acknowledged).length}
               </span>
             )}
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              fetchRecentSales()
+              setShowRecentSales(true)
+            }}
+            className="flex items-center gap-2"
+          >
+            <Receipt className="h-4 w-4" />
+            รายการขายล่าสุด
           </Button>
           {items.length > 0 && (
             <Button
@@ -1477,6 +1604,81 @@ export default function POSPage() {
               <p className="text-xs text-gray-500 text-center">
                 หมายเหตุ: ฟีเจอร์นี้ใช้ Barcode Detection API ของเบราว์เซอร์ รองรับ Chrome, Edge, Safari
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recent Sales Modal */}
+      {showRecentSales && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex items-center gap-2">
+                <Receipt className="h-6 w-6 text-blue-500" />
+                <h2 className="text-lg font-bold text-gray-900">รายการขายล่าสุด</h2>
+              </div>
+              <button 
+                onClick={() => setShowRecentSales(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-4">
+              {loadingRecentSales ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="text-sm text-gray-600 mt-2">กำลังโหลด...</p>
+                </div>
+              ) : recentSales.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Receipt className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                  <p>ยังไม่มีรายการขาย</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {recentSales.map((sale) => (
+                    <div
+                      key={sale.id}
+                      className="p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer border border-gray-200 hover:border-blue-300"
+                      onClick={() => handleLoadSale(sale.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-gray-900">{sale.order_number}</span>
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                              {getPlatformName(sale.platform_id)}
+                            </span>
+                          </div>
+                          {sale.customer_name && (
+                            <p className="text-sm text-gray-600">{sale.customer_name}</p>
+                          )}
+                          <p className="text-xs text-gray-400 mt-1">
+                            {formatSaleDate(sale.created_at)} • {sale.item_count} รายการ
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-blue-600">฿{sale.total.toFixed(2)}</p>
+                          <p className="text-xs text-gray-500">คลิกเพื่อโหลด</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4 border-t bg-gray-50">
+              <Button
+                variant="secondary"
+                className="w-full"
+                onClick={() => setShowRecentSales(false)}
+              >
+                ปิด
+              </Button>
             </div>
           </div>
         </div>
