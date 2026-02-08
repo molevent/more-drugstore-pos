@@ -103,6 +103,15 @@ interface ProductFormData {
   alert_custom: boolean
   alert_custom_title: string
   alert_custom_message: string
+
+  // 9. Label (ฉลาก)
+  label_dosage_instructions_th: string
+  label_special_instructions_th: string
+  label_dosage_instructions_en: string
+  label_special_instructions_en: string
+  label_custom_line1: string
+  label_custom_line2: string
+  label_custom_line3: string
 }
 
 const initialFormData: ProductFormData = {
@@ -182,7 +191,15 @@ const initialFormData: ProductFormData = {
   alert_expiry_days: 30,
   alert_custom: false,
   alert_custom_title: '',
-  alert_custom_message: ''
+  alert_custom_message: '',
+  // 9. Label (ฉลาก)
+  label_dosage_instructions_th: '',
+  label_special_instructions_th: '',
+  label_dosage_instructions_en: '',
+  label_special_instructions_en: '',
+  label_custom_line1: '',
+  label_custom_line2: '',
+  label_custom_line3: ''
 }
 
 export default function ProductsPage() {
@@ -200,8 +217,9 @@ export default function ProductsPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [imageFiles, setImageFiles] = useState<(File | null)[]>(Array(9).fill(null))
   const [imagePreviews, setImagePreviews] = useState<string[]>(Array(9).fill(''))
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'identification' | 'categorization' | 'financials' | 'inventory' | 'logistics' | 'channels' | 'movements' | 'alerts'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'identification' | 'categorization' | 'financials' | 'inventory' | 'logistics' | 'channels' | 'movements' | 'alerts' | 'label'>('dashboard')
   const [inventorySubTab, setInventorySubTab] = useState<'general' | 'warehouse'>('general')
+  const [labelSubTab, setLabelSubTab] = useState<'thai' | 'english' | 'custom'>('thai')
   const [movementHistory, setMovementHistory] = useState<any[]>([])
   const [movementLoading, setMovementLoading] = useState(false)
   const [showCategoryTable, setShowCategoryTable] = useState(true)
@@ -347,7 +365,15 @@ export default function ProductsPage() {
       alert_expiry_days: product.alert_expiry_days || 30,
       alert_custom: product.alert_custom || false,
       alert_custom_title: product.alert_custom_title || '',
-      alert_custom_message: product.alert_custom_message || ''
+      alert_custom_message: product.alert_custom_message || '',
+      // 9. Label (ฉลาก)
+      label_dosage_instructions_th: product.label_dosage_instructions_th || '',
+      label_special_instructions_th: product.label_special_instructions_th || '',
+      label_dosage_instructions_en: product.label_dosage_instructions_en || '',
+      label_special_instructions_en: product.label_special_instructions_en || '',
+      label_custom_line1: product.label_custom_line1 || '',
+      label_custom_line2: product.label_custom_line2 || '',
+      label_custom_line3: product.label_custom_line3 || ''
     })
     setImagePreviews(product.image_urls?.slice(0, 9).concat(Array(9 - (product.image_urls?.length || 0)).fill('')) || Array(9).fill(''))
     setActiveTab('dashboard')
@@ -479,7 +505,15 @@ export default function ProductsPage() {
         alert_expiry_days: formData.alert_expiry_days,
         alert_custom: formData.alert_custom,
         alert_custom_title: formData.alert_custom_title,
-        alert_custom_message: formData.alert_custom_message
+        alert_custom_message: formData.alert_custom_message,
+        // Label (ฉลาก)
+        label_dosage_instructions_th: formData.label_dosage_instructions_th,
+        label_special_instructions_th: formData.label_special_instructions_th,
+        label_dosage_instructions_en: formData.label_dosage_instructions_en,
+        label_special_instructions_en: formData.label_special_instructions_en,
+        label_custom_line1: formData.label_custom_line1,
+        label_custom_line2: formData.label_custom_line2,
+        label_custom_line3: formData.label_custom_line3
       }
 
       if (editingProduct) {
@@ -512,6 +546,7 @@ export default function ProductsPage() {
     setImagePreviews(Array(9).fill(''))
     setActiveTab('dashboard')
     setShowCategoryTable(true)
+    setLabelSubTab('thai')
   }
 
   const clearFilters = () => {
@@ -1087,6 +1122,14 @@ export default function ProductsPage() {
               >
                 <AlertTriangle className="h-4 w-4" />
                 แจ้งเตือน
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('label')}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'label' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              >
+                <Printer className="h-4 w-4" />
+                ฉลาก
               </button>
             </div>
 
@@ -2695,6 +2738,202 @@ export default function ProductsPage() {
                       </div>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* Tab 9: Label (ฉลาก) */}
+              {activeTab === 'label' && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">ข้อมูลฉลากยา (Label)</h3>
+                  <p className="text-sm text-gray-600">ข้อมูลนี้จะใช้แสดงในหน้าพิมพ์ฉลากยา</p>
+
+                  {/* Sub-tabs */}
+                  <div className="flex border-b border-gray-200">
+                    <button
+                      type="button"
+                      onClick={() => setLabelSubTab('thai')}
+                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                        labelSubTab === 'thai'
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      ภาษาไทย
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLabelSubTab('english')}
+                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                        labelSubTab === 'english'
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      English
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLabelSubTab('custom')}
+                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                        labelSubTab === 'custom'
+                          ? 'border-purple-500 text-purple-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      Custom
+                    </button>
+                  </div>
+
+                  {/* Thai Tab */}
+                  {labelSubTab === 'thai' && (
+                    <div className="space-y-4">
+                      <div>
+                        <LabelWithTooltip label="วิธีใช้ (ไทย)" tooltip="คำแนะนำการใช้ยาภาษาไทย จะแสดงบนฉลาก" />
+                        <textarea
+                          value={formData.label_dosage_instructions_th}
+                          onChange={(e) => setFormData({ ...formData, label_dosage_instructions_th: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          rows={3}
+                          placeholder="เช่น รับประทานครั้งละ 1 เม็ด วันละ 3 ครั้ง หลังอาหาร"
+                        />
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setFormData({...formData, label_dosage_instructions_th: 'ครั้งละ 1 เม็ด วันละ 3 ครั้ง หลังอาหาร'})}
+                            className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+                          >
+                            1x3 หลังอาหาร
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormData({...formData, label_dosage_instructions_th: 'ครั้งละ 1 เม็ด วันละ 2 ครั้ง เช้า-เย็น'})}
+                            className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+                          >
+                            1x2 เช้า-เย็น
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormData({...formData, label_dosage_instructions_th: 'ครั้งละ 1 เม็ด ก่อนนอน'})}
+                            className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+                          >
+                            ก่อนนอน
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormData({...formData, label_dosage_instructions_th: 'เมื่อมีอาการ'})}
+                            className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+                          >
+                            เมื่อมีอาการ
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <LabelWithTooltip label="คำเตือน/ข้อควรระวัง (ไทย)" tooltip="คำเตือนหรือข้อควรระวังภาษาไทย" />
+                        <textarea
+                          value={formData.label_special_instructions_th}
+                          onChange={(e) => setFormData({ ...formData, label_special_instructions_th: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          rows={2}
+                          placeholder="เช่น ห้ามดื่มแอลกอฮอล์, เก็บในตู้เย็น"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* English Tab */}
+                  {labelSubTab === 'english' && (
+                    <div className="space-y-4">
+                      <div>
+                        <LabelWithTooltip label="Dosage Instructions (English)" tooltip="Dosage instructions in English" />
+                        <textarea
+                          value={formData.label_dosage_instructions_en}
+                          onChange={(e) => setFormData({ ...formData, label_dosage_instructions_en: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          rows={3}
+                          placeholder="e.g., Take 1 tablet 3 times daily after meals"
+                        />
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setFormData({...formData, label_dosage_instructions_en: 'Take 1 tablet 3 times daily after meals'})}
+                            className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+                          >
+                            1x3 after meals
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormData({...formData, label_dosage_instructions_en: 'Take 1 tablet twice daily morning and evening'})}
+                            className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+                          >
+                            1x2 morning-evening
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormData({...formData, label_dosage_instructions_en: 'Take 1 tablet at bedtime'})}
+                            className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+                          >
+                            At bedtime
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormData({...formData, label_dosage_instructions_en: 'Take as needed'})}
+                            className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+                          >
+                            As needed
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <LabelWithTooltip label="Warnings/Precautions (English)" tooltip="Warnings or precautions in English" />
+                        <textarea
+                          value={formData.label_special_instructions_en}
+                          onChange={(e) => setFormData({ ...formData, label_special_instructions_en: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          rows={2}
+                          placeholder="e.g., Avoid alcohol, store in refrigerator"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Custom Tab */}
+                  {labelSubTab === 'custom' && (
+                    <div className="space-y-4">
+                      <p className="text-sm text-gray-600">ข้อความแบบกำหนดเองจะแสดงแทนวิธีใช้มาตรฐาน (ถ้ากรอก)</p>
+                      <div>
+                        <LabelWithTooltip label="ข้อความบรรทัดที่ 1" tooltip="ข้อความแถวแรกบนฉลาก" />
+                        <input
+                          type="text"
+                          value={formData.label_custom_line1}
+                          onChange={(e) => setFormData({ ...formData, label_custom_line1: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="เช่น สำหรับผู้ป่วยเบาหวาน"
+                        />
+                      </div>
+                      <div>
+                        <LabelWithTooltip label="ข้อความบรรทัดที่ 2" tooltip="ข้อความแถวที่สองบนฉลาก" />
+                        <input
+                          type="text"
+                          value={formData.label_custom_line2}
+                          onChange={(e) => setFormData({ ...formData, label_custom_line2: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="เช่น รับประทานพร้อมอาหารเท่านั้น"
+                        />
+                      </div>
+                      <div>
+                        <LabelWithTooltip label="ข้อความบรรทัดที่ 3" tooltip="ข้อความแถวที่สามบนฉลาก" />
+                        <input
+                          type="text"
+                          value={formData.label_custom_line3}
+                          onChange={(e) => setFormData({ ...formData, label_custom_line3: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="เช่น ห้ามลืมทานยา"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

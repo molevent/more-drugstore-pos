@@ -127,6 +127,15 @@ export interface Product {
   alert_custom_title?: string
   alert_custom_message?: string
   
+  // 9. Label (ฉลาก)
+  label_dosage_instructions_th?: string
+  label_special_instructions_th?: string
+  label_dosage_instructions_en?: string
+  label_special_instructions_en?: string
+  label_custom_line1?: string
+  label_custom_line2?: string
+  label_custom_line3?: string
+  
   created_at: string
   updated_at: string
 }
