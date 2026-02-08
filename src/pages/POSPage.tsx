@@ -1080,9 +1080,17 @@ export default function POSPage() {
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4 sm:mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">ขายสินค้า (POS)</h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-100">
+      <div className="flex items-center justify-between mb-6 px-4 sm:px-0">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30 flex items-center justify-center">
+            <Store className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900 tracking-tight">ขายสินค้า</h1>
+            <p className="text-xs text-gray-500">POS System</p>
+          </div>
+        </div>
         <div className="flex gap-2">
           <Button
             variant="secondary"
@@ -1214,7 +1222,7 @@ export default function POSPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-4 sm:px-0">
         <div className="lg:col-span-2">
           <Card title="สแกนบาร์โค้ด">
             {/* Filter Options */}
@@ -1306,15 +1314,17 @@ export default function POSPage() {
             <div className="space-y-2">
               {items.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
-                  <ShoppingCart className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                  <p>ยังไม่มีสินค้าในตะกร้า</p>
-                  <p className="text-sm">สแกนบาร์โค้ดเพื่อเพิ่มสินค้า</p>
+                  <div className="h-20 w-20 mx-auto mb-4 rounded-2xl bg-gray-100 flex items-center justify-center">
+                    <ShoppingCart className="h-10 w-10 text-gray-300" />
+                  </div>
+                  <p className="text-sm font-medium">ยังไม่มีสินค้าในตะกร้า</p>
+                  <p className="text-xs text-gray-400 mt-1">สแกนบาร์โค้ดเพื่อเพิ่มสินค้า</p>
                 </div>
               ) : (
                 items.map((item) => (
                   <div
                     key={item.product.id}
-                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                    className="flex items-center gap-3 p-4 bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
                   >
                     {/* Product Image */}
                     {item.product.image_url ? (
