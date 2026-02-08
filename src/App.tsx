@@ -11,6 +11,8 @@ import ProductsPage from './pages/ProductsPage'
 import InventoryPage from './pages/InventoryPage'
 import WarehouseManagementPage from './pages/WarehouseManagementPage'
 import PurchaseOrderPage from './pages/PurchaseOrderPage'
+import PaymentVoucherPage from './pages/PaymentVoucherPage'
+import WithholdingTaxPage from './pages/WithholdingTaxPage'
 import ExpensesPage from './pages/ExpensesPage'
 import ReportsPage from './pages/ReportsPage'
 import ContactsPage from './pages/ContactsPage'
@@ -42,6 +44,8 @@ function App() {
                     <Route path="/inventory" element={<InventoryPage />} />
                     <Route path="/warehouse-management" element={<WarehouseManagementPage />} />
                     <Route path="/purchase-orders" element={<PurchaseOrderPage />} />
+                    <Route path="/payment-vouchers" element={<PaymentVoucherPage />} />
+                    <Route path="/withholding-tax" element={<WithholdingTaxPage />} />
                     <Route path="/expenses" element={<ExpensesPage />} />
                     <Route path="/reports" element={<ReportsPage />} />
                     <Route path="/contacts" element={<ContactsPage />} />

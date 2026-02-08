@@ -13,7 +13,8 @@ import {
   Brain,
   Printer,
   Users,
-  Receipt
+  Receipt,
+  Percent
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -91,6 +92,8 @@ export default function Layout({ children }: LayoutProps) {
       title: 'เอกสาร',
       items: [
         { name: 'ใบสั่งซื้อ', href: '/purchase-orders', icon: FileText },
+        { name: 'ใบสำคัญจ่าย', href: '/payment-vouchers', icon: Receipt },
+        { name: 'หัก ณ ที่จ่าย', href: '/withholding-tax', icon: Percent },
         { name: 'ค่าใช้จ่าย', href: '/expenses', icon: Receipt },
       ]
     },
