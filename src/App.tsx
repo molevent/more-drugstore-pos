@@ -11,6 +11,7 @@ import ProductsPage from './pages/ProductsPage'
 import InventoryPage from './pages/InventoryPage'
 import WarehouseManagementPage from './pages/WarehouseManagementPage'
 import PurchaseOrderPage from './pages/PurchaseOrderPage'
+import ExpensesPage from './pages/ExpensesPage'
 import ReportsPage from './pages/ReportsPage'
 import ContactsPage from './pages/ContactsPage'
 import SettingsPage from './pages/SettingsPage'
@@ -41,6 +42,7 @@ function App() {
                     <Route path="/inventory" element={<InventoryPage />} />
                     <Route path="/warehouse-management" element={<WarehouseManagementPage />} />
                     <Route path="/purchase-orders" element={<PurchaseOrderPage />} />
+                    <Route path="/expenses" element={<ExpensesPage />} />
                     <Route path="/reports" element={<ReportsPage />} />
                     <Route path="/contacts" element={<ContactsPage />} />
                     <Route path="/settings" element={<SettingsPage />} />

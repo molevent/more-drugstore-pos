@@ -12,7 +12,8 @@ import {
   X,
   Brain,
   Printer,
-  Users
+  Users,
+  Receipt
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -85,6 +86,12 @@ export default function Layout({ children }: LayoutProps) {
       title: 'ผู้ติดต่อ',
       items: [
         { name: 'ผู้ติดต่อ', href: '/contacts', icon: Users },
+      ]
+    },
+    {
+      title: 'เอกสาร',
+      items: [
+        { name: 'ค่าใช้จ่าย', href: '/expenses', icon: Receipt },
       ]
     },
     {
