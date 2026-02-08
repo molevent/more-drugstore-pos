@@ -6,7 +6,7 @@ import Card from '../components/common/Card'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import { LabelWithTooltip } from '../components/common/Tooltip'
-import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft, Printer, ExternalLink, ArrowLeft } from 'lucide-react'
+import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft, Printer, ExternalLink, ArrowLeft, Bell } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { Product, Category } from '../types/database'
 
@@ -1248,6 +1248,30 @@ export default function ProductsPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Custom Alert Display */}
+                  {formData.alert_custom && formData.alert_custom_title && (
+                    <div className="bg-red-50 rounded-lg p-4 border-2 border-red-300">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0">
+                          <Bell className="h-6 w-6 text-red-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-red-800 mb-1">
+                            {formData.alert_custom_title}
+                          </h4>
+                          {formData.alert_custom_message && (
+                            <p className="text-red-700 text-sm">
+                              {formData.alert_custom_message}
+                            </p>
+                          )}
+                          <p className="text-xs text-red-500 mt-2">
+                            แจ้งเตือนนี้จะแสดงเมื่อขายสินค้า (POS)
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Status and Print Label */}
                   <div className="flex items-center gap-3">
