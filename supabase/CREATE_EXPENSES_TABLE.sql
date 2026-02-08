@@ -54,7 +54,10 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
-CREATE TRIGGER IF NOT EXISTS update_expenses_updated_at 
+-- Drop trigger if exists, then create
+DROP TRIGGER IF EXISTS update_expenses_updated_at ON expenses;
+
+CREATE TRIGGER update_expenses_updated_at 
   BEFORE UPDATE ON expenses 
   FOR EACH ROW 
   EXECUTE FUNCTION update_updated_at_column();
