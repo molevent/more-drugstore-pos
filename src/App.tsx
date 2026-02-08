@@ -16,6 +16,7 @@ import WithholdingTaxPage from './pages/WithholdingTaxPage'
 import ExpensesPage from './pages/ExpensesPage'
 import ReportsPage from './pages/ReportsPage'
 import ContactsPage from './pages/ContactsPage'
+import SalesOrdersPage from './pages/SalesOrdersPage'
 import SettingsPage from './pages/SettingsPage'
 import AuthGuard from './components/auth/AuthGuard'
 import Layout from './components/common/Layout'
@@ -49,6 +50,7 @@ function App() {
                     <Route path="/expenses" element={<ExpensesPage />} />
                     <Route path="/reports" element={<ReportsPage />} />
                     <Route path="/contacts" element={<ContactsPage />} />
+                    <Route path="/sales-orders" element={<SalesOrdersPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   </Routes>
