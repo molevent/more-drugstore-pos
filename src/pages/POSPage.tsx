@@ -578,6 +578,7 @@ export default function POSPage() {
         const subtotal = getSubtotal()
         const discount = getTotalDiscount()
         const total = getTotal()
+        const paymentMethodName = paymentMethods.find(m => m.id === selectedPaymentMethod)?.name || 'เงินสด'
         const { data: orderData, error: orderError } = await supabase
           .from('orders')
           .insert({
@@ -588,7 +589,7 @@ export default function POSPage() {
             subtotal: subtotal,
             discount: discount,
             total: total,
-            payment_method: selectedPaymentMethod || 'cash',
+            payment_method: paymentMethodName,
           })
           .select()
           .single()
