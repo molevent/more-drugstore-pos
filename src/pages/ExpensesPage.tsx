@@ -50,15 +50,16 @@ export default function ExpensesPage() {
   const [sheetLoading, setSheetLoading] = useState(false)
   const [showSheetSettings, setShowSheetSettings] = useState(false)
   const [sheetConfig, setSheetConfig] = useState({
-    dateCol: 0,
-    categoryCol: 1,
-    descriptionCol: 2,
-    amountCol: 3,
-    paymentCol: 4,
-    vendorCol: 5,
-    receiptCol: 6,
-    notesCol: 7,
-    startRow: 1
+    dateCol: 0,        // A: วันที่
+    receiptCol: 1,     // B: เลขที่เอกสาร
+    descriptionCol: 2, // C: รายการสินค้า/บริการ
+    quantityCol: 3,    // D: จำนวน (เก็บไว้อ้างอิง)
+    unitPriceCol: 4,   // E: ราคาหน่วย (เก็บไว้อ้างอิง)
+    amountCol: 7,      // H: มูลค่าที่ต้องจ่าย (ใช้ค่านี้)
+    categoryCol: 8,    // I: หมวดหมู่
+    vendorCol: 9,      // J: ชื่อลูกค้า/ผู้ขาย
+    notesCol: 10,      // K: หมายเหตุ
+    startRow: 4        // ข้อมูลเริ่มแถว 5 (แถว 1-4 เป็นหัวตาราง)
   })
   const [importing, setImporting] = useState(false)
   
@@ -214,7 +215,7 @@ export default function ExpensesPage() {
         category: row[sheetConfig.categoryCol] || 'ค่าอื่นๆ',
         description: row[sheetConfig.descriptionCol] || '',
         amount: parseFloat(row[sheetConfig.amountCol]) || 0,
-        payment_method: row[sheetConfig.paymentCol] || 'เงินสด',
+        payment_method: 'เงินสด', // ไม่มีคอลัมน์ใน Sheet, ใช้ค่า default
         vendor: row[sheetConfig.vendorCol] || '',
         receipt_number: row[sheetConfig.receiptCol] || '',
         notes: row[sheetConfig.notesCol] || '',
@@ -475,6 +476,33 @@ export default function ExpensesPage() {
                       type="number"
                       value={sheetConfig.amountCol}
                       onChange={(e) => setSheetConfig({...sheetConfig, amountCol: parseInt(e.target.value)})}
+                      className="w-full px-2 py-1 border rounded text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">เลขที่เอกสาร</label>
+                    <input
+                      type="number"
+                      value={sheetConfig.receiptCol}
+                      onChange={(e) => setSheetConfig({...sheetConfig, receiptCol: parseInt(e.target.value)})}
+                      className="w-full px-2 py-1 border rounded text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">ชื่อลูกค้า/ผู้ขาย</label>
+                    <input
+                      type="number"
+                      value={sheetConfig.vendorCol}
+                      onChange={(e) => setSheetConfig({...sheetConfig, vendorCol: parseInt(e.target.value)})}
+                      className="w-full px-2 py-1 border rounded text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">หมายเหตุ</label>
+                    <input
+                      type="number"
+                      value={sheetConfig.notesCol}
+                      onChange={(e) => setSheetConfig({...sheetConfig, notesCol: parseInt(e.target.value)})}
                       className="w-full px-2 py-1 border rounded text-sm"
                     />
                   </div>
