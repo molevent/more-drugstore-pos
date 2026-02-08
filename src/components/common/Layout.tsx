@@ -100,14 +100,9 @@ export default function Layout({ children }: LayoutProps) {
       ]
     },
     {
-      title: 'การเงิน',
-      items: [
-        { name: 'ช่องทางการชำระเงิน', href: '/payment-methods', icon: CreditCard },
-      ]
-    },
-    {
       title: 'อื่นๆ',
       items: [
+        { name: 'ช่องทางการชำระเงิน', href: '/payment-methods', icon: CreditCard },
         { name: t('nav.reports'), href: '/reports', icon: FileText },
         { name: t('nav.settings'), href: '/settings', icon: Settings },
       ]
