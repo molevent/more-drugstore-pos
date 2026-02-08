@@ -730,6 +730,8 @@ export default function POSPage() {
   const fetchRecentSales = async () => {
     setLoadingRecentSales(true)
     try {
+      console.log('Fetching recent sales...')
+      
       // Fetch recent orders with item count
       const { data: orders, error } = await supabase
         .from('orders')
@@ -745,24 +747,41 @@ export default function POSPage() {
         .order('created_at', { ascending: false })
         .limit(20)
 
+      console.log('Orders response:', { orders, error })
+
       if (error) {
         console.error('Error fetching recent sales:', error)
+        alert('ไม่สามารถโหลดรายการขายได้: ' + error.message)
         return
       }
 
-      const formattedSales = orders?.map((order: any) => ({
-        id: order.id,
-        order_number: order.order_number,
-        customer_name: order.customer_name,
-        total: order.total,
-        platform_id: order.platform_id,
-        created_at: order.created_at,
-        item_count: order.order_items?.[0]?.count || 0
-      })) || []
+      const formattedSales = orders?.map((order: any) => {
+        console.log('Processing order:', order)
+        // Handle count from Supabase - it can be a number directly or in an array
+        let itemCount = 0
+        if (order.order_items) {
+          if (Array.isArray(order.order_items)) {
+            itemCount = order.order_items[0]?.count || 0
+          } else if (typeof order.order_items === 'number') {
+            itemCount = order.order_items
+          }
+        }
+        return {
+          id: order.id,
+          order_number: order.order_number,
+          customer_name: order.customer_name,
+          total: order.total,
+          platform_id: order.platform_id,
+          created_at: order.created_at,
+          item_count: itemCount
+        }
+      }) || []
 
+      console.log('Formatted sales:', formattedSales)
       setRecentSales(formattedSales)
     } catch (err) {
       console.error('Exception fetching recent sales:', err)
+      alert('เกิดข้อผิดพลาดในการโหลดรายการขาย')
     } finally {
       setLoadingRecentSales(false)
     }
