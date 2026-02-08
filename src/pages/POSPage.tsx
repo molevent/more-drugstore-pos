@@ -1463,19 +1463,19 @@ export default function POSPage() {
 
             {/* Payment Method Selection */}
             <div className="mb-4">
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              <label className="block text-xs font-medium text-gray-600 mb-2">
                 วิธีชำระ
               </label>
               {paymentMethods.length > 0 ? (
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {paymentMethods.map((method) => (
                     <button
                       key={method.id}
                       onClick={() => setSelectedPaymentMethod(method.id)}
-                      className={`flex items-center justify-center px-2 py-1.5 rounded border transition-all text-xs ${
+                      className={`px-4 py-2 rounded-full border-2 transition-all text-sm whitespace-nowrap ${
                         selectedPaymentMethod === method.id
-                          ? 'border-green-500 bg-green-50 text-green-700 font-medium'
-                          : 'border-gray-200 bg-white text-gray-600 hover:border-green-300'
+                          ? 'border-green-500 bg-green-500 text-white font-medium shadow-md'
+                          : 'border-gray-300 bg-white text-gray-700 hover:border-green-400 hover:bg-green-50'
                       }`}
                     >
                       {method.name}
@@ -1483,7 +1483,7 @@ export default function POSPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-gray-500 bg-gray-100 p-2 rounded">
+                <p className="text-xs text-gray-500 bg-gray-100 p-2 rounded-full">
                   ยังไม่มีวิธีการชำระเงิน
                 </p>
               )}
