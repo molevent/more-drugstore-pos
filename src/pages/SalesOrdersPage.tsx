@@ -13,9 +13,23 @@ interface SalesOrder {
   subtotal: number
   discount: number
   platform_id: string
+  is_cancelled?: boolean
   created_at: string
   updated_at: string
   order_items_count: number
+}
+
+interface OrderItem {
+  id: string
+  product_name: string
+  quantity: number
+  unit_price: number
+  discount: number
+  total_price: number
+}
+
+interface OrderDetail extends SalesOrder {
+  order_items: OrderItem[]
 }
 
 const SALES_CHANNELS: Record<string, string> = {
@@ -41,6 +55,9 @@ export default function SalesOrdersPage() {
     const today = new Date()
     return today.toISOString().split('T')[0]
   })
+  const [selectedOrder, setSelectedOrder] = useState<OrderDetail | null>(null)
+  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [loadingDetail, setLoadingDetail] = useState(false)
 
   useEffect(() => {
     fetchOrders()
@@ -145,6 +162,48 @@ export default function SalesOrdersPage() {
 
   const getPlatformName = (platformId: string) => {
     return SALES_CHANNELS[platformId] || platformId
+  }
+
+  const handleViewOrder = async (orderId: string) => {
+    setLoadingDetail(true)
+    try {
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .single()
+
+      if (orderError) {
+        console.error('Error fetching order:', orderError)
+        alert('ไม่สามารถโหลดข้อมูลออเดอร์ได้')
+        return
+      }
+
+      const { data: items, error: itemsError } = await supabase
+        .from('order_items')
+        .select('*')
+        .eq('order_id', orderId)
+
+      if (itemsError) {
+        console.error('Error fetching order items:', itemsError)
+      }
+
+      setSelectedOrder({
+        ...order,
+        order_items: items || []
+      })
+      setShowDetailModal(true)
+    } catch (err: any) {
+      console.error('Exception viewing order:', err)
+      alert('เกิดข้อผิดพลาด: ' + err.message)
+    } finally {
+      setLoadingDetail(false)
+    }
+  }
+
+  const closeDetailModal = () => {
+    setShowDetailModal(false)
+    setSelectedOrder(null)
   }
 
   const filteredOrders = orders.filter(order =>
@@ -299,7 +358,7 @@ export default function SalesOrdersPage() {
                       {formatCurrency(order.total)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center">
-                      <Button variant="secondary" size="sm">
+                      <Button variant="secondary" size="sm" onClick={() => handleViewOrder(order.id)}>
                         <Eye className="h-4 w-4" />
                       </Button>
                     </td>
@@ -310,6 +369,108 @@ export default function SalesOrdersPage() {
           </div>
         )}
       </Card>
+
+      {/* Order Detail Modal */}
+      {showDetailModal && selectedOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900">
+                  รายละเอียดออเดอร์ {selectedOrder.order_number}
+                </h2>
+                <button
+                  onClick={closeDetailModal}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {loadingDetail ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="text-sm text-gray-600 mt-2">กำลังโหลด...</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Order Info */}
+                  <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                    <div>
+                      <p className="text-sm text-gray-500">วันที่</p>
+                      <p className="font-medium">{formatDate(selectedOrder.created_at)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">ช่องทาง</p>
+                      <p className="font-medium">{getPlatformName(selectedOrder.platform_id)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">ลูกค้า</p>
+                      <p className="font-medium">{selectedOrder.customer_name || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">สถานะ</p>
+                      <p className="font-medium">{selectedOrder.is_cancelled ? 'ยกเลิก' : 'สำเร็จ'}</p>
+                    </div>
+                  </div>
+
+                  {/* Order Items */}
+                  <div>
+                    <h3 className="font-medium text-gray-900 mb-2">รายการสินค้า</h3>
+                    {selectedOrder.order_items?.length === 0 ? (
+                      <p className="text-sm text-gray-500">ไม่พบรายการสินค้า</p>
+                    ) : (
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="px-3 py-2 text-left">สินค้า</th>
+                            <th className="px-3 py-2 text-right">จำนวน</th>
+                            <th className="px-3 py-2 text-right">ราคา/หน่วย</th>
+                            <th className="px-3 py-2 text-right">รวม</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {selectedOrder.order_items?.map((item) => (
+                            <tr key={item.id}>
+                              <td className="px-3 py-2">{item.product_name}</td>
+                              <td className="px-3 py-2 text-right">{item.quantity}</td>
+                              <td className="px-3 py-2 text-right">{formatCurrency(item.unit_price)}</td>
+                              <td className="px-3 py-2 text-right font-medium">{formatCurrency(item.total_price)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+
+                  {/* Totals */}
+                  <div className="border-t pt-4 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">รวมก่อนลด</span>
+                      <span>{formatCurrency(selectedOrder.subtotal)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">ส่วนลด</span>
+                      <span className="text-red-600">-{formatCurrency(selectedOrder.discount)}</span>
+                    </div>
+                    <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                      <span>ยอดรวม</span>
+                      <span className="text-blue-600">{formatCurrency(selectedOrder.total)}</span>
+                    </div>
+                  </div>
+
+                  {/* Close Button */}
+                  <div className="flex justify-end pt-4">
+                    <Button onClick={closeDetailModal}>
+                      ปิด
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
