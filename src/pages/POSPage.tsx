@@ -571,7 +571,6 @@ export default function POSPage() {
           .insert({
             order_number: orderNumber,
             user_id: (await supabase.auth.getUser()).data.user?.id,
-            platform_id: salesChannel,
           })
           .select()
           .single()
