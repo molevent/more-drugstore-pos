@@ -4,6 +4,22 @@ import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import { Printer, Search, Package } from 'lucide-react'
 
+// Helper to get URL query params
+function useQueryParams() {
+  const [params, setParams] = useState<Record<string, string>>({})
+  
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search)
+    const result: Record<string, string> = {}
+    searchParams.forEach((value, key) => {
+      result[key] = value
+    })
+    setParams(result)
+  }, [])
+  
+  return params
+}
+
 interface Product {
   id: string
   name_th: string
@@ -56,6 +72,7 @@ interface CustomizeData {
 }
 
 export default function MedicineLabelPage() {
+  const queryParams = useQueryParams()
   const [products, setProducts] = useState<Product[]>([])
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -100,6 +117,39 @@ export default function MedicineLabelPage() {
   useEffect(() => {
     fetchProducts()
   }, [])
+
+  // Handle query params from ProductsPage
+  useEffect(() => {
+    if (queryParams.data) {
+      try {
+        const parsedData = JSON.parse(queryParams.data)
+        // Pre-fill label data from query params
+        setLabelData({
+          product_id: '',
+          dosage_instructions_th: parsedData.label_dosage_instructions_th || '',
+          special_instructions_th: parsedData.label_special_instructions_th || '',
+          dosage_instructions_en: parsedData.label_dosage_instructions_en || '',
+          special_instructions_en: parsedData.label_special_instructions_en || ''
+        })
+        // Pre-fill lot and expiry
+        if (parsedData.lot_number) setLotNumber(parsedData.lot_number)
+        if (parsedData.expiry_date) setExpiryDate(parsedData.expiry_date)
+        // Store custom lines for potential use
+        if (parsedData.label_custom_line1 || parsedData.label_custom_line2 || parsedData.label_custom_line3) {
+          setCustomizeData(prev => ({
+            ...prev,
+            custom_instructions: [
+              parsedData.label_custom_line1,
+              parsedData.label_custom_line2,
+              parsedData.label_custom_line3
+            ].filter(Boolean).join('\n')
+          }))
+        }
+      } catch (e) {
+        console.error('Error parsing query params:', e)
+      }
+    }
+  }, [queryParams.data])
 
   useEffect(() => {
     if (selectedProduct) {

@@ -1346,7 +1346,7 @@ export default function ProductsPage() {
                       variant="secondary"
                       size="sm"
                       onClick={() => {
-                        // Navigate to medicine label page with product data
+                        // Navigate to medicine label page with product data including new label fields
                         const labelData = {
                           product_name: formData.name_th,
                           product_name_en: formData.name_en,
@@ -1354,7 +1354,15 @@ export default function ProductsPage() {
                           dosage: formData.packaging_size,
                           active_ingredient: formData.active_ingredient,
                           lot_number: formData.lot_number,
-                          expiry_date: formData.expiry_date
+                          expiry_date: formData.expiry_date,
+                          // New label fields from the product form
+                          label_dosage_instructions_th: formData.label_dosage_instructions_th,
+                          label_special_instructions_th: formData.label_special_instructions_th,
+                          label_dosage_instructions_en: formData.label_dosage_instructions_en,
+                          label_special_instructions_en: formData.label_special_instructions_en,
+                          label_custom_line1: formData.label_custom_line1,
+                          label_custom_line2: formData.label_custom_line2,
+                          label_custom_line3: formData.label_custom_line3
                         }
                         const queryParams = new URLSearchParams({
                           data: JSON.stringify(labelData)
