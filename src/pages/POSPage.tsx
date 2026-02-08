@@ -4,7 +4,7 @@ import { useProductStore } from '../stores/productStore'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Package, Receipt } from 'lucide-react'
+import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Package, Receipt, AlertTriangle } from 'lucide-react'
 import type { Product } from '../types/database'
 import { supabase } from '../services/supabase'
 
@@ -48,6 +48,15 @@ export default function POSPage() {
   
   // Product filter states
   const [showStockOnly, setShowStockOnly] = useState(false)
+  
+  // Alert states
+  const [showAlertModal, setShowAlertModal] = useState(false)
+  const [currentAlerts, setCurrentAlerts] = useState<Array<{
+    type: string
+    title: string
+    message: string
+    productName: string
+  }>>([])
   
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -175,6 +184,131 @@ export default function POSPage() {
     setSearchResults([])
     setSelectedIndex(-1)
     inputRef.current?.focus()
+    
+    // Check for product alerts
+    checkProductAlerts(product)
+  }
+
+  // Check product alerts and show modal if any
+  const checkProductAlerts = (product: Product) => {
+    const alerts: Array<{type: string, title: string, message: string, productName: string}> = []
+    
+    // Check out of stock alert
+    if (product.alert_out_of_stock && product.stock_quantity === 0) {
+      alerts.push({
+        type: 'out_of_stock',
+        title: 'สินค้าหมดสต็อก',
+        message: product.alert_out_of_stock_message || 'สินค้าชิ้นนี้ขายหมดแล้ว จำนวนคงเหลือ = 0',
+        productName: product.name_th
+      })
+    }
+    
+    // Check low stock alert
+    if (product.alert_low_stock && product.stock_quantity > 0 && product.stock_quantity <= (product.min_stock_level || 5)) {
+      alerts.push({
+        type: 'low_stock',
+        title: 'สินค้าใกล้หมด',
+        message: product.alert_low_stock_message || `สินค้าเหลือน้อย คงเหลือ ${product.stock_quantity} ชิ้น`,
+        productName: product.name_th
+      })
+    }
+    
+    // Check expiry alert
+    if (product.alert_expiry && product.expiry_date) {
+      const expiryDate = new Date(product.expiry_date)
+      const today = new Date()
+      const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+      const alertDays = product.alert_expiry_days || 30
+      
+      if (daysUntilExpiry <= alertDays && daysUntilExpiry > 0) {
+        alerts.push({
+          type: 'expiry',
+          title: 'สินค้าใกล้หมดอายุ',
+          message: product.alert_expiry_message || `สินค้าจะหมดอายุในอีก ${daysUntilExpiry} วัน`,
+          productName: product.name_th
+        })
+      } else if (daysUntilExpiry <= 0) {
+        alerts.push({
+          type: 'expired',
+          title: 'สินค้าหมดอายุแล้ว',
+          message: product.alert_expiry_message || 'สินค้าหมดอายุแล้ว กรุณาตรวจสอบ',
+          productName: product.name_th
+        })
+      }
+    }
+    
+    // Check custom alert
+    if (product.alert_custom && product.alert_custom_title) {
+      alerts.push({
+        type: 'custom',
+        title: product.alert_custom_title,
+        message: product.alert_custom_message || '',
+        productName: product.name_th
+      })
+    }
+    
+    if (alerts.length > 0) {
+      setCurrentAlerts(alerts)
+      setShowAlertModal(true)
+    }
+  }
+
+  // Check all cart items for alerts during checkout
+  const checkAllCartAlerts = () => {
+    const allAlerts: Array<{type: string, title: string, message: string, productName: string}> = []
+    
+    items.forEach(item => {
+      const product = item.product
+      
+      // Check out of stock alert
+      if (product.alert_out_of_stock && product.stock_quantity === 0) {
+        allAlerts.push({
+          type: 'out_of_stock',
+          title: 'สินค้าหมดสต็อก',
+          message: product.alert_out_of_stock_message || 'สินค้าชิ้นนี้ขายหมดแล้ว',
+          productName: product.name_th
+        })
+      }
+      
+      // Check low stock alert
+      if (product.alert_low_stock && product.stock_quantity > 0 && product.stock_quantity <= (product.min_stock_level || 5)) {
+        allAlerts.push({
+          type: 'low_stock',
+          title: 'สินค้าใกล้หมด',
+          message: product.alert_low_stock_message || `สินค้าเหลือน้อย คงเหลือ ${product.stock_quantity} ชิ้น`,
+          productName: product.name_th
+        })
+      }
+      
+      // Check expiry alert
+      if (product.alert_expiry && product.expiry_date) {
+        const expiryDate = new Date(product.expiry_date)
+        const today = new Date()
+        const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+        const alertDays = product.alert_expiry_days || 30
+        
+        if (daysUntilExpiry <= alertDays) {
+          allAlerts.push({
+            type: 'expiry',
+            title: 'สินค้าใกล้หมดอายุ',
+            message: product.alert_expiry_message || `สินค้าจะหมดอายุในอีก ${daysUntilExpiry} วัน`,
+            productName: product.name_th
+          })
+        }
+      }
+      
+      // Check custom alert
+      if (product.alert_custom && product.alert_custom_title) {
+        allAlerts.push({
+          type: 'custom',
+          title: product.alert_custom_title,
+          message: product.alert_custom_message || '',
+          productName: product.name_th
+        })
+      }
+    })
+    
+    return allAlerts
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -250,6 +384,40 @@ export default function POSPage() {
       return
     }
 
+    // Check for alerts before checkout
+    const alerts = checkAllCartAlerts()
+    if (alerts.length > 0) {
+      setCurrentAlerts(alerts)
+      setShowAlertModal(true)
+      return
+    }
+
+    const channelName = SALES_CHANNELS.find(c => c.id === salesChannel)?.name || 'หน้าร้าน'
+    const confirmed = confirm(`ยืนยันการขายผ่าน ${channelName}\nยอดชำระ: ฿${getTotal().toFixed(2)}`)
+    
+    if (confirmed) {
+      // Remove from saved orders if it was a saved order
+      if (activeOrderId) {
+        setSavedOrders(savedOrders.filter(o => o.id !== activeOrderId))
+        setActiveOrderId(null)
+      }
+      
+      // Show print receipt confirmation
+      const printReceipt = confirm(`ขายสำเร็จ! ช่องทาง: ${channelName}\n\nต้องการพิมพ์ใบเสร็จรับเงินหรือไม่?`)
+      if (printReceipt) {
+        handlePrintReceipt()
+      }
+      
+      clearCart()
+      setSalesChannel('walk-in')
+    }
+  }
+
+  // Proceed with checkout after acknowledging alerts
+  const proceedWithCheckout = () => {
+    setShowAlertModal(false)
+    setCurrentAlerts([])
+    
     const channelName = SALES_CHANNELS.find(c => c.id === salesChannel)?.name || 'หน้าร้าน'
     const confirmed = confirm(`ยืนยันการขายผ่าน ${channelName}\nยอดชำระ: ฿${getTotal().toFixed(2)}`)
     
@@ -657,6 +825,76 @@ export default function POSPage() {
           </Card>
         </div>
       </div>
+
+      {/* Alert Modal */}
+      {showAlertModal && currentAlerts.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-6 w-6 text-yellow-500" />
+                <h2 className="text-lg font-bold text-gray-900">
+                  {currentAlerts.length === 1 ? 'การแจ้งเตือน' : `การแจ้งเตือน (${currentAlerts.length})`}
+                </h2>
+              </div>
+              <button 
+                onClick={() => setShowAlertModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-4 space-y-3">
+              {currentAlerts.map((alert, index) => (
+                <div 
+                  key={index} 
+                  className={`p-3 rounded-lg border-l-4 ${
+                    alert.type === 'out_of_stock' ? 'bg-red-50 border-red-500' :
+                    alert.type === 'low_stock' ? 'bg-yellow-50 border-yellow-500' :
+                    alert.type === 'expiry' || alert.type === 'expired' ? 'bg-orange-50 border-orange-500' :
+                    'bg-blue-50 border-blue-500'
+                  }`}
+                >
+                  <p className="font-semibold text-gray-900">{alert.productName}</p>
+                  <p className={`font-medium text-sm ${
+                    alert.type === 'out_of_stock' ? 'text-red-700' :
+                    alert.type === 'low_stock' ? 'text-yellow-700' :
+                    alert.type === 'expiry' || alert.type === 'expired' ? 'text-orange-700' :
+                    'text-blue-700'
+                  }`}>
+                    {alert.title}
+                  </p>
+                  {alert.message && (
+                    <p className="text-sm text-gray-600 mt-1">{alert.message}</p>
+                  )}
+                </div>
+              ))}
+              
+              <p className="text-sm text-gray-500 mt-4">
+                กรุณาตรวจสอบสินค้าเหล่านี้ก่อนดำเนินการต่อ
+              </p>
+            </div>
+            
+            <div className="flex gap-2 p-4 border-t bg-gray-50">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setShowAlertModal(false)}
+              >
+                กลับไปแก้ไข
+              </Button>
+              <Button
+                variant="primary"
+                className="flex-1"
+                onClick={proceedWithCheckout}
+              >
+                ดำเนินการต่อ
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
