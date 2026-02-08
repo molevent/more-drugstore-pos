@@ -1462,32 +1462,29 @@ export default function POSPage() {
             </div>
 
             {/* Payment Method Selection */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                วิธีการชำระเงิน
+            <div className="mb-4">
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                วิธีชำระ
               </label>
               {paymentMethods.length > 0 ? (
-                <div className="grid grid-cols-1 gap-2">
+                <div className="grid grid-cols-2 gap-1.5">
                   {paymentMethods.map((method) => (
                     <button
                       key={method.id}
                       onClick={() => setSelectedPaymentMethod(method.id)}
-                      className={`flex items-center justify-between px-3 py-2 rounded-lg border-2 transition-all ${
+                      className={`flex items-center justify-center px-2 py-1.5 rounded border transition-all text-xs ${
                         selectedPaymentMethod === method.id
-                          ? 'border-green-500 bg-green-50 text-green-700'
-                          : 'border-gray-200 bg-white text-gray-700 hover:border-green-300'
+                          ? 'border-green-500 bg-green-50 text-green-700 font-medium'
+                          : 'border-gray-200 bg-white text-gray-600 hover:border-green-300'
                       }`}
                     >
-                      <span className="text-sm font-medium">{method.name}</span>
-                      {selectedPaymentMethod === method.id && (
-                        <span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded-full">เลือก</span>
-                      )}
+                      {method.name}
                     </button>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500 bg-gray-100 p-3 rounded-lg">
-                  ยังไม่มีวิธีการชำระเงิน กรุณาตั้งค่าในเมนูตั้งค่า
+                <p className="text-xs text-gray-500 bg-gray-100 p-2 rounded">
+                  ยังไม่มีวิธีการชำระเงิน
                 </p>
               )}
             </div>
