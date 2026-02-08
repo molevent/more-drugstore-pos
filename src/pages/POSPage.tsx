@@ -1149,7 +1149,12 @@ export default function POSPage() {
                         type="number"
                         min="1"
                         value={item.quantity}
-                        onChange={(e) => updateQuantity(item.product.id, parseInt(e.target.value))}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value)
+                          if (!isNaN(value) && value >= 1) {
+                            updateQuantity(item.product.id, value)
+                          }
+                        }}
                         className="w-16 text-center"
                       />
                       <span className="font-medium text-gray-900 w-20 text-right">

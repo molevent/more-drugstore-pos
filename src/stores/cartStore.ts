@@ -74,8 +74,8 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
   
   updateQuantity: (productId, quantity) => {
-    if (quantity <= 0) {
-      get().removeItem(productId)
+    // Prevent negative quantities - minimum is 1
+    if (quantity < 1 || isNaN(quantity)) {
       return
     }
     
