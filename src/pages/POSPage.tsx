@@ -53,6 +53,9 @@ export default function POSPage() {
   const [showCameraModal, setShowCameraModal] = useState(false)
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
   const [isProcessingBarcode, setIsProcessingBarcode] = useState(false)
+  const [detectedProducts, setDetectedProducts] = useState<Product[]>([])
+  const [selectedDetectedProducts, setSelectedDetectedProducts] = useState<Set<string>>(new Set())
+  const [showDetectedProductsView, setShowDetectedProductsView] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -683,11 +686,37 @@ export default function POSPage() {
         const barcodes = await barcodeDetector.detect(img)
         
         if (barcodes.length > 0) {
-          const scannedBarcode = barcodes[0].rawValue
-          console.log('Barcode found:', scannedBarcode)
-          handleScannedBarcode(scannedBarcode)
+          console.log(`Found ${barcodes.length} barcodes:`, barcodes.map((b: any) => b.rawValue))
+          
+          // Find all products matching detected barcodes
+          const foundProducts: Product[] = []
+          const uniqueBarcodes = new Set<string>()
+          
+          for (const barcode of barcodes) {
+            const code = barcode.rawValue
+            if (!uniqueBarcodes.has(code)) {
+              uniqueBarcodes.add(code)
+              
+              // Try to find product by barcode
+              const product = getProductByBarcode(code) || products.find(p => p.barcode === code)
+              if (product && !foundProducts.find(p => p.id === product.id)) {
+                foundProducts.push(product)
+              }
+            }
+          }
+          
+          if (foundProducts.length > 0) {
+            // Show product selection view
+            setDetectedProducts(foundProducts)
+            setSelectedDetectedProducts(new Set(foundProducts.map(p => p.id)))
+            setShowDetectedProductsView(true)
+          } else {
+            alert('ไม่พบสินค้าที่ตรงกับบาร์โค้ดในรูปภาพ')
+            setCapturedImage(null)
+          }
         } else {
           alert('ไม่พบบาร์โค้ดในรูปภาพ กรุณาลองใหม่')
+          setCapturedImage(null)
         }
       } else {
         // Fallback: just show the image and let user enter barcode manually
@@ -702,26 +731,35 @@ export default function POSPage() {
     }
   }
 
-  const handleScannedBarcode = (scannedBarcode: string) => {
-    // Search for product
-    const product = getProductByBarcode(scannedBarcode)
-    if (product) {
-      addProductToCart(product)
-      handleCloseCamera()
-      alert(`เพิ่มสินค้า: ${product.name_th}`)
-    } else {
-      // Try searching in products list
-      const foundProduct = products.find(p => p.barcode === scannedBarcode)
-      if (foundProduct) {
-        addProductToCart(foundProduct)
-        handleCloseCamera()
-        alert(`เพิ่มสินค้า: ${foundProduct.name_th}`)
+  const handleToggleProductSelection = (productId: string) => {
+    setSelectedDetectedProducts(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(productId)) {
+        newSet.delete(productId)
       } else {
-        setBarcode(scannedBarcode)
-        handleCloseCamera()
-        alert(`ไม่พบสินค้าสำหรับบาร์โค้ด: ${scannedBarcode}`)
+        newSet.add(productId)
       }
+      return newSet
+    })
+  }
+
+  const handleSelectAllDetected = () => {
+    setSelectedDetectedProducts(new Set(detectedProducts.map(p => p.id)))
+  }
+
+  const handleDeselectAllDetected = () => {
+    setSelectedDetectedProducts(new Set())
+  }
+
+  const handleAddSelectedToCart = () => {
+    const selectedProducts = detectedProducts.filter(p => selectedDetectedProducts.has(p.id))
+    
+    for (const product of selectedProducts) {
+      addItem(product)
     }
+    
+    alert(`เพิ่มสินค้า ${selectedProducts.length} รายการเข้าตะกร้าแล้ว`)
+    handleCloseCamera()
   }
 
   return (
@@ -1262,6 +1300,115 @@ export default function POSPage() {
                       onChange={handleFileSelect}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                     />
+                  </div>
+                </div>
+              ) : showDetectedProductsView ? (
+                /* Detected Products Selection View */
+                <div className="space-y-4">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <p className="text-green-800 font-medium">
+                      พบสินค้า {detectedProducts.length} รายการจากรูปภาพ
+                    </p>
+                    <p className="text-sm text-green-600">
+                      เลือกสินค้าที่ต้องการเพิ่มเข้าตะกร้า
+                    </p>
+                  </div>
+
+                  {/* Select/Deselect All Buttons */}
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleSelectAllDetected}
+                      className="flex-1"
+                    >
+                      เลือกทั้งหมด
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleDeselectAllDetected}
+                      className="flex-1"
+                    >
+                      ยกเลิกทั้งหมด
+                    </Button>
+                  </div>
+
+                  {/* Products List */}
+                  <div className="max-h-80 overflow-y-auto space-y-2 border rounded-lg">
+                    {detectedProducts.map((product) => (
+                      <div
+                        key={product.id}
+                        onClick={() => handleToggleProductSelection(product.id)}
+                        className={`p-3 cursor-pointer border-b last:border-b-0 transition-colors flex items-center gap-3 ${
+                          selectedDetectedProducts.has(product.id)
+                            ? 'bg-blue-50 border-blue-200'
+                            : 'bg-white border-gray-100 hover:bg-gray-50'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedDetectedProducts.has(product.id)}
+                          onChange={() => handleToggleProductSelection(product.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
+                        />
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">{product.name_th}</p>
+                          {product.name_en && (
+                            <p className="text-sm text-gray-500">{product.name_en}</p>
+                          )}
+                          <p className="text-xs text-gray-400">
+                            บาร์โค้ด: {product.barcode}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-blue-600">
+                            ฿{product.base_price.toFixed(2)}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            คงเหลือ: {product.stock_quantity}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Summary and Add Button */}
+                  <div className="border-t pt-4 space-y-3">
+                    <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                      <span className="text-gray-600">
+                        เลือก {selectedDetectedProducts.size} จาก {detectedProducts.length} รายการ
+                      </span>
+                      <span className="font-bold text-blue-600">
+                        รวม: ฿{detectedProducts
+                          .filter(p => selectedDetectedProducts.has(p.id))
+                          .reduce((sum, p) => sum + p.base_price, 0)
+                          .toFixed(2)}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="flex-1"
+                        onClick={() => setShowDetectedProductsView(false)}
+                      >
+                        ถ่ายใหม่
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="primary"
+                        className="flex-1"
+                        onClick={handleAddSelectedToCart}
+                        disabled={selectedDetectedProducts.size === 0}
+                      >
+                        เพิ่มเข้าตะกร้า ({selectedDetectedProducts.size})
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ) : (
