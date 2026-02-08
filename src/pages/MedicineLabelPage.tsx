@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Printer, Search, Package } from 'lucide-react'
+import { Printer, Search, Package, Heart } from 'lucide-react'
 
 // Helper to get URL query params
 function useQueryParams() {
@@ -122,8 +122,14 @@ export default function MedicineLabelPage() {
     age: ''
   })
 
+  // Favorites and sales data states
+  const [favorites, setFavorites] = useState<Set<string>>(new Set())
+  const [salesData, setSalesData] = useState<Record<string, number>>({})
+
   useEffect(() => {
     fetchProducts()
+    fetchFavorites()
+    fetchSalesData()
   }, [])
 
   // Handle query params from ProductsPage
@@ -246,6 +252,82 @@ export default function MedicineLabelPage() {
     }
   }
 
+  const fetchFavorites = async () => {
+    try {
+      const { data: userData } = await supabase.auth.getUser()
+      if (!userData.user) return
+
+      const { data, error } = await supabase
+        .from('favorite_labels')
+        .select('product_id')
+        .eq('user_id', userData.user.id)
+
+      if (error) throw error
+      setFavorites(new Set(data.map(f => f.product_id)))
+    } catch (error) {
+      console.error('Error fetching favorites:', error)
+    }
+  }
+
+  const fetchSalesData = async () => {
+    try {
+      // Get sales data from sale_items for the last 90 days
+      const ninetyDaysAgo = new Date()
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+
+      const { data, error } = await supabase
+        .from('sale_items')
+        .select('product_id, quantity')
+        .gte('created_at', ninetyDaysAgo.toISOString())
+
+      if (error) throw error
+
+      // Aggregate sales by product
+      const salesMap: Record<string, number> = {}
+      data?.forEach(item => {
+        salesMap[item.product_id] = (salesMap[item.product_id] || 0) + (item.quantity || 0)
+      })
+      setSalesData(salesMap)
+    } catch (error) {
+      console.error('Error fetching sales data:', error)
+    }
+  }
+
+  const toggleFavorite = async (productId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      const { data: userData } = await supabase.auth.getUser()
+      if (!userData.user) {
+        alert('กรุณาเข้าสู่ระบบก่อน')
+        return
+      }
+
+      const isFavorite = favorites.has(productId)
+
+      if (isFavorite) {
+        // Remove from favorites
+        await supabase
+          .from('favorite_labels')
+          .delete()
+          .eq('product_id', productId)
+          .eq('user_id', userData.user.id)
+        setFavorites(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(productId)
+          return newSet
+        })
+      } else {
+        // Add to favorites
+        await supabase
+          .from('favorite_labels')
+          .insert({ product_id: productId, user_id: userData.user.id })
+        setFavorites(prev => new Set(prev).add(productId))
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error)
+    }
+  }
+
   const handlePrintLabel = async () => {
     if (!selectedProduct || (!labelData.dosage_instructions_th && !labelData.dosage_instructions_en)) {
       alert('กรุณากรอกข้อมูลให้ครบถ้วน')
@@ -277,6 +359,25 @@ export default function MedicineLabelPage() {
     product.name_th?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.name_en?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.barcode?.includes(searchTerm)
+  ).sort((a, b) => {
+    // Sort: favorites first, then by sales volume
+    const aIsFavorite = favorites.has(a.id)
+    const bIsFavorite = favorites.has(b.id)
+    
+    if (aIsFavorite && !bIsFavorite) return -1
+    if (!aIsFavorite && bIsFavorite) return 1
+    
+    // If both are favorites or both are not, sort by sales
+    const aSales = salesData[a.id] || 0
+    const bSales = salesData[b.id] || 0
+    return bSales - aSales
+  })
+
+  // Find medicines without label data
+  const medicinesWithoutLabel = products.filter(product => 
+    product.medicine_details && 
+    !product.label_dosage_instructions_th &&
+    !product.label_dosage_instructions_en
   )
 
 
@@ -316,31 +417,87 @@ export default function MedicineLabelPage() {
                 <div
                   key={product.id}
                   onClick={() => setSelectedProduct(product)}
-                  className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                  className={`p-3 border rounded-lg cursor-pointer transition-all ${
                     selectedProduct?.id === product.id
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:bg-gray-50'
                   }`}
                 >
                   <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium text-gray-900">{product.name_th}</h3>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-gray-900">{product.name_th}</h3>
+                        {favorites.has(product.id) && (
+                          <Heart className="h-4 w-4 text-red-500 fill-red-500" />
+                        )}
+                      </div>
                       <p className="text-sm text-gray-600">{product.name_en}</p>
                       {product.medicine_details && (
-                        <div className="mt-1">
+                        <div className="mt-1 flex items-center gap-2">
                           <span className="text-xs text-gray-500">
                             {product.medicine_details.dosage_form} {product.medicine_details.strength}
                           </span>
+                          {salesData[product.id] > 0 && (
+                            <span className="text-xs text-green-600">
+                              ขาย {salesData[product.id]} ชิ้น
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
-                    <span className="text-xs text-gray-500">{product.barcode}</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => toggleFavorite(product.id, e)}
+                        className={`p-1.5 rounded-full transition-colors ${
+                          favorites.has(product.id)
+                            ? 'text-red-500 hover:bg-red-100'
+                            : 'text-gray-400 hover:text-red-500 hover:bg-gray-100'
+                        }`}
+                      >
+                        <Heart className={`h-4 w-4 ${favorites.has(product.id) ? 'fill-current' : ''}`} />
+                      </button>
+                      <span className="text-xs text-gray-500">{product.barcode}</span>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </Card>
+
+        {/* Warning Section: Medicines Without Label Data */}
+        {medicinesWithoutLabel.length > 0 && (
+          <Card className="mt-4 border-amber-200">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+              <h3 className="font-semibold text-amber-700">ยาที่ยังไม่มีข้อมูลฉลาก ({medicinesWithoutLabel.length})</h3>
+            </div>
+            <p className="text-sm text-amber-600 mb-3">
+              ยาเหล่านี้อยู่ในหมวดหมู่ยาแต่ยังไม่ได้บันทึกข้อมูลฉลาก กรุณาคลิกเพื่อไปบันทึก
+            </p>
+            <div className="space-y-2 max-h-[200px] overflow-y-auto">
+              {medicinesWithoutLabel.slice(0, 5).map((product) => (
+                <a
+                  key={product.id}
+                  href={`/products?id=${product.id}`}
+                  className="flex items-center justify-between p-2 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{product.name_th}</p>
+                    <p className="text-xs text-gray-500">{product.barcode}</p>
+                  </div>
+                  <span className="text-xs text-amber-600">ไปบันทึกฉลาก →</span>
+                </a>
+              ))}
+              {medicinesWithoutLabel.length > 5 && (
+                <p className="text-xs text-gray-500 text-center py-2">
+                  ...และอีก {medicinesWithoutLabel.length - 5} รายการ
+                </p>
+              )}
+            </div>
+          </Card>
+        )}
 
         {/* Label Form */}
         <Card>
