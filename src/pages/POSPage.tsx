@@ -116,7 +116,7 @@ export default function POSPage() {
 
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const { items, addItem, removeItem, updateQuantity, updateCustomPrice, clearCart, getTotal, getSubtotal, setItems, setSalesChannel: setCartSalesChannel } = useCartStore()
+  const { items, addItem, removeItem, updateQuantity, updateCustomPrice, clearCart, getTotal, getSubtotal, getTotalDiscount, setItems, setSalesChannel: setCartSalesChannel } = useCartStore()
   const { getProductByBarcode, products, fetchProducts } = useProductStore()
 
   // Load products and customers on mount
@@ -575,12 +575,18 @@ export default function POSPage() {
       try {
         const orderNumber = `ORD${Date.now()}`
         const platformUuid = PLATFORM_UUIDS[salesChannel] || PLATFORM_UUIDS['walk-in']
+        const subtotal = getSubtotal()
+        const discount = getTotalDiscount()
+        const total = getTotal()
         const { data: orderData, error: orderError } = await supabase
           .from('orders')
           .insert({
             order_number: orderNumber,
             user_id: (await supabase.auth.getUser()).data.user?.id,
             platform_id: platformUuid,
+            subtotal: subtotal,
+            discount: discount,
+            total: total,
           })
           .select()
           .single()
