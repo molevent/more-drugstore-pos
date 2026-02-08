@@ -832,12 +832,12 @@ export default function POSPage() {
             setSelectedDetectedProducts(new Set(foundProducts.map(p => p.id)))
             setShowDetectedProductsView(true)
           } else {
-            alert('ไม่พบสินค้าที่ตรงกับบาร์โค้ดในรูปภาพ')
-            setCapturedImage(null)
+            alert('ไม่พบสินค้าที่ตรงกับบาร์โค้ดในรูปภาพ กรุณาลองถ่ายใหม่หรือเลือกรูปอื่น')
+            // Keep captured image visible for user to retry
           }
         } else {
           alert('ไม่พบบาร์โค้ดในรูปภาพ กรุณาลองใหม่')
-          setCapturedImage(null)
+          // Keep captured image visible for user to retry
         }
       } else {
         // Fallback: just show the image and let user enter barcode manually
