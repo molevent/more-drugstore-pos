@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useCartStore } from '../stores/cartStore'
+import { useCartStore, getProductPriceForChannel, SalesChannel } from '../stores/cartStore'
 import { useProductStore } from '../stores/productStore'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -82,7 +82,7 @@ export default function POSPage() {
   
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const { items, addItem, removeItem, updateQuantity, clearCart, getTotal, getSubtotal, setItems } = useCartStore()
+  const { items, addItem, removeItem, updateQuantity, clearCart, getTotal, getSubtotal, setItems, setSalesChannel: setCartSalesChannel } = useCartStore()
   const { getProductByBarcode, products, fetchProducts } = useProductStore()
 
   // Load products and customers on mount
@@ -92,6 +92,11 @@ export default function POSPage() {
     // Load default customer
     setSelectedCustomer({ id: 'default', name: 'ลูกค้าทั่วไป', type: 'buyer' })
   }, [])
+
+  // Sync sales channel with cart store
+  useEffect(() => {
+    setCartSalesChannel(salesChannel as SalesChannel)
+  }, [salesChannel, setCartSalesChannel])
 
   // Search products as user types
   useEffect(() => {
@@ -944,8 +949,13 @@ export default function POSPage() {
                             </div>
                             <div className="text-right ml-4">
                               <p className="font-bold text-blue-600">
-                                ฿{product.base_price.toFixed(2)}
+                                ฿{getProductPriceForChannel(product, salesChannel as SalesChannel).toFixed(2)}
                               </p>
+                              {getProductPriceForChannel(product, salesChannel as SalesChannel) !== product.base_price && (
+                                <p className="text-xs text-gray-400 line-through">
+                                  ฿{product.base_price.toFixed(2)}
+                                </p>
+                              )}
                               <p className="text-xs text-gray-500">
                                 คงเหลือ: {product.stock_quantity}
                               </p>
@@ -998,7 +1008,14 @@ export default function POSPage() {
                     
                     <div className="flex-1 min-w-0">
                       <h3 className="font-medium text-gray-900 truncate">{item.product.name_th}</h3>
-                      <p className="text-sm text-gray-500">฿{item.product.base_price.toFixed(2)}</p>
+                      <p className="text-sm text-gray-500">
+                        ฿{getProductPriceForChannel(item.product, salesChannel as SalesChannel).toFixed(2)}
+                        {getProductPriceForChannel(item.product, salesChannel as SalesChannel) !== item.product.base_price && (
+                          <span className="text-xs text-gray-400 line-through ml-1">
+                            ฿{item.product.base_price.toFixed(2)}
+                          </span>
+                        )}
+                      </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Input
@@ -1009,7 +1026,7 @@ export default function POSPage() {
                         className="w-16 text-center"
                       />
                       <span className="font-medium text-gray-900 w-20 text-right">
-                        ฿{(item.product.base_price * item.quantity).toFixed(2)}
+                        ฿{(getProductPriceForChannel(item.product, salesChannel as SalesChannel) * item.quantity).toFixed(2)}
                       </span>
                       <Button
                         variant="danger"
@@ -1366,7 +1383,12 @@ export default function POSPage() {
                         </div>
                         <div className="text-right">
                           <p className="font-bold text-blue-600">
-                            ฿{product.base_price.toFixed(2)}
+                            ฿{getProductPriceForChannel(product, salesChannel as SalesChannel).toFixed(2)}
+                            {getProductPriceForChannel(product, salesChannel as SalesChannel) !== product.base_price && (
+                              <span className="text-xs text-gray-400 line-through ml-1">
+                                ฿{product.base_price.toFixed(2)}
+                              </span>
+                            )}
                           </p>
                           <p className="text-xs text-gray-500">
                             คงเหลือ: {product.stock_quantity}
@@ -1385,7 +1407,7 @@ export default function POSPage() {
                       <span className="font-bold text-blue-600">
                         รวม: ฿{detectedProducts
                           .filter(p => selectedDetectedProducts.has(p.id))
-                          .reduce((sum, p) => sum + p.base_price, 0)
+                          .reduce((sum, p) => sum + getProductPriceForChannel(p, salesChannel as SalesChannel), 0)
                           .toFixed(2)}
                       </span>
                     </div>
