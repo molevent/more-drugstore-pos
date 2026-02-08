@@ -468,7 +468,18 @@ export default function ProductsPage() {
         stock_quantity: formData.stock_quantity,
         min_stock_level: formData.min_stock_level,
         image_url: imageUrls[0] || '',
-        image_urls: imageUrls.filter(url => url)
+        image_urls: imageUrls.filter(url => url),
+        // Alerts
+        alert_out_of_stock: formData.alert_out_of_stock,
+        alert_out_of_stock_message: formData.alert_out_of_stock_message,
+        alert_low_stock: formData.alert_low_stock,
+        alert_low_stock_message: formData.alert_low_stock_message,
+        alert_expiry: formData.alert_expiry,
+        alert_expiry_message: formData.alert_expiry_message,
+        alert_expiry_days: formData.alert_expiry_days,
+        alert_custom: formData.alert_custom,
+        alert_custom_title: formData.alert_custom_title,
+        alert_custom_message: formData.alert_custom_message
       }
 
       if (editingProduct) {
