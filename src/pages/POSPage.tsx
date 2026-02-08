@@ -544,7 +544,7 @@ export default function POSPage() {
     fetchPaymentMethods()
   }, [])
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (items.length === 0) {
       alert('กรุณาเพิ่มสินค้าในตะกร้า')
       return
@@ -563,20 +563,62 @@ export default function POSPage() {
     const confirmed = confirm(`ยืนยันการขายผ่าน ${channelName}\nวิธีชำระ: ${paymentMethodName}\nยอดชำระ: ฿${getTotal().toFixed(2)}`)
     
     if (confirmed) {
-      // Remove from saved orders if it was a saved order
-      if (activeOrderId) {
-        setSavedOrders(savedOrders.filter(o => o.id !== activeOrderId))
-        setActiveOrderId(null)
+      // Save order to database
+      try {
+        const orderNumber = `ORD${Date.now()}`
+        const { data: orderData, error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            order_number: orderNumber,
+            user_id: (await supabase.auth.getUser()).data.user?.id,
+            platform_id: salesChannel,
+          })
+          .select()
+          .single()
+
+        if (orderError) {
+          console.error('Error saving order:', orderError)
+          alert('ไม่สามารถบันทึกออเดอร์ได้')
+          return
+        }
+
+        // Save order items
+        const orderItems = items.map(item => ({
+          order_id: orderData.id,
+          product_id: item.product.id,
+          product_name: item.product.name_th,
+          quantity: item.quantity,
+          unit_price: item.product.base_price,
+          discount: item.discount || 0,
+          total_price: item.product.base_price * item.quantity - (item.discount || 0),
+        }))
+
+        const { error: itemsError } = await supabase
+          .from('order_items')
+          .insert(orderItems)
+
+        if (itemsError) {
+          console.error('Error saving order items:', itemsError)
+        }
+
+        // Remove from saved orders if it was a saved order
+        if (activeOrderId) {
+          setSavedOrders(savedOrders.filter(o => o.id !== activeOrderId))
+          setActiveOrderId(null)
+        }
+        
+        // Show print receipt confirmation
+        const printReceipt = confirm(`ขายสำเร็จ! เลขออเดอร์: ${orderNumber}\nช่องทาง: ${channelName}\n\nต้องการพิมพ์ใบเสร็จรับเงินหรือไม่?`)
+        if (printReceipt) {
+          handlePrintReceipt()
+        }
+        
+        clearCart()
+        setSalesChannel('walk-in')
+      } catch (err) {
+        console.error('Exception during checkout:', err)
+        alert('เกิดข้อผิดพลาดในการบันทึกออเดอร์')
       }
-      
-      // Show print receipt confirmation
-      const printReceipt = confirm(`ขายสำเร็จ! ช่องทาง: ${channelName}\n\nต้องการพิมพ์ใบเสร็จรับเงินหรือไม่?`)
-      if (printReceipt) {
-        handlePrintReceipt()
-      }
-      
-      clearCart()
-      setSalesChannel('walk-in')
     }
   }
 
