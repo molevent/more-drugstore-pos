@@ -31,6 +31,14 @@ interface Product {
   base_price?: number
   cost_price?: number
   medicine_details?: MedicineDetails
+  // Label fields from ProductsPage
+  label_dosage_instructions_th?: string
+  label_special_instructions_th?: string
+  label_dosage_instructions_en?: string
+  label_special_instructions_en?: string
+  label_custom_line1?: string
+  label_custom_line2?: string
+  label_custom_line3?: string
 }
 
 interface MedicineDetails {
@@ -153,37 +161,67 @@ export default function MedicineLabelPage() {
 
   useEffect(() => {
     if (selectedProduct) {
-      // อัพเดตคำแนะนำการใช้ยาอัตโนมัติ
-      const details = selectedProduct.medicine_details
-      if (details) {
-        let instructions = []
-        
-        // เวลารับประทาน
-        const timing = []
-        if (details.usage_morning) timing.push('เช้า')
-        if (details.usage_noon) timing.push('กลางวัน')
-        if (details.usage_evening) timing.push('เย็น')
-        if (details.usage_bedtime) timing.push('ก่อนนอน')
-        if (timing.length > 0) instructions.push(`รับประทาน${timing.join(' ')}`)
-        
-        // ก่อน/หลังอาหาร
-        if (details.usage_before_meal) instructions.push('ก่อนอาหาร')
-        if (details.usage_after_meal) instructions.push('หลังอาหาร')
-        
-        // ตามอาการ
-        if (details.usage_as_needed) instructions.push('เมื่อมีอาการ')
-        
-        // รวมคำแนะนำ
-        const fullInstructions = instructions.join(' ') || details.dosage_instructions || ''
-        
+      // ใช้ข้อมูลฉลากจาก database ที่บันทึกในเมนูสินค้า (ถ้ามี)
+      // ถ้าไม่มีจะใช้ข้อมูลจาก medicine_details แทน
+      const hasLabelData = selectedProduct.label_dosage_instructions_th || 
+                           selectedProduct.label_special_instructions_th ||
+                           selectedProduct.label_dosage_instructions_en ||
+                           selectedProduct.label_special_instructions_en
+      
+      if (hasLabelData) {
+        // ใช้ข้อมูลที่บันทึกจากแท็บ "ฉลาก" ในเมนูสินค้า
         setLabelData(prev => ({
           ...prev,
           product_id: selectedProduct.id,
-          dosage_instructions_th: fullInstructions,
-          special_instructions_th: details.special_instructions || '',
-          dosage_instructions_en: '',
-          special_instructions_en: ''
+          dosage_instructions_th: selectedProduct.label_dosage_instructions_th || '',
+          special_instructions_th: selectedProduct.label_special_instructions_th || '',
+          dosage_instructions_en: selectedProduct.label_dosage_instructions_en || '',
+          special_instructions_en: selectedProduct.label_special_instructions_en || ''
         }))
+        // ใช้ข้อมูล custom lines ถ้ามี
+        if (selectedProduct.label_custom_line1 || selectedProduct.label_custom_line2 || selectedProduct.label_custom_line3) {
+          setCustomizeData(prev => ({
+            ...prev,
+            custom_instructions: [
+              selectedProduct.label_custom_line1,
+              selectedProduct.label_custom_line2,
+              selectedProduct.label_custom_line3
+            ].filter(Boolean).join('\n')
+          }))
+        }
+      } else {
+        // ถ้าไม่มีข้อมูล label ให้สร้างจาก medicine_details (fallback)
+        const details = selectedProduct.medicine_details
+        if (details) {
+          let instructions = []
+          
+          // เวลารับประทาน
+          const timing = []
+          if (details.usage_morning) timing.push('เช้า')
+          if (details.usage_noon) timing.push('กลางวัน')
+          if (details.usage_evening) timing.push('เย็น')
+          if (details.usage_bedtime) timing.push('ก่อนนอน')
+          if (timing.length > 0) instructions.push(`รับประทาน${timing.join(' ')}`)
+          
+          // ก่อน/หลังอาหาร
+          if (details.usage_before_meal) instructions.push('ก่อนอาหาร')
+          if (details.usage_after_meal) instructions.push('หลังอาหาร')
+          
+          // ตามอาการ
+          if (details.usage_as_needed) instructions.push('เมื่อมีอาการ')
+          
+          // รวมคำแนะนำ
+          const fullInstructions = instructions.join(' ') || details.dosage_instructions || ''
+          
+          setLabelData(prev => ({
+            ...prev,
+            product_id: selectedProduct.id,
+            dosage_instructions_th: fullInstructions,
+            special_instructions_th: details.special_instructions || '',
+            dosage_instructions_en: '',
+            special_instructions_en: ''
+          }))
+        }
       }
     }
   }, [selectedProduct])
