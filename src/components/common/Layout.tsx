@@ -14,7 +14,8 @@ import {
   Printer,
   Users,
   Receipt,
-  Percent
+  Percent,
+  CreditCard
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -96,6 +97,12 @@ export default function Layout({ children }: LayoutProps) {
         { name: 'ใบสำคัญจ่าย', href: '/payment-vouchers', icon: Receipt },
         { name: 'หัก ณ ที่จ่าย', href: '/withholding-tax', icon: Percent },
         { name: 'ค่าใช้จ่าย', href: '/expenses', icon: Receipt },
+      ]
+    },
+    {
+      title: 'การเงิน',
+      items: [
+        { name: 'ช่องทางการชำระเงิน', href: '/payment-methods', icon: CreditCard },
       ]
     },
     {
