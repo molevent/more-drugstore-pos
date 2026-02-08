@@ -15,7 +15,6 @@ interface SalesOrder {
   platform_id: string
   created_at: string
   updated_at: string
-  created_by: string
   order_items_count: number
 }
 
@@ -58,7 +57,6 @@ export default function SalesOrdersPage() {
           platform_id,
           created_at,
           updated_at,
-          created_by,
           order_items(count)
         `)
         .order('created_at', { ascending: false })
@@ -96,7 +94,6 @@ export default function SalesOrdersPage() {
         platform_id: order.platform_id,
         created_at: order.created_at,
         updated_at: order.updated_at,
-        created_by: order.created_by,
         order_items_count: order.order_items?.[0]?.count || 0
       })) || []
 
