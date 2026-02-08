@@ -79,7 +79,6 @@ export default function Layout({ children }: LayoutProps) {
         { name: t('nav.categories'), href: '/categories', icon: Package },
         { name: t('nav.products'), href: '/products', icon: Package },
         { name: 'คลังสินค้า', href: '/warehouse-management', icon: Warehouse },
-        { name: 'ใบสั่งซื้อ', href: '/purchase-orders', icon: FileText },
       ]
     },
     {
@@ -91,6 +90,7 @@ export default function Layout({ children }: LayoutProps) {
     {
       title: 'เอกสาร',
       items: [
+        { name: 'ใบสั่งซื้อ', href: '/purchase-orders', icon: FileText },
         { name: 'ค่าใช้จ่าย', href: '/expenses', icon: Receipt },
       ]
     },
