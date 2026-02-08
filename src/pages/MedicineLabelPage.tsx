@@ -433,15 +433,10 @@ export default function MedicineLabelPage() {
                       </div>
                       <p className="text-sm text-gray-600">{product.name_en}</p>
                       {product.medicine_details && (
-                        <div className="mt-1 flex items-center gap-2">
+                        <div className="mt-1">
                           <span className="text-xs text-gray-500">
                             {product.medicine_details.dosage_form} {product.medicine_details.strength}
                           </span>
-                          {salesData[product.id] > 0 && (
-                            <span className="text-xs text-green-600">
-                              ขาย {salesData[product.id]} ชิ้น
-                            </span>
-                          )}
                         </div>
                       )}
                     </div>
