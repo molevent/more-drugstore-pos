@@ -584,6 +584,7 @@ export default function POSPage() {
             order_number: orderNumber,
             user_id: (await supabase.auth.getUser()).data.user?.id,
             platform_id: platformUuid,
+            customer_name: selectedCustomer?.name || 'ลูกค้าทั่วไป',
             subtotal: subtotal,
             discount: discount,
             total: total,
