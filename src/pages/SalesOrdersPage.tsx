@@ -9,7 +9,6 @@ interface SalesOrder {
   id: string
   order_number: string
   customer_name?: string
-  customer_id?: string
   total: number
   subtotal: number
   discount: number
@@ -53,7 +52,6 @@ export default function SalesOrdersPage() {
           id,
           order_number,
           customer_name,
-          customer_id,
           total,
           subtotal,
           discount,
@@ -92,7 +90,6 @@ export default function SalesOrdersPage() {
         id: order.id,
         order_number: order.order_number,
         customer_name: order.customer_name,
-        customer_id: order.customer_id,
         total: order.total,
         subtotal: order.subtotal,
         discount: order.discount,
