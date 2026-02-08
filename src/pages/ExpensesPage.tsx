@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database } from 'lucide-react'
+import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle } from 'lucide-react'
 
 interface Expense {
   id: string
@@ -15,6 +15,8 @@ interface Expense {
   vendor?: string
   notes?: string
   created_at: string
+  status?: 'approved' | 'pending' | 'rejected'
+  source?: 'manual' | 'google_sheets'
   // Google Sheets extended fields
   sheet_id?: string
   tax_invoice_number?: string
@@ -59,7 +61,7 @@ export default function ExpensesPage() {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   
   // Google Sheets states
-  const [viewMode, setViewMode] = useState<'database' | 'sheets'>('database')
+  const [viewMode, setViewMode] = useState<'database' | 'sheets' | 'pending'>('database')
   const [sheetUrl, setSheetUrl] = useState('')
   const [sheetData, setSheetData] = useState<any[]>([])
   const [sheetLoading, setSheetLoading] = useState(false)
@@ -87,6 +89,7 @@ export default function ExpensesPage() {
     startRow: 4              // ข้อมูลเริ่มแถว 5
   })
   const [importing, setImporting] = useState(false)
+  const [pendingCount, setPendingCount] = useState(0)
   
   const [formData, setFormData] = useState({
     expense_date: new Date().toISOString().split('T')[0],
@@ -113,6 +116,10 @@ export default function ExpensesPage() {
 
       if (error) throw error
       setExpenses(data || [])
+      
+      // Count pending expenses
+      const pending = data?.filter(e => e.status === 'pending').length || 0
+      setPendingCount(pending)
     } catch (error) {
       console.error('Error fetching expenses:', error)
     } finally {
@@ -209,6 +216,10 @@ export default function ExpensesPage() {
   )
 
   const totalAmount = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0)
+
+  // Pending expenses
+  const pendingExpenses = expenses.filter(e => e.status === 'pending')
+  const pendingTotalAmount = pendingExpenses.reduce((sum, e) => sum + e.amount, 0)
 
   // Google Sheets functions
   const fetchSheetData = async () => {
@@ -333,6 +344,8 @@ export default function ExpensesPage() {
         payment_method: item.payment_method,
         vendor: item.vendor || null,
         notes: item.notes || null,
+        status: 'pending',
+        source: 'google_sheets',
         // Google Sheets extended fields
         sheet_id: item.sheet_id || null,
         tax_invoice_number: item.tax_invoice_number || null,
@@ -353,7 +366,7 @@ export default function ExpensesPage() {
       const { error } = await supabase.from('expenses').insert(expensesToInsert)
       if (error) throw error
       
-      alert(`Import สำเร็จ! เพิ่ม ${expensesToInsert.length} รายการ`)
+      alert(`Import สำเร็จ! เพิ่ม ${expensesToInsert.length} รายการเข้าโซนรออนุมัติ`)
       fetchExpenses()
       setViewMode('database')
     } catch (error) {
@@ -365,6 +378,57 @@ export default function ExpensesPage() {
   }
 
   const sheetTotalAmount = sheetData.reduce((sum, item) => sum + item.amount, 0)
+
+  // Approval functions
+  const handleApprove = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('expenses')
+        .update({ status: 'approved' })
+        .eq('id', id)
+      
+      if (error) throw error
+      fetchExpenses()
+    } catch (error) {
+      console.error('Error approving:', error)
+      alert('เกิดข้อผิดพลาดในการอนุมัติ')
+    }
+  }
+
+  const handleReject = async (id: string) => {
+    if (!confirm('ต้องการปฏิเสธรายการนี้?')) return
+    
+    try {
+      const { error } = await supabase
+        .from('expenses')
+        .update({ status: 'rejected' })
+        .eq('id', id)
+      
+      if (error) throw error
+      fetchExpenses()
+    } catch (error) {
+      console.error('Error rejecting:', error)
+      alert('เกิดข้อผิดพลาดในการปฏิเสธ')
+    }
+  }
+
+  const handleApproveAll = async () => {
+    if (!confirm(`ต้องการอนุมัติทั้งหมด ${pendingExpenses.length} รายการ?`)) return
+    
+    try {
+      const { error } = await supabase
+        .from('expenses')
+        .update({ status: 'approved' })
+        .eq('status', 'pending')
+      
+      if (error) throw error
+      fetchExpenses()
+      alert('อนุมัติทั้งหมดสำเร็จ!')
+    } catch (error) {
+      console.error('Error approving all:', error)
+      alert('เกิดข้อผิดพลาดในการอนุมัติ')
+    }
+  }
 
   return (
     <div>
@@ -388,6 +452,22 @@ export default function ExpensesPage() {
         >
           <Database className="h-4 w-4" />
           ฐานข้อมูล
+        </button>
+        <button
+          onClick={() => setViewMode('pending')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+            viewMode === 'pending'
+              ? 'bg-yellow-600 text-white'
+              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+          }`}
+        >
+          <Clock className="h-4 w-4" />
+          รออนุมัติ
+          {pendingCount > 0 && (
+            <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+              {pendingCount}
+            </span>
+          )}
         </button>
         <button
           onClick={() => setViewMode('sheets')}
@@ -668,6 +748,97 @@ export default function ExpensesPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Pending Approval View */}
+      {viewMode === 'pending' && (
+        <Card>
+          {loading ? (
+            <p className="text-center text-gray-600 py-8">กำลังโหลด...</p>
+          ) : pendingExpenses.length === 0 ? (
+            <div className="text-center py-12">
+              <Clock className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-600">ไม่มีรายการรออนุมัติ</p>
+              <p className="text-sm text-gray-500 mt-1">ข้อมูลจาก Google Sheets จะแสดงที่นี่</p>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm text-gray-600">
+                    พบ {pendingExpenses.length} รายการรออนุมัติ
+                  </p>
+                  <p className="text-lg font-bold text-yellow-600">
+                    ยอดรวม: ฿{pendingTotalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <Button
+                  variant="primary"
+                  onClick={handleApproveAll}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  อนุมัติทั้งหมด
+                </Button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-yellow-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">วันที่</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">หมวดหมู่</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">รายการ</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">ผู้ขาย</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">จำนวนเงิน</th>
+                      <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">การชำระเงิน</th>
+                      <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {pendingExpenses.map((expense) => (
+                      <tr key={expense.id} className="hover:bg-yellow-50/50">
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {new Date(expense.expense_date).toLocaleDateString('th-TH')}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600">
+                          <span className="px-2 py-1 bg-yellow-100 rounded-full text-xs">
+                            {expense.category}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">{expense.description}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{expense.vendor || '-'}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
+                          ฿{expense.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600 text-center">
+                          {expense.payment_method}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => handleApprove(expense.id)}
+                              className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                              title="อนุมัติ"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleReject(expense.id)}
+                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="ปฏิเสธ"
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </Card>

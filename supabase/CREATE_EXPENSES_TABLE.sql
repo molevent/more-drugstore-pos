@@ -27,7 +27,10 @@ CREATE TABLE IF NOT EXISTS expenses (
   subcategory TEXT,
   seller_tax_id TEXT,
   requester TEXT,
-  evidence_url TEXT
+  evidence_url TEXT,
+  -- Approval workflow
+  status TEXT DEFAULT 'approved', -- 'approved', 'pending', 'rejected'
+  source TEXT DEFAULT 'manual' -- 'manual', 'google_sheets'
 );
 
 -- Add index for faster queries
