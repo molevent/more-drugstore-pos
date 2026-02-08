@@ -23,14 +23,6 @@ interface Contact {
   phone?: string
 }
 
-// Map sales channel to platform UUID
-const PLATFORM_UUIDS: Record<string, string> = {
-  'walk-in': 'a1111111-1111-1111-1111-111111111111',
-  'grab': 'a2222222-2222-2222-2222-222222222222',
-  'shopee': 'a3333333-3333-3333-3333-333333333333',
-  'lineman': 'a4444444-4444-4444-4444-444444444444',
-}
-
 const SALES_CHANNELS = [
   { id: 'walk-in', name: 'หน้าร้าน', icon: Store },
   { id: 'grab', name: 'GRAB', icon: Bike },
@@ -574,7 +566,6 @@ export default function POSPage() {
       // Save order to database
       try {
         const orderNumber = `ORD${Date.now()}`
-        const platformUuid = PLATFORM_UUIDS[salesChannel] || PLATFORM_UUIDS['walk-in']
         const subtotal = getSubtotal()
         const discount = getTotalDiscount()
         const total = getTotal()
@@ -584,7 +575,6 @@ export default function POSPage() {
           .insert({
             order_number: orderNumber,
             user_id: (await supabase.auth.getUser()).data.user?.id,
-            platform_id: platformUuid,
             customer_name: selectedCustomer?.name || 'ลูกค้าทั่วไป',
             subtotal: subtotal,
             discount: discount,
