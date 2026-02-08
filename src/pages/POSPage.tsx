@@ -588,6 +588,7 @@ export default function POSPage() {
             subtotal: subtotal,
             discount: discount,
             total: total,
+            payment_method: selectedPaymentMethod || 'cash',
           })
           .select()
           .single()
