@@ -4,7 +4,7 @@ import { useProductStore } from '../stores/productStore'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Package, Receipt, AlertTriangle } from 'lucide-react'
+import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Package, Receipt, AlertTriangle, History, Bell } from 'lucide-react'
 import type { Product } from '../types/database'
 import { supabase } from '../services/supabase'
 
@@ -57,6 +57,17 @@ export default function POSPage() {
     message: string
     productName: string
   }>>([])
+  const [savedAlertLogs, setSavedAlertLogs] = useState<Array<{
+    id: string
+    product_name: string
+    alert_type: string
+    alert_title: string
+    alert_message?: string
+    created_at: string
+    acknowledged: boolean
+    acknowledged_at?: string
+  }>>([])
+  const [showAlertHistory, setShowAlertHistory] = useState(false)
   
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -416,12 +427,16 @@ export default function POSPage() {
   // Proceed with checkout after acknowledging alerts
   const proceedWithCheckout = () => {
     setShowAlertModal(false)
-    setCurrentAlerts([])
     
     const channelName = SALES_CHANNELS.find(c => c.id === salesChannel)?.name || 'หน้าร้าน'
     const confirmed = confirm(`ยืนยันการขายผ่าน ${channelName}\nยอดชำระ: ฿${getTotal().toFixed(2)}`)
     
     if (confirmed) {
+      // Save alerts to database before clearing
+      if (currentAlerts.length > 0) {
+        saveAlertsToDatabase(currentAlerts)
+      }
+
       // Remove from saved orders if it was a saved order
       if (activeOrderId) {
         setSavedOrders(savedOrders.filter(o => o.id !== activeOrderId))
@@ -434,8 +449,12 @@ export default function POSPage() {
         handlePrintReceipt()
       }
       
+      // Refresh alert logs to show new alerts
+      fetchAlertLogs()
+      
       clearCart()
       setSalesChannel('walk-in')
+      setCurrentAlerts([])
     }
   }
 
@@ -498,21 +517,167 @@ export default function POSPage() {
     }
   }
 
+  // Save alerts to database
+  const saveAlertsToDatabase = async (alerts: Array<{type: string, title: string, message: string, productName: string}>, orderId?: string) => {
+    try {
+      const alertLogs = alerts.map(alert => ({
+        order_id: orderId,
+        product_id: items.find(item => item.product.name_th === alert.productName)?.product.id,
+        product_name: alert.productName,
+        alert_type: alert.type,
+        alert_title: alert.title,
+        alert_message: alert.message,
+        acknowledged: false,
+        created_at: new Date().toISOString()
+      }))
+
+      const { error } = await supabase
+        .from('sale_alert_logs')
+        .insert(alertLogs)
+
+      if (error) {
+        console.error('Error saving alerts:', error)
+      } else {
+        console.log('Alerts saved successfully')
+      }
+    } catch (err) {
+      console.error('Exception saving alerts:', err)
+    }
+  }
+
+  // Fetch saved alert logs
+  const fetchAlertLogs = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sale_alert_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50)
+
+      if (error) {
+        console.error('Error fetching alert logs:', error)
+        return
+      }
+
+      setSavedAlertLogs(data || [])
+    } catch (err) {
+      console.error('Exception fetching alert logs:', err)
+    }
+  }
+
+  // Load alert logs on mount
+  useEffect(() => {
+    fetchAlertLogs()
+  }, [])
+
+  // Format date for display
+  const formatAlertDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('th-TH', { 
+      day: 'numeric', 
+      month: 'short', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  // Get alert type color
+  const getAlertTypeColor = (type: string) => {
+    switch (type) {
+      case 'out_of_stock': return 'bg-red-100 text-red-700 border-red-300'
+      case 'low_stock': return 'bg-yellow-100 text-yellow-700 border-yellow-300'
+      case 'expiry':
+      case 'expired': return 'bg-orange-100 text-orange-700 border-orange-300'
+      default: return 'bg-blue-100 text-blue-700 border-blue-300'
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4 sm:mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">ขายสินค้า (POS)</h1>
-        {items.length > 0 && (
+        <div className="flex gap-2">
           <Button
             variant="secondary"
-            onClick={handleSaveOrder}
+            onClick={() => {
+              fetchAlertLogs()
+              setShowAlertHistory(true)
+            }}
             className="flex items-center gap-2"
           >
-            <Save className="h-4 w-4" />
-            บันทึกไว้ก่อน
+            <History className="h-4 w-4" />
+            ประวัติแจ้งเตือน
+            {savedAlertLogs.filter(log => !log.acknowledged).length > 0 && (
+              <span className="ml-1 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
+                {savedAlertLogs.filter(log => !log.acknowledged).length}
+              </span>
+            )}
           </Button>
-        )}
+          {items.length > 0 && (
+            <Button
+              variant="secondary"
+              onClick={handleSaveOrder}
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              บันทึกไว้ก่อน
+            </Button>
+          )}
+        </div>
       </div>
+
+      {showAlertHistory && (
+        <div className="mb-4 bg-white rounded-lg shadow p-4 border border-blue-200">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-blue-600" />
+              <h3 className="font-semibold text-gray-900">ประวัติการแจ้งเตือน</h3>
+            </div>
+            <button
+              onClick={() => setShowAlertHistory(false)}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          
+          {savedAlertLogs.length === 0 ? (
+            <div className="text-center py-4 text-gray-500">
+              <p>ไม่มีประวัติการแจ้งเตือน</p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {savedAlertLogs.map((log) => (
+                <div
+                  key={log.id}
+                  className={`p-3 rounded-lg border-l-4 ${getAlertTypeColor(log.alert_type)} ${
+                    !log.acknowledged ? 'ring-2 ring-blue-300' : 'opacity-75'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="font-semibold text-sm">{log.product_name}</p>
+                      <p className="font-medium text-sm">{log.alert_title}</p>
+                      {log.alert_message && (
+                        <p className="text-sm text-gray-600 mt-1">{log.alert_message}</p>
+                      )}
+                      <p className="text-xs text-gray-400 mt-1">
+                        {formatAlertDate(log.created_at)}
+                      </p>
+                    </div>
+                    {!log.acknowledged && (
+                      <span className="px-2 py-1 bg-red-500 text-white text-xs rounded-full">
+                        ใหม่
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Saved Orders Tabs */}
       {savedOrders.length > 0 && (

@@ -221,6 +221,20 @@ export interface StockAlert {
   resolved_by?: string
 }
 
+// Alert logs for tracking alerts triggered during sales
+export interface SaleAlertLog {
+  id: string
+  order_id?: string
+  product_id: string
+  product_name: string
+  alert_type: 'out_of_stock' | 'low_stock' | 'expiry' | 'expired' | 'custom'
+  alert_title: string
+  alert_message?: string
+  created_at: string
+  acknowledged: boolean
+  acknowledged_at?: string
+}
+
 export interface DailyReport {
   id: string
   report_date: string
