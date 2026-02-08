@@ -45,6 +45,8 @@ export default function SalesOrdersPage() {
   const fetchOrders = async () => {
     setLoading(true)
     try {
+      console.log('Fetching orders from Supabase...')
+      
       let query = supabase
         .from('orders')
         .select(`
@@ -72,9 +74,17 @@ export default function SalesOrdersPage() {
 
       const { data, error } = await query
 
+      console.log('Supabase response:', { data, error, count: data?.length })
+
       if (error) {
-        console.error('Error fetching orders:', error)
-        alert('ไม่สามารถโหลดรายการขายได้')
+        console.error('Supabase error:', error)
+        alert('ไม่สามารถโหลดรายการขายได้: ' + error.message)
+        return
+      }
+
+      if (!data || data.length === 0) {
+        console.log('No orders found in database')
+        setOrders([])
         return
       }
 
@@ -93,10 +103,11 @@ export default function SalesOrdersPage() {
         order_items_count: order.order_items?.[0]?.count || 0
       })) || []
 
+      console.log('Formatted orders:', formattedOrders)
       setOrders(formattedOrders)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Exception fetching orders:', err)
-      alert('เกิดข้อผิดพลาดในการโหลดรายการขาย')
+      alert('เกิดข้อผิดพลาด: ' + err.message)
     } finally {
       setLoading(false)
     }
