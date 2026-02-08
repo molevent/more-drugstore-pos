@@ -4,7 +4,7 @@ import { useProductStore } from '../stores/productStore'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Package, Receipt, AlertTriangle, History, Bell } from 'lucide-react'
+import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Package, Receipt, AlertTriangle, History, Bell, Camera } from 'lucide-react'
 import type { Product } from '../types/database'
 import { supabase } from '../services/supabase'
 
@@ -48,6 +48,14 @@ export default function POSPage() {
   
   // Product filter states
   const [showStockOnly, setShowStockOnly] = useState(false)
+  
+  // Camera barcode scanning states
+  const [showCameraModal, setShowCameraModal] = useState(false)
+  const [capturedImage, setCapturedImage] = useState<string | null>(null)
+  const [isProcessingBarcode, setIsProcessingBarcode] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
   
   // Alert states
   const [showAlertModal, setShowAlertModal] = useState(false)
@@ -593,6 +601,129 @@ export default function POSPage() {
     }
   }
 
+  // Camera barcode scanning functions
+  const handleOpenCamera = () => {
+    setShowCameraModal(true)
+    setCapturedImage(null)
+  }
+
+  const handleCloseCamera = () => {
+    setShowCameraModal(false)
+    setCapturedImage(null)
+    // Stop camera stream if active
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream
+      stream.getTracks().forEach(track => track.stop())
+      videoRef.current.srcObject = null
+    }
+  }
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      })
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error)
+      alert('ไม่สามารถเข้าถึงกล้องได้ กรุณาตรวจสอบสิทธิ์การใช้งานกล้อง')
+    }
+  }
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current
+      const canvas = canvasRef.current
+      const context = canvas.getContext('2d')
+      
+      if (context) {
+        canvas.width = video.videoWidth
+        canvas.height = video.videoHeight
+        context.drawImage(video, 0, 0, canvas.width, canvas.height)
+        
+        const imageData = canvas.toDataURL('image/jpeg')
+        setCapturedImage(imageData)
+        processBarcodeFromImage(imageData)
+      }
+    }
+  }
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const imageData = e.target?.result as string
+        setCapturedImage(imageData)
+        processBarcodeFromImage(imageData)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const processBarcodeFromImage = async (imageData: string) => {
+    setIsProcessingBarcode(true)
+    try {
+      // Check if Barcode Detection API is supported
+      if ('BarcodeDetector' in window) {
+        const barcodeDetector = new (window as any).BarcodeDetector({
+          formats: ['code_128', 'code_39', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'qr_code']
+        })
+        
+        // Create image element
+        const img = new Image()
+        img.src = imageData
+        await new Promise((resolve, reject) => {
+          img.onload = resolve
+          img.onerror = reject
+        })
+        
+        const barcodes = await barcodeDetector.detect(img)
+        
+        if (barcodes.length > 0) {
+          const scannedBarcode = barcodes[0].rawValue
+          console.log('Barcode found:', scannedBarcode)
+          handleScannedBarcode(scannedBarcode)
+        } else {
+          alert('ไม่พบบาร์โค้ดในรูปภาพ กรุณาลองใหม่')
+        }
+      } else {
+        // Fallback: just show the image and let user enter barcode manually
+        alert('เบราว์เซอร์นี้ไม่รองรับการอ่านบาร์โค้ดอัตโนมัติ กรุณาดูบาร์โค้ดจากรูปแล้วกรอกด้วยตนเอง')
+        setShowCameraModal(false)
+      }
+    } catch (error) {
+      console.error('Error processing image:', error)
+      alert('เกิดข้อผิดพลาดในการประมวลผลรูปภาพ')
+    } finally {
+      setIsProcessingBarcode(false)
+    }
+  }
+
+  const handleScannedBarcode = (scannedBarcode: string) => {
+    // Search for product
+    const product = getProductByBarcode(scannedBarcode)
+    if (product) {
+      addProductToCart(product)
+      handleCloseCamera()
+      alert(`เพิ่มสินค้า: ${product.name_th}`)
+    } else {
+      // Try searching in products list
+      const foundProduct = products.find(p => p.barcode === scannedBarcode)
+      if (foundProduct) {
+        addProductToCart(foundProduct)
+        handleCloseCamera()
+        alert(`เพิ่มสินค้า: ${foundProduct.name_th}`)
+      } else {
+        setBarcode(scannedBarcode)
+        handleCloseCamera()
+        alert(`ไม่พบสินค้าสำหรับบาร์โค้ด: ${scannedBarcode}`)
+      }
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4 sm:mb-6">
@@ -789,6 +920,14 @@ export default function POSPage() {
                 </div>
                 <Button type="submit" variant="primary">
                   <Scan className="h-5 w-5" />
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="secondary"
+                  onClick={handleOpenCamera}
+                  title="ถ่ายรูปบาร์โค้ด"
+                >
+                  <Camera className="h-5 w-5" />
                 </Button>
               </div>
             </form>
@@ -1056,6 +1195,119 @@ export default function POSPage() {
               >
                 ดำเนินการต่อ
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Camera Modal */}
+      {showCameraModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-bold text-gray-900">ถ่ายรูปบาร์โค้ด</h2>
+              <button 
+                onClick={handleCloseCamera}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-4 space-y-4">
+              {/* Video/Camera Preview */}
+              {!capturedImage ? (
+                <div className="space-y-4">
+                  <div className="relative bg-black rounded-lg overflow-hidden" style={{ minHeight: '300px' }}>
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover"
+                      style={{ maxHeight: '400px' }}
+                    />
+                    <canvas ref={canvasRef} className="hidden" />
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="primary"
+                      className="flex-1"
+                      onClick={startCamera}
+                    >
+                      <Camera className="h-5 w-5 mr-2" />
+                      เปิดกล้อง
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="flex-1"
+                      onClick={capturePhoto}
+                      disabled={!videoRef.current?.srcObject}
+                    >
+                      ถ่ายรูป
+                    </Button>
+                  </div>
+                  
+                  {/* File Upload Option */}
+                  <div className="border-t pt-4">
+                    <p className="text-sm text-gray-600 mb-2">หรือเลือกรูปจากเครื่อง</p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleFileSelect}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    />
+                  </div>
+                </div>
+              ) : (
+                /* Captured Image Preview */
+                <div className="space-y-4">
+                  <div className="bg-gray-100 rounded-lg overflow-hidden">
+                    <img 
+                      src={capturedImage} 
+                      alt="Captured barcode"
+                      className="w-full h-auto max-h-80 object-contain"
+                    />
+                  </div>
+                  
+                  {isProcessingBarcode ? (
+                    <div className="text-center py-4">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <p className="text-sm text-gray-600 mt-2">กำลังอ่านบาร์โค้ด...</p>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="flex-1"
+                        onClick={() => setCapturedImage(null)}
+                      >
+                        ถ่ายใหม่
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="primary"
+                        className="flex-1"
+                        onClick={() => processBarcodeFromImage(capturedImage)}
+                      >
+                        อ่านบาร์โค้ด
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4 border-t bg-gray-50">
+              <p className="text-xs text-gray-500 text-center">
+                หมายเหตุ: ฟีเจอร์นี้ใช้ Barcode Detection API ของเบราว์เซอร์ รองรับ Chrome, Edge, Safari
+              </p>
             </div>
           </div>
         </div>
