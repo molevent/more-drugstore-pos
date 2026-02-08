@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Receipt, Plus, Search, Trash2, Edit2 } from 'lucide-react'
+import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database } from 'lucide-react'
 
 interface Expense {
   id: string
@@ -42,6 +42,25 @@ export default function ExpensesPage() {
   const [showModal, setShowModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
+  
+  // Google Sheets states
+  const [viewMode, setViewMode] = useState<'database' | 'sheets'>('database')
+  const [sheetUrl, setSheetUrl] = useState('')
+  const [sheetData, setSheetData] = useState<any[]>([])
+  const [sheetLoading, setSheetLoading] = useState(false)
+  const [showSheetSettings, setShowSheetSettings] = useState(false)
+  const [sheetConfig, setSheetConfig] = useState({
+    dateCol: 0,
+    categoryCol: 1,
+    descriptionCol: 2,
+    amountCol: 3,
+    paymentCol: 4,
+    vendorCol: 5,
+    receiptCol: 6,
+    notesCol: 7,
+    startRow: 1
+  })
+  const [importing, setImporting] = useState(false)
   
   const [formData, setFormData] = useState({
     expense_date: new Date().toISOString().split('T')[0],
@@ -165,6 +184,135 @@ export default function ExpensesPage() {
 
   const totalAmount = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0)
 
+  // Google Sheets functions
+  const fetchSheetData = async () => {
+    if (!sheetUrl) {
+      alert('กรุณาใส่ URL Google Sheet ก่อน')
+      return
+    }
+    
+    setSheetLoading(true)
+    try {
+      // Convert Google Sheet URL to CSV export URL
+      const sheetId = extractSheetId(sheetUrl)
+      if (!sheetId) {
+        throw new Error('Invalid Google Sheet URL')
+      }
+      
+      const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`
+      
+      const response = await fetch(csvUrl)
+      if (!response.ok) throw new Error('Failed to fetch sheet data')
+      
+      const csvText = await response.text()
+      const rows = parseCSV(csvText)
+      
+      // Map CSV data to expense format
+      const mappedData = rows.slice(sheetConfig.startRow).map((row, index) => ({
+        id: `sheet-${index}`,
+        expense_date: formatDate(row[sheetConfig.dateCol] || ''),
+        category: row[sheetConfig.categoryCol] || 'ค่าอื่นๆ',
+        description: row[sheetConfig.descriptionCol] || '',
+        amount: parseFloat(row[sheetConfig.amountCol]) || 0,
+        payment_method: row[sheetConfig.paymentCol] || 'เงินสด',
+        vendor: row[sheetConfig.vendorCol] || '',
+        receipt_number: row[sheetConfig.receiptCol] || '',
+        notes: row[sheetConfig.notesCol] || '',
+        _isSheetData: true
+      })).filter(item => item.description && item.amount > 0)
+      
+      setSheetData(mappedData)
+    } catch (error) {
+      console.error('Error fetching sheet:', error)
+      alert('ไม่สามารถดึงข้อมูลจาก Google Sheet ได้ ตรวจสอบว่า Sheet ถูก Publish แล้ว')
+    } finally {
+      setSheetLoading(false)
+    }
+  }
+
+  const extractSheetId = (url: string): string | null => {
+    const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)
+    return match ? match[1] : null
+  }
+
+  const parseCSV = (text: string): string[][] => {
+    const lines = text.trim().split('\n')
+    return lines.map(line => {
+      const result: string[] = []
+      let current = ''
+      let inQuotes = false
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i]
+        if (char === '"') {
+          inQuotes = !inQuotes
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim())
+          current = ''
+        } else {
+          current += char
+        }
+      }
+      result.push(current.trim())
+      return result
+    })
+  }
+
+  const formatDate = (dateStr: string): string => {
+    if (!dateStr) return new Date().toISOString().split('T')[0]
+    
+    // Try parsing Thai date format (DD/MM/YYYY)
+    const thaiMatch = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/)
+    if (thaiMatch) {
+      const [, day, month, year] = thaiMatch
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+    }
+    
+    // Try ISO format
+    const isoMatch = dateStr.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/)
+    if (isoMatch) {
+      const [, year, month, day] = isoMatch
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+    }
+    
+    return new Date().toISOString().split('T')[0]
+  }
+
+  const importSheetToDatabase = async () => {
+    if (sheetData.length === 0) {
+      alert('ไม่มีข้อมูลให้ import')
+      return
+    }
+    
+    setImporting(true)
+    try {
+      const expensesToInsert = sheetData.map(item => ({
+        expense_date: item.expense_date,
+        category: item.category,
+        description: item.description,
+        amount: item.amount,
+        payment_method: item.payment_method,
+        vendor: item.vendor || null,
+        receipt_number: item.receipt_number || null,
+        notes: item.notes || null
+      }))
+      
+      const { error } = await supabase.from('expenses').insert(expensesToInsert)
+      if (error) throw error
+      
+      alert(`Import สำเร็จ! เพิ่ม ${expensesToInsert.length} รายการ`)
+      fetchExpenses()
+      setViewMode('database')
+    } catch (error) {
+      console.error('Error importing:', error)
+      alert('เกิดข้อผิดพลาดในการ import')
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const sheetTotalAmount = sheetData.reduce((sum, item) => sum + item.amount, 0)
+
   return (
     <div>
       <div className="mb-6">
@@ -175,112 +323,319 @@ export default function ExpensesPage() {
         <p className="text-gray-600">บันทึกและติดตามค่าใช้จ่ายต่างๆ ของร้าน</p>
       </div>
 
+      {/* View Mode Tabs */}
+      <div className="flex gap-2 mb-6">
+        <button
+          onClick={() => setViewMode('database')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+            viewMode === 'database'
+              ? 'bg-blue-600 text-white'
+              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+          }`}
+        >
+          <Database className="h-4 w-4" />
+          ฐานข้อมูล
+        </button>
+        <button
+          onClick={() => setViewMode('sheets')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+            viewMode === 'sheets'
+              ? 'bg-green-600 text-white'
+              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+          }`}
+        >
+          <Sheet className="h-4 w-4" />
+          Google Sheets
+        </button>
+      </div>
+
       {/* Summary Card */}
       <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-blue-600 font-medium">ค่าใช้จ่ายทั้งหมด (จากรายการที่แสดง)</p>
+            <p className="text-sm text-blue-600 font-medium">
+              ค่าใช้จ่ายทั้งหมด {viewMode === 'sheets' && '(จาก Google Sheet)'}
+            </p>
             <p className="text-3xl font-bold text-blue-900">
-              ฿{totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+              ฿{(viewMode === 'database' ? totalAmount : sheetTotalAmount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </p>
           </div>
           <div className="text-right">
             <p className="text-sm text-gray-600">จำนวนรายการ</p>
-            <p className="text-xl font-semibold text-gray-800">{filteredExpenses.length}</p>
+            <p className="text-xl font-semibold text-gray-800">
+              {viewMode === 'database' ? filteredExpenses.length : sheetData.length}
+            </p>
           </div>
         </div>
       </Card>
 
-      {/* Actions Bar */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="ค้นหาค่าใช้จ่าย..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <Button
-          variant="primary"
-          onClick={() => {
-            resetForm()
-            setShowModal(true)
-          }}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          เพิ่มค่าใช้จ่าย
-        </Button>
-      </div>
-
-      {/* Expenses List */}
-      <Card>
-        {loading ? (
-          <p className="text-center text-gray-600 py-8">กำลังโหลด...</p>
-        ) : filteredExpenses.length === 0 ? (
-          <div className="text-center py-12">
-            <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600">ไม่มีรายการค่าใช้จ่าย</p>
-            <p className="text-sm text-gray-500 mt-1">คลิก "เพิ่มค่าใช้จ่าย" เพื่อบันทึก</p>
+      {/* Actions Bar - Database View */}
+      {viewMode === 'database' && (
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="ค้นหาค่าใช้จ่าย..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">วันที่</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">หมวดหมู่</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">รายการ</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">ผู้จำหน่าย</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">จำนวนเงิน</th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">การชำระเงิน</th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-700"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredExpenses.map((expense) => (
-                  <tr key={expense.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {new Date(expense.expense_date).toLocaleDateString('th-TH')}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">
-                        {expense.category}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{expense.description}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{expense.vendor || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
-                      ฿{expense.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600 text-center">
-                      {expense.payment_method}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => handleEdit(expense)}
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(expense.id)}
-                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
+          <Button
+            variant="primary"
+            onClick={() => {
+              resetForm()
+              setShowModal(true)
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            เพิ่มค่าใช้จ่าย
+          </Button>
+        </div>
+      )}
+
+      {/* Actions Bar - Google Sheets View */}
+      {viewMode === 'sheets' && (
+        <Card className="mb-6 border-green-200">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Sheet className="h-5 w-5 text-green-600" />
+              <h3 className="font-semibold text-gray-900">เชื่อมต่อ Google Sheets</h3>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={sheetUrl}
+                  onChange={(e) => setSheetUrl(e.target.value)}
+                  placeholder="วางลิงค์ Google Sheet (เช่น https://docs.google.com/spreadsheets/d/...)"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  ต้อง Publish Google Sheet ก่อน: File → Share → Publish to web
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowSheetSettings(!showSheetSettings)}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  ตั้งค่า
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={fetchSheetData}
+                  disabled={sheetLoading}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${sheetLoading ? 'animate-spin' : ''}`} />
+                  {sheetLoading ? 'กำลังโหลด...' : 'ดึงข้อมูล'}
+                </Button>
+              </div>
+            </div>
+
+            {/* Sheet Column Settings */}
+            {showSheetSettings && (
+              <div className="p-4 bg-gray-50 rounded-lg space-y-3">
+                <h4 className="font-medium text-gray-700">ตั้งค่าคอลัมน์ (เริ่มจาก 0)</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div>
+                    <label className="text-xs text-gray-600">วันที่ (คอลัมน์)</label>
+                    <input
+                      type="number"
+                      value={sheetConfig.dateCol}
+                      onChange={(e) => setSheetConfig({...sheetConfig, dateCol: parseInt(e.target.value)})}
+                      className="w-full px-2 py-1 border rounded text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">หมวดหมู่</label>
+                    <input
+                      type="number"
+                      value={sheetConfig.categoryCol}
+                      onChange={(e) => setSheetConfig({...sheetConfig, categoryCol: parseInt(e.target.value)})}
+                      className="w-full px-2 py-1 border rounded text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">รายการ</label>
+                    <input
+                      type="number"
+                      value={sheetConfig.descriptionCol}
+                      onChange={(e) => setSheetConfig({...sheetConfig, descriptionCol: parseInt(e.target.value)})}
+                      className="w-full px-2 py-1 border rounded text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">จำนวนเงิน</label>
+                    <input
+                      type="number"
+                      value={sheetConfig.amountCol}
+                      onChange={(e) => setSheetConfig({...sheetConfig, amountCol: parseInt(e.target.value)})}
+                      className="w-full px-2 py-1 border rounded text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-600">แถวเริ่มต้นข้อมูล (ข้ามหัวตาราง)</label>
+                  <input
+                    type="number"
+                    value={sheetConfig.startRow}
+                    onChange={(e) => setSheetConfig({...sheetConfig, startRow: parseInt(e.target.value)})}
+                    className="w-24 px-2 py-1 border rounded text-sm"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Import Button */}
+            {sheetData.length > 0 && (
+              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                <div>
+                  <p className="text-sm text-green-800 font-medium">
+                    พบ {sheetData.length} รายการจาก Google Sheet
+                  </p>
+                  <p className="text-xs text-green-600">
+                    ยอดรวม: ฿{sheetTotalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <Button
+                  variant="primary"
+                  onClick={importSheetToDatabase}
+                  disabled={importing}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {importing ? 'กำลัง import...' : 'Import ลง Database'}
+                </Button>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+
+      {/* Expenses List - Database View */}
+      {viewMode === 'database' && (
+        <Card>
+          {loading ? (
+            <p className="text-center text-gray-600 py-8">กำลังโหลด...</p>
+          ) : filteredExpenses.length === 0 ? (
+            <div className="text-center py-12">
+              <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-600">ไม่มีรายการค่าใช้จ่าย</p>
+              <p className="text-sm text-gray-500 mt-1">คลิก "เพิ่มค่าใช้จ่าย" เพื่อบันทึก</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">วันที่</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">หมวดหมู่</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">รายการ</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">ผู้จำหน่าย</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">จำนวนเงิน</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">การชำระเงิน</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredExpenses.map((expense) => (
+                    <tr key={expense.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {new Date(expense.expense_date).toLocaleDateString('th-TH')}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">
+                          {expense.category}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">{expense.description}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{expense.vendor || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
+                        ฿{expense.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 text-center">
+                        {expense.payment_method}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleEdit(expense)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(expense.id)}
+                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Google Sheets Data View */}
+      {viewMode === 'sheets' && (
+        <Card>
+          {sheetData.length === 0 ? (
+            <div className="text-center py-12">
+              <Sheet className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-600">ยังไม่มีข้อมูลจาก Google Sheet</p>
+              <p className="text-sm text-gray-500 mt-1">
+                ใส่ URL แล้วกด "ดึงข้อมูล" เพื่อแสดงข้อมูลจาก Google Sheet
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-green-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">วันที่</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">หมวดหมู่</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">รายการ</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">ผู้จำหน่าย</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">จำนวนเงิน</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">การชำระเงิน</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {sheetData.map((item, index) => (
+                    <tr key={index} className="hover:bg-green-50/50">
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {new Date(item.expense_date).toLocaleDateString('th-TH')}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        <span className="px-2 py-1 bg-green-100 rounded-full text-xs">
+                          {item.category}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">{item.description}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{item.vendor || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
+                        ฿{item.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 text-center">
+                        {item.payment_method}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Add/Edit Modal */}
       {showModal && (
