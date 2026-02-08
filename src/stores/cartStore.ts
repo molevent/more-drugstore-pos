@@ -31,10 +31,11 @@ export const getProductPriceForChannel = (product: Product, channel: SalesChanne
 interface CartState {
   items: CartItem[]
   salesChannel: SalesChannel
-  addItem: (product: Product, quantity?: number) => void
+  addItem: (product: Product, quantity?: number, customPrice?: number) => void
   removeItem: (productId: string) => void
   updateQuantity: (productId: string, quantity: number) => void
   updateDiscount: (productId: string, discount: number) => void
+  updateCustomPrice: (productId: string, customPrice: number | undefined) => void
   setItems: (items: CartItem[]) => void
   clearCart: () => void
   setSalesChannel: (channel: SalesChannel) => void
@@ -42,6 +43,7 @@ interface CartState {
   getSubtotal: () => number
   getTotalDiscount: () => number
   getProductPrice: (product: Product) => number
+  getItemPrice: (item: CartItem) => number
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
@@ -94,6 +96,14 @@ export const useCartStore = create<CartState>((set, get) => ({
     })
   },
   
+  updateCustomPrice: (productId, customPrice) => {
+    set({
+      items: get().items.map(item =>
+        item.product.id === productId ? { ...item, custom_price: customPrice } : item
+      ),
+    })
+  },
+  
   setItems: (items) => set({ items }),
   
   clearCart: () => set({ items: [], salesChannel: 'walk-in' }),
@@ -104,10 +114,21 @@ export const useCartStore = create<CartState>((set, get) => ({
     return getProductPriceForChannel(product, get().salesChannel)
   },
   
+  getItemPrice: (item) => {
+    // Use custom price if set, otherwise use channel-specific price
+    if (item.custom_price !== undefined && item.custom_price !== null) {
+      return item.custom_price
+    }
+    return getProductPriceForChannel(item.product, get().salesChannel)
+  },
+  
   getSubtotal: () => {
     const channel = get().salesChannel
     return get().items.reduce(
-      (sum, item) => sum + getProductPriceForChannel(item.product, channel) * item.quantity,
+      (sum, item) => {
+        const price = item.custom_price ?? getProductPriceForChannel(item.product, channel)
+        return sum + price * item.quantity
+      },
       0
     )
   },

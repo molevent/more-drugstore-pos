@@ -92,10 +92,20 @@ export default function POSPage() {
   }>>([])
   const [showRecentSales, setShowRecentSales] = useState(false)
   const [loadingRecentSales, setLoadingRecentSales] = useState(false)
-  
+
+  // Held bills states
+  const [heldBills, setHeldBills] = useState<SavedOrder[]>([])
+  const [showHeldBills, setShowHeldBills] = useState(false)
+  const [holdBillName, setHoldBillName] = useState('')
+  const [showHoldBillModal, setShowHoldBillModal] = useState(false)
+
+  // Payment methods states
+  const [paymentMethods, setPaymentMethods] = useState<Array<{id: string; name: string; is_active: boolean}>>([])
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('')
+
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const { items, addItem, removeItem, updateQuantity, clearCart, getTotal, getSubtotal, setItems, setSalesChannel: setCartSalesChannel } = useCartStore()
+  const { items, addItem, removeItem, updateQuantity, updateCustomPrice, clearCart, getTotal, getSubtotal, setItems, setSalesChannel: setCartSalesChannel } = useCartStore()
   const { getProductByBarcode, products, fetchProducts } = useProductStore()
 
   // Load products and customers on mount
@@ -418,6 +428,81 @@ export default function POSPage() {
     }
   }
 
+  // Held Bills Functions
+  const handleHoldBill = () => {
+    if (items.length === 0) {
+      alert('ไม่มีสินค้าในตะกร้า')
+      return
+    }
+    setHoldBillName('')
+    setShowHoldBillModal(true)
+  }
+
+  const confirmHoldBill = () => {
+    const name = holdBillName.trim() || `บิล ${heldBills.length + 1}`
+    const heldBill: SavedOrder = {
+      id: Date.now().toString(),
+      name: name,
+      items: [...items],
+      createdAt: new Date(),
+      salesChannel: salesChannel
+    }
+    setHeldBills([...heldBills, heldBill])
+    clearCart()
+    setSalesChannel('walk-in')
+    setShowHoldBillModal(false)
+    alert(`พักบิล "${name}" เรียบร้อยแล้ว`)
+  }
+
+  const handleResumeBill = (bill: SavedOrder) => {
+    if (items.length > 0) {
+      if (!confirm('มีสินค้าในตะกร้าอยู่ ต้องการล้างตะกร้าก่อนหรือไม่?')) {
+        return
+      }
+      clearCart()
+    }
+    setItems(bill.items)
+    setSalesChannel(bill.salesChannel)
+    setHeldBills(heldBills.filter(b => b.id !== bill.id))
+    setShowHeldBills(false)
+    alert(`เปิดบิล "${bill.name}" เรียบร้อย`)
+  }
+
+  const handleDeleteHeldBill = (billId: string) => {
+    if (!confirm('ต้องการลบบิลที่พักไว้นี้ใช่หรือไม่?')) return
+    setHeldBills(heldBills.filter(b => b.id !== billId))
+  }
+
+  // Fetch Payment Methods
+  const fetchPaymentMethods = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+      
+      if (error) {
+        console.error('Error fetching payment methods:', error)
+        return
+      }
+      
+      if (data) {
+        setPaymentMethods(data)
+        if (data.length > 0 && !selectedPaymentMethod) {
+          setSelectedPaymentMethod(data[0].id)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching payment methods:', error)
+    }
+  }
+
+  // Load payment methods on mount
+  useEffect(() => {
+    fetchPaymentMethods()
+  }, [])
+
   const handleCheckout = () => {
     if (items.length === 0) {
       alert('กรุณาเพิ่มสินค้าในตะกร้า')
@@ -433,7 +518,8 @@ export default function POSPage() {
     }
 
     const channelName = SALES_CHANNELS.find(c => c.id === salesChannel)?.name || 'หน้าร้าน'
-    const confirmed = confirm(`ยืนยันการขายผ่าน ${channelName}\nยอดชำระ: ฿${getTotal().toFixed(2)}`)
+    const paymentMethodName = paymentMethods.find(m => m.id === selectedPaymentMethod)?.name || 'เงินสด'
+    const confirmed = confirm(`ยืนยันการขายผ่าน ${channelName}\nวิธีชำระ: ${paymentMethodName}\nยอดชำระ: ฿${getTotal().toFixed(2)}`)
     
     if (confirmed) {
       // Remove from saved orders if it was a saved order
@@ -1135,16 +1221,44 @@ export default function POSPage() {
                     
                     <div className="flex-1 min-w-0">
                       <h3 className="font-medium text-gray-900 truncate">{item.product.name_th}</h3>
-                      <p className="text-sm text-gray-500">
-                        ฿{getProductPriceForChannel(item.product, salesChannel as SalesChannel).toFixed(2)}
-                        {getProductPriceForChannel(item.product, salesChannel as SalesChannel) !== item.product.base_price && (
-                          <span className="text-xs text-gray-400 line-through ml-1">
-                            ฿{item.product.base_price.toFixed(2)}
-                          </span>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-sm text-gray-500">ราคา:</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={item.custom_price ?? getProductPriceForChannel(item.product, salesChannel as SalesChannel)}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value)
+                            if (!isNaN(value) && value >= 0) {
+                              updateCustomPrice(item.product.id, value)
+                            }
+                          }}
+                          className="w-20 text-sm h-6 py-0"
+                        />
+                        {item.custom_price !== undefined && item.custom_price !== null && (
+                          <span className="text-xs text-orange-500">(แก้ไข)</span>
                         )}
+                      </div>
+                      <p className="text-xs text-gray-400 line-through">
+                        ราคาปกติ: ฿{getProductPriceForChannel(item.product, salesChannel as SalesChannel).toFixed(2)}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
+                      {/* Minus Button */}
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          if (item.quantity > 1) {
+                            updateQuantity(item.product.id, item.quantity - 1)
+                          }
+                        }}
+                        className="h-8 w-8 p-0"
+                      >
+                        -
+                      </Button>
                       <Input
                         type="number"
                         min="1"
@@ -1155,10 +1269,20 @@ export default function POSPage() {
                             updateQuantity(item.product.id, value)
                           }
                         }}
-                        className="w-16 text-center"
+                        className="w-14 text-center h-8"
                       />
+                      {/* Plus Button */}
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                        className="h-8 w-8 p-0"
+                      >
+                        +
+                      </Button>
                       <span className="font-medium text-gray-900 w-20 text-right">
-                        ฿{(getProductPriceForChannel(item.product, salesChannel as SalesChannel) * item.quantity).toFixed(2)}
+                        ฿{((item.custom_price ?? getProductPriceForChannel(item.product, salesChannel as SalesChannel)) * item.quantity).toFixed(2)}
                       </span>
                       <Button
                         variant="danger"
@@ -1248,23 +1372,83 @@ export default function POSPage() {
               <div className="grid grid-cols-2 gap-2">
                 {SALES_CHANNELS.map((channel) => {
                   const Icon = channel.icon
+                  const isSelected = salesChannel === channel.id
                   return (
                     <button
                       key={channel.id}
                       onClick={() => setSalesChannel(channel.id)}
-                      className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${
-                        salesChannel === channel.id
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      className={`flex items-center justify-center gap-2 px-3 py-3 rounded-lg border-2 transition-all ${
+                        isSelected
+                          ? 'border-blue-600 bg-blue-100 text-blue-800 ring-2 ring-blue-300'
                           : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300'
                       }`}
                     >
-                      <Icon className="h-4 w-4" />
-                      <span className="text-sm font-medium">{channel.name}</span>
+                      <Icon className={`h-5 w-5 ${isSelected ? 'text-blue-600' : ''}`} />
+                      <span className={`text-sm font-medium ${isSelected ? 'font-bold' : ''}`}>{channel.name}</span>
+                      {isSelected && (
+                        <span className="ml-1 text-xs bg-blue-600 text-white px-1.5 py-0.5 rounded-full">✓</span>
+                      )}
                     </button>
                   )
                 })}
               </div>
+              {salesChannel && (
+                <p className="mt-2 text-sm text-blue-700 font-medium">
+                  กำลังขายผ่าน: {SALES_CHANNELS.find(c => c.id === salesChannel)?.name}
+                </p>
+              )}
             </div>
+
+            {/* Payment Method Selection */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                วิธีการชำระเงิน
+              </label>
+              {paymentMethods.length > 0 ? (
+                <div className="grid grid-cols-1 gap-2">
+                  {paymentMethods.map((method) => (
+                    <button
+                      key={method.id}
+                      onClick={() => setSelectedPaymentMethod(method.id)}
+                      className={`flex items-center justify-between px-3 py-2 rounded-lg border-2 transition-all ${
+                        selectedPaymentMethod === method.id
+                          ? 'border-green-500 bg-green-50 text-green-700'
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-green-300'
+                      }`}
+                    >
+                      <span className="text-sm font-medium">{method.name}</span>
+                      {selectedPaymentMethod === method.id && (
+                        <span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded-full">เลือก</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 bg-gray-100 p-3 rounded-lg">
+                  ยังไม่มีวิธีการชำระเงิน กรุณาตั้งค่าในเมนูตั้งค่า
+                </p>
+              )}
+            </div>
+
+            {/* Held Bills Section */}
+            {heldBills.length > 0 && (
+              <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-yellow-800">
+                    บิลที่พักไว้ ({heldBills.length})
+                  </span>
+                  <button
+                    onClick={() => setShowHeldBills(true)}
+                    className="text-sm text-yellow-700 hover:text-yellow-900 underline"
+                  >
+                    ดูทั้งหมด
+                  </button>
+                </div>
+                <div className="text-xs text-yellow-700">
+                  ล่าสุด: {heldBills[heldBills.length - 1]?.name}
+                </div>
+              </div>
+            )}
 
             <div className="space-y-3 mb-6">
               <div className="flex justify-between text-gray-600">
@@ -1293,16 +1477,26 @@ export default function POSPage() {
               >
                 ชำระเงิน
               </Button>
-              <Button
-                variant="secondary"
-                size="lg"
-                className="w-full"
-                onClick={handlePrintReceipt}
-                disabled={items.length === 0}
-              >
-                <Receipt className="h-5 w-5 mr-2" />
-                พิมพ์ใบเสร็จ
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  onClick={handleHoldBill}
+                  disabled={items.length === 0}
+                >
+                  <Save className="h-5 w-5 mr-2" />
+                  พักบิล
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  onClick={handlePrintReceipt}
+                  disabled={items.length === 0}
+                >
+                  <Receipt className="h-5 w-5 mr-2" />
+                  พิมพ์ใบเสร็จ
+                </Button>
+              </div>
               <Button
                 variant="secondary"
                 size="lg"
@@ -1683,6 +1877,135 @@ export default function POSPage() {
                 onClick={() => setShowRecentSales(false)}
               >
                 ปิด
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Held Bills Modal */}
+      {showHeldBills && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex items-center gap-2">
+                <Save className="h-6 w-6 text-yellow-500" />
+                <h2 className="text-lg font-bold text-gray-900">บิลที่พักไว้</h2>
+              </div>
+              <button
+                onClick={() => setShowHeldBills(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="p-4">
+              {heldBills.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Save className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                  <p>ไม่มีบิลที่พักไว้</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {heldBills.map((bill) => (
+                    <div
+                      key={bill.id}
+                      className="p-3 bg-yellow-50 rounded-lg border border-yellow-200"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-gray-900">{bill.name}</span>
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                              {SALES_CHANNELS.find(c => c.id === bill.salesChannel)?.name || 'หน้าร้าน'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {bill.items.length} รายการ • {new Date(bill.createdAt).toLocaleString('th-TH')}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleResumeBill(bill)}
+                          >
+                            เปิดบิล
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="danger"
+                            size="sm"
+                            onClick={() => handleDeleteHeldBill(bill.id)}
+                          >
+                            ลบ
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t bg-gray-50">
+              <Button
+                variant="secondary"
+                className="w-full"
+                onClick={() => setShowHeldBills(false)}
+              >
+                ปิด
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hold Bill Confirmation Modal */}
+      {showHoldBillModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex items-center gap-2">
+                <Save className="h-6 w-6 text-yellow-500" />
+                <h2 className="text-lg font-bold text-gray-900">พักบิล</h2>
+              </div>
+              <button
+                onClick={() => setShowHoldBillModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="p-4">
+              <p className="text-gray-600 mb-4">ระบุชื่อหรือหมายเหตุสำหรับบิลนี้:</p>
+              <input
+                type="text"
+                value={holdBillName}
+                onChange={(e) => setHoldBillName(e.target.value)}
+                placeholder={`บิล ${heldBills.length + 1}`}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                autoFocus
+              />
+            </div>
+
+            <div className="p-4 border-t bg-gray-50 flex gap-2">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setShowHoldBillModal(false)}
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                variant="primary"
+                className="flex-1"
+                onClick={confirmHoldBill}
+              >
+                พักบิล
               </Button>
             </div>
           </div>

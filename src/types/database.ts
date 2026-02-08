@@ -345,6 +345,7 @@ export interface CartItem {
   quantity: number
   discount: number
   platform_price?: number
+  custom_price?: number // Allow editing selling price in POS
 }
 
 export interface Cart {
