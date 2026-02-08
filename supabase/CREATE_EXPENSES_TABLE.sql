@@ -12,7 +12,22 @@ CREATE TABLE IF NOT EXISTS expenses (
   vendor TEXT,
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  -- Google Sheets extended fields
+  sheet_id TEXT,
+  tax_invoice_number TEXT,
+  document_type TEXT,
+  quantity DECIMAL(10, 2),
+  unit_price DECIMAL(10, 2),
+  amount_before_tax DECIMAL(10, 2),
+  vat_amount DECIMAL(10, 2),
+  withholding_tax DECIMAL(10, 2),
+  payment_amount DECIMAL(10, 2),
+  product_type TEXT,
+  subcategory TEXT,
+  seller_tax_id TEXT,
+  requester TEXT,
+  evidence_url TEXT
 );
 
 -- Add index for faster queries

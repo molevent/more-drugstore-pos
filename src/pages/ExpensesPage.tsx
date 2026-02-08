@@ -15,6 +15,21 @@ interface Expense {
   vendor?: string
   notes?: string
   created_at: string
+  // Google Sheets extended fields
+  sheet_id?: string
+  tax_invoice_number?: string
+  document_type?: string
+  quantity?: number
+  unit_price?: number
+  amount_before_tax?: number
+  vat_amount?: number
+  withholding_tax?: number
+  payment_amount?: number
+  product_type?: string
+  subcategory?: string
+  seller_tax_id?: string
+  requester?: string
+  evidence_url?: string
 }
 
 const EXPENSE_CATEGORIES = [
@@ -50,16 +65,26 @@ export default function ExpensesPage() {
   const [sheetLoading, setSheetLoading] = useState(false)
   const [showSheetSettings, setShowSheetSettings] = useState(false)
   const [sheetConfig, setSheetConfig] = useState({
-    dateCol: 0,        // A: วันที่
-    receiptCol: 1,     // B: เลขที่เอกสาร
-    descriptionCol: 2, // C: รายการสินค้า/บริการ
-    quantityCol: 3,    // D: จำนวน (เก็บไว้อ้างอิง)
-    unitPriceCol: 4,   // E: ราคาหน่วย (เก็บไว้อ้างอิง)
-    amountCol: 7,      // H: มูลค่าที่ต้องจ่าย (ใช้ค่านี้)
-    categoryCol: 8,    // I: หมวดหมู่
-    vendorCol: 9,      // J: ชื่อลูกค้า/ผู้ขาย
-    notesCol: 10,      // K: หมายเหตุ
-    startRow: 4        // ข้อมูลเริ่มแถว 5 (แถว 1-4 เป็นหัวตาราง)
+    dateCol: 0,              // A: วันที่
+    sheetIdCol: 1,           // B: ไอดี
+    taxInvoiceCol: 2,        // C: เลขที่ใบกำกับภาษี
+    docTypeCol: 3,           // D: ประเภทเอกสาร
+    descriptionCol: 4,       // E: รายละเอียด
+    quantityCol: 5,          // F: จำนวน
+    unitPriceCol: 6,         // G: ราคาต่อหน่วย
+    amountBeforeTaxCol: 7,   // H: ยอดรวมก่อนภาษี
+    vatCol: 8,               // I: ภาษีมูลค่าเพิ่ม
+    withholdingTaxCol: 9,    // J: ภาษีหัก ณ ที่จ่าย
+    paymentAmountCol: 10,    // K: ยอดชำระ
+    productTypeCol: 11,      // L: ประเภทสินค้า
+    categoryCol: 12,         // M: หมวดหมู่
+    subcategoryCol: 13,      // N: หมวดหมู่ย่อย
+    vendorCol: 14,           // O: ผู้ขาย/ผู้ให้บริการ
+    sellerTaxIdCol: 15,      // P: เลขประจำตัวผู้เสียภาษีของร้านค้า
+    requesterCol: 16,        // Q: ผู้ขออนุญาตเบิกจ่าย
+    evidenceCol: 17,         // R: หลักฐาน
+    notesCol: 18,            // S: หมายเหตุ
+    startRow: 4              // ข้อมูลเริ่มแถว 5
   })
   const [importing, setImporting] = useState(false)
   
@@ -208,17 +233,30 @@ export default function ExpensesPage() {
       const csvText = await response.text()
       const rows = parseCSV(csvText)
       
-      // Map CSV data to expense format
+      // Map CSV data to expense format - all 19 columns
       const mappedData = rows.slice(sheetConfig.startRow).map((row, index) => ({
         id: `sheet-${index}`,
         expense_date: formatDate(row[sheetConfig.dateCol] || ''),
-        category: row[sheetConfig.categoryCol] || 'ค่าอื่นๆ',
+        sheet_id: row[sheetConfig.sheetIdCol] || '',
+        tax_invoice_number: row[sheetConfig.taxInvoiceCol] || '',
+        document_type: row[sheetConfig.docTypeCol] || '',
         description: row[sheetConfig.descriptionCol] || '',
-        amount: parseFloat(row[sheetConfig.amountCol]) || 0,
-        payment_method: 'เงินสด', // ไม่มีคอลัมน์ใน Sheet, ใช้ค่า default
+        quantity: parseFloat(row[sheetConfig.quantityCol]) || 0,
+        unit_price: parseFloat(row[sheetConfig.unitPriceCol]) || 0,
+        amount_before_tax: parseFloat(row[sheetConfig.amountBeforeTaxCol]) || 0,
+        vat_amount: parseFloat(row[sheetConfig.vatCol]) || 0,
+        withholding_tax: parseFloat(row[sheetConfig.withholdingTaxCol]) || 0,
+        payment_amount: parseFloat(row[sheetConfig.paymentAmountCol]) || 0,
+        amount: parseFloat(row[sheetConfig.paymentAmountCol]) || 0, // ใช้ยอดชำระเป็นหลัก
+        product_type: row[sheetConfig.productTypeCol] || '',
+        category: row[sheetConfig.categoryCol] || 'ค่าอื่นๆ',
+        subcategory: row[sheetConfig.subcategoryCol] || '',
         vendor: row[sheetConfig.vendorCol] || '',
-        receipt_number: row[sheetConfig.receiptCol] || '',
+        seller_tax_id: row[sheetConfig.sellerTaxIdCol] || '',
+        requester: row[sheetConfig.requesterCol] || '',
+        evidence_url: row[sheetConfig.evidenceCol] || '',
         notes: row[sheetConfig.notesCol] || '',
+        payment_method: 'เงินสด', // ไม่มีคอลัมน์ใน Sheet, ใช้ค่า default
         _isSheetData: true
       })).filter(item => item.description && item.amount > 0)
       
@@ -294,8 +332,22 @@ export default function ExpensesPage() {
         amount: item.amount,
         payment_method: item.payment_method,
         vendor: item.vendor || null,
-        receipt_number: item.receipt_number || null,
-        notes: item.notes || null
+        notes: item.notes || null,
+        // Google Sheets extended fields
+        sheet_id: item.sheet_id || null,
+        tax_invoice_number: item.tax_invoice_number || null,
+        document_type: item.document_type || null,
+        quantity: item.quantity || null,
+        unit_price: item.unit_price || null,
+        amount_before_tax: item.amount_before_tax || null,
+        vat_amount: item.vat_amount || null,
+        withholding_tax: item.withholding_tax || null,
+        payment_amount: item.payment_amount || null,
+        product_type: item.product_type || null,
+        subcategory: item.subcategory || null,
+        seller_tax_id: item.seller_tax_id || null,
+        requester: item.requester || null,
+        evidence_url: item.evidence_url || null
       }))
       
       const { error } = await supabase.from('expenses').insert(expensesToInsert)
@@ -441,80 +493,88 @@ export default function ExpensesPage() {
             {/* Sheet Column Settings */}
             {showSheetSettings && (
               <div className="p-4 bg-gray-50 rounded-lg space-y-3">
-                <h4 className="font-medium text-gray-700">ตั้งค่าคอลัมน์ (เริ่มจาก 0)</h4>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <h4 className="font-medium text-gray-700">ตั้งค่าคอลัมน์ Google Sheets (เริ่มจาก 0)</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   <div>
-                    <label className="text-xs text-gray-600">วันที่ (คอลัมน์)</label>
-                    <input
-                      type="number"
-                      value={sheetConfig.dateCol}
-                      onChange={(e) => setSheetConfig({...sheetConfig, dateCol: parseInt(e.target.value)})}
-                      className="w-full px-2 py-1 border rounded text-sm"
-                    />
+                    <label className="text-xs text-gray-600">A: วันที่</label>
+                    <input type="number" value={sheetConfig.dateCol} onChange={(e) => setSheetConfig({...sheetConfig, dateCol: parseInt(e.target.value)})} className="w-full px-2 py-1 border rounded text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-600">หมวดหมู่</label>
-                    <input
-                      type="number"
-                      value={sheetConfig.categoryCol}
-                      onChange={(e) => setSheetConfig({...sheetConfig, categoryCol: parseInt(e.target.value)})}
-                      className="w-full px-2 py-1 border rounded text-sm"
-                    />
+                    <label className="text-xs text-gray-600">B: ไอดี</label>
+                    <input type="number" value={sheetConfig.sheetIdCol} onChange={(e) => setSheetConfig({...sheetConfig, sheetIdCol: parseInt(e.target.value)})} className="w-full px-2 py-1 border rounded text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-600">รายการ</label>
-                    <input
-                      type="number"
-                      value={sheetConfig.descriptionCol}
-                      onChange={(e) => setSheetConfig({...sheetConfig, descriptionCol: parseInt(e.target.value)})}
-                      className="w-full px-2 py-1 border rounded text-sm"
-                    />
+                    <label className="text-xs text-gray-600">C: เลขที่ใบกำกับภาษี</label>
+                    <input type="number" value={sheetConfig.taxInvoiceCol} onChange={(e) => setSheetConfig({...sheetConfig, taxInvoiceCol: parseInt(e.target.value)})} className="w-full px-2 py-1 border rounded text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-600">จำนวนเงิน</label>
-                    <input
-                      type="number"
-                      value={sheetConfig.amountCol}
-                      onChange={(e) => setSheetConfig({...sheetConfig, amountCol: parseInt(e.target.value)})}
-                      className="w-full px-2 py-1 border rounded text-sm"
-                    />
+                    <label className="text-xs text-gray-600">D: ประเภทเอกสาร</label>
+                    <input type="number" value={sheetConfig.docTypeCol} onChange={(e) => setSheetConfig({...sheetConfig, docTypeCol: parseInt(e.target.value)})} className="w-full px-2 py-1 border rounded text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-600">เลขที่เอกสาร</label>
-                    <input
-                      type="number"
-                      value={sheetConfig.receiptCol}
-                      onChange={(e) => setSheetConfig({...sheetConfig, receiptCol: parseInt(e.target.value)})}
-                      className="w-full px-2 py-1 border rounded text-sm"
-                    />
+                    <label className="text-xs text-gray-600">E: รายละเอียด</label>
+                    <input type="number" value={sheetConfig.descriptionCol} onChange={(e) => setSheetConfig({...sheetConfig, descriptionCol: parseInt(e.target.value)})} className="w-full px-2 py-1 border rounded text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-600">ชื่อลูกค้า/ผู้ขาย</label>
-                    <input
-                      type="number"
-                      value={sheetConfig.vendorCol}
-                      onChange={(e) => setSheetConfig({...sheetConfig, vendorCol: parseInt(e.target.value)})}
-                      className="w-full px-2 py-1 border rounded text-sm"
-                    />
+                    <label className="text-xs text-gray-600">F: จำนวน</label>
+                    <input type="number" value={sheetConfig.quantityCol} onChange={(e) => setSheetConfig({...sheetConfig, quantityCol: parseInt(e.target.value)})} className="w-full px-2 py-1 border rounded text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-600">หมายเหตุ</label>
-                    <input
-                      type="number"
-                      value={sheetConfig.notesCol}
-                      onChange={(e) => setSheetConfig({...sheetConfig, notesCol: parseInt(e.target.value)})}
-                      className="w-full px-2 py-1 border rounded text-sm"
-                    />
+                    <label className="text-xs text-gray-600">G: ราคาต่อหน่วย</label>
+                    <input type="number" value={sheetConfig.unitPriceCol} onChange={(e) => setSheetConfig({...sheetConfig, unitPriceCol: parseInt(e.target.value)})} className="w-full px-2 py-1 border rounded text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">H: ยอดรวมก่อนภาษี</label>
+                    <input type="number" value={sheetConfig.amountBeforeTaxCol} onChange={(e) => setSheetConfig({...sheetConfig, amountBeforeTaxCol: parseInt(e.target.value)})} className="w-full px-2 py-1 border rounded text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">I: ภาษีมูลค่าเพิ่ม</label>
+                    <input type="number" value={sheetConfig.vatCol} onChange={(e) => setSheetConfig({...sheetConfig, vatCol: parseInt(e.target.value)})} className="w-full px-2 py-1 border rounded text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">J: ภาษีหัก ณ ที่จ่าย</label>
+                    <input type="number" value={sheetConfig.withholdingTaxCol} onChange={(e) => setSheetConfig({...sheetConfig, withholdingTaxCol: parseInt(e.target.value)})} className="w-full px-2 py-1 border rounded text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">K: ยอดชำระ</label>
+                    <input type="number" value={sheetConfig.paymentAmountCol} onChange={(e) => setSheetConfig({...sheetConfig, paymentAmountCol: parseInt(e.target.value)})} className="w-full px-2 py-1 border rounded text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">L: ประเภทสินค้า</label>
+                    <input type="number" value={sheetConfig.productTypeCol} onChange={(e) => setSheetConfig({...sheetConfig, productTypeCol: parseInt(e.target.value)})} className="w-full px-2 py-1 border rounded text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">M: หมวดหมู่</label>
+                    <input type="number" value={sheetConfig.categoryCol} onChange={(e) => setSheetConfig({...sheetConfig, categoryCol: parseInt(e.target.value)})} className="w-full px-2 py-1 border rounded text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">N: หมวดหมู่ย่อย</label>
+                    <input type="number" value={sheetConfig.subcategoryCol} onChange={(e) => setSheetConfig({...sheetConfig, subcategoryCol: parseInt(e.target.value)})} className="w-full px-2 py-1 border rounded text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">O: ผู้ขาย</label>
+                    <input type="number" value={sheetConfig.vendorCol} onChange={(e) => setSheetConfig({...sheetConfig, vendorCol: parseInt(e.target.value)})} className="w-full px-2 py-1 border rounded text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">P: เลขผู้เสียภาษี</label>
+                    <input type="number" value={sheetConfig.sellerTaxIdCol} onChange={(e) => setSheetConfig({...sheetConfig, sellerTaxIdCol: parseInt(e.target.value)})} className="w-full px-2 py-1 border rounded text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">Q: ผู้ขอเบิก</label>
+                    <input type="number" value={sheetConfig.requesterCol} onChange={(e) => setSheetConfig({...sheetConfig, requesterCol: parseInt(e.target.value)})} className="w-full px-2 py-1 border rounded text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">R: หลักฐาน</label>
+                    <input type="number" value={sheetConfig.evidenceCol} onChange={(e) => setSheetConfig({...sheetConfig, evidenceCol: parseInt(e.target.value)})} className="w-full px-2 py-1 border rounded text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600">S: หมายเหตุ</label>
+                    <input type="number" value={sheetConfig.notesCol} onChange={(e) => setSheetConfig({...sheetConfig, notesCol: parseInt(e.target.value)})} className="w-full px-2 py-1 border rounded text-sm" />
                   </div>
                 </div>
                 <div>
                   <label className="text-xs text-gray-600">แถวเริ่มต้นข้อมูล (ข้ามหัวตาราง)</label>
-                  <input
-                    type="number"
-                    value={sheetConfig.startRow}
-                    onChange={(e) => setSheetConfig({...sheetConfig, startRow: parseInt(e.target.value)})}
-                    className="w-24 px-2 py-1 border rounded text-sm"
-                  />
+                  <input type="number" value={sheetConfig.startRow} onChange={(e) => setSheetConfig({...sheetConfig, startRow: parseInt(e.target.value)})} className="w-24 px-2 py-1 border rounded text-sm" />
                 </div>
               </div>
             )}
