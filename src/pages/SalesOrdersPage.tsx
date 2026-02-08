@@ -33,8 +33,14 @@ export default function SalesOrdersPage() {
   const [orders, setOrders] = useState<SalesOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
+  const [dateFrom, setDateFrom] = useState(() => {
+    const today = new Date()
+    return today.toISOString().split('T')[0]
+  })
+  const [dateTo, setDateTo] = useState(() => {
+    const today = new Date()
+    return today.toISOString().split('T')[0]
+  })
 
   useEffect(() => {
     fetchOrders()
