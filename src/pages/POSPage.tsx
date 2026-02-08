@@ -44,6 +44,9 @@ export default function POSPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<Contact | null>(null)
   const [customerResults, setCustomerResults] = useState<Contact[]>([])
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false)
+  const [showAddContactModal, setShowAddContactModal] = useState(false)
+  const [newContactName, setNewContactName] = useState('')
+  const [newContactPhone, setNewContactPhone] = useState('')
   const customerDropdownRef = useRef<HTMLDivElement>(null)
   
   // Product filter states
@@ -203,6 +206,44 @@ export default function POSPage() {
   const handleClearCustomer = () => {
     setSelectedCustomer({ id: 'default', name: 'ลูกค้าทั่วไป', type: 'buyer' })
     setCustomerSearch('')
+  }
+
+  const handleAddNewContact = async () => {
+    if (!newContactName.trim()) {
+      alert('กรุณาระบุชื่อผู้ติดต่อ')
+      return
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('contacts')
+        .insert({
+          name: newContactName.trim(),
+          phone: newContactPhone.trim() || null,
+          type: 'buyer'
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error adding contact:', error)
+        alert('ไม่สามารถเพิ่มผู้ติดต่อได้')
+        return
+      }
+
+      if (data) {
+        setSelectedCustomer(data as Contact)
+        setNewContactName('')
+        setNewContactPhone('')
+        setShowAddContactModal(false)
+        setCustomerSearch('')
+        setShowCustomerDropdown(false)
+        alert(`เพิ่มผู้ติดต่อ "${data.name}" สำเร็จ`)
+      }
+    } catch (error) {
+      console.error('Error adding contact:', error)
+      alert('เกิดข้อผิดพลาดในการเพิ่มผู้ติดต่อ')
+    }
   }
 
   const handleBarcodeSubmit = (e: React.FormEvent) => {
@@ -1358,6 +1399,27 @@ export default function POSPage() {
                     ))}
                   </div>
                 )}
+
+                {/* Add New Contact Button - Show when searching but no results */}
+                {customerSearch.trim().length > 0 && !showCustomerDropdown && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-3">
+                    <p className="text-sm text-gray-500 mb-2">ไม่พบลูกค้า "{customerSearch}"</p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => {
+                        setNewContactName(customerSearch)
+                        setShowAddContactModal(true)
+                        setShowCustomerDropdown(false)
+                      }}
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      เพิ่มผู้ติดต่อใหม่
+                    </Button>
+                  </div>
+                )}
               </div>
               {selectedCustomer?.id === 'default' && (
                 <p className="text-xs text-gray-500 mt-1">ค่าเริ่มต้น: ลูกค้าทั่วไป</p>
@@ -2006,6 +2068,70 @@ export default function POSPage() {
                 onClick={confirmHoldBill}
               >
                 พักบิล
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Add Contact Modal */}
+      {showAddContactModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex items-center gap-2">
+                <User className="h-6 w-6 text-blue-500" />
+                <h2 className="text-lg font-bold text-gray-900">เพิ่มผู้ติดต่อใหม่</h2>
+              </div>
+              <button
+                onClick={() => setShowAddContactModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  ชื่อ <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newContactName}
+                  onChange={(e) => setNewContactName(e.target.value)}
+                  placeholder="ชื่อผู้ติดต่อ"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  เบอร์โทรศัพท์
+                </label>
+                <input
+                  type="tel"
+                  value={newContactPhone}
+                  onChange={(e) => setNewContactPhone(e.target.value)}
+                  placeholder="เบอร์โทรศัพท์ (ถ้ามี)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="p-4 border-t bg-gray-50 flex gap-2">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setShowAddContactModal(false)}
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                variant="primary"
+                className="flex-1"
+                onClick={handleAddNewContact}
+              >
+                บันทึก
               </Button>
             </div>
           </div>
