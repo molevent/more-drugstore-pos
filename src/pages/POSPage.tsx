@@ -48,9 +48,6 @@ export default function POSPage() {
   const [newContactPhone, setNewContactPhone] = useState('')
   const customerDropdownRef = useRef<HTMLDivElement>(null)
   
-  // Product filter states
-  const [showStockOnly, setShowStockOnly] = useState(false)
-  
   // Camera barcode scanning states
   const [showCameraModal, setShowCameraModal] = useState(false)
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
@@ -125,7 +122,7 @@ export default function POSPage() {
 
   // Search products as user types
   useEffect(() => {
-    console.log('POS: Search triggered', { barcode, productsCount: products.length, showStockOnly })
+    console.log('POS: Search triggered', { barcode, productsCount: products.length })
     
     if (barcode.trim().length > 0) {
       const searchTerm = barcode.toLowerCase()
@@ -135,14 +132,9 @@ export default function POSPage() {
         p.name_en?.toLowerCase().includes(searchTerm)
       )
       
-      // Apply stock filter if enabled
-      if (showStockOnly) {
-        results = results.filter(p => (p.stock_quantity || 0) > 0)
-      }
-      
       results = results.slice(0, 10) // Limit to 10 results
       
-      console.log('POS: Search results', { searchTerm, resultsCount: results.length, showStockOnly })
+      console.log('POS: Search results', { searchTerm, resultsCount: results.length })
       
       setSearchResults(results)
       setShowDropdown(results.length > 0)
@@ -151,7 +143,7 @@ export default function POSPage() {
       setSearchResults([])
       setShowDropdown(false)
     }
-  }, [barcode, products, showStockOnly])
+  }, [barcode, products])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -1174,24 +1166,6 @@ export default function POSPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-4 sm:px-0">
         <div className="lg:col-span-2">
           <Card title="สแกนบาร์โค้ด">
-            {/* Filter Options */}
-            <div className="mb-3 flex items-center gap-2">
-              <button
-                onClick={() => setShowStockOnly(!showStockOnly)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                  showStockOnly
-                    ? 'bg-[#A67B5B]/20 text-gray-500 border border-[#A67B5B]'
-                    : 'bg-[#B8C9B8]/20 text-gray-600 border border-[#B8C9B8]/50 hover:bg-[#B8C9B8]/30'
-                }`}
-              >
-                <Package className="h-4 w-4" />
-                {showStockOnly ? 'เฉพาะสินค้ามี stock' : 'แสดงทั้งหมด'}
-              </button>
-              {showStockOnly && (
-                <span className="text-xs text-gray-500">กรอง: สินค้าคงเหลือ {'>'} 0</span>
-              )}
-            </div>
-
             <form onSubmit={handleBarcodeSubmit} className="mb-6">
               <div className="flex gap-2">
                 <div className="flex-1 relative" ref={dropdownRef}>
