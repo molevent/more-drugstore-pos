@@ -1,7 +1,7 @@
 import { useAuthStore } from '../stores/authStore'
 import { useLanguage } from '../contexts/LanguageContext'
 import Card from '../components/common/Card'
-import { TrendingUp, Package, AlertTriangle, DollarSign } from 'lucide-react'
+import { TrendingUp, Package, AlertTriangle, DollarSign, Home } from 'lucide-react'
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
@@ -36,11 +36,16 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('dashboard.title')}</h1>
-        <p className="text-sm sm:text-base text-gray-600 mt-1">
-          {t('dashboard.welcome')}, {user?.full_name} ({user?.role})
-        </p>
+      <div className="flex items-center gap-3 mb-6">
+        <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30 flex items-center justify-center">
+          <Home className="h-5 w-5 text-white" />
+        </div>
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('dashboard.title')}</h1>
+          <p className="text-sm sm:text-base text-gray-600">
+            {t('dashboard.welcome')}, {user?.full_name} ({user?.role})
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
