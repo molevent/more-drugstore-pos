@@ -40,7 +40,7 @@ export default function POSPage() {
   
   // Customer search states
   const [customerSearch, setCustomerSearch] = useState('')
-  const [selectedCustomer, setSelectedCustomer] = useState<Contact | null>(null)
+  const [selectedCustomer, setSelectedCustomer] = useState<Contact | null>({ id: 'default', name: 'ลูกค้าทั่วไป', type: 'buyer' })
   const [customerResults, setCustomerResults] = useState<Contact[]>([])
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false)
   const [showAddContactModal, setShowAddContactModal] = useState(false)
@@ -142,8 +142,6 @@ export default function POSPage() {
   useEffect(() => {
     console.log('POS: Loading products...')
     fetchProducts()
-    // Load default customer
-    setSelectedCustomer({ id: 'default', name: 'ลูกค้าทั่วไป', type: 'buyer' })
   }, [])
 
   // Sync sales channel with cart store
