@@ -1047,7 +1047,7 @@ export default function POSPage() {
         </div>
       </div>
 
-      {/* AI & Consultation Section - Compact */}
+      {/* AI Section - Compact with Consultation History inside */}
       <div className="flex gap-2 mb-2 mx-4 sm:mx-0">
         <Link 
           to="/ai-symptom-checker"
@@ -1058,10 +1058,10 @@ export default function POSPage() {
         </Link>
         <Link 
           to="/consultation-history"
-          className="flex-1 flex items-center gap-2 px-3 py-2 bg-green-50 rounded-full border border-green-200 hover:bg-green-100 hover:shadow-md transition-all"
+          className="flex items-center gap-2 px-3 py-2 bg-blue-50/50 rounded-full border border-blue-200 hover:bg-blue-100 hover:shadow-md transition-all"
+          title="ประวัติการปรึกษา"
         >
-          <FileText className="h-5 w-5 text-green-600 flex-shrink-0" />
-          <span className="font-medium text-gray-900 text-sm truncate">ประวัติการปรึกษา</span>
+          <FileText className="h-5 w-5 text-blue-600 flex-shrink-0" />
         </Link>
       </div>
 
