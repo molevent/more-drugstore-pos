@@ -14,7 +14,8 @@ import {
   FolderTree,
   Warehouse,
   Settings,
-  Bike
+  Bike,
+  AlertTriangle
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Card from '../components/common/Card'
@@ -238,6 +239,18 @@ export default function SettingsPage() {
       link: '/settings/zortout'
     },
   ]
+
+  // Audit Section Items
+  const auditItems = [
+    {
+      icon: AlertTriangle,
+      iconBg: 'bg-red-100',
+      iconColor: 'text-red-600',
+      title: 'รายงานสินค้าติดลบ',
+      subtitle: 'ตรวจสอบสินค้าที่สต็อกติดลบและการเคลื่อนไหว',
+      link: '/negative-stock-report'
+    },
+  ]
   
   return (
     <div>
@@ -285,6 +298,24 @@ export default function SettingsPage() {
               subtitle={item.subtitle}
               details={item.details}
               status={item.status}
+              link={item.link}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Audit Section */}
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">Audit - ตรวจสอบและควบคุม</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {auditItems.map((item, index) => (
+            <SettingsCard
+              key={index}
+              icon={item.icon}
+              iconBg={item.iconBg}
+              iconColor={item.iconColor}
+              title={item.title}
+              subtitle={item.subtitle}
               link={item.link}
             />
           ))}

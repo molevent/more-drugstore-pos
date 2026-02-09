@@ -9,8 +9,7 @@ import {
   LogOut,
   Menu,
   X,
-  Users,
-  AlertTriangle
+  Users
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -67,12 +66,6 @@ export default function Layout({ children }: LayoutProps) {
       title: 'ผู้ติดต่อ',
       items: [
         { name: 'ผู้ติดต่อ', href: '/contacts', icon: Users },
-      ]
-    },
-    {
-      title: 'รายงาน',
-      items: [
-        { name: 'สินค้าติดลบ', href: '/negative-stock-report', icon: AlertTriangle },
       ]
     },
     {
