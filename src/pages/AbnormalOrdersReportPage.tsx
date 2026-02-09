@@ -244,7 +244,7 @@ export default function AbnormalOrdersReportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#F5F0E6]">
       <div className="flex items-center justify-between mb-6 px-4 sm:px-0">
         <div className="flex items-center gap-3">
           <Link to="/settings">
@@ -255,7 +255,7 @@ export default function AbnormalOrdersReportPage() {
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <AlertTriangle className="h-7 w-7 text-amber-600" />
+              <AlertTriangle className="h-7 w-7 text-[#D4756A]" />
               รายงานออเดอร์ไม่ปกติ
             </h1>
             <p className="text-gray-600 mt-1">ตรวจสอบออเดอร์ที่มีการแก้ไขราคา หรือมีของแถม</p>
@@ -265,9 +265,9 @@ export default function AbnormalOrdersReportPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 px-4 sm:px-0">
-        <Card className="bg-white border-gray-200">
+        <Card className="bg-white border-[#B8C9B8] shadow-sm">
           <div className="flex items-center">
-            <div className="h-10 w-10 rounded-xl bg-amber-500 flex items-center justify-center shadow-sm">
+            <div className="h-10 w-10 rounded-xl bg-[#D4756A] flex items-center justify-center shadow-sm">
               <AlertTriangle className="h-5 w-5 text-white" />
             </div>
             <div className="ml-4">
@@ -276,9 +276,9 @@ export default function AbnormalOrdersReportPage() {
             </div>
           </div>
         </Card>
-        <Card className="bg-white border-gray-200">
+        <Card className="bg-white border-[#B8C9B8] shadow-sm">
           <div className="flex items-center">
-            <div className="h-10 w-10 rounded-xl bg-blue-500 flex items-center justify-center shadow-sm">
+            <div className="h-10 w-10 rounded-xl bg-[#7D735F] flex items-center justify-center shadow-sm">
               <DollarSign className="h-5 w-5 text-white" />
             </div>
             <div className="ml-4">
@@ -289,9 +289,9 @@ export default function AbnormalOrdersReportPage() {
             </div>
           </div>
         </Card>
-        <Card className="bg-white border-gray-200">
+        <Card className="bg-white border-[#B8C9B8] shadow-sm">
           <div className="flex items-center">
-            <div className="h-10 w-10 rounded-xl bg-purple-500 flex items-center justify-center shadow-sm">
+            <div className="h-10 w-10 rounded-xl bg-[#B8C9B8] flex items-center justify-center shadow-sm">
               <Gift className="h-5 w-5 text-white" />
             </div>
             <div className="ml-4">
@@ -302,9 +302,9 @@ export default function AbnormalOrdersReportPage() {
             </div>
           </div>
         </Card>
-        <Card className="bg-white border-gray-200">
+        <Card className="bg-white border-[#B8C9B8] shadow-sm">
           <div className="flex items-center">
-            <div className="h-10 w-10 rounded-xl bg-red-500 flex items-center justify-center shadow-sm">
+            <div className="h-10 w-10 rounded-xl bg-[#A67B5B] flex items-center justify-center shadow-sm">
               <DollarSign className="h-5 w-5 text-white" />
             </div>
             <div className="ml-4">
@@ -318,14 +318,14 @@ export default function AbnormalOrdersReportPage() {
       </div>
 
       {/* Filters */}
-      <Card className="mb-6 px-4 sm:px-0 bg-white border-gray-200">
+      <Card className="mb-6 px-4 sm:px-0 bg-white border-[#B8C9B8] shadow-sm">
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               <Search className="h-4 w-4 inline mr-1" />
               ค้นหา
             </label>
-            <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-2.5 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+            <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-2.5 border border-transparent focus-within:border-[#7D735F] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#B8C9B8] transition-all">
               <input
                 type="text"
                 placeholder="เลขที่ออเดอร์, ชื่อลูกค้า, สินค้า..."
@@ -365,7 +365,7 @@ export default function AbnormalOrdersReportPage() {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as any)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="w-full px-3 py-2 border border-[#B8C9B8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7D735F] bg-white"
             >
               <option value="all">ทั้งหมด</option>
               <option value="price_edited">แก้ไขราคา</option>
@@ -393,7 +393,7 @@ export default function AbnormalOrdersReportPage() {
       <div className="space-y-4 px-4 sm:px-0">
         {loading ? (
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7D735F] mx-auto"></div>
             <p className="text-sm text-gray-500 mt-2">กำลังโหลด...</p>
           </div>
         ) : error ? (
@@ -402,7 +402,7 @@ export default function AbnormalOrdersReportPage() {
           </div>
         ) : filteredOrders.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+            <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-[#B8C9B8]" />
             <p>ไม่พบออเดอร์ที่ไม่ปกติ</p>
           </div>
         ) : (
@@ -412,9 +412,9 @@ export default function AbnormalOrdersReportPage() {
             const isExpanded = expandedOrder === order.id
             
             return (
-              <Card key={order.id} className="bg-white border-gray-200 overflow-hidden">
+              <Card key={order.id} className="bg-white border-[#B8C9B8] shadow-sm overflow-hidden">
                 <div 
-                  className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                  className="p-4 cursor-pointer hover:bg-[#F5F0E6] transition-colors"
                   onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
                 >
                   <div className="flex items-start justify-between">

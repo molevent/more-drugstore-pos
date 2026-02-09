@@ -171,7 +171,7 @@ export default function StockTransferReportPage() {
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <ArrowRightLeft className="h-7 w-7 text-blue-600" />
+              <ArrowRightLeft className="h-7 w-7 text-[#7D735F]" />
               รายงานการโอนสินค้าระหว่างคลัง
             </h1>
             <p className="text-gray-600 mt-1">ตรวจสอบและติดตามการเคลื่อนย้ายสินค้าระหว่างคลัง</p>
@@ -181,9 +181,9 @@ export default function StockTransferReportPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 px-4 sm:px-0">
-        <Card className="bg-white border-gray-200">
+        <Card className="bg-white border-[#B8C9B8] shadow-sm">
           <div className="flex items-center">
-            <div className="h-10 w-10 rounded-xl bg-blue-500 flex items-center justify-center shadow-sm">
+            <div className="h-10 w-10 rounded-xl bg-[#7D735F] flex items-center justify-center shadow-sm">
               <ArrowRightLeft className="h-5 w-5 text-white" />
             </div>
             <div className="ml-4">
@@ -192,9 +192,9 @@ export default function StockTransferReportPage() {
             </div>
           </div>
         </Card>
-        <Card className="bg-white border-gray-200">
+        <Card className="bg-white border-[#B8C9B8] shadow-sm">
           <div className="flex items-center">
-            <div className="h-10 w-10 rounded-xl bg-green-500 flex items-center justify-center shadow-sm">
+            <div className="h-10 w-10 rounded-xl bg-[#B8C9B8] flex items-center justify-center shadow-sm">
               <Package className="h-5 w-5 text-white" />
             </div>
             <div className="ml-4">
@@ -205,9 +205,9 @@ export default function StockTransferReportPage() {
             </div>
           </div>
         </Card>
-        <Card className="bg-white border-gray-200">
+        <Card className="bg-white border-[#B8C9B8] shadow-sm">
           <div className="flex items-center">
-            <div className="h-10 w-10 rounded-xl bg-purple-500 flex items-center justify-center shadow-sm">
+            <div className="h-10 w-10 rounded-xl bg-[#A67B5B] flex items-center justify-center shadow-sm">
               <Warehouse className="h-5 w-5 text-white" />
             </div>
             <div className="ml-4">
@@ -219,14 +219,14 @@ export default function StockTransferReportPage() {
       </div>
 
       {/* Filters */}
-      <Card className="mb-6 px-4 sm:px-0 bg-white border-gray-200">
+      <Card className="mb-6 px-4 sm:px-0 bg-white border-[#B8C9B8] shadow-sm">
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               <Search className="h-4 w-4 inline mr-1" />
               ค้นหาสินค้า
             </label>
-            <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-2.5 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+            <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-2.5 border border-transparent focus-within:border-[#7D735F] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#B8C9B8] transition-all">
               <input
                 type="text"
                 placeholder="ชื่อสินค้า, บาร์โค้ด..."
@@ -266,7 +266,7 @@ export default function StockTransferReportPage() {
             <select
               value={selectedFromWarehouse}
               onChange={(e) => setSelectedFromWarehouse(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="w-full px-3 py-2 border border-[#B8C9B8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7D735F] bg-white"
             >
               <option value="">ทั้งหมด</option>
               {warehouses.map((w) => (
@@ -282,7 +282,7 @@ export default function StockTransferReportPage() {
             <select
               value={selectedToWarehouse}
               onChange={(e) => setSelectedToWarehouse(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="w-full px-3 py-2 border border-[#B8C9B8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7D735F] bg-white"
             >
               <option value="">ทั้งหมด</option>
               {warehouses.map((w) => (
@@ -307,10 +307,10 @@ export default function StockTransferReportPage() {
       </Card>
 
       {/* Transfers Table */}
-      <Card className="px-4 sm:px-0 bg-white border-gray-200">
+      <Card className="px-4 sm:px-0 bg-white border-[#B8C9B8] shadow-sm">
         {loading ? (
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7D735F] mx-auto"></div>
             <p className="text-sm text-gray-500 mt-2">กำลังโหลด...</p>
           </div>
         ) : error ? (
@@ -319,40 +319,40 @@ export default function StockTransferReportPage() {
           </div>
         ) : filteredTransfers.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            <ArrowRightLeft className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+            <ArrowRightLeft className="h-16 w-16 mx-auto mb-4 text-[#B8C9B8]" />
             <p>ไม่พบรายการโอนสินค้า</p>
           </div>
         ) : (
           <div className="min-w-full">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-[#B8C9B8]">
+              <thead className="bg-[#F5F0E6]">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#7D735F] uppercase tracking-wider">
                     วันที่โอน
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#7D735F] uppercase tracking-wider">
                     สินค้า
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#7D735F] uppercase tracking-wider">
                     บาร์โค้ด
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#7D735F] uppercase tracking-wider">
                     จากคลัง
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#7D735F] uppercase tracking-wider">
                     ไปคลัง
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-[#7D735F] uppercase tracking-wider">
                     จำนวน
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#7D735F] uppercase tracking-wider">
                     หมายเหตุ
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-[#B8C9B8]">
                 {filteredTransfers.map((transfer) => (
-                  <tr key={transfer.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={transfer.id} className="hover:bg-[#F5F0E6] transition-colors">
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                       {formatDate(transfer.transfer_date)}
                     </td>
