@@ -195,6 +195,9 @@ export default function CategoriesManagementPage() {
             <ArrowLeft className="h-5 w-5" />
             กลับ
           </Button>
+          <div className="h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center">
+            <FolderTree className="h-6 w-6 text-gray-900" />
+          </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">จัดการหมวดหมู่สินค้า</h1>
         </div>
         <Button variant="primary" onClick={() => setShowModal(true)} className="w-full sm:w-auto">

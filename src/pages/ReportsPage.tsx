@@ -1,7 +1,7 @@
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import { useLanguage } from '../contexts/LanguageContext'
-import { Download, Calendar } from 'lucide-react'
+import { Download, Calendar, BarChart3 } from 'lucide-react'
 
 export default function ReportsPage() {
   const { t } = useLanguage()
@@ -9,7 +9,12 @@ export default function ReportsPage() {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('reports.title')}</h1>
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center">
+            <BarChart3 className="h-6 w-6 text-gray-900" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('reports.title')}</h1>
+        </div>
         <Button variant="primary">
           <Download className="h-5 w-5 mr-2" />
           {t('reports.comingSoon')}

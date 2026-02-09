@@ -3,7 +3,7 @@ import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { FileText, Plus, Trash2, X, Search, CheckCircle, Package, AlertCircle } from 'lucide-react'
+import { FileText, Plus, Trash2, X, Search, CheckCircle, Package, AlertCircle, ShoppingCart } from 'lucide-react'
 import type { Product } from '../types/database'
 
 interface PurchaseOrder {
@@ -225,9 +225,14 @@ export default function PurchaseOrderPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">ใบสั่งซื้อ (Purchase Orders)</h1>
-            <p className="text-sm text-gray-500">จัดการใบสั่งซื้อจากซัพพลายเออร์</p>
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center">
+              <ShoppingCart className="h-6 w-6 text-gray-900" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">ใบสั่งซื้อ (Purchase Orders)</h1>
+              <p className="text-sm text-gray-500">จัดการใบสั่งซื้อจากซัพพลายเออร์</p>
+            </div>
           </div>
           <Button variant="primary" onClick={() => setShowModal(true)}>
             <Plus className="h-5 w-5 mr-2" />

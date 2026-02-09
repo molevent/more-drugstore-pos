@@ -12,7 +12,8 @@ import {
   CheckCircle, 
   XCircle,
   FolderTree,
-  Warehouse
+  Warehouse,
+  Settings
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Card from '../components/common/Card'
@@ -205,7 +206,12 @@ export default function SettingsPage() {
   
   return (
     <div>
-      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">{t('settings.title')}</h1>
+      <div className="flex items-center gap-3 mb-4 sm:mb-6">
+        <div className="h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center">
+          <Settings className="h-6 w-6 text-gray-900" />
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('settings.title')}</h1>
+      </div>
 
       {/* Business Settings Section */}
       <div className="mb-8">

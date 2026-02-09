@@ -4,7 +4,7 @@ import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Plus, X, AlertCircle, Pill, Stethoscope, Heart, Sparkles, UtensilsCrossed, Gift, ShoppingBag, ChevronDown, ChevronRight, ArrowLeft } from 'lucide-react'
+import { Plus, X, AlertCircle, Pill, Stethoscope, Heart, Sparkles, UtensilsCrossed, Gift, ShoppingBag, ChevronDown, ChevronRight, ArrowLeft, FolderTree } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { Category } from '../types/database'
 
@@ -145,6 +145,9 @@ export default function CategoriesPage() {
             <ArrowLeft className="h-5 w-5" />
             กลับ
           </Button>
+          <div className="h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center">
+            <FolderTree className="h-6 w-6 text-gray-900" />
+          </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('categories.title')}</h1>
         </div>
         <div className="flex gap-2">
