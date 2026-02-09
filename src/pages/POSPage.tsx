@@ -145,20 +145,24 @@ export default function POSPage() {
 
   // Check for edit query parameter on mount and when URL changes
   useEffect(() => {
+    let isMounted = true
     const params = new URLSearchParams(location.search)
     const editId = params.get('edit')
     if (editId) {
       console.log('POS: Loading order for editing:', editId)
       setEditOrderId(editId)
-      loadOrderForEditing(editId)
+      loadOrderForEditing(editId, isMounted)
     } else {
       // Clear edit mode if no edit param
       setEditOrderId(null)
     }
+    return () => {
+      isMounted = false
+    }
   }, [location.search])
 
   // Function to load order data for editing
-  const loadOrderForEditing = async (orderId: string) => {
+  const loadOrderForEditing = async (orderId: string, isMounted: boolean = true) => {
     try {
       console.log('Fetching order data for editing:', orderId)
       
@@ -168,6 +172,8 @@ export default function POSPage() {
         .select('*')
         .eq('id', orderId)
         .single()
+      
+      if (!isMounted) return
       
       if (orderError) {
         console.error('Error fetching order:', orderError)
@@ -188,6 +194,8 @@ export default function POSPage() {
           product:products(*)
         `)
         .eq('order_id', orderId)
+      
+      if (!isMounted) return
       
       if (itemsError) {
         console.error('Error fetching order items:', itemsError)
@@ -230,7 +238,12 @@ export default function POSPage() {
       console.log(`Loaded order ${orderId}: ${addedCount} items`)
       alert(`กำลังแก้ไขออเดอร์: ${order.order_number}\nโหลดสินค้า ${addedCount} รายการ`)
       
-    } catch (err) {
+    } catch (err: any) {
+      // Ignore AbortError (component unmounted or request cancelled)
+      if (err?.name === 'AbortError' || err?.message?.includes('aborted')) {
+        console.log('Order loading aborted:', orderId)
+        return
+      }
       console.error('Exception loading order for editing:', err)
       alert('เกิดข้อผิดพลาดในการโหลดออเดอร์')
     }
