@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ListOrdered, Search, Calendar, Eye, Edit } from 'lucide-react'
+import { ListOrdered, Search, Calendar, Eye, Edit, Trash2 } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
@@ -216,6 +216,44 @@ export default function SalesOrdersPage() {
     setSelectedOrder(null)
   }
 
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm('ต้องการลบออเดอร์นี้ใช่หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้')) {
+      return
+    }
+
+    try {
+      // Delete order items first (due to foreign key constraint)
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .delete()
+        .eq('order_id', orderId)
+
+      if (itemsError) {
+        console.error('Error deleting order items:', itemsError)
+        alert('ไม่สามารถลบรายการสินค้าในออเดอร์ได้')
+        return
+      }
+
+      // Delete order
+      const { error: orderError } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderId)
+
+      if (orderError) {
+        console.error('Error deleting order:', orderError)
+        alert('ไม่สามารถลบออเดอร์ได้')
+        return
+      }
+
+      alert('ลบออเดอร์สำเร็จ')
+      fetchOrders() // Refresh the orders list
+    } catch (err: any) {
+      console.error('Exception deleting order:', err)
+      alert('เกิดข้อผิดพลาด: ' + err.message)
+    }
+  }
+
   const filteredOrders = orders.filter(order => {
     const matchesOrderNumber = order.order_number.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCustomerName = order.customer_name && order.customer_name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -401,6 +439,13 @@ export default function SalesOrdersPage() {
                         >
                           <Edit className="h-4 w-4 mr-1" />
                           แก้ไข
+                        </Button>
+                        <Button 
+                          variant="danger" 
+                          size="sm" 
+                          onClick={() => handleDeleteOrder(order.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </td>
