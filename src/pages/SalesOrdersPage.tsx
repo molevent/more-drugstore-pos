@@ -260,12 +260,15 @@ export default function SalesOrdersPage() {
               <Search className="h-4 w-4 inline mr-1" />
               ค้นหา
             </label>
-            <Input
-              type="text"
-              placeholder="เลขที่ออเดอร์, ชื่อลูกค้า..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+            <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-2.5 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+              <input
+                type="text"
+                placeholder="เลขที่ออเดอร์, ชื่อลูกค้า..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-sm"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

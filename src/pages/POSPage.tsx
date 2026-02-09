@@ -1168,17 +1168,31 @@ export default function POSPage() {
           <Card title="สแกนบาร์โค้ด">
             <form onSubmit={handleBarcodeSubmit} className="mb-6">
               <div className="flex gap-2">
-                <div className="flex-1 relative" ref={dropdownRef}>
+                <div className="flex-1 relative">
+                <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-3 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
                   <input
                     ref={inputRef}
                     type="text"
                     value={barcode}
                     onChange={(e) => setBarcode(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="สแกนหรือพิมพ์บาร์โค้ดสินค้า"
-                    className="w-full px-3 py-2 border border-[#B8C9B8]/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7D735F] focus:border-transparent text-gray-900 placeholder-[#7D735F]/50 bg-white"
+                    placeholder="สแกนหรือพิมพ์บาร์โค้ดสินค้า..."
+                    className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-base"
                     autoFocus
                   />
+                  <Button type="submit" variant="primary" className="rounded-full p-2 h-10 w-10">
+                    <Scan className="h-5 w-5" />
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="secondary"
+                    onClick={handleOpenCamera}
+                    title="ถ่ายรูปบาร์โค้ด"
+                    className="rounded-full p-2 h-10 w-10"
+                  >
+                    <Camera className="h-5 w-5" />
+                  </Button>
+                </div>
                   
                   {/* Autocomplete Dropdown */}
                   {showDropdown && searchResults.length > 0 && (

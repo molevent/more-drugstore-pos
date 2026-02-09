@@ -643,14 +643,16 @@ export default function ProductsPage() {
         <div className="mb-6 space-y-4">
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#8B968B]" />
-              <Input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder={t('products.search')}
-                className="pl-12 pr-4 py-3 rounded-full border-[#8B968B]/30 shadow-sm focus:shadow-md transition-shadow bg-[#FAF9F6]"
-              />
+              <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-3 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                <Search className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder={t('products.search')}
+                  className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-base"
+                />
+              </div>
             </div>
             <Button
               variant="secondary"

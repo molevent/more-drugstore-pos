@@ -289,14 +289,16 @@ export default function StockManagementPage() {
       {/* Search Bar */}
       <Card className="mb-6">
         <div className="flex items-center gap-3">
-          <Search className="h-5 w-5 text-gray-400" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="ค้นหาด้วยชื่อสินค้า หรือบาร์โค้ด..."
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          />
+          <div className="flex-1 flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-3 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+            <Search className="h-5 w-5 text-gray-400 flex-shrink-0" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="ค้นหาด้วยชื่อสินค้า หรือบาร์โค้ด..."
+              className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-base"
+            />
+          </div>
         </div>
       </Card>
 
@@ -585,13 +587,15 @@ export default function StockManagementPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Batch Number *</label>
-                <input
-                  type="text"
-                  value={batchData.batch_number}
-                  onChange={(e) => setBatchData({...batchData, batch_number: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  required
-                />
+                <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-2.5 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                  <input
+                    type="text"
+                    value={batchData.batch_number}
+                    onChange={(e) => setBatchData({...batchData, batch_number: e.target.value})}
+                    className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-sm"
+                    required
+                  />
+                </div>
               </div>
 
               <div>
