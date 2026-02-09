@@ -270,7 +270,7 @@ export default function SalesOrdersPage() {
       <div className="flex items-center justify-between mb-6 px-4 sm:px-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <ListOrdered className="h-7 w-7 text-blue-600" />
+            <ListOrdered className="h-7 w-7 text-[#7D735F]" />
             รายการขาย
           </h1>
           <p className="text-gray-600 mt-1">รายการขายและยอดขายรวม</p>
@@ -279,9 +279,9 @@ export default function SalesOrdersPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 px-4 sm:px-0">
-        <Card className="bg-white border-gray-200">
+        <Card className="bg-white border-[#B8C9B8] shadow-sm">
           <div className="flex items-center">
-            <div className="h-10 w-10 rounded-xl bg-blue-500 flex items-center justify-center shadow-sm">
+            <div className="h-10 w-10 rounded-xl bg-[#7D735F] flex items-center justify-center shadow-sm">
               <ListOrdered className="h-5 w-5 text-white" />
             </div>
             <div className="ml-4">
@@ -290,9 +290,9 @@ export default function SalesOrdersPage() {
             </div>
           </div>
         </Card>
-        <Card className="bg-white border-gray-200">
+        <Card className="bg-white border-[#B8C9B8] shadow-sm">
           <div className="flex items-center">
-            <div className="h-10 w-10 rounded-xl bg-green-500 flex items-center justify-center shadow-sm">
+            <div className="h-10 w-10 rounded-xl bg-[#A67B5B] flex items-center justify-center shadow-sm">
               <ListOrdered className="h-5 w-5 text-white" />
             </div>
             <div className="ml-4">

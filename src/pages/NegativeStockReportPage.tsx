@@ -135,7 +135,7 @@ export default function NegativeStockReportPage() {
       <div className="flex items-center justify-between mb-6 px-4 sm:px-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <AlertTriangle className="h-7 w-7 text-red-600" />
+            <AlertTriangle className="h-7 w-7 text-[#D4756A]" />
             รายงานสินค้าติดลบ
           </h1>
           <p className="text-gray-600 mt-1">รายการสินค้าที่มีสต็อกติดลบและการเคลื่อนไหวที่ทำให้เกิดสต็อกติดลบ</p>
@@ -144,25 +144,25 @@ export default function NegativeStockReportPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 px-4 sm:px-0">
-        <Card className="bg-white border-gray-200">
+        <Card className="bg-white border-[#B8C9B8] shadow-sm">
           <div className="flex items-center">
-            <div className="h-10 w-10 rounded-xl bg-red-500 flex items-center justify-center shadow-sm">
+            <div className="h-10 w-10 rounded-xl bg-[#D4756A] flex items-center justify-center shadow-sm">
               <Package className="h-5 w-5 text-white" />
             </div>
             <div className="ml-4">
               <p className="text-sm text-gray-600">จำนวนสินค้าติดลบ</p>
-              <p className="text-2xl font-bold text-red-600">{negativeProducts.length} รายการ</p>
+              <p className="text-2xl font-bold text-[#D4756A]">{negativeProducts.length} รายการ</p>
             </div>
           </div>
         </Card>
-        <Card className="bg-white border-gray-200">
+        <Card className="bg-white border-[#B8C9B8] shadow-sm">
           <div className="flex items-center">
-            <div className="h-10 w-10 rounded-xl bg-orange-500 flex items-center justify-center shadow-sm">
+            <div className="h-10 w-10 rounded-xl bg-[#A67B5B] flex items-center justify-center shadow-sm">
               <AlertTriangle className="h-5 w-5 text-white" />
             </div>
             <div className="ml-4">
               <p className="text-sm text-gray-600">มูลค่าที่ขาด</p>
-              <p className="text-2xl font-bold text-orange-600">{formatCurrency(totalNegativeValue)}</p>
+              <p className="text-2xl font-bold text-[#A67B5B]">{formatCurrency(totalNegativeValue)}</p>
             </div>
           </div>
         </Card>
@@ -175,7 +175,7 @@ export default function NegativeStockReportPage() {
             onClick={() => setActiveTab('products')}
             className={`px-4 py-2 text-sm font-medium ${
               activeTab === 'products'
-                ? 'text-red-600 border-b-2 border-red-600'
+                ? 'text-[#D4756A] border-b-2 border-[#D4756A]'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -185,7 +185,7 @@ export default function NegativeStockReportPage() {
             onClick={() => setActiveTab('transactions')}
             className={`px-4 py-2 text-sm font-medium ${
               activeTab === 'transactions'
-                ? 'text-red-600 border-b-2 border-red-600'
+                ? 'text-[#D4756A] border-b-2 border-[#D4756A]'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -196,7 +196,7 @@ export default function NegativeStockReportPage() {
 
       {/* Search */}
       {activeTab === 'products' && (
-        <Card className="mb-6 px-4 sm:px-0 bg-white border-gray-200">
+        <Card className="mb-6 px-4 sm:px-0 bg-white border-[#B8C9B8] shadow-sm">
           <div className="flex items-end gap-4">
             <div className="flex-1 min-w-[200px]">
               <label className="block text-sm font-medium text-gray-700 mb-1">

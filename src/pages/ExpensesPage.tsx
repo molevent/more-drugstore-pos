@@ -436,7 +436,7 @@ export default function ExpensesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Receipt className="h-7 w-7 text-blue-600" />
+            <Receipt className="h-7 w-7 text-[#7D735F]" />
             ค่าใช้จ่าย
           </h1>
           <p className="text-gray-600 mt-1">บันทึกและติดตามค่าใช้จ่ายต่างๆ ของร้าน</p>
@@ -444,21 +444,21 @@ export default function ExpensesPage() {
         <div className="flex gap-2">
           <Link 
             to="/purchase-orders"
-            className="flex items-center gap-3 px-5 py-3 bg-green-50 rounded-full border border-green-200 hover:bg-green-100 hover:shadow-md transition-all"
+            className="flex items-center gap-3 px-5 py-3 bg-[#F5F0E6] rounded-full border border-[#B8C9B8] hover:bg-[#E8EBF0] hover:shadow-md transition-all"
           >
             <ShoppingCart className="h-6 w-6 text-gray-900" />
             <span className="font-semibold text-gray-900">ใบสั่งซื้อ</span>
           </Link>
           <Link 
             to="/payment-vouchers"
-            className="flex items-center gap-3 px-5 py-3 bg-purple-50 rounded-full border border-purple-200 hover:bg-purple-100 hover:shadow-md transition-all"
+            className="flex items-center gap-3 px-5 py-3 bg-[#B8C9B8]/10 rounded-full border border-[#B8C9B8] hover:bg-[#B8C9B8]/20 hover:shadow-md transition-all"
           >
             <FileText className="h-6 w-6 text-gray-900" />
             <span className="font-semibold text-gray-900">ใบสำคัญจ่าย</span>
           </Link>
           <Link 
             to="/withholding-tax"
-            className="flex items-center gap-3 px-5 py-3 bg-blue-50 rounded-full border border-blue-200 hover:bg-blue-100 hover:shadow-md transition-all"
+            className="flex items-center gap-3 px-5 py-3 bg-[#7D735F]/10 rounded-full border border-[#7D735F] hover:bg-[#7D735F]/20 hover:shadow-md transition-all"
           >
             <Percent className="h-6 w-6 text-gray-900" />
             <span className="font-semibold text-gray-900">หัก ณ ที่จ่าย</span>
@@ -472,7 +472,7 @@ export default function ExpensesPage() {
           onClick={() => setViewMode('database')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
             viewMode === 'database'
-              ? 'bg-blue-600 text-white'
+              ? 'bg-[#7D735F] text-white'
               : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
           }`}
         >
@@ -483,14 +483,14 @@ export default function ExpensesPage() {
           onClick={() => setViewMode('pending')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
             viewMode === 'pending'
-              ? 'bg-yellow-600 text-white'
+              ? 'bg-[#A67B5B] text-white'
               : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
           }`}
         >
           <Clock className="h-4 w-4" />
           รออนุมัติ
           {pendingCount > 0 && (
-            <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+            <span className="bg-[#D4756A] text-white text-xs rounded-full px-2 py-0.5">
               {pendingCount}
             </span>
           )}

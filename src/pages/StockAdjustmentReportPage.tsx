@@ -110,7 +110,7 @@ export default function StockAdjustmentReportPage() {
       <div className="flex items-center justify-between mb-6 px-4 sm:px-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <ClipboardList className="h-7 w-7 text-blue-600" />
+            <ClipboardList className="h-7 w-7 text-[#7D735F]" />
             รายงานการปรับยอดสต็อก
           </h1>
           <p className="text-gray-600 mt-1">รายการปรับยอดสต็อกสินค้าทั้งหมด พร้อมผู้ดำเนินการและเหตุผล</p>
@@ -119,9 +119,9 @@ export default function StockAdjustmentReportPage() {
 
       {/* Summary Card */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 px-4 sm:px-0">
-        <Card className="bg-white border-gray-200">
+        <Card className="bg-white border-[#B8C9B8] shadow-sm">
           <div className="flex items-center">
-            <div className="h-10 w-10 rounded-xl bg-blue-500 flex items-center justify-center shadow-sm">
+            <div className="h-10 w-10 rounded-xl bg-[#7D735F] flex items-center justify-center shadow-sm">
               <ClipboardList className="h-5 w-5 text-white" />
             </div>
             <div className="ml-4">
@@ -133,14 +133,14 @@ export default function StockAdjustmentReportPage() {
       </div>
 
       {/* Filters */}
-      <Card className="mb-6 px-4 sm:px-0 bg-white border-gray-200">
+      <Card className="mb-6 px-4 sm:px-0 bg-white border-[#B8C9B8] shadow-sm">
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               <Search className="h-4 w-4 inline mr-1" />
               ค้นหา
             </label>
-            <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-2.5 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+            <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-2.5 border border-transparent focus-within:border-[#7D735F] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#B8C9B8] transition-all">
               <input
                 type="text"
                 placeholder="ชื่อสินค้า, บาร์โค้ด, ผู้ใช้งาน..."

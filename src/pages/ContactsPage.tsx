@@ -187,9 +187,9 @@ export default function ContactsPage() {
 
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'buyer': return { label: 'ผู้ซื้อ', color: 'bg-blue-100 text-blue-700', icon: User }
-      case 'seller': return { label: 'ผู้ขาย', color: 'bg-green-100 text-green-700', icon: Building2 }
-      case 'both': return { label: 'ซื้อ/ขาย', color: 'bg-purple-100 text-purple-700', icon: ArrowLeftRight }
+      case 'buyer': return { label: 'ผู้ซื้อ', color: 'bg-[#7D735F]/10 text-[#7D735F]', icon: User }
+      case 'seller': return { label: 'ผู้ขาย', color: 'bg-[#B8C9B8]/10 text-[#B8C9B8]', icon: Building2 }
+      case 'both': return { label: 'ซื้อ/ขาย', color: 'bg-[#A67B5B]/10 text-[#A67B5B]', icon: ArrowLeftRight }
       default: return { label: type, color: 'bg-gray-100', icon: User }
     }
   }
@@ -204,7 +204,7 @@ export default function ContactsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Users className="h-7 w-7 text-blue-600" />
+            <Users className="h-7 w-7 text-[#7D735F]" />
             ผู้ติดต่อ
           </h1>
           <p className="text-gray-600 mt-1">จัดการผู้ซื้อ ผู้ขาย และคู่ค้า</p>
@@ -216,10 +216,10 @@ export default function ContactsPage() {
       </div>
 
       {/* Filters */}
-      <Card className="p-4">
+      <Card className="p-4 bg-white border-[#B8C9B8] shadow-sm">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
-            <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-3 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+            <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-3 border border-transparent focus-within:border-[#7D735F] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#B8C9B8] transition-all">
               <Search className="h-5 w-5 text-gray-400 flex-shrink-0" />
               <input
                 type="text"
@@ -242,7 +242,7 @@ export default function ContactsPage() {
                 onClick={() => setFilterType(filter.key as any)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   filterType === filter.key
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-[#7D735F] text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >

@@ -611,7 +611,7 @@ export default function ProductsPage() {
             </Button>
           )}
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Package className="h-7 w-7 text-blue-600" />
+            <Package className="h-7 w-7 text-[#7D735F]" />
             {selectedCategory && selectedCategory !== 'uncategorized'
               ? categories.find(c => c.id === selectedCategory)?.name_th || t('products.title')
               : selectedCategory === 'uncategorized'
@@ -623,9 +623,9 @@ export default function ProductsPage() {
         <div className="flex gap-2">
           <Link 
             to="/stock-management"
-            className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-full border border-amber-200 hover:bg-amber-100 hover:shadow-md transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-[#F5F0E6] rounded-full border border-[#B8C9B8] hover:bg-[#E8EBF0] hover:shadow-md transition-all"
           >
-            <div className="h-8 w-8 rounded-full bg-amber-500 flex items-center justify-center shadow-sm">
+            <div className="h-8 w-8 rounded-full bg-[#A67B5B] flex items-center justify-center shadow-sm">
               <Boxes className="h-4 w-4 text-white" />
             </div>
             <span className="font-semibold text-gray-900 text-sm">จัดการสต็อก</span>
@@ -657,7 +657,7 @@ export default function ProductsPage() {
             if (allDescendants.length === 0) return null
             
             return (
-              <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+              <div className="bg-white rounded-xl border border-[#B8C9B8] p-4 shadow-sm">
                 <p className="text-sm font-medium text-gray-600 mb-3">หมวดหมู่ย่อย:</p>
                 <div className="flex flex-wrap gap-2">
                   {allDescendants.map((cat) => (
@@ -666,8 +666,8 @@ export default function ProductsPage() {
                       onClick={() => navigate(`/products?category=${cat.id}`)}
                       className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                         cat.parent_id === selectedCategory
-                          ? 'bg-blue-100 hover:bg-blue-200 text-blue-800 border border-blue-300'
-                          : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300'
+                          ? 'bg-[#7D735F]/10 hover:bg-[#7D735F]/20 text-[#7D735F] border border-[#7D735F]/30'
+                          : 'bg-[#F5F0E6] hover:bg-[#E8EBF0] text-gray-700 border border-[#B8C9B8]'
                       }`}
                     >
                       {cat.name_th}
@@ -684,7 +684,7 @@ export default function ProductsPage() {
         <div className="mb-6 space-y-4">
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-3 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+              <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-3 border border-transparent focus-within:border-[#7D735F] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#B8C9B8] transition-all">
                 <Search className="h-5 w-5 text-gray-400 flex-shrink-0" />
                 <input
                   type="text"

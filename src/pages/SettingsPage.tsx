@@ -155,33 +155,33 @@ export default function SettingsPage() {
   const businessSettingsItems = [
     {
       icon: Bike,
-      iconBg: 'bg-orange-100',
-      iconColor: 'text-orange-600',
+      iconBg: 'bg-[#B8C9B8]/10',
+      iconColor: 'text-[#7D735F]',
       title: 'ช่องทางการขาย',
       subtitle: `ตั้งค่าแล้ว ${getConfiguredCount()}/${SALES_CHANNELS.length} ช่องทาง`,
       link: '/settings/sales-channels'
     },
     {
       icon: CreditCard,
-      iconBg: 'bg-blue-100',
-      iconColor: 'text-blue-600',
+      iconBg: 'bg-[#7D735F]/10',
+      iconColor: 'text-[#7D735F]',
       title: 'ช่องทางการชำระเงิน',
       subtitle: 'ตั้งค่าวิธีการรับเงิน',
-      status: { text: 'เปิดใช้งาน', bgColor: 'bg-green-100', textColor: 'text-green-700' },
+      status: { text: 'เปิดใช้งาน', bgColor: 'bg-[#B8C9B8]/10', textColor: 'text-[#7D735F]' },
       link: '/payment-methods'
     },
     {
       icon: Store,
-      iconBg: 'bg-green-100',
-      iconColor: 'text-green-600',
+      iconBg: 'bg-[#A67B5B]/10',
+      iconColor: 'text-[#A67B5B]',
       title: 'ข้อมูลร้าน',
       subtitle: shopInfo.name,
       link: '/settings/shop'
     },
     {
       icon: Users,
-      iconBg: 'bg-white',
-      iconColor: 'text-gray-600',
+      iconBg: 'bg-[#F5F0E6]',
+      iconColor: 'text-[#7D735F]',
       title: 'การจัดการผู้ใช้',
       subtitle: 'ผู้ใช้งานในระบบ',
       details: [
@@ -191,16 +191,16 @@ export default function SettingsPage() {
     },
     {
       icon: Warehouse,
-      iconBg: 'bg-amber-100',
-      iconColor: 'text-amber-600',
+      iconBg: 'bg-[#D4756A]/10',
+      iconColor: 'text-[#D4756A]',
       title: 'คลังสินค้า',
       subtitle: 'จัดการคลังสินค้าและสต็อก',
       link: '/warehouse-management'
     },
     {
       icon: FolderTree,
-      iconBg: 'bg-indigo-100',
-      iconColor: 'text-indigo-600',
+      iconBg: 'bg-[#B8C9B8]/10',
+      iconColor: 'text-[#B8C9B8]',
       title: 'หมวดหมู่สินค้า',
       subtitle: 'จัดการหมวดหมู่และหมวดหมู่ย่อย',
       link: '/categories-management'
@@ -211,23 +211,23 @@ export default function SettingsPage() {
   const externalConnectionItems = [
     {
       icon: Building2,
-      iconBg: 'bg-purple-100',
-      iconColor: 'text-purple-600',
+      iconBg: 'bg-[#7D735F]/10',
+      iconColor: 'text-[#7D735F]',
       title: 'การเชื่อมต่อ FlowAccount',
       subtitle: 'บัญชีและใบกำกับภาษี',
       status: flowAccount.connected 
-        ? { text: 'เชื่อมต่อแล้ว', bgColor: 'bg-green-100', textColor: 'text-green-700' }
-        : { text: 'ยังไม่เชื่อมต่อ', bgColor: 'bg-red-100', textColor: 'text-red-700' },
+        ? { text: 'เชื่อมต่อแล้ว', bgColor: 'bg-[#B8C9B8]/10', textColor: 'text-[#7D735F]' }
+        : { text: 'ยังไม่เชื่อมต่อ', bgColor: 'bg-[#D4756A]/10', textColor: 'text-[#D4756A]' },
       details: undefined,
       link: '/settings/flowaccount'
     },
     {
       icon: Plug,
-      iconBg: 'bg-orange-100',
-      iconColor: 'text-orange-600',
+      iconBg: 'bg-[#A67B5B]/10',
+      iconColor: 'text-[#A67B5B]',
       title: 'การเชื่อมต่อ ZortOut',
       subtitle: 'ระบบจัดการสต็อก',
-      status: { text: 'ยังไม่เชื่อมต่อ', bgColor: 'bg-gray-100', textColor: 'text-gray-600' },
+      status: { text: 'ยังไม่เชื่อมต่อ', bgColor: 'bg-[#F5F0E6]', textColor: 'text-[#7D735F]' },
       details: undefined,
       link: '/settings/zortout'
     },
@@ -237,32 +237,32 @@ export default function SettingsPage() {
   const auditItems = [
     {
       icon: AlertTriangle,
-      iconBg: 'bg-red-100',
-      iconColor: 'text-red-600',
+      iconBg: 'bg-[#D4756A]/10',
+      iconColor: 'text-[#D4756A]',
       title: 'รายงานสินค้าติดลบ',
       subtitle: 'ตรวจสอบสินค้าที่สต็อกติดลบและการเคลื่อนไหว',
       link: '/negative-stock-report'
     },
     {
       icon: ClipboardList,
-      iconBg: 'bg-blue-100',
-      iconColor: 'text-blue-600',
+      iconBg: 'bg-[#7D735F]/10',
+      iconColor: 'text-[#7D735F]',
       title: 'รายงานการปรับยอดสต็อก',
       subtitle: 'ตรวจสอบการปรับยอดสต็อกโดยผู้ใช้งาน',
       link: '/stock-adjustment-report'
     },
     {
       icon: ArrowRightLeft,
-      iconBg: 'bg-purple-100',
-      iconColor: 'text-purple-600',
+      iconBg: 'bg-[#B8C9B8]/10',
+      iconColor: 'text-[#B8C9B8]',
       title: 'รายงานการโอนสินค้าระหว่างคลัง',
       subtitle: 'ตรวจสอบการเคลื่อนย้ายสินค้าระหว่างคลัง',
       link: '/stock-transfer-report'
     },
     {
       icon: AlertTriangle,
-      iconBg: 'bg-amber-100',
-      iconColor: 'text-amber-600',
+      iconBg: 'bg-[#A67B5B]/10',
+      iconColor: 'text-[#A67B5B]',
       title: 'รายงานออเดอร์ไม่ปกติ',
       subtitle: 'ตรวจสอบการแก้ไขราคาและของแถม',
       link: '/abnormal-orders-report'
@@ -274,7 +274,7 @@ export default function SettingsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Settings className="h-7 w-7 text-blue-600" />
+            <Settings className="h-7 w-7 text-[#7D735F]" />
             {t('settings.title')}
           </h1>
           <p className="text-gray-600 mt-1">ตั้งค่าระบบและการเชื่อมต่อ</p>

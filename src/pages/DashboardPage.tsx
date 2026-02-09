@@ -12,25 +12,25 @@ export default function DashboardPage() {
       name: t('dashboard.todaySales'),
       value: '฿0',
       icon: DollarSign,
-      color: 'text-green-600',
+      color: 'text-[#7D735F]',
     },
     {
       name: t('dashboard.salesCount'),
       value: '0',
       icon: TrendingUp,
-      color: 'text-blue-600',
+      color: 'text-[#B8C9B8]',
     },
     {
       name: t('dashboard.totalProducts'),
       value: '0',
       icon: Package,
-      color: 'text-purple-600',
+      color: 'text-[#A67B5B]',
     },
     {
       name: t('dashboard.lowStock'),
       value: '0',
       icon: AlertTriangle,
-      color: 'text-red-600',
+      color: 'text-[#D4756A]',
     },
   ]
 
@@ -39,7 +39,7 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Home className="h-7 w-7 text-blue-600" />
+            <Home className="h-7 w-7 text-[#7D735F]" />
             {t('dashboard.title')}
           </h1>
           <p className="text-gray-600 mt-1">

@@ -11,7 +11,7 @@ export default function InventoryPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Package className="h-7 w-7 text-blue-600" />
+            <Package className="h-7 w-7 text-[#7D735F]" />
             {t('inventory.title')}
           </h1>
           <p className="text-gray-600 mt-1">สต็อกสินค้าและการจัดการคลัง</p>
@@ -23,9 +23,9 @@ export default function InventoryPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <Card>
+        <Card className="bg-white border-[#B8C9B8] shadow-sm">
           <div className="flex items-center">
-            <div className="bg-blue-500 p-3 rounded-lg">
+            <div className="bg-[#A67B5B] p-3 rounded-lg shadow-sm">
               <AlertTriangle className="h-6 w-6 text-white" />
             </div>
             <div className="ml-4">
@@ -35,9 +35,9 @@ export default function InventoryPage() {
           </div>
         </Card>
 
-        <Card>
+        <Card className="bg-white border-[#B8C9B8] shadow-sm">
           <div className="flex items-center">
-            <div className="bg-green-500 p-3 rounded-lg">
+            <div className="bg-[#B8C9B8] p-3 rounded-lg shadow-sm">
               <AlertTriangle className="h-6 w-6 text-white" />
             </div>
             <div className="ml-4">
@@ -47,9 +47,9 @@ export default function InventoryPage() {
           </div>
         </Card>
 
-        <Card>
+        <Card className="bg-white border-[#B8C9B8] shadow-sm">
           <div className="flex items-center">
-            <div className="bg-red-500 p-3 rounded-lg">
+            <div className="bg-[#D4756A] p-3 rounded-lg shadow-sm">
               <AlertTriangle className="h-6 w-6 text-white" />
             </div>
             <div className="ml-4">
@@ -60,9 +60,9 @@ export default function InventoryPage() {
         </Card>
       </div>
 
-      <Card title="รายการสินค้าใกล้หมด">
+      <Card title="รายการสินค้าใกล้หมด" className="bg-white border-[#B8C9B8] shadow-sm">
         <div className="text-center py-12 text-gray-500">
-          <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+          <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-[#B8C9B8]" />
           <p>ไม่มีสินค้าที่ใกล้หมด</p>
           <p className="text-sm mt-2">ระบบจะแจ้งเตือนเมื่อสินค้าใกล้หมด</p>
         </div>
