@@ -5,7 +5,6 @@ import {
   ListOrdered,
   ShoppingCart, 
   Package, 
-  Warehouse, 
   FileText, 
   Settings,
   LogOut,
