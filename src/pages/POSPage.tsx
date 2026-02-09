@@ -1505,42 +1505,44 @@ export default function POSPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {/* Minus Button */}
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          if (item.quantity > 1) {
-                            updateQuantity(item.product.id, item.quantity - 1)
-                          }
-                        }}
-                        className="h-8 w-8 p-0"
-                      >
-                        -
-                      </Button>
-                      <Input
-                        type="number"
-                        min="1"
-                        value={item.quantity}
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value)
-                          if (!isNaN(value) && value >= 1) {
-                            updateQuantity(item.product.id, value)
-                          }
-                        }}
-                        className="w-14 text-center h-8"
-                      />
-                      {/* Plus Button */}
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                        className="h-8 w-8 p-0"
-                      >
-                        +
-                      </Button>
+                      {/* Quantity Input Group with integrated -/+ buttons */}
+                      <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden h-8">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (item.quantity > 1) {
+                              updateQuantity(item.product.id, item.quantity - 1)
+                            }
+                          }}
+                          className="h-full px-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors border-r border-gray-300"
+                        >
+                          −
+                        </button>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={item.quantity}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            if (value === '') {
+                              updateQuantity(item.product.id, 1)
+                              return
+                            }
+                            const numValue = parseInt(value)
+                            if (!isNaN(numValue) && numValue >= 1) {
+                              updateQuantity(item.product.id, numValue)
+                            }
+                          }}
+                          className="w-12 text-center h-full border-none focus:outline-none focus:ring-0 text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          className="h-full px-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors border-l border-gray-300"
+                        >
+                          +
+                        </button>
+                      </div>
                       <span className="font-medium text-gray-900 w-20 text-right">
                         ฿{((item.custom_price ?? getProductPriceForChannel(item.product, salesChannel as SalesChannel)) * item.quantity).toFixed(2)}
                       </span>
