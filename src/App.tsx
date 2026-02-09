@@ -20,6 +20,7 @@ import ReportsPage from './pages/ReportsPage'
 import ContactsPage from './pages/ContactsPage'
 import SalesOrdersPage from './pages/SalesOrdersPage'
 import SettingsPage from './pages/SettingsPage'
+import ShopSettingsPage from './pages/ShopSettingsPage'
 import AuthGuard from './components/auth/AuthGuard'
 import Layout from './components/common/Layout'
 import { LanguageProvider } from './contexts/LanguageContext'
@@ -56,6 +57,7 @@ function App() {
                     <Route path="/contacts" element={<ContactsPage />} />
                     <Route path="/sales-orders" element={<SalesOrdersPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/settings/shop" element={<ShopSettingsPage />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   </Routes>
                 </Layout>
