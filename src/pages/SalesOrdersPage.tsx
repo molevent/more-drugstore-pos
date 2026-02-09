@@ -253,10 +253,10 @@ export default function SalesOrdersPage() {
       </div>
 
       {/* Filters */}
-      <Card className="mb-6 px-4 sm:px-0 bg-white/80 border-[#C9C4B5]/20">
+      <Card className="mb-6 px-4 sm:px-0 bg-white border-gray-200">
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-[#455A64] mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               <Search className="h-4 w-4 inline mr-1" />
               ค้นหา
             </label>
@@ -268,7 +268,7 @@ export default function SalesOrdersPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-[#455A64] mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               <Calendar className="h-4 w-4 inline mr-1" />
               จากวันที่
             </label>
@@ -279,7 +279,7 @@ export default function SalesOrdersPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-[#455A64] mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               <Calendar className="h-4 w-4 inline mr-1" />
               ถึงวันที่
             </label>
@@ -301,66 +301,66 @@ export default function SalesOrdersPage() {
       </Card>
 
       {/* Orders Table */}
-      <Card className="px-4 sm:px-0 bg-white/80 border-[#C9C4B5]/20">
+      <Card className="px-4 sm:px-0 bg-white border-gray-200">
         {loading ? (
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#455A64] mx-auto"></div>
-            <p className="text-sm text-[#455A64]/70 mt-2">กำลังโหลด...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600 mx-auto"></div>
+            <p className="text-sm text-gray-500 mt-2">กำลังโหลด...</p>
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="text-center py-8 text-[#455A64]/70">
-            <Receipt className="h-16 w-16 mx-auto mb-4 text-[#B2E6CE]" />
+          <div className="text-center py-8 text-gray-500">
+            <Receipt className="h-16 w-16 mx-auto mb-4 text-gray-300" />
             <p>ไม่พบรายการขาย</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-[#C9C4B5]/30">
-              <thead className="bg-[#F0E4CC]/50">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#455A64] uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     เลขที่ออเดอร์
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#455A64] uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     วันที่
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#455A64] uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     ช่องทาง
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#455A64] uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     ลูกค้า
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-[#455A64] uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     จำนวนรายการ
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-[#455A64] uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     ยอดรวม
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-[#455A64] uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     ดูรายละเอียด
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-[#C9C4B5]/20">
+              <tbody className="bg-white divide-y divide-gray-200">
                 {filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-[#F0E4CC]/30 transition-colors">
+                  <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="font-medium text-[#455A64]">{order.order_number}</span>
+                      <span className="font-medium text-gray-900">{order.order_number}</span>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#455A64]/70">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(order.created_at)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="px-2 py-1 bg-[#B2E6CE]/50 text-[#455A64] text-xs rounded-full">
+                      <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
                         {getPlatformName(order.platform_id)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#455A64]/70">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                       {order.customer_name || '-'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#455A64]/70 text-right">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
                       {order.order_items_count} รายการ
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-[#455A64] text-right">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
                       {formatCurrency(order.total)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center">
