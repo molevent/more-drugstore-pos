@@ -151,8 +151,8 @@ export default function SettingsPage() {
     },
     {
       icon: Users,
-      iconBg: 'bg-pink-100',
-      iconColor: 'text-pink-600',
+      iconBg: 'bg-white',
+      iconColor: 'text-gray-600',
       title: 'การจัดการผู้ใช้',
       subtitle: 'ผู้ใช้งานในระบบ',
       details: [

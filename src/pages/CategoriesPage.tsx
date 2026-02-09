@@ -113,7 +113,7 @@ export default function CategoriesPage() {
     if (name.includes('อุปกรณ์') || name.includes('equipment') || name.includes('medical')) return <Stethoscope className="h-5 w-5 text-green-600" />
     if (name.includes('วิตามิน') || name.includes('vitamin') || name.includes('supplement')) return <Heart className="h-5 w-5 text-red-500" />
     if (name.includes('ความงาม') || name.includes('beauty') || name.includes('cosmetic')) return <Sparkles className="h-5 w-5 text-purple-500" />
-    if (name.includes('ชีวิตคู่') || name.includes('sexual') || name.includes('health')) return <Heart className="h-5 w-5 text-pink-500" />
+    if (name.includes('ชีวิตคู่') || name.includes('sexual') || name.includes('health')) return <Heart className="h-5 w-5 text-gray-500" />
     if (name.includes('อาหาร') || name.includes('food') || name.includes('beverage')) return <UtensilsCrossed className="h-5 w-5 text-orange-500" />
     if (name.includes('ของฝาก') || name.includes('souvenir') || name.includes('gift')) return <Gift className="h-5 w-5 text-teal-500" />
     return <ShoppingBag className="h-5 w-5 text-gray-500" />

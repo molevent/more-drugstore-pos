@@ -169,8 +169,8 @@ export default function CategoriesManagementPage() {
       'Beauty': <Sparkles className="h-5 w-5 text-purple-500" />,
       'อาหาร': <UtensilsCrossed className="h-5 w-5 text-orange-500" />,
       'Food': <UtensilsCrossed className="h-5 w-5 text-orange-500" />,
-      'ของขวัญ': <Gift className="h-5 w-5 text-pink-500" />,
-      'Gift': <Gift className="h-5 w-5 text-pink-500" />,
+      'ของขวัญ': <Gift className="h-5 w-5 text-white" />,
+      'Gift': <Gift className="h-5 w-5 text-white" />,
       'ทั่วไป': <ShoppingBag className="h-5 w-5 text-gray-500" />,
       'General': <ShoppingBag className="h-5 w-5 text-gray-500" />,
     }

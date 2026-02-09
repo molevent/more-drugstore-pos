@@ -415,15 +415,15 @@ export default function AISymptomCheckerForm() {
             </div>
 
             {consultationData.gender === 'female' && (
-              <div className="mt-4 bg-pink-50 border border-pink-200 rounded-lg p-4">
-                <p className="text-sm font-medium text-pink-900 mb-3">🤰 สำหรับผู้หญิงเท่านั้น:</p>
+              <div className="mt-4 bg-white border border-gray-200 rounded-lg p-4">
+                <p className="text-sm font-medium text-gray-900 mb-3">🤰 สำหรับผู้หญิงเท่านั้น:</p>
                 <div className="flex gap-6">
                   <label className="flex items-center cursor-pointer">
                     <input
                       type="checkbox"
                       checked={consultationData.pregnant}
                       onChange={(e) => setConsultationData({...consultationData, pregnant: e.target.checked})}
-                      className="mr-2 h-5 w-5 text-pink-600"
+                      className="mr-2 h-5 w-5 text-gray-600"
                     />
                     <span className="text-gray-700">ตั้งครรภ์</span>
                   </label>
@@ -432,7 +432,7 @@ export default function AISymptomCheckerForm() {
                       type="checkbox"
                       checked={consultationData.breastfeeding}
                       onChange={(e) => setConsultationData({...consultationData, breastfeeding: e.target.checked})}
-                      className="mr-2 h-5 w-5 text-pink-600"
+                      className="mr-2 h-5 w-5 text-gray-600"
                     />
                     <span className="text-gray-700">ให้นมบุตร</span>
                   </label>

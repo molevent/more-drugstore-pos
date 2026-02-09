@@ -2436,10 +2436,10 @@ export default function ProductsPage() {
                             type="checkbox"
                             checked={formData.sell_on_tiktok}
                             onChange={(e) => setFormData({ ...formData, sell_on_tiktok: e.target.checked })}
-                            className="h-4 w-4 text-pink-600 rounded"
+                            className="h-4 w-4 text-gray-600 rounded"
                           />
                           <div className="flex items-center gap-1.5">
-                            <Video className="h-4 w-4 text-pink-600" />
+                            <Video className="h-4 w-4 text-gray-600" />
                             <span className="font-medium text-sm">TIKTOK</span>
                           </div>
                         </label>
@@ -2450,13 +2450,13 @@ export default function ProductsPage() {
                               const url = prompt('ลิงก์สินค้า:', formData.url_tiktok)
                               if (url !== null) setFormData({ ...formData, url_tiktok: url })
                             }}
-                            className={`p-1 rounded hover:bg-gray-100 ${formData.url_tiktok ? 'text-pink-600' : 'text-gray-400'}`}
+                            className={`p-1 rounded hover:bg-gray-100 ${formData.url_tiktok ? 'text-gray-600' : 'text-gray-400'}`}
                             title={formData.url_tiktok ? 'แก้ไขลิงก์' : 'เพิ่มลิงก์'}
                           >
                             <ExternalLink className="h-4 w-4" />
                           </button>
                           {formData.url_tiktok && (
-                            <a href={formData.url_tiktok} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:text-pink-800 p-1 rounded hover:bg-gray-100">
+                            <a href={formData.url_tiktok} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-800 p-1 rounded hover:bg-gray-100">
                               <ExternalLink className="h-4 w-4" />
                             </a>
                           )}
