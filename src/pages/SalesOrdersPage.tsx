@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { ListOrdered, Search, Calendar, Eye, Edit } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -393,13 +392,17 @@ export default function SalesOrdersPage() {
                         <Button variant="secondary" size="sm" onClick={() => handleViewOrder(order.id)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Link
-                          to={`/pos?edit=${order.id}`}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            console.log('Edit button clicked for order:', order.id)
+                            window.location.href = `/pos?edit=${order.id}`
+                          }}
                           className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-[#7D735F] text-white hover:bg-[#7D735F]/90 transition-colors"
                         >
                           <Edit className="h-4 w-4 mr-1" />
                           แก้ไข
-                        </Link>
+                        </button>
                       </div>
                     </td>
                   </tr>
