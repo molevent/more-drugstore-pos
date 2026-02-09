@@ -30,6 +30,18 @@ export default function ShopSettingsPage() {
   }, [])
 
   const fetchShopInfo = async () => {
+    // First try to load from localStorage
+    const localData = localStorage.getItem('shop_settings')
+    if (localData) {
+      try {
+        const parsed = JSON.parse(localData)
+        setShopInfo(parsed)
+      } catch (e) {
+        console.error('Error parsing localStorage:', e)
+      }
+    }
+    
+    // Then try to fetch from Supabase
     try {
       const { data, error } = await supabase
         .from('shop_settings')
@@ -42,13 +54,16 @@ export default function ShopSettingsPage() {
       }
       
       if (data) {
-        setShopInfo({
+        const shopData = {
           name: data.name || 'More Drug Store',
           address: data.address || '',
           phone: data.phone || '',
           tax_id: data.tax_id || '',
           email: data.email || ''
-        })
+        }
+        setShopInfo(shopData)
+        // Update localStorage with latest data
+        localStorage.setItem('shop_settings', JSON.stringify(shopData))
       }
     } catch (error) {
       console.error('Error:', error)
@@ -59,27 +74,35 @@ export default function ShopSettingsPage() {
     try {
       setSaving(true)
       
+      // Try to save to Supabase
       const { error } = await supabase
         .from('shop_settings')
         .upsert({
+          id: 1, // Use fixed ID for single record
           name: shopInfo.name,
           address: shopInfo.address,
           phone: shopInfo.phone,
           tax_id: shopInfo.tax_id,
           email: shopInfo.email,
           updated_at: new Date().toISOString()
-        })
+        }, { onConflict: 'id' })
       
       if (error) {
         console.error('Error saving shop info:', error)
-        alert('เกิดข้อผิดพลาดในการบันทึก')
+        // Fallback: save to localStorage
+        localStorage.setItem('shop_settings', JSON.stringify(shopInfo))
+        alert('บันทึกข้อมูลร้านสำเร็จ (Local Mode)')
         return
       }
       
+      // Also save to localStorage as backup
+      localStorage.setItem('shop_settings', JSON.stringify(shopInfo))
       alert('บันทึกข้อมูลร้านสำเร็จ')
     } catch (error) {
       console.error('Error:', error)
-      alert('เกิดข้อผิดพลาดในการบันทึก')
+      // Fallback: save to localStorage
+      localStorage.setItem('shop_settings', JSON.stringify(shopInfo))
+      alert('บันทึกข้อมูลร้านสำเร็จ (Local Mode)')
     } finally {
       setSaving(false)
     }
