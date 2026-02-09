@@ -9,7 +9,8 @@ import {
   LogOut,
   Menu,
   X,
-  Users
+  Users,
+  Wallet
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -66,6 +67,12 @@ export default function Layout({ children }: LayoutProps) {
       title: 'ผู้ติดต่อ',
       items: [
         { name: 'ผู้ติดต่อ', href: '/contacts', icon: Users },
+      ]
+    },
+    {
+      title: 'บัญชี',
+      items: [
+        { name: 'ค่าใช้จ่าย', href: '/expenses', icon: Wallet },
       ]
     },
     {
