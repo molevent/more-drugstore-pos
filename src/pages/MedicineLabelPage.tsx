@@ -104,6 +104,12 @@ export default function MedicineLabelPage() {
     hospital_clinic: ''
   })
   const [showPreview, setShowPreview] = useState(false)
+  // Auto-show preview when product is selected
+  useEffect(() => {
+    if (selectedProduct) {
+      setShowPreview(true)
+    }
+  }, [selectedProduct])
   const [barcodeSize, setBarcodeSize] = useState<'small' | 'medium' | 'large' | 'custom'>('medium')
   const [customBarcodeWidth, setCustomBarcodeWidth] = useState(50)
   const [customBarcodeHeight, setCustomBarcodeHeight] = useState(30)
