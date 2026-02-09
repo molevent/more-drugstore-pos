@@ -4,7 +4,7 @@ import {
   Home,
   ListOrdered,
   ShoppingCart, 
-  Package, 
+  Boxes, 
   FileText, 
   Settings,
   LogOut,
@@ -61,7 +61,7 @@ export default function Layout({ children }: LayoutProps) {
     {
       title: 'สินค้า',
       items: [
-        { name: t('nav.products'), href: '/products', icon: Package },
+        { name: t('nav.products'), href: '/products', icon: Boxes },
       ]
     },
     {
