@@ -318,7 +318,7 @@ export default function SalesOrdersPage() {
           </div>
         ) : filteredOrders.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            <Receipt className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+            <ListOrdered className="h-16 w-16 mx-auto mb-4 text-gray-300" />
             <p>ไม่พบรายการขาย</p>
           </div>
         ) : (
