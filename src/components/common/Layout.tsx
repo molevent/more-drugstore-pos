@@ -101,11 +101,16 @@ export default function Layout({ children }: LayoutProps) {
       ]
     },
     {
-      title: 'อื่นๆ',
+      title: 'ตั้งค่า',
       items: [
         { name: 'ช่องทางการชำระเงิน', href: '/payment-methods', icon: CreditCard },
-        { name: t('nav.reports'), href: '/reports', icon: FileText },
         { name: t('nav.settings'), href: '/settings', icon: Settings },
+      ]
+    },
+    {
+      title: 'อื่นๆ',
+      items: [
+        { name: t('nav.reports'), href: '/reports', icon: FileText },
       ]
     }
   ]
