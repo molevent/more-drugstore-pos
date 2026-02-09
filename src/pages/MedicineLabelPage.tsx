@@ -483,7 +483,7 @@ export default function MedicineLabelPage() {
             <p className="text-sm text-amber-600 mb-3">
               ยาเหล่านี้อยู่ในหมวดหมู่ยาแต่ยังไม่ได้บันทึกข้อมูลฉลาก กรุณาคลิกเพื่อไปบันทึก
             </p>
-            <div className="space-y-2 max-h-[200px] overflow-y-auto">
+            <div className="space-y-2 max-h-[200px] overflow-y-auto mb-3">
               {medicinesWithoutLabel.slice(0, 5).map((product) => (
                 <a
                   key={product.id}
@@ -497,11 +497,32 @@ export default function MedicineLabelPage() {
                   <span className="text-xs text-amber-600">ไปบันทึกฉลาก →</span>
                 </a>
               ))}
-              {medicinesWithoutLabel.length > 5 && (
-                <p className="text-xs text-gray-500 text-center py-2">
-                  ...และอีก {medicinesWithoutLabel.length - 5} รายการ
-                </p>
-              )}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="primary"
+                onClick={() => setShowPreview(true)}
+                disabled={!selectedProduct || (!labelData.dosage_instructions_th && !labelData.dosage_instructions_en)}
+                className="flex-1"
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                ดูตัวอย่าง
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setLabelData({
+                    product_id: selectedProduct?.id || '',
+                    dosage_instructions_th: '',
+                    special_instructions_th: '',
+                    dosage_instructions_en: '',
+                    special_instructions_en: ''
+                  })
+                }}
+                className="flex-1"
+              >
+                ล้างข้อมูล
+              </Button>
             </div>
           </Card>
         )}
