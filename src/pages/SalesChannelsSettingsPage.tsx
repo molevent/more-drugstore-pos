@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Store, Bike, ShoppingCart, Bike as BikeIcon } from 'lucide-react'
-import Card from '../components/common/Card'
+import { ArrowLeft, Store, Bike, ShoppingCart, Bike as BikeIcon, X, CreditCard } from 'lucide-react'
 import Button from '../components/common/Button'
 import { supabase } from '../services/supabase'
 
@@ -64,6 +63,23 @@ export default function SalesChannelsSettingsPage() {
     setTimeout(() => setSaved(false), 3000)
   }
 
+  const getPaymentMethodName = (paymentId: string) => {
+    return paymentMethods.find(m => m.id === paymentId)?.name || ''
+  }
+
+  const handleClearPayment = (channelId: string) => {
+    setChannelPaymentMap(prev => {
+      const { [channelId]: _, ...rest } = prev
+      return rest
+    })
+  }
+
+  const handleSelectPayment = (channelId: string, paymentId: string) => {
+    if (paymentId) {
+      setChannelPaymentMap(prev => ({ ...prev, [channelId]: paymentId }))
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -80,54 +96,78 @@ export default function SalesChannelsSettingsPage() {
         </h1>
       </div>
 
-      <Card className="max-w-2xl">
-        <div className="space-y-6">
-          <p className="text-sm text-gray-600">
-            เลือกวิธีชำระเงินเริ่มต้นสำหรับแต่ละช่องทางการขาย 
-            เมื่อเปลี่ยนช่องทางการขายในหน้า POS ระบบจะเลือกวิธีชำระเงินอัตโนมัติตามที่ตั้งค่าไว้
+      {/* Main Card - Summary Style */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm max-w-2xl">
+        <div className="p-5">
+          {/* Title */}
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">ช่องทางการขาย</h2>
+
+          {/* Description */}
+          <p className="text-sm text-gray-600 mb-6">
+            เลือกวิธีชำระเงินเริ่มต้นสำหรับแต่ละช่องทาง ระบบจะเลือกวิธีชำระเงินอัตโนมัติตามที่ตั้งค่าไว้
           </p>
 
-          {SALES_CHANNELS.map((channel) => {
-            const Icon = channel.icon
-            return (
-              <div key={channel.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                    <Icon className="h-5 w-5 text-gray-600" />
-                  </div>
-                  <span className="font-medium text-gray-900">{channel.name}</span>
-                </div>
-                <select
-                  value={channelPaymentMap[channel.id] || ''}
-                  onChange={(e) => {
-                    const paymentId = e.target.value
-                    if (paymentId) {
-                      setChannelPaymentMap(prev => ({ ...prev, [channel.id]: paymentId }))
-                    } else {
-                      setChannelPaymentMap(prev => {
-                        const { [channel.id]: _, ...rest } = prev
-                        return rest
-                      })
-                    }
-                  }}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[200px]"
-                >
-                  <option value="">-- ไม่ตั้งค่า --</option>
-                  {paymentMethods.map((method) => (
-                    <option key={method.id} value={method.id}>{method.name}</option>
-                  ))}
-                </select>
-              </div>
-            )
-          })}
+          {/* Channel List - Summary Card Style */}
+          <div className="space-y-4">
+            {SALES_CHANNELS.map((channel) => {
+              const Icon = channel.icon
+              const selectedPaymentId = channelPaymentMap[channel.id]
+              const selectedPaymentName = getPaymentMethodName(selectedPaymentId)
 
+              return (
+                <div key={channel.id}>
+                  {/* Channel Label */}
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
+                    {channel.name}
+                  </label>
+
+                  {/* Selected Payment Display */}
+                  {selectedPaymentId ? (
+                    <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
+                      <div className="flex items-center gap-3">
+                        <CreditCard className="h-5 w-5 text-gray-500" />
+                        <span className="text-gray-900 font-medium">{selectedPaymentName}</span>
+                      </div>
+                      <button
+                        onClick={() => handleClearPayment(channel.id)}
+                        className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+                        title="ล้างการเลือก"
+                      >
+                        <X className="h-4 w-4 text-gray-400" />
+                      </button>
+                    </div>
+                  ) : (
+                    /* Payment Method Selection */
+                    <div className="flex flex-wrap gap-2">
+                      {paymentMethods.length > 0 ? (
+                        paymentMethods.map((method) => (
+                          <button
+                            key={method.id}
+                            onClick={() => handleSelectPayment(channel.id, method.id)}
+                            className="px-4 py-2 rounded-full border-2 border-gray-200 bg-white text-gray-600 text-sm hover:border-blue-400 hover:bg-blue-50 transition-all"
+                          >
+                            {method.name}
+                          </button>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500">ยังไม่มีวิธีการชำระเงิน</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Success Message */}
           {saved && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="mt-6 p-3 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-sm text-green-700">บันทึกการตั้งค่าสำเร็จ!</p>
             </div>
           )}
 
-          <div className="flex gap-3 pt-4">
+          {/* Action Buttons */}
+          <div className="flex gap-3 mt-6 pt-4 border-t border-gray-100">
             <Button
               variant="secondary"
               onClick={() => navigate('/settings')}
@@ -144,7 +184,7 @@ export default function SalesChannelsSettingsPage() {
             </Button>
           </div>
         </div>
-      </Card>
+      </div>
     </div>
   )
 }
