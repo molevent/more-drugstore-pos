@@ -5,7 +5,6 @@ import {
   ListOrdered,
   ShoppingCart, 
   Boxes, 
-  FileText, 
   Settings,
   LogOut,
   Menu,
@@ -73,7 +72,6 @@ export default function Layout({ children }: LayoutProps) {
     {
       title: 'เอกสาร',
       items: [
-        { name: 'ใบสั่งซื้อ', href: '/purchase-orders', icon: FileText },
         { name: 'ค่าใช้จ่าย', href: '/expenses', icon: Receipt },
       ]
     },
