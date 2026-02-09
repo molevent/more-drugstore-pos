@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useCartStore, getProductPriceForChannel, SalesChannel } from '../stores/cartStore'
 import { useProductStore } from '../stores/productStore'
 import Card from '../components/common/Card'
@@ -137,20 +138,24 @@ export default function POSPage() {
   const inputRef = useRef<HTMLInputElement>(null)
   const { items, addItem, removeItem, updateQuantity, updateCustomPrice, clearCart, getTotal, getSubtotal, getTotalDiscount, setItems, setSalesChannel: setCartSalesChannel } = useCartStore()
   const { getProductByBarcode, products, fetchProducts } = useProductStore()
+  const location = useLocation()
 
   // Edit order state
   const [editOrderId, setEditOrderId] = useState<string | null>(null)
 
-  // Check for edit query parameter on mount and load order data
+  // Check for edit query parameter on mount and when URL changes
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
+    const params = new URLSearchParams(location.search)
     const editId = params.get('edit')
     if (editId) {
       console.log('POS: Loading order for editing:', editId)
       setEditOrderId(editId)
       loadOrderForEditing(editId)
+    } else {
+      // Clear edit mode if no edit param
+      setEditOrderId(null)
     }
-  }, [])
+  }, [location.search])
 
   // Function to load order data for editing
   const loadOrderForEditing = async (orderId: string) => {
