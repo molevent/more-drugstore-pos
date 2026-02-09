@@ -12,7 +12,6 @@ import {
   ExternalLink, 
   CheckCircle, 
   XCircle,
-  Warehouse,
   FolderTree
 } from 'lucide-react'
 import { useState } from 'react'

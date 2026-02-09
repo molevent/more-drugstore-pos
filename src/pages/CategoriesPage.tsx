@@ -84,55 +84,6 @@ export default function CategoriesPage() {
     }
   }
 
-  const handleEdit = (category: Category) => {
-    setEditingCategory(category)
-    setFormData({
-      name_th: category.name_th,
-      name_en: category.name_en,
-      parent_id: category.parent_id || ''
-    })
-    setShowModal(true)
-  }
-
-  const handleDelete = async (id: string) => {
-    if (!confirm(t('categories.confirmDelete'))) return
-    
-    try {
-      // First check if category has products
-      const { data: products, error: checkError } = await supabase
-        .from('products')
-        .select('id')
-        .eq('category_id', id)
-      
-      if (checkError) throw checkError
-      
-      if (products && products.length > 0) {
-        alert(t('categories.hasProducts').replace('{count}', products.length.toString()))
-        return
-      }
-      
-      // If no products, proceed with deletion
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', id)
-      
-      if (error) throw error
-      alert(t('categories.deleteSuccess'))
-      fetchCategories()
-    } catch (error: any) {
-      console.error('Error deleting category:', error)
-      // Check if error is from trigger
-      if (error.message?.includes('products are using this category')) {
-        const match = error.message.match(/(\d+) products/)
-        const count = match ? match[1] : 'some'
-        alert(t('categories.hasProducts').replace('{count}', count))
-      } else {
-        alert(error.message)
-      }
-    }
-  }
-
   const resetForm = () => {
     setFormData({
       name_th: '',
