@@ -326,7 +326,12 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
                 {items.map((item, index) => (
                   <tr key={item.id}>
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">{item.product_name}</div>
+                      <div className="font-medium text-gray-900">
+                        {item.unit_price === 0 && (
+                          <span className="text-orange-500 mr-1">🎁 ของแถม:</span>
+                        )}
+                        {item.product_name}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <input
@@ -338,14 +343,29 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
                       />
                     </td>
                     <td className="px-4 py-3">
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={item.unit_price}
-                        onChange={(e) => updateItemPrice(index, parseFloat(e.target.value) || 0)}
-                        className="w-full px-2 py-1 text-right border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
+                      {item.unit_price === 0 ? (
+                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-orange-600 bg-orange-50 rounded">
+                          🎁 ของแถม
+                        </span>
+                      ) : (
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={item.unit_price}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            if (value === '') {
+                              updateItemPrice(index, 0)
+                              return
+                            }
+                            const numValue = parseFloat(value)
+                            if (!isNaN(numValue) && numValue >= 0) {
+                              updateItemPrice(index, numValue)
+                            }
+                          }}
+                          className="w-full px-2 py-1 text-right border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <input
