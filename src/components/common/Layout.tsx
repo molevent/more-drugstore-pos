@@ -172,15 +172,15 @@ export default function Layout({ children }: LayoutProps) {
       </div>
 
       <div className="lg:pl-64 flex flex-col flex-1">
-        <header className="lg:hidden bg-[#7D735F] shadow-sm border-b border-[#7D735F]/20 sticky top-0 z-30">
+        <header className="lg:hidden bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
           <div className="flex items-center justify-between h-16 px-4">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="text-white/80 hover:text-white"
+              className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
             >
               <Menu className="h-6 w-6" />
             </button>
-            <h1 className="text-lg font-semibold text-white">More Drug Store</h1>
+            <h1 className="text-lg font-semibold text-gray-900">More Drug Store</h1>
             <LanguageSwitcher />
           </div>
         </header>
