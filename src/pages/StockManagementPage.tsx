@@ -278,12 +278,14 @@ export default function StockManagementPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <Package className="h-8 w-8 text-blue-600" />
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">จัดการสต็อก</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Package className="h-7 w-7 text-blue-600" />
+            จัดการสต็อก
+          </h1>
+          <p className="text-gray-600 mt-1">ปรับยอดสต็อก, จัดการ Batch และติดตามการเคลื่อนไหว</p>
         </div>
-        <p className="text-gray-600">ปรับยอดสต็อก, จัดการ Batch และติดตามการเคลื่อนไหว</p>
       </div>
 
       {/* Search Bar */}

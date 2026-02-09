@@ -433,13 +433,14 @@ export default function ExpensesPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <Receipt className="h-8 w-8 text-blue-600" />
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">ค่าใช้จ่าย</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Receipt className="h-7 w-7 text-blue-600" />
+            ค่าใช้จ่าย
+          </h1>
+          <p className="text-gray-600 mt-1">บันทึกและติดตามค่าใช้จ่ายต่างๆ ของร้าน</p>
         </div>
-        <div className="flex items-center justify-between">
-          <p className="text-gray-600">บันทึกและติดตามค่าใช้จ่ายต่างๆ ของร้าน</p>
           <div className="flex gap-2">
             <Link 
               to="/payment-vouchers"

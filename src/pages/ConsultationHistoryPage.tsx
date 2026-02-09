@@ -154,7 +154,7 @@ export default function ConsultationHistoryPage() {
       <div>
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">รายละเอียดการปรึกษา</h1>
+            <h1 className="text-2xl font-bold text-gray-900">รายละเอียดการปรึกษา</h1>
             <p className="text-gray-600 mt-1">ข้อมูลการปรึกษาผู้ป่วย</p>
           </div>
           <Button variant="secondary" onClick={closeDetail}>
@@ -348,11 +348,11 @@ export default function ConsultationHistoryPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <FileText className="h-8 w-8 text-blue-600" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">ประวัติการปรึกษา</h1>
-          </div>
-          <p className="text-gray-600">รายการบันทึกการปรึกษาผู้ป่วยทั้งหมด</p>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <FileText className="h-7 w-7 text-blue-600" />
+            ประวัติการปรึกษา
+          </h1>
+          <p className="text-gray-600 mt-1">รายการบันทึกการปรึกษาผู้ป่วยทั้งหมด</p>
         </div>
         <Button variant="secondary" onClick={() => navigate('/pos')}>
           <ArrowLeft className="h-4 w-4 mr-2" />

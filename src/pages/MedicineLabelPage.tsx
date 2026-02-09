@@ -401,10 +401,12 @@ export default function MedicineLabelPage() {
             <ArrowLeft className="h-5 w-5" />
             กลับ
           </Button>
-          <Printer className="h-8 w-8 text-blue-600" />
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">พิมพ์ฉลากยา</h1>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Printer className="h-7 w-7 text-blue-600" />
+            พิมพ์ฉลากยา
+          </h1>
         </div>
-        <p className="text-gray-600">สร้างและพิมพ์ฉลากยาสำหรับผู้ป่วย</p>
+        <p className="text-gray-600 mt-1">สร้างและพิมพ์ฉลากยาสำหรับผู้ป่วย</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

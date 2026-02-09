@@ -240,13 +240,13 @@ export default function AISymptomCheckerForm() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <Brain className="h-8 w-8 text-blue-600" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">AI ช่วยแนะนำยา</h1>
-          </div>
-          <p className="text-gray-600">กรอกข้อมูลผู้ป่วยและอาการในแบบฟอร์มเดียว</p>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Brain className="h-7 w-7 text-blue-600" />
+            AI ช่วยแนะนำยา
+          </h1>
+          <p className="text-gray-600 mt-1">กรอกข้อมูลผู้ป่วยและอาการในแบบฟอร์มเดียว</p>
         </div>
         <Button variant="secondary" onClick={() => navigate('/pos')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
