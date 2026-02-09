@@ -37,8 +37,8 @@ export default function DashboardPage() {
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30 flex items-center justify-center">
-          <Home className="h-5 w-5 text-white" />
+        <div className="h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center">
+          <Home className="h-6 w-6 text-gray-900" />
         </div>
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('dashboard.title')}</h1>
