@@ -129,7 +129,7 @@ export default function Layout({ children }: LayoutProps) {
       } lg:translate-x-0`}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between h-16 px-4 border-b border-[#7D735F]/10">
+          <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
             <img 
               src="/logo.png" 
               alt="More Drug Store" 
@@ -137,7 +137,7 @@ export default function Layout({ children }: LayoutProps) {
             />
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden text-[#7D735F] hover:text-[#4A4A4A]"
+              className="lg:hidden text-gray-500 hover:text-gray-700"
             >
               <X className="h-5 w-5" />
             </button>
@@ -148,7 +148,7 @@ export default function Layout({ children }: LayoutProps) {
             <nav className="space-y-1">
               {navigationSections.map((section, sectionIndex) => (
                 <div key={sectionIndex} className="mb-4">
-                  <h3 className="px-3 mb-2 text-xs font-semibold text-[#7D735F]/70 uppercase tracking-wider">
+                  <h3 className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                     {section.title}
                   </h3>
                   <div className="space-y-1">
@@ -165,11 +165,11 @@ export default function Layout({ children }: LayoutProps) {
                           }}
                           className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all ${
                             isActive
-                              ? 'bg-white text-[#0D9488] shadow-sm border-l-4 border-[#0D9488]'
-                              : 'text-[#4A4A4A] hover:bg-white/60 hover:text-[#7D735F]'
+                              ? 'bg-white text-black shadow-sm border-l-4 border-[#0D9488]'
+                              : 'text-gray-700 hover:bg-white/60 hover:text-black'
                           }`}
                         >
-                          <item.icon className={`h-5 w-5 mr-3 ${isActive ? 'text-[#0D9488]' : 'text-[#7D735F]/60'}`} />
+                          <item.icon className={`h-5 w-5 mr-3 ${isActive ? 'text-[#0D9488]' : 'text-gray-500'}`} />
                           {item.name}
                         </Link>
                       )
@@ -181,17 +181,17 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           {/* Footer */}
-          <div className="border-t border-[#7D735F]/10 p-4">
+          <div className="border-t border-gray-200 p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex-1">
-                <p className="text-sm font-medium text-[#4A4A4A]">{user?.full_name}</p>
-                <p className="text-xs text-[#7D735F]/70">{user?.role}</p>
+                <p className="text-sm font-medium text-gray-900">{user?.full_name}</p>
+                <p className="text-xs text-gray-500">{user?.role}</p>
               </div>
               <LanguageSwitcher />
             </div>
             <button
               onClick={handleSignOut}
-              className="flex items-center w-full px-3 py-2 text-sm text-[#D4756A] hover:bg-white/60 rounded-lg transition-colors"
+              className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <LogOut className="h-4 w-4 mr-3" />
               {t('nav.logout')}
