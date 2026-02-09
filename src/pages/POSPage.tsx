@@ -4,7 +4,7 @@ import { useProductStore } from '../stores/productStore'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Package, Receipt, AlertTriangle, History, Bell, Camera, Brain, FileText, CreditCard, Printer } from 'lucide-react'
+import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Package, Receipt, AlertTriangle, History, Bell, Camera, Brain, CreditCard, Printer } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { Product } from '../types/database'
 import { supabase } from '../services/supabase'
@@ -1053,13 +1053,6 @@ export default function POSPage() {
         >
           <Brain className="h-5 w-5 text-[#7D735F] flex-shrink-0" />
           <span className="font-medium text-gray-900 text-sm whitespace-nowrap">AI ช่วยแนะนำยา</span>
-        </Link>
-        <Link 
-          to="/consultation-history"
-          className="flex items-center gap-2 px-3 py-2 bg-[#DFEAF5]/50 rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
-          title="ประวัติการปรึกษา"
-        >
-          <FileText className="h-5 w-5 text-[#7D735F] flex-shrink-0" />
         </Link>
         <Link 
           to="/categories"

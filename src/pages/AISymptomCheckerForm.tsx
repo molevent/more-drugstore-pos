@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { analyzeSymptoms } from '../services/gemini'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Brain, AlertTriangle, Pill, ShoppingCart, Save, Loader2, X, CheckCircle, ArrowLeft } from 'lucide-react'
+import { Brain, AlertTriangle, Pill, ShoppingCart, Save, Loader2, X, CheckCircle, ArrowLeft, FileText } from 'lucide-react'
 
 interface ConsultationData {
   patientName: string
@@ -248,10 +248,19 @@ export default function AISymptomCheckerForm() {
           </h1>
           <p className="text-gray-600 mt-1">กรอกข้อมูลผู้ป่วยและอาการในแบบฟอร์มเดียว</p>
         </div>
-        <Button variant="secondary" onClick={() => navigate('/pos')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          กลับไป POS
-        </Button>
+        <div className="flex gap-2">
+          <Link
+            to="/consultation-history"
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-700"
+          >
+            <FileText className="h-4 w-4" />
+            ประวัติการปรึกษา
+          </Link>
+          <Button variant="secondary" onClick={() => navigate('/pos')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            กลับไป POS
+          </Button>
+        </div>
       </div>
 
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
