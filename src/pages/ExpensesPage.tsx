@@ -445,18 +445,14 @@ export default function ExpensesPage() {
               to="/payment-vouchers"
               className="flex items-center gap-3 px-5 py-3 bg-purple-50 rounded-full border border-purple-200 hover:bg-purple-100 hover:shadow-md transition-all"
             >
-              <div className="h-10 w-10 rounded-full bg-purple-500 flex items-center justify-center shadow-sm">
-                <FileText className="h-5 w-5 text-white" />
-              </div>
+              <FileText className="h-6 w-6 text-purple-400" />
               <span className="font-semibold text-gray-900">ใบสำคัญจ่าย</span>
             </Link>
             <Link 
               to="/withholding-tax"
               className="flex items-center gap-3 px-5 py-3 bg-orange-50 rounded-full border border-orange-200 hover:bg-orange-100 hover:shadow-md transition-all"
             >
-              <div className="h-10 w-10 rounded-full bg-orange-500 flex items-center justify-center shadow-sm">
-                <Percent className="h-5 w-5 text-white" />
-              </div>
+              <Percent className="h-6 w-6 text-orange-400" />
               <span className="font-semibold text-gray-900">หัก ณ ที่จ่าย</span>
             </Link>
           </div>
