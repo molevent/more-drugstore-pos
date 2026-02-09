@@ -278,8 +278,9 @@ ${productList.map((p, i) => {
   } catch (error: any) {
     console.error('Error in analyzeSymptoms:', error)
     
-    // Handle timeout error
+    // Handle timeout error - don't throw to prevent uncaught promise rejection
     if (error.name === 'AbortError') {
+      console.log('Gemini request timed out (30s)')
       throw new Error('การวิเคราะห์ใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง')
     }
     
