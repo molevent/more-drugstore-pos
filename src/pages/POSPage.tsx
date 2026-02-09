@@ -1204,11 +1204,6 @@ export default function POSPage() {
                   )
                 })}
               </div>
-              {salesChannel && (
-                <p className="mt-2 text-sm text-gray-600 font-medium">
-                  กำลังขายผ่าน: {SALES_CHANNELS.find(c => c.id === salesChannel)?.name}
-                </p>
-              )}
             </div>
 
             <form onSubmit={handleBarcodeSubmit} className="mb-6">
@@ -1474,6 +1469,15 @@ export default function POSPage() {
                 <p className="text-xs text-gray-600 mt-1">ค่าเริ่มต้น: ลูกค้าทั่วไป</p>
               )}
             </div>
+
+            {/* Sales Channel Info */}
+            {salesChannel && (
+              <div className="mb-3 p-2 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">
+                  กำลังขายผ่าน: <span className="font-medium text-gray-900">{SALES_CHANNELS.find(c => c.id === salesChannel)?.name}</span>
+                </p>
+              </div>
+            )}
 
             {/* Payment Method Selection */}
             <div className="mb-4">
