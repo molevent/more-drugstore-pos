@@ -162,7 +162,8 @@ export default function SalesOrdersPage() {
     }).format(amount)
   }
 
-  const getPlatformName = (platformId: string) => {
+  const getPlatformName = (platformId: string | null | undefined) => {
+    if (!platformId) return 'ไม่ระบุ'
     return SALES_CHANNELS[platformId] || platformId
   }
 
