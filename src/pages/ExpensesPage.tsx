@@ -450,7 +450,7 @@ export default function ExpensesPage() {
             </Link>
             <Link 
               to="/withholding-tax"
-              className="flex items-center gap-3 px-5 py-3 bg-orange-50 rounded-full border border-orange-200 hover:bg-orange-100 hover:shadow-md transition-all"
+              className="flex items-center gap-3 px-5 py-3 bg-blue-50 rounded-full border border-blue-200 hover:bg-blue-100 hover:shadow-md transition-all"
             >
               <Percent className="h-6 w-6 text-gray-900" />
               <span className="font-semibold text-gray-900">หัก ณ ที่จ่าย</span>
