@@ -9,6 +9,7 @@ interface SalesOrder {
   id: string
   order_number: string
   customer_name?: string
+  payment_method_name?: string
   total: number
   subtotal: number
   discount: number
@@ -76,6 +77,7 @@ export default function SalesOrdersPage() {
           id,
           order_number,
           customer_name,
+          payment_method_name,
           total,
           subtotal,
           discount,
@@ -342,6 +344,9 @@ export default function SalesOrdersPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     ลูกค้า
                   </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    วิธีชำระ
+                  </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     จำนวนรายการ
                   </th>
@@ -369,6 +374,11 @@ export default function SalesOrdersPage() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                       {order.customer_name || '-'}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                        {order.payment_method_name || '-'}
+                      </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
                       {order.order_items_count} รายการ
@@ -426,6 +436,10 @@ export default function SalesOrdersPage() {
                     <div>
                       <p className="text-sm text-gray-500">ลูกค้า</p>
                       <p className="font-medium">{selectedOrder.customer_name || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">วิธีชำระ</p>
+                      <p className="font-medium">{selectedOrder.payment_method_name || '-'}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">สถานะ</p>
