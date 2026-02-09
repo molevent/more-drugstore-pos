@@ -6,7 +6,6 @@ import {
   Phone, 
   Mail, 
   MapPin, 
-  Edit2, 
   Trash2, 
   X,
   Building2,
@@ -261,7 +260,11 @@ export default function ContactsPage() {
           const TypeIcon = typeInfo.icon
           
           return (
-            <Card key={contact.id} className="p-4 hover:shadow-md transition-shadow">
+            <Card 
+              key={contact.id} 
+              className="p-4 hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => openEditModal(contact)}
+            >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-lg ${typeInfo.color} flex items-center justify-center`}>
@@ -310,16 +313,6 @@ export default function ContactsPage() {
                   {contact.notes}
                 </div>
               )}
-
-              <div className="mt-4 flex gap-2">
-                <Button variant="secondary" className="flex-1" onClick={() => openEditModal(contact)}>
-                  <Edit2 className="h-4 w-4 mr-1" />
-                  แก้ไข
-                </Button>
-                <Button variant="secondary" className="text-red-600 hover:bg-red-50" onClick={() => handleDelete(contact.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
             </Card>
           )
         })}
@@ -458,7 +451,23 @@ export default function ContactsPage() {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button type="submit" variant="primary" className="flex-1">
+                {editingContact && (
+                  <Button 
+                    type="button" 
+                    variant="danger" 
+                    onClick={() => {
+                      if (editingContact) {
+                        handleDelete(editingContact.id)
+                        setShowModal(false)
+                      }
+                    }}
+                    className="flex-1"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    ลบผู้ติดต่อ
+                  </Button>
+                )}
+                <Button type="submit" variant="primary" className={editingContact ? 'flex-1' : 'flex-1'}>
                   {editingContact ? 'บันทึกการแก้ไข' : 'เพิ่มผู้ติดต่อ'}
                 </Button>
                 <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>
