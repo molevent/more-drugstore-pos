@@ -10,7 +10,6 @@ import {
   LogOut,
   Menu,
   X,
-  Printer,
   Users,
   Receipt
 } from 'lucide-react'
@@ -63,7 +62,6 @@ export default function Layout({ children }: LayoutProps) {
       title: 'จัดการสต็อก',
       items: [
         { name: 'จัดการสต็อก', href: '/stock-management', icon: Package },
-        { name: 'พิมพ์ฉลากยา', href: '/medicine-labels', icon: Printer },
       ]
     },
     {

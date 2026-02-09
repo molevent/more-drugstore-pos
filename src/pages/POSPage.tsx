@@ -4,7 +4,7 @@ import { useProductStore } from '../stores/productStore'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Package, Receipt, AlertTriangle, History, Bell, Camera, Brain, FileText, CreditCard } from 'lucide-react'
+import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Package, Receipt, AlertTriangle, History, Bell, Camera, Brain, FileText, CreditCard, Printer } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { Product } from '../types/database'
 import { supabase } from '../services/supabase'
@@ -1074,6 +1074,19 @@ export default function POSPage() {
             <FileText className="h-5 w-5 text-white" />
           </div>
           <span className="font-semibold text-gray-900">ประวัติการปรึกษา</span>
+        </Link>
+      </div>
+
+      {/* Medicine Labels Link */}
+      <div className="mb-4 mx-4 sm:mx-0">
+        <Link 
+          to="/medicine-labels"
+          className="flex items-center gap-3 px-5 py-3 bg-purple-50 rounded-full border border-purple-200 hover:bg-purple-100 hover:shadow-md transition-all w-fit"
+        >
+          <div className="h-10 w-10 rounded-full bg-purple-500 flex items-center justify-center shadow-sm">
+            <Printer className="h-5 w-5 text-white" />
+          </div>
+          <span className="font-semibold text-gray-900">พิมพ์ฉลากยา</span>
         </Link>
       </div>
 
