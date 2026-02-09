@@ -22,6 +22,7 @@ import SalesOrdersPage from './pages/SalesOrdersPage'
 import NegativeStockReportPage from './pages/NegativeStockReportPage'
 import StockAdjustmentReportPage from './pages/StockAdjustmentReportPage'
 import StockTransferReportPage from './pages/StockTransferReportPage'
+import AbnormalOrdersReportPage from './pages/AbnormalOrdersReportPage'
 import SettingsPage from './pages/SettingsPage'
 import ShopSettingsPage from './pages/ShopSettingsPage'
 import SalesChannelsSettingsPage from './pages/SalesChannelsSettingsPage'
@@ -63,6 +64,7 @@ function App() {
                     <Route path="/negative-stock-report" element={<NegativeStockReportPage />} />
                     <Route path="/stock-adjustment-report" element={<StockAdjustmentReportPage />} />
                     <Route path="/stock-transfer-report" element={<StockTransferReportPage />} />
+                    <Route path="/abnormal-orders-report" element={<AbnormalOrdersReportPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/settings/shop" element={<ShopSettingsPage />} />
                     <Route path="/settings/sales-channels" element={<SalesChannelsSettingsPage />} />

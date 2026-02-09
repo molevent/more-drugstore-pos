@@ -259,6 +259,14 @@ export default function SettingsPage() {
       subtitle: 'ตรวจสอบการเคลื่อนย้ายสินค้าระหว่างคลัง',
       link: '/stock-transfer-report'
     },
+    {
+      icon: AlertTriangle,
+      iconBg: 'bg-amber-100',
+      iconColor: 'text-amber-600',
+      title: 'รายงานออเดอร์ไม่ปกติ',
+      subtitle: 'ตรวจสอบการแก้ไขราคาและของแถม',
+      link: '/abnormal-orders-report'
+    },
   ]
   
   return (
