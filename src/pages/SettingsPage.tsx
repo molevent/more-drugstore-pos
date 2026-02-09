@@ -12,7 +12,8 @@ import {
   Save, 
   ExternalLink, 
   CheckCircle, 
-  XCircle
+  XCircle,
+  Warehouse
 } from 'lucide-react'
 import { useState } from 'react'
 import Card from '../components/common/Card'
@@ -161,12 +162,12 @@ export default function SettingsPage() {
       link: '/settings/users'
     },
     {
-      icon: FileText,
-      iconBg: 'bg-cyan-100',
-      iconColor: 'text-cyan-600',
-      title: 'รายงาน',
-      subtitle: 'ดูรายงานต่างๆ',
-      link: '/reports'
+      icon: Warehouse,
+      iconBg: 'bg-amber-100',
+      iconColor: 'text-amber-600',
+      title: 'คลังสินค้า',
+      subtitle: 'จัดการคลังสินค้าและสต็อก',
+      link: '/warehouse-management'
     },
   ]
   
