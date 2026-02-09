@@ -9,7 +9,6 @@ interface SalesOrder {
   id: string
   order_number: string
   customer_name?: string
-  payment_method_name?: string
   total: number
   subtotal: number
   discount: number
