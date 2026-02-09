@@ -4,7 +4,6 @@ import {
   CreditCard, 
   Store, 
   Users, 
-  FileText, 
   Pencil, 
   Trash2,
   Building2,
