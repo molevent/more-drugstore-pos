@@ -209,6 +209,11 @@ export default function SalesOrdersPage() {
     }
   }
 
+  const handleEditOrder = (orderId: string) => {
+    // Navigate to POS page with order ID for editing
+    window.location.href = `/pos?edit=${orderId}`
+  }
+
   const closeDetailModal = () => {
     setShowDetailModal(false)
     setSelectedOrder(null)
@@ -388,9 +393,14 @@ export default function SalesOrdersPage() {
                       {formatCurrency(order.total)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center">
-                      <Button variant="secondary" size="sm" onClick={() => handleViewOrder(order.id)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-2 justify-center">
+                        <Button variant="secondary" size="sm" onClick={() => handleViewOrder(order.id)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="primary" size="sm" onClick={() => handleEditOrder(order.id)}>
+                          แก้ไข
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
