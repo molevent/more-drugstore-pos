@@ -11,7 +11,6 @@ import {
   LogOut,
   Menu,
   X,
-  Brain,
   Printer,
   Users,
   Receipt,
@@ -60,13 +59,6 @@ export default function Layout({ children }: LayoutProps) {
         { name: t('nav.dashboard'), href: '/dashboard', icon: Home },
         { name: t('nav.pos'), href: '/pos', icon: ShoppingCart },
         { name: 'รายการขายทั้งหมด', href: '/sales-orders', icon: ListOrdered },
-      ]
-    },
-    {
-      title: 'AI & ปรึกษา',
-      items: [
-        { name: t('nav.aiSymptomChecker'), href: '/ai-symptom-checker', icon: Brain },
-        { name: 'ประวัติการปรึกษา', href: '/consultation-history', icon: FileText },
       ]
     },
     {
