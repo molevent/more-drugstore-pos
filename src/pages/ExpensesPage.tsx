@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle, Percent } from 'lucide-react'
+import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle, Percent, FileText } from 'lucide-react'
 
 interface Expense {
   id: string
@@ -440,15 +440,26 @@ export default function ExpensesPage() {
         </div>
         <div className="flex items-center justify-between">
           <p className="text-gray-600">บันทึกและติดตามค่าใช้จ่ายต่างๆ ของร้าน</p>
-          <Link 
-            to="/withholding-tax"
-            className="flex items-center gap-3 px-5 py-3 bg-orange-50 rounded-full border border-orange-200 hover:bg-orange-100 hover:shadow-md transition-all"
-          >
-            <div className="h-10 w-10 rounded-full bg-orange-500 flex items-center justify-center shadow-sm">
-              <Percent className="h-5 w-5 text-white" />
-            </div>
-            <span className="font-semibold text-gray-900">หัก ณ ที่จ่าย</span>
-          </Link>
+          <div className="flex gap-2">
+            <Link 
+              to="/payment-vouchers"
+              className="flex items-center gap-3 px-5 py-3 bg-purple-50 rounded-full border border-purple-200 hover:bg-purple-100 hover:shadow-md transition-all"
+            >
+              <div className="h-10 w-10 rounded-full bg-purple-500 flex items-center justify-center shadow-sm">
+                <FileText className="h-5 w-5 text-white" />
+              </div>
+              <span className="font-semibold text-gray-900">ใบสำคัญจ่าย</span>
+            </Link>
+            <Link 
+              to="/withholding-tax"
+              className="flex items-center gap-3 px-5 py-3 bg-orange-50 rounded-full border border-orange-200 hover:bg-orange-100 hover:shadow-md transition-all"
+            >
+              <div className="h-10 w-10 rounded-full bg-orange-500 flex items-center justify-center shadow-sm">
+                <Percent className="h-5 w-5 text-white" />
+              </div>
+              <span className="font-semibold text-gray-900">หัก ณ ที่จ่าย</span>
+            </Link>
+          </div>
         </div>
       </div>
 

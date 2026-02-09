@@ -85,7 +85,6 @@ export default function Layout({ children }: LayoutProps) {
       title: 'เอกสาร',
       items: [
         { name: 'ใบสั่งซื้อ', href: '/purchase-orders', icon: FileText },
-        { name: 'ใบสำคัญจ่าย', href: '/payment-vouchers', icon: Receipt },
         { name: 'ค่าใช้จ่าย', href: '/expenses', icon: Receipt },
       ]
     },
