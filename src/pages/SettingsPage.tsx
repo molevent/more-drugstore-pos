@@ -37,7 +37,7 @@ function SettingsCard({ icon: Icon, iconBg, iconColor, title, subtitle, details,
     <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
       <div className="p-5">
         {/* Header */}
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
             <div className={`h-12 w-12 rounded-2xl ${iconBg} flex items-center justify-center`}>
               <Icon className={`h-6 w-6 ${iconColor}`} />
@@ -56,7 +56,7 @@ function SettingsCard({ icon: Icon, iconBg, iconColor, title, subtitle, details,
 
         {/* Details */}
         {details && (
-          <div className="space-y-2 mb-4">
+          <div className="space-y-1 mb-3">
             {details.map((detail, index) => (
               <div key={index} className="flex items-center gap-2 text-sm text-gray-600">
                 {detail.icon && <detail.icon className="h-4 w-4 text-gray-400" />}
@@ -66,20 +66,20 @@ function SettingsCard({ icon: Icon, iconBg, iconColor, title, subtitle, details,
             ))}
           </div>
         )}
-      </div>
 
-      {/* Actions */}
-      <div className="flex gap-2 p-3 bg-gray-50 border-t border-gray-100">
-        <Link 
-          to={link}
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-white rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
-        >
-          <Pencil className="h-4 w-4" />
-          แก้ไข
-        </Link>
-        <button className="flex items-center justify-center p-2.5 bg-white rounded-xl border border-gray-200 text-red-500 hover:bg-red-50 transition-colors">
-          <Trash2 className="h-4 w-4" />
-        </button>
+        {/* Actions - Compact inline below status */}
+        <div className="flex gap-2 mt-3">
+          <Link 
+            to={link}
+            className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-gray-50 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            <Pencil className="h-4 w-4" />
+            แก้ไข
+          </Link>
+          <button className="flex items-center justify-center p-2 bg-gray-50 rounded-lg border border-gray-200 text-red-500 hover:bg-red-50 transition-colors">
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </div>
   )
