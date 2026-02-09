@@ -142,9 +142,7 @@ export default function Layout({ children }: LayoutProps) {
                               : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                           }`}
                         >
-                          <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${isActive ? 'bg-blue-500' : 'bg-gray-100'}`}>
-                            <item.icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-gray-500'}`} />
-                          </div>
+                          <item.icon className={`h-5 w-5 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
                           {item.name}
                         </Link>
                       )
