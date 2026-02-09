@@ -15,7 +15,8 @@ import {
   Warehouse,
   Settings,
   Bike,
-  AlertTriangle
+  AlertTriangle,
+  ClipboardList
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Card from '../components/common/Card'
@@ -249,6 +250,14 @@ export default function SettingsPage() {
       title: 'รายงานสินค้าติดลบ',
       subtitle: 'ตรวจสอบสินค้าที่สต็อกติดลบและการเคลื่อนไหว',
       link: '/negative-stock-report'
+    },
+    {
+      icon: ClipboardList,
+      iconBg: 'bg-blue-100',
+      iconColor: 'text-blue-600',
+      title: 'รายงานการปรับยอดสต็อก',
+      subtitle: 'ตรวจสอบการปรับยอดสต็อกโดยผู้ใช้งาน',
+      link: '/stock-adjustment-report'
     },
   ]
   

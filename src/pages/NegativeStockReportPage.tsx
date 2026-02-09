@@ -71,8 +71,13 @@ export default function NegativeStockReportPage() {
       // Calculate total negative value
       const totalValue = formattedProducts.reduce((sum, item) => sum + item.negative_value, 0)
       setTotalNegativeValue(totalValue)
+    } catch (err: any) {
+      console.error('Error fetching negative stock products:', err)
+      // Don't show alert for products error, just log it
+    }
 
-      // Fetch transactions that caused negative stock
+    // Fetch transactions separately - this table may not exist yet
+    try {
       const { data: transactionsData, error: transactionsError } = await supabase
         .from('stock_transactions')
         .select(`
@@ -91,12 +96,21 @@ export default function NegativeStockReportPage() {
         .order('created_at', { ascending: false })
         .limit(100)
 
-      if (transactionsError) throw transactionsError
-
-      setTransactions(transactionsData || [])
+      if (transactionsError) {
+        // Silently handle missing table - just set empty transactions
+        if (transactionsError.code === '42P01' || transactionsError.message?.includes('stock_transactions')) {
+          console.log('stock_transactions table not found - skipping transactions fetch')
+          setTransactions([])
+        } else {
+          throw transactionsError
+        }
+      } else {
+        setTransactions(transactionsData || [])
+      }
     } catch (err: any) {
-      console.error('Error fetching negative stock data:', err)
-      alert('ไม่สามารถโหลดข้อมูลสินค้าติดลบได้: ' + err.message)
+      // Silently log error for transactions - don't block the UI
+      console.log('Could not fetch transactions:', err.message)
+      setTransactions([])
     } finally {
       setLoading(false)
     }
