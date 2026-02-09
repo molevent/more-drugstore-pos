@@ -4,7 +4,7 @@ import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Plus, Edit, Trash2, X, AlertCircle, Pill, Stethoscope, Heart, Sparkles, UtensilsCrossed, Gift, ShoppingBag, ChevronDown, ChevronRight, ArrowLeft } from 'lucide-react'
+import { Plus, X, AlertCircle, Pill, Stethoscope, Heart, Sparkles, UtensilsCrossed, Gift, ShoppingBag, ChevronDown, ChevronRight, ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { Category } from '../types/database'
 
@@ -251,8 +251,8 @@ export default function CategoriesPage() {
                     </div>
                   </div>
                   
-                  {/* Actions Row */}
-                  <div className="flex items-center justify-between p-2 bg-gray-50">
+                  {/* Actions Row - Only expand/collapse button */}
+                  <div className="flex items-center p-2 bg-gray-50">
                     <div className="flex items-center gap-1">
                       {children.length > 0 && (
                         <button
@@ -268,20 +268,6 @@ export default function CategoriesPage() {
                         </button>
                       )}
                     </div>
-                    <div className="flex items-center gap-1">
-                      <button 
-                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-100 rounded"
-                        onClick={() => handleEdit(mainCat)}
-                      >
-                        <Edit className="h-3.5 w-3.5" />
-                      </button>
-                      <button 
-                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-100 rounded"
-                        onClick={() => handleDelete(mainCat.id)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
                   </div>
                   
                   {/* Sub Categories - Collapsible */}
@@ -295,30 +281,15 @@ export default function CategoriesPage() {
                             <div key={subCat.id} className="group">
                               <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:border-blue-300 transition-all overflow-hidden">
                                 {/* Main subcategory button */}
-                                <button
-                                  onClick={() => navigate(`/products?category=${subCat.id}`)}
-                                  className="flex-1 px-2 py-1.5 text-left text-sm"
-                                >
-                                  <span className="font-medium text-gray-800">{subCat.name_th}</span>
-                                  {grandChildren.length > 0 && (
-                                    <span className="text-xs text-gray-500 ml-1">({grandChildren.length})</span>
-                                  )}
-                                </button>
-                                {/* Actions */}
-                                <div className="flex items-center gap-0.5 pr-1">
-                                  <button 
-                                    className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-100 rounded"
-                                    onClick={() => handleEdit(subCat)}
-                                  >
-                                    <Edit className="h-3 w-3" />
-                                  </button>
-                                  <button 
-                                    className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-100 rounded"
-                                    onClick={() => handleDelete(subCat.id)}
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </button>
-                                </div>
+                              <button
+                                onClick={() => navigate(`/products?category=${subCat.id}`)}
+                                className="flex-1 px-2 py-1.5 text-left text-sm"
+                              >
+                                <span className="font-medium text-gray-800">{subCat.name_th}</span>
+                                {grandChildren.length > 0 && (
+                                  <span className="text-xs text-gray-500 ml-1">({grandChildren.length})</span>
+                                )}
+                              </button>
                               </div>
                               
                               {/* Grandchildren */}
@@ -330,25 +301,11 @@ export default function CategoriesPage() {
                                       className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 hover:border-blue-300 transition-colors"
                                     >
                                       <button
-                                        onClick={() => navigate(`/products?category=${grandChild.id}`)}
-                                        className="text-left text-xs text-gray-700 flex-1"
-                                      >
-                                        {grandChild.name_th}
-                                      </button>
-                                      <div className="flex items-center gap-0.5">
-                                        <button 
-                                          className="p-1 text-gray-400 hover:text-blue-600 rounded"
-                                          onClick={() => handleEdit(grandChild)}
-                                        >
-                                          <Edit className="h-2.5 w-2.5" />
-                                        </button>
-                                        <button 
-                                          className="p-1 text-gray-400 hover:text-red-600 rounded"
-                                          onClick={() => handleDelete(grandChild.id)}
-                                        >
-                                          <Trash2 className="h-2.5 w-2.5" />
-                                        </button>
-                                      </div>
+                                      onClick={() => navigate(`/products?category=${grandChild.id}`)}
+                                      className="text-left text-xs text-gray-700 flex-1"
+                                    >
+                                      {grandChild.name_th}
+                                    </button>
                                     </div>
                                   ))}
                                 </div>
