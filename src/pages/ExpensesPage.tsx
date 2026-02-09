@@ -442,12 +442,12 @@ export default function ExpensesPage() {
           <p className="text-gray-600">บันทึกและติดตามค่าใช้จ่ายต่างๆ ของร้าน</p>
           <Link 
             to="/withholding-tax"
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl border border-orange-200 hover:shadow-md transition-all"
+            className="flex items-center gap-3 px-5 py-3 bg-orange-50 rounded-full border border-orange-200 hover:bg-orange-100 hover:shadow-md transition-all"
           >
-            <div className="h-8 w-8 rounded-lg bg-orange-500 flex items-center justify-center">
-              <Percent className="h-4 w-4 text-white" />
+            <div className="h-10 w-10 rounded-full bg-orange-500 flex items-center justify-center shadow-sm">
+              <Percent className="h-5 w-5 text-white" />
             </div>
-            <span className="font-medium text-gray-900 text-sm">หัก ณ ที่จ่าย</span>
+            <span className="font-semibold text-gray-900">หัก ณ ที่จ่าย</span>
           </Link>
         </div>
       </div>

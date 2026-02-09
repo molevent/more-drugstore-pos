@@ -1059,21 +1059,21 @@ export default function POSPage() {
       <div className="flex gap-2 mb-4 mx-4 sm:mx-0">
         <Link 
           to="/ai-symptom-checker"
-          className="flex-1 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200 hover:shadow-md transition-all"
+          className="flex-1 flex items-center gap-3 px-5 py-3 bg-blue-50 rounded-full border border-blue-200 hover:bg-blue-100 hover:shadow-md transition-all"
         >
-          <div className="h-8 w-8 rounded-lg bg-blue-500 flex items-center justify-center">
-            <Brain className="h-4 w-4 text-white" />
+          <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center shadow-sm">
+            <Brain className="h-5 w-5 text-white" />
           </div>
-          <span className="font-medium text-gray-900 text-sm">AI ช่วยแนะนำยา</span>
+          <span className="font-semibold text-gray-900">AI ช่วยแนะนำยา</span>
         </Link>
         <Link 
           to="/consultation-history"
-          className="flex-1 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-50 to-green-100 rounded-xl border border-green-200 hover:shadow-md transition-all"
+          className="flex-1 flex items-center gap-3 px-5 py-3 bg-green-50 rounded-full border border-green-200 hover:bg-green-100 hover:shadow-md transition-all"
         >
-          <div className="h-8 w-8 rounded-lg bg-green-500 flex items-center justify-center">
-            <FileText className="h-4 w-4 text-white" />
+          <div className="h-10 w-10 rounded-full bg-green-500 flex items-center justify-center shadow-sm">
+            <FileText className="h-5 w-5 text-white" />
           </div>
-          <span className="font-medium text-gray-900 text-sm">ประวัติการปรึกษา</span>
+          <span className="font-semibold text-gray-900">ประวัติการปรึกษา</span>
         </Link>
       </div>
 
