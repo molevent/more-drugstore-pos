@@ -441,22 +441,21 @@ export default function ExpensesPage() {
           </h1>
           <p className="text-gray-600 mt-1">บันทึกและติดตามค่าใช้จ่ายต่างๆ ของร้าน</p>
         </div>
-          <div className="flex gap-2">
-            <Link 
-              to="/payment-vouchers"
-              className="flex items-center gap-3 px-5 py-3 bg-purple-50 rounded-full border border-purple-200 hover:bg-purple-100 hover:shadow-md transition-all"
-            >
-              <FileText className="h-6 w-6 text-gray-900" />
-              <span className="font-semibold text-gray-900">ใบสำคัญจ่าย</span>
-            </Link>
-            <Link 
-              to="/withholding-tax"
-              className="flex items-center gap-3 px-5 py-3 bg-blue-50 rounded-full border border-blue-200 hover:bg-blue-100 hover:shadow-md transition-all"
-            >
-              <Percent className="h-6 w-6 text-gray-900" />
-              <span className="font-semibold text-gray-900">หัก ณ ที่จ่าย</span>
-            </Link>
-          </div>
+        <div className="flex gap-2">
+          <Link 
+            to="/payment-vouchers"
+            className="flex items-center gap-3 px-5 py-3 bg-purple-50 rounded-full border border-purple-200 hover:bg-purple-100 hover:shadow-md transition-all"
+          >
+            <FileText className="h-6 w-6 text-gray-900" />
+            <span className="font-semibold text-gray-900">ใบสำคัญจ่าย</span>
+          </Link>
+          <Link 
+            to="/withholding-tax"
+            className="flex items-center gap-3 px-5 py-3 bg-blue-50 rounded-full border border-blue-200 hover:bg-blue-100 hover:shadow-md transition-all"
+          >
+            <Percent className="h-6 w-6 text-gray-900" />
+            <span className="font-semibold text-gray-900">หัก ณ ที่จ่าย</span>
+          </Link>
         </div>
       </div>
 
