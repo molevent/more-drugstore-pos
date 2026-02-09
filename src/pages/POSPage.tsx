@@ -1103,17 +1103,17 @@ export default function POSPage() {
       {heldBills.length > 0 && (
         <div className="mb-4 mx-4 sm:mx-0 p-3 rounded-lg border bg-[#F9E4B7]/50 border-[#D4756A]/30">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-[#A67B5B]">
+            <span className="text-sm font-medium text-gray-500">
               บิลที่พักไว้ ({heldBills.length})
             </span>
             <button
               onClick={() => setShowHeldBills(true)}
-              className="text-sm text-[#7D735F] hover:text-[#7D735F]/80 underline"
+              className="text-sm text-gray-600 hover:text-gray-600/80 underline"
             >
               ดูทั้งหมด
             </button>
           </div>
-          <div className="text-xs text-[#A67B5B]/80">
+          <div className="text-xs text-gray-500/80">
             ล่าสุด: {heldBills[heldBills.length - 1]?.name}
           </div>
         </div>
@@ -1123,19 +1123,19 @@ export default function POSPage() {
         <div className="mb-4 bg-white rounded-lg shadow p-4 border border-[#B8C9B8]/30">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-[#7D735F]" />
-              <h3 className="font-semibold text-[#4A4A4A]">ประวัติการแจ้งเตือน</h3>
+              <Bell className="h-5 w-5 text-gray-600" />
+              <h3 className="font-semibold text-gray-900">ประวัติการแจ้งเตือน</h3>
             </div>
             <button
               onClick={() => setShowAlertHistory(false)}
-              className="text-[#7D735F] hover:text-[#4A4A4A]"
+              className="text-gray-600 hover:text-gray-900"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
           
           {savedAlertLogs.length === 0 ? (
-            <div className="text-center py-4 text-[#7D735F]">
+            <div className="text-center py-4 text-gray-600">
               <p>ไม่มีประวัติการแจ้งเตือน</p>
             </div>
           ) : (
@@ -1149,12 +1149,12 @@ export default function POSPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <p className="font-semibold text-sm text-[#4A4A4A]">{log.product_name}</p>
-                      <p className="font-medium text-sm text-[#4A4A4A]">{log.alert_title}</p>
+                      <p className="font-semibold text-sm text-gray-900">{log.product_name}</p>
+                      <p className="font-medium text-sm text-gray-900">{log.alert_title}</p>
                       {log.alert_message && (
-                        <p className="text-sm text-[#7D735F] mt-1">{log.alert_message}</p>
+                        <p className="text-sm text-gray-600 mt-1">{log.alert_message}</p>
                       )}
-                      <p className="text-xs text-[#7D735F]/70 mt-1">
+                      <p className="text-xs text-gray-600/70 mt-1">
                         {formatAlertDate(log.created_at)}
                       </p>
                     </div>
@@ -1180,15 +1180,15 @@ export default function POSPage() {
                 onClick={() => setShowStockOnly(!showStockOnly)}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
                   showStockOnly
-                    ? 'bg-[#A67B5B]/20 text-[#A67B5B] border border-[#A67B5B]'
-                    : 'bg-[#B8C9B8]/20 text-[#7D735F] border border-[#B8C9B8]/50 hover:bg-[#B8C9B8]/30'
+                    ? 'bg-[#A67B5B]/20 text-gray-500 border border-[#A67B5B]'
+                    : 'bg-[#B8C9B8]/20 text-gray-600 border border-[#B8C9B8]/50 hover:bg-[#B8C9B8]/30'
                 }`}
               >
                 <Package className="h-4 w-4" />
                 {showStockOnly ? 'เฉพาะสินค้ามี stock' : 'แสดงทั้งหมด'}
               </button>
               {showStockOnly && (
-                <span className="text-xs text-[#A67B5B]">กรอง: สินค้าคงเหลือ {'>'} 0</span>
+                <span className="text-xs text-gray-500">กรอง: สินค้าคงเหลือ {'>'} 0</span>
               )}
             </div>
 
@@ -1202,7 +1202,7 @@ export default function POSPage() {
                     onChange={(e) => setBarcode(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="สแกนหรือพิมพ์บาร์โค้ดสินค้า"
-                    className="w-full px-3 py-2 border border-[#B8C9B8]/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7D735F] focus:border-transparent text-[#4A4A4A] placeholder-[#7D735F]/50 bg-white"
+                    className="w-full px-3 py-2 border border-[#B8C9B8]/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7D735F] focus:border-transparent text-gray-900 placeholder-[#7D735F]/50 bg-white"
                     autoFocus
                   />
                   
@@ -1219,24 +1219,24 @@ export default function POSPage() {
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <p className="font-medium text-[#4A4A4A]">{product.name_th}</p>
+                              <p className="font-medium text-gray-900">{product.name_th}</p>
                               {product.name_en && (
-                                <p className="text-sm text-[#7D735F]">{product.name_en}</p>
+                                <p className="text-sm text-gray-600">{product.name_en}</p>
                               )}
-                              <p className="text-xs text-[#7D735F]/70 mt-1">
+                              <p className="text-xs text-gray-600/70 mt-1">
                                 บาร์โค้ด: {product.barcode}
                               </p>
                             </div>
                             <div className="text-right ml-4">
-                              <p className="font-bold text-[#7D735F]">
+                              <p className="font-bold text-gray-600">
                                 ฿{getProductPriceForChannel(product, salesChannel as SalesChannel).toFixed(2)}
                               </p>
                               {getProductPriceForChannel(product, salesChannel as SalesChannel) !== product.base_price && (
-                                <p className="text-xs text-[#7D735F]/60 line-through">
+                                <p className="text-xs text-gray-600/60 line-through">
                                   ฿{product.base_price.toFixed(2)}
                                 </p>
                               )}
-                              <p className="text-xs text-[#7D735F]">
+                              <p className="text-xs text-gray-600">
                                 คงเหลือ: {product.stock_quantity}
                               </p>
                             </div>
@@ -1262,12 +1262,12 @@ export default function POSPage() {
 
             <div className="space-y-2">
               {items.length === 0 ? (
-                <div className="text-center py-12 text-[#7D735F]">
+                <div className="text-center py-12 text-gray-600">
                   <div className="h-20 w-20 mx-auto mb-4 rounded-2xl bg-[#F5F0E6] flex items-center justify-center">
                     <ShoppingCart className="h-10 w-10 text-[#B8C9B8]" />
                   </div>
-                  <p className="text-sm font-medium text-[#4A4A4A]">ยังไม่มีสินค้าในตะกร้า</p>
-                  <p className="text-xs text-[#7D735F]/70 mt-1">สแกนบาร์โค้ดเพื่อเพิ่มสินค้า</p>
+                  <p className="text-sm font-medium text-gray-900">ยังไม่มีสินค้าในตะกร้า</p>
+                  <p className="text-xs text-gray-600/70 mt-1">สแกนบาร์โค้ดเพื่อเพิ่มสินค้า</p>
                 </div>
               ) : (
                 items.map((item) => (
@@ -1289,9 +1289,9 @@ export default function POSPage() {
                     )}
                     
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-[#4A4A4A] truncate">{item.product.name_th}</h3>
+                      <h3 className="font-medium text-gray-900 truncate">{item.product.name_th}</h3>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-sm text-[#7D735F]">ราคา:</span>
+                        <span className="text-sm text-gray-600">ราคา:</span>
                         <Input
                           type="number"
                           min="0"
@@ -1309,7 +1309,7 @@ export default function POSPage() {
                           <span className="text-xs text-[#D4756A]">(แก้ไข)</span>
                         )}
                       </div>
-                      <p className="text-xs text-[#7D735F]/60 line-through">
+                      <p className="text-xs text-gray-600/60 line-through">
                         ราคาปกติ: ฿{getProductPriceForChannel(item.product, salesChannel as SalesChannel).toFixed(2)}
                       </p>
                     </div>
@@ -1350,7 +1350,7 @@ export default function POSPage() {
                       >
                         +
                       </Button>
-                      <span className="font-medium text-[#4A4A4A] w-20 text-right">
+                      <span className="font-medium text-gray-900 w-20 text-right">
                         ฿{((item.custom_price ?? getProductPriceForChannel(item.product, salesChannel as SalesChannel)) * item.quantity).toFixed(2)}
                       </span>
                       <Button
@@ -1372,29 +1372,29 @@ export default function POSPage() {
           <Card title="สรุปรายการ">
             {/* Customer Selection */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-[#7D735F] mb-2">
+              <label className="block text-sm font-medium text-gray-600 mb-2">
                 ลูกค้า
               </label>
               <div className="relative" ref={customerDropdownRef}>
                 {selectedCustomer && selectedCustomer.id !== 'default' ? (
                   <div className="flex items-center gap-2 p-2 bg-[#7D735F]/10 border border-[#7D735F]/30 rounded-lg">
-                    <User className="h-4 w-4 text-[#7D735F]" />
+                    <User className="h-4 w-4 text-gray-600" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#4A4A4A] truncate">{selectedCustomer.name}</p>
+                      <p className="text-sm font-medium text-gray-900 truncate">{selectedCustomer.name}</p>
                       {selectedCustomer.phone && (
-                        <p className="text-xs text-[#7D735F]">{selectedCustomer.phone}</p>
+                        <p className="text-xs text-gray-600">{selectedCustomer.phone}</p>
                       )}
                     </div>
                     <button
                       onClick={handleClearCustomer}
-                      className="text-[#7D735F]/60 hover:text-[#7D735F]"
+                      className="text-gray-600/60 hover:text-gray-600"
                     >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                 ) : (
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7D735F]" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600" />
                     <input
                       type="text"
                       value={customerSearch}
@@ -1417,9 +1417,9 @@ export default function POSPage() {
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-[#B8C9B8]" />
                           <div className="flex-1">
-                            <p className="font-medium text-sm text-[#4A4A4A]">{customer.name}</p>
+                            <p className="font-medium text-sm text-gray-900">{customer.name}</p>
                             {customer.phone && (
-                              <p className="text-xs text-[#7D735F]">{customer.phone}</p>
+                              <p className="text-xs text-gray-600">{customer.phone}</p>
                             )}
                           </div>
                         </div>
@@ -1431,7 +1431,7 @@ export default function POSPage() {
                 {/* Add New Contact Button - Show when searching but no results */}
                 {customerSearch.trim().length > 0 && !showCustomerDropdown && (
                   <div className="absolute z-50 w-full mt-1 bg-white border border-[#B8C9B8]/30 rounded-lg shadow-lg p-3">
-                    <p className="text-sm text-[#7D735F] mb-2">ไม่พบลูกค้า "{customerSearch}"</p>
+                    <p className="text-sm text-gray-600 mb-2">ไม่พบลูกค้า "{customerSearch}"</p>
                     <Button
                       type="button"
                       variant="secondary"
@@ -1450,13 +1450,13 @@ export default function POSPage() {
                 )}
               </div>
               {selectedCustomer?.id === 'default' && (
-                <p className="text-xs text-[#7D735F] mt-1">ค่าเริ่มต้น: ลูกค้าทั่วไป</p>
+                <p className="text-xs text-gray-600 mt-1">ค่าเริ่มต้น: ลูกค้าทั่วไป</p>
               )}
             </div>
 
             {/* Sales Channel Selection */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-[#7D735F] mb-2">
+              <label className="block text-sm font-medium text-gray-600 mb-2">
                 ช่องทางการขาย
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -1469,11 +1469,11 @@ export default function POSPage() {
                       onClick={() => setSalesChannel(channel.id)}
                       className={`flex items-center justify-center gap-2 px-3 py-3 rounded-lg border-2 transition-all ${
                         isSelected
-                          ? 'border-[#7D735F] bg-[#7D735F]/10 text-[#7D735F] ring-2 ring-[#7D735F]/30'
-                          : 'border-[#B8C9B8]/50 bg-white text-[#7D735F] hover:border-[#7D735F]/50'
+                          ? 'border-[#7D735F] bg-[#7D735F]/10 text-gray-600 ring-2 ring-[#7D735F]/30'
+                          : 'border-[#B8C9B8]/50 bg-white text-gray-600 hover:border-[#7D735F]/50'
                       }`}
                     >
-                      <Icon className={`h-5 w-5 ${isSelected ? 'text-[#7D735F]' : ''}`} />
+                      <Icon className={`h-5 w-5 ${isSelected ? 'text-gray-600' : ''}`} />
                       <span className={`text-sm font-medium ${isSelected ? 'font-bold' : ''}`}>{channel.name}</span>
                       {isSelected && (
                         <span className="ml-1 text-xs bg-[#7D735F] text-white px-1.5 py-0.5 rounded-full">✓</span>
@@ -1483,7 +1483,7 @@ export default function POSPage() {
                 })}
               </div>
               {salesChannel && (
-                <p className="mt-2 text-sm text-[#7D735F] font-medium">
+                <p className="mt-2 text-sm text-gray-600 font-medium">
                   กำลังขายผ่าน: {SALES_CHANNELS.find(c => c.id === salesChannel)?.name}
                 </p>
               )}
@@ -1491,7 +1491,7 @@ export default function POSPage() {
 
             {/* Payment Method Selection */}
             <div className="mb-4">
-              <label className="block text-xs font-medium text-[#7D735F] mb-2">
+              <label className="block text-xs font-medium text-gray-600 mb-2">
                 วิธีชำระ
               </label>
               {paymentMethods.length > 0 ? (
@@ -1503,7 +1503,7 @@ export default function POSPage() {
                       className={`px-4 py-2 rounded-full border-2 transition-all text-sm whitespace-nowrap ${
                         selectedPaymentMethod === method.id
                           ? 'border-[#A67B5B] bg-[#A67B5B] text-white font-medium shadow-md'
-                          : 'border-[#B8C9B8]/50 bg-white text-[#7D735F] hover:border-[#A67B5B]/50 hover:bg-[#A67B5B]/10'
+                          : 'border-[#B8C9B8]/50 bg-white text-gray-600 hover:border-[#A67B5B]/50 hover:bg-[#A67B5B]/10'
                       }`}
                     >
                       {method.name}
@@ -1512,7 +1512,7 @@ export default function POSPage() {
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <p className="text-xs text-[#7D735F] bg-[#B8C9B8]/20 px-3 py-2 rounded-full flex-1">
+                  <p className="text-xs text-gray-600 bg-[#B8C9B8]/20 px-3 py-2 rounded-full flex-1">
                     ยังไม่มีวิธีการชำระเงิน
                   </p>
                   <Link
@@ -1527,16 +1527,16 @@ export default function POSPage() {
             </div>
 
             <div className="space-y-3 mb-6">
-              <div className="flex justify-between text-[#7D735F]">
+              <div className="flex justify-between text-gray-600">
                 <span>ยอดรวม</span>
                 <span>฿{getSubtotal().toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-[#7D735F]">
+              <div className="flex justify-between text-gray-600">
                 <span>ส่วนลด</span>
                 <span>฿0.00</span>
               </div>
               <div className="border-t border-[#B8C9B8]/50 pt-3">
-                <div className="flex justify-between text-xl font-bold text-[#4A4A4A]">
+                <div className="flex justify-between text-xl font-bold text-gray-900">
                   <span>ยอดชำระ</span>
                   <span>฿{getTotal().toFixed(2)}</span>
                 </div>
