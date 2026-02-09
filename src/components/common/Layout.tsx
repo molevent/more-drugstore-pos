@@ -1,7 +1,7 @@
 import { ReactNode, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { 
-  LayoutDashboard, 
+  Home,
   ShoppingCart, 
   Package, 
   Warehouse, 
@@ -57,7 +57,7 @@ export default function Layout({ children }: LayoutProps) {
     {
       title: 'หลัก',
       items: [
-        { name: t('nav.dashboard'), href: '/dashboard', icon: LayoutDashboard },
+        { name: t('nav.dashboard'), href: '/dashboard', icon: Home },
         { name: t('nav.pos'), href: '/pos', icon: ShoppingCart },
         { name: 'รายการขายทั้งหมด', href: '/sales-orders', icon: Receipt },
       ]
