@@ -107,7 +107,8 @@ export default function SettingsPage() {
     window.open('https://developer.flowaccount.com/oauth/authorize', '_blank')
   }
 
-  const settingsItems = [
+  // Business Settings Items
+  const businessSettingsItems = [
     {
       icon: CreditCard,
       iconBg: 'bg-blue-100',
@@ -129,26 +130,6 @@ export default function SettingsPage() {
         { value: '123 ถนนสุขุมวิท กรุงเทพฯ' },
       ],
       link: '/settings/shop'
-    },
-    {
-      icon: Building2,
-      iconBg: 'bg-purple-100',
-      iconColor: 'text-purple-600',
-      title: 'การเชื่อมต่อ FlowAccount',
-      subtitle: 'บัญชีและใบกำกับภาษี',
-      status: flowAccount.connected 
-        ? { text: 'เชื่อมต่อแล้ว', bgColor: 'bg-green-100', textColor: 'text-green-700' }
-        : { text: 'ยังไม่เชื่อมต่อ', bgColor: 'bg-red-100', textColor: 'text-red-700' },
-      link: '/settings/flowaccount'
-    },
-    {
-      icon: Plug,
-      iconBg: 'bg-orange-100',
-      iconColor: 'text-orange-600',
-      title: 'การเชื่อมต่อ ZortOut',
-      subtitle: 'ระบบจัดการสต็อก',
-      status: { text: 'ยังไม่เชื่อมต่อ', bgColor: 'bg-gray-100', textColor: 'text-gray-600' },
-      link: '/settings/zortout'
     },
     {
       icon: Users,
@@ -178,26 +159,75 @@ export default function SettingsPage() {
       link: '/categories-management'
     },
   ]
+
+  // External Connection Settings Items
+  const externalConnectionItems = [
+    {
+      icon: Building2,
+      iconBg: 'bg-purple-100',
+      iconColor: 'text-purple-600',
+      title: 'การเชื่อมต่อ FlowAccount',
+      subtitle: 'บัญชีและใบกำกับภาษี',
+      status: flowAccount.connected 
+        ? { text: 'เชื่อมต่อแล้ว', bgColor: 'bg-green-100', textColor: 'text-green-700' }
+        : { text: 'ยังไม่เชื่อมต่อ', bgColor: 'bg-red-100', textColor: 'text-red-700' },
+      details: undefined,
+      link: '/settings/flowaccount'
+    },
+    {
+      icon: Plug,
+      iconBg: 'bg-orange-100',
+      iconColor: 'text-orange-600',
+      title: 'การเชื่อมต่อ ZortOut',
+      subtitle: 'ระบบจัดการสต็อก',
+      status: { text: 'ยังไม่เชื่อมต่อ', bgColor: 'bg-gray-100', textColor: 'text-gray-600' },
+      details: undefined,
+      link: '/settings/zortout'
+    },
+  ]
   
   return (
     <div>
       <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">{t('settings.title')}</h1>
 
-      {/* Grid of Settings Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {settingsItems.map((item, index) => (
-          <SettingsCard
-            key={index}
-            icon={item.icon}
-            iconBg={item.iconBg}
-            iconColor={item.iconColor}
-            title={item.title}
-            subtitle={item.subtitle}
-            details={item.details}
-            status={item.status}
-            link={item.link}
-          />
-        ))}
+      {/* Business Settings Section */}
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">ตั้งค่าธุรกิจ</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {businessSettingsItems.map((item, index) => (
+            <SettingsCard
+              key={index}
+              icon={item.icon}
+              iconBg={item.iconBg}
+              iconColor={item.iconColor}
+              title={item.title}
+              subtitle={item.subtitle}
+              details={item.details}
+              status={item.status}
+              link={item.link}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* External Connections Section */}
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">ตั้งค่าการเชื่อมต่อภายนอก</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {externalConnectionItems.map((item, index) => (
+            <SettingsCard
+              key={index}
+              icon={item.icon}
+              iconBg={item.iconBg}
+              iconColor={item.iconColor}
+              title={item.title}
+              subtitle={item.subtitle}
+              details={item.details}
+              status={item.status}
+              link={item.link}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Legacy Settings Sections - Keep for backward compatibility */}
