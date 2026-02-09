@@ -87,8 +87,8 @@ export default function Layout({ children }: LayoutProps) {
       items: [
         { name: 'ใบสั่งซื้อ', href: '/purchase-orders', icon: FileText },
         { name: 'ใบสำคัญจ่าย', href: '/payment-vouchers', icon: Receipt },
-        { name: 'หัก ณ ที่จ่าย', href: '/withholding-tax', icon: Percent },
         { name: 'ค่าใช้จ่าย', href: '/expenses', icon: Receipt },
+        { name: 'หัก ณ ที่จ่าย', href: '/withholding-tax', icon: Percent },
       ]
     },
     {
