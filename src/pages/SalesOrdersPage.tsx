@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Receipt, Search, Calendar, Eye } from 'lucide-react'
+import { ListOrdered, Search, Calendar, Eye } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
@@ -226,7 +226,7 @@ export default function SalesOrdersPage() {
       <div className="flex items-center justify-between mb-6 px-4 sm:px-0">
         <div className="flex items-center gap-3">
           <div className="h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center">
-            <Receipt className="h-6 w-6 text-gray-900" />
+            <ListOrdered className="h-6 w-6 text-gray-900" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">รายการขายทั้งหมด</h1>
         </div>
@@ -237,7 +237,7 @@ export default function SalesOrdersPage() {
         <Card className="bg-white border-gray-200">
           <div className="flex items-center">
             <div className="h-10 w-10 rounded-xl bg-blue-500 flex items-center justify-center shadow-sm">
-              <Receipt className="h-5 w-5 text-white" />
+              <ListOrdered className="h-5 w-5 text-white" />
             </div>
             <div className="ml-4">
               <p className="text-sm text-gray-600">จำนวนรายการขาย</p>
@@ -248,7 +248,7 @@ export default function SalesOrdersPage() {
         <Card className="bg-white border-gray-200">
           <div className="flex items-center">
             <div className="h-10 w-10 rounded-xl bg-green-500 flex items-center justify-center shadow-sm">
-              <Receipt className="h-5 w-5 text-white" />
+              <ListOrdered className="h-5 w-5 text-white" />
             </div>
             <div className="ml-4">
               <p className="text-sm text-gray-600">ยอดขายรวม</p>
