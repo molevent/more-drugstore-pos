@@ -124,79 +124,78 @@ export default function Layout({ children }: LayoutProps) {
       )}
       
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#D4E8D4] transform transition-transform duration-300 ease-in-out ${
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#E9F7F0] transform transition-transform duration-300 ease-in-out ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } lg:translate-x-0`}>
-        <div className="flex flex-col h-full p-3">
-          {/* White card container */}
-          <div className="bg-white rounded-3xl shadow-lg flex-1 flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between h-20 px-6 bg-[#7D735F] border-b border-[#7D735F]/20">
-              <img 
-                src="/logo.png" 
-                alt="More Drug Store" 
-                className="h-16 w-auto object-contain"
-              />
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="lg:hidden text-white/80 hover:text-white"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="flex items-center justify-between h-16 px-4 border-b border-[#7D735F]/10">
+            <img 
+              src="/logo.png" 
+              alt="More Drug Store" 
+              className="h-12 w-auto object-contain"
+            />
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden text-[#7D735F] hover:text-[#4A4A4A]"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
 
-            <div className="flex-1 overflow-y-auto py-4">
-              <nav className="px-3 space-y-6">
-                {navigationSections.map((section, sectionIndex) => (
-                  <div key={sectionIndex}>
-                    <h3 className="px-3 mb-2 text-xs font-semibold text-[#7D735F] uppercase tracking-wider">
-                      {section.title}
-                    </h3>
-                    <div className="space-y-1">
-                      {section.items.map((item) => {
-                        const isActive = location.pathname === item.href
-                        return (
-                          <Link
-                            key={item.name}
-                            to={item.href}
-                            onClick={() => {
-                              // Auto-close sidebar on mobile after clicking
-                              if (window.innerWidth < 1024) {
-                                setSidebarOpen(false)
-                              }
-                            }}
-                            className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors bg-white ${
+          {/* Navigation */}
+          <div className="flex-1 overflow-y-auto py-4 px-3">
+            <nav className="space-y-1">
+              {navigationSections.map((section, sectionIndex) => (
+                <div key={sectionIndex} className="mb-4">
+                  <h3 className="px-3 mb-2 text-xs font-semibold text-[#7D735F]/70 uppercase tracking-wider">
+                    {section.title}
+                  </h3>
+                  <div className="space-y-1">
+                    {section.items.map((item) => {
+                      const isActive = location.pathname === item.href
+                      return (
+                        <Link
+                          key={item.name}
+                          to={item.href}
+                          onClick={() => {
+                            if (window.innerWidth < 1024) {
+                              setSidebarOpen(false)
+                            }
+                          }}
+                          className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all ${
                             isActive
-                              ? 'bg-[#7D735F] text-white'
-                              : 'text-[#4A4A4A] hover:bg-[#F9E4B7]/50'
+                              ? 'bg-white text-[#0D9488] shadow-sm border-l-4 border-[#0D9488]'
+                              : 'text-[#4A4A4A] hover:bg-white/60 hover:text-[#7D735F]'
                           }`}
-                          >
-                            <item.icon className="h-5 w-5 mr-3" />
-                            {item.name}
-                          </Link>
-                        )
-                      })}
-                    </div>
+                        >
+                          <item.icon className={`h-5 w-5 mr-3 ${isActive ? 'text-[#0D9488]' : 'text-[#7D735F]/60'}`} />
+                          {item.name}
+                        </Link>
+                      )
+                    })}
                   </div>
-                ))}
-              </nav>
-            </div>
-
-            <div className="border-t border-[#7D735F]/20 p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-[#4A4A4A]">{user?.full_name}</p>
-                  <p className="text-xs text-[#7D735F]">{user?.role}</p>
                 </div>
-                <LanguageSwitcher />
+              ))}
+            </nav>
+          </div>
+
+          {/* Footer */}
+          <div className="border-t border-[#7D735F]/10 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-[#4A4A4A]">{user?.full_name}</p>
+                <p className="text-xs text-[#7D735F]/70">{user?.role}</p>
               </div>
-              <button
-                onClick={handleSignOut}
-                className="flex items-center w-full px-3 py-2 text-sm text-[#D4756A] hover:bg-[#D4756A]/10 rounded-lg transition-colors"
-              >
-                <LogOut className="h-4 w-4 mr-3" />
-                {t('nav.logout')}
-              </button>
+              <LanguageSwitcher />
             </div>
+            <button
+              onClick={handleSignOut}
+              className="flex items-center w-full px-3 py-2 text-sm text-[#D4756A] hover:bg-white/60 rounded-lg transition-colors"
+            >
+              <LogOut className="h-4 w-4 mr-3" />
+              {t('nav.logout')}
+            </button>
           </div>
         </div>
       </div>
