@@ -1220,7 +1220,7 @@ export default function POSPage() {
               <label className="block text-sm font-medium text-gray-600 mb-2">
                 ช่องทางการขาย
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 {SALES_CHANNELS.map((channel) => {
                   const Icon = channel.icon
                   const isSelected = salesChannel === channel.id
