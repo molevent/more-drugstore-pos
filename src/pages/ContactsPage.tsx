@@ -216,26 +216,6 @@ export default function ContactsPage() {
         </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <div className="text-2xl font-bold text-gray-900">{contacts.length}</div>
-          <div className="text-sm text-gray-500">ทั้งหมด</div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-2xl font-bold text-blue-600">{getTypeCount('buyer')}</div>
-          <div className="text-sm text-gray-500">ผู้ซื้อ</div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-2xl font-bold text-green-600">{getTypeCount('seller')}</div>
-          <div className="text-sm text-gray-500">ผู้ขาย</div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-2xl font-bold text-purple-600">{getTypeCount('both')}</div>
-          <div className="text-sm text-gray-500">ซื้อ/ขาย</div>
-        </Card>
-      </div>
-
       {/* Filters */}
       <Card className="p-4">
         <div className="flex flex-col sm:flex-row gap-4">
