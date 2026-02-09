@@ -4,7 +4,7 @@ import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Plus, Edit, Trash2, X, AlertCircle, Pill, Stethoscope, Heart, Sparkles, UtensilsCrossed, Gift, ShoppingBag, ChevronDown, ChevronRight } from 'lucide-react'
+import { Plus, Edit, Trash2, X, AlertCircle, Pill, Stethoscope, Heart, Sparkles, UtensilsCrossed, Gift, ShoppingBag, ChevronDown, ChevronRight, ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { Category } from '../types/database'
 
@@ -185,7 +185,17 @@ export default function CategoriesPage() {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('categories.title')}</h1>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="secondary"
+            onClick={() => navigate('/pos')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            กลับ
+          </Button>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('categories.title')}</h1>
+        </div>
         <div className="flex gap-2">
           <Button 
             variant="danger" 

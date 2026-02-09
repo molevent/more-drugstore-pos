@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
+import { useNavigate } from 'react-router-dom'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Printer, Search, Package, Heart } from 'lucide-react'
+import { Printer, Search, Package, Heart, ArrowLeft } from 'lucide-react'
 
 // Helper to get URL query params
 function useQueryParams() {
@@ -81,6 +82,7 @@ interface CustomizeData {
 
 export default function MedicineLabelPage() {
   const queryParams = useQueryParams()
+  const navigate = useNavigate()
   const [products, setProducts] = useState<Product[]>([])
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -385,6 +387,14 @@ export default function MedicineLabelPage() {
     <div>
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
+          <Button
+            variant="secondary"
+            onClick={() => navigate('/pos')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            กลับ
+          </Button>
           <Printer className="h-8 w-8 text-blue-600" />
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">พิมพ์ฉลากยา</h1>
         </div>
