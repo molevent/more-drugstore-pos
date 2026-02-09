@@ -237,9 +237,19 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
       
       alert('บันทึกการแก้ไขสำเร็จ')
       onSave()
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving order:', err)
-      alert('ไม่สามารถบันทึกการแก้ไขได้')
+      
+      // Handle specific error types
+      if (err?.code === '23514' || err?.message?.includes('stock_quantity_check')) {
+        alert('ไม่สามารถบันทึกได้: สินค้าในสต็อกไม่เพียงพอ กรุณาตรวจสอบจำนวนสินค้า')
+      } else if (err?.code === '23503') {
+        alert('ไม่สามารถบันทึกได้: มีข้อมูลที่เชื่อมโยงกับสินค้าหรือออเดอร์นี้')
+      } else if (err?.message) {
+        alert('ไม่สามารถบันทึกการแก้ไขได้: ' + err.message)
+      } else {
+        alert('ไม่สามารถบันทึกการแก้ไขได้')
+      }
     } finally {
       setSaving(false)
     }
