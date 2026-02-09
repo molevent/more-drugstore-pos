@@ -13,7 +13,8 @@ import {
   XCircle,
   FolderTree,
   Warehouse,
-  Settings
+  Settings,
+  Bike
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Card from '../components/common/Card'
@@ -130,8 +131,42 @@ export default function SettingsPage() {
     window.open('https://developer.flowaccount.com/oauth/authorize', '_blank')
   }
 
+  // SALES_CHANNELS constant for display
+  const SALES_CHANNELS = [
+    { id: 'walk-in', name: 'หน้าร้าน' },
+    { id: 'grab', name: 'GRAB' },
+    { id: 'shopee', name: 'SHOPEE' },
+    { id: 'lineman', name: 'LINEMAN' }
+  ]
+
+  // Channel payment map state
+  const [channelPaymentMap, setChannelPaymentMap] = useState<Record<string, string>>(() => {
+    const saved = localStorage.getItem('pos_channel_payment_map')
+    return saved ? JSON.parse(saved) : {}
+  })
+
+  // Load channel payment map from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('pos_channel_payment_map')
+    if (saved) {
+      setChannelPaymentMap(JSON.parse(saved))
+    }
+  }, [])
+
+  const getConfiguredCount = () => {
+    return Object.keys(channelPaymentMap).length
+  }
+
   // Business Settings Items
   const businessSettingsItems = [
+    {
+      icon: Bike,
+      iconBg: 'bg-orange-100',
+      iconColor: 'text-orange-600',
+      title: 'ช่องทางการขาย',
+      subtitle: `ตั้งค่าแล้ว ${getConfiguredCount()}/${SALES_CHANNELS.length} ช่องทาง`,
+      link: '/settings/sales-channels'
+    },
     {
       icon: CreditCard,
       iconBg: 'bg-blue-100',
