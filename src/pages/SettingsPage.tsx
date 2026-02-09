@@ -1,8 +1,9 @@
+import { Link } from 'react-router-dom'
 import Card from '../components/common/Card'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import { useLanguage } from '../contexts/LanguageContext'
-import { Save, ExternalLink, CheckCircle, XCircle } from 'lucide-react'
+import { Save, ExternalLink, CheckCircle, XCircle, CreditCard, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 
 export default function SettingsPage() {
@@ -34,6 +35,26 @@ export default function SettingsPage() {
       <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">{t('settings.title')}</h1>
 
       <div className="space-y-6">
+        <Card title="การตั้งค่าระบบ">
+          <div className="space-y-3">
+            <Link 
+              to="/payment-methods" 
+              className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <CreditCard className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">ช่องทางการชำระเงิน</p>
+                  <p className="text-sm text-gray-500">ตั้งค่าวิธีการรับเงิน</p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-gray-400" />
+            </Link>
+          </div>
+        </Card>
+
         <Card title="ข้อมูลร้าน">
           <div className="space-y-4">
             <Input label="ชื่อร้าน" placeholder="More Drug Store" />

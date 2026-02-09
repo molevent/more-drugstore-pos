@@ -15,8 +15,7 @@ import {
   Printer,
   Users,
   Receipt,
-  Percent,
-  CreditCard
+  Percent
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -103,7 +102,6 @@ export default function Layout({ children }: LayoutProps) {
     {
       title: 'ตั้งค่า',
       items: [
-        { name: 'ช่องทางการชำระเงิน', href: '/payment-methods', icon: CreditCard },
         { name: t('nav.settings'), href: '/settings', icon: Settings },
       ]
     },
