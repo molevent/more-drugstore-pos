@@ -104,12 +104,6 @@ export default function Layout({ children }: LayoutProps) {
       items: [
         { name: t('nav.settings'), href: '/settings', icon: Settings },
       ]
-    },
-    {
-      title: 'อื่นๆ',
-      items: [
-        { name: t('nav.reports'), href: '/reports', icon: FileText },
-      ]
     }
   ]
 

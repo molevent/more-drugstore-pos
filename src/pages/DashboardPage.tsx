@@ -1,7 +1,7 @@
 import { useAuthStore } from '../stores/authStore'
 import { useLanguage } from '../contexts/LanguageContext'
 import Card from '../components/common/Card'
-import { TrendingUp, Package, AlertTriangle, DollarSign, Home } from 'lucide-react'
+import { TrendingUp, Package, AlertTriangle, DollarSign, Home, Calendar } from 'lucide-react'
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
@@ -64,15 +64,49 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card title={t('dashboard.recentSales')}>
-          <p className="text-gray-500 text-center py-8">{t('dashboard.noSalesData')}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <Card title="สรุปยอดขายวันนี้">
+          <div className="space-y-4">
+            <div className="flex justify-between">
+              <span className="text-gray-600">ยอดขายรวม</span>
+              <span className="font-bold text-gray-900">฿0.00</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">จำนวนรายการ</span>
+              <span className="font-bold text-gray-900">0</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">สินค้าที่ขาย</span>
+              <span className="font-bold text-gray-900">0</span>
+            </div>
+          </div>
         </Card>
 
-        <Card title={t('dashboard.lowStock')}>
-          <p className="text-gray-500 text-center py-8">{t('dashboard.noLowStock')}</p>
+        <Card title="ช่องทางการชำระเงิน">
+          <div className="space-y-4">
+            <div className="flex justify-between">
+              <span className="text-gray-600">เงินสด</span>
+              <span className="font-bold text-gray-900">฿0.00</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">บัตรเครดิต</span>
+              <span className="font-bold text-gray-900">฿0.00</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">โอนเงิน</span>
+              <span className="font-bold text-gray-900">฿0.00</span>
+            </div>
+          </div>
         </Card>
       </div>
+
+      <Card title="ประวัติการขาย">
+        <div className="text-center py-12 text-gray-500">
+          <Calendar className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+          <p>ยังไม่มีข้อมูลการขาย</p>
+          <p className="text-sm mt-2">เริ่มขายสินค้าเพื่อดูรายงาน</p>
+        </div>
+      </Card>
     </div>
   )
 }
