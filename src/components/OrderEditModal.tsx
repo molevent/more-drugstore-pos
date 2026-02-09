@@ -77,7 +77,12 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
       })) || []
       
       setItems(formattedItems)
-    } catch (err) {
+    } catch (err: any) {
+      // Ignore AbortError (component unmounted or request cancelled)
+      if (err?.name === 'AbortError' || err?.message?.includes('aborted')) {
+        console.log('Order loading aborted in modal')
+        return
+      }
       console.error('Error loading order:', err)
       alert('ไม่สามารถโหลดข้อมูลออเดอร์ได้')
     } finally {
