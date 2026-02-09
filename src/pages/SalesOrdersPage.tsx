@@ -215,37 +215,38 @@ export default function SalesOrdersPage() {
   const totalOrders = filteredOrders.length
 
   return (
-    <div className="min-h-screen bg-[#F5F5DC]">
+    <div className="min-h-screen bg-[#F8FBFF]">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6 px-4 sm:px-0">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-[#455A64] shadow-lg flex items-center justify-center">
-            <Receipt className="h-5 w-5 text-white" />
+          <div className="h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center">
+            <Receipt className="h-6 w-6 text-gray-900" />
           </div>
-          <h1 className="text-2xl font-bold text-[#455A64]">รายการขายทั้งหมด</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">รายการขายทั้งหมด</h1>
         </div>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 px-4 sm:px-0">
-        <Card className="bg-[#F0E4CC]/50 border-[#C9C4B5]/30">
+        <Card className="bg-white border-gray-200">
           <div className="flex items-center">
-            <div className="p-3 bg-[#B2E6CE] rounded-xl">
-              <Receipt className="h-6 w-6 text-[#455A64]" />
+            <div className="h-10 w-10 rounded-xl bg-blue-500 flex items-center justify-center shadow-sm">
+              <Receipt className="h-5 w-5 text-white" />
             </div>
             <div className="ml-4">
-              <p className="text-sm text-[#455A64]/70">จำนวนรายการขาย</p>
-              <p className="text-2xl font-bold text-[#455A64]">{totalOrders.toLocaleString()}</p>
+              <p className="text-sm text-gray-600">จำนวนรายการขาย</p>
+              <p className="text-2xl font-bold text-gray-900">{totalOrders.toLocaleString()}</p>
             </div>
           </div>
         </Card>
-        <Card className="bg-[#F0E4CC]/50 border-[#C9C4B5]/30">
+        <Card className="bg-white border-gray-200">
           <div className="flex items-center">
-            <div className="p-3 bg-[#B2E6CE] rounded-xl">
-              <Receipt className="h-6 w-6 text-[#455A64]" />
+            <div className="h-10 w-10 rounded-xl bg-green-500 flex items-center justify-center shadow-sm">
+              <Receipt className="h-5 w-5 text-white" />
             </div>
             <div className="ml-4">
-              <p className="text-sm text-[#455A64]/70">ยอดขายรวม</p>
-              <p className="text-2xl font-bold text-[#455A64]">{formatCurrency(totalSales)}</p>
+              <p className="text-sm text-gray-600">ยอดขายรวม</p>
+              <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalSales)}</p>
             </div>
           </div>
         </Card>
