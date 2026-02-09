@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { ListOrdered, Search, Calendar, Eye, Edit } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
+import OrderEditModal from '../components/OrderEditModal'
 import { supabase } from '../services/supabase'
 
 interface SalesOrder {
@@ -62,6 +62,7 @@ export default function SalesOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<OrderDetail | null>(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [loadingDetail, setLoadingDetail] = useState(false)
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchOrders()
@@ -393,13 +394,14 @@ export default function SalesOrdersPage() {
                         <Button variant="secondary" size="sm" onClick={() => handleViewOrder(order.id)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Link
-                          to={`/pos?edit=${order.id}`}
-                          className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-[#7D735F] text-white hover:bg-[#7D735F]/90 transition-colors"
+                        <Button 
+                          variant="primary" 
+                          size="sm" 
+                          onClick={() => setEditingOrderId(order.id)}
                         >
                           <Edit className="h-4 w-4 mr-1" />
                           แก้ไข
-                        </Link>
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -514,6 +516,18 @@ export default function SalesOrdersPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Order Edit Modal */}
+      {editingOrderId && (
+        <OrderEditModal
+          orderId={editingOrderId}
+          onClose={() => setEditingOrderId(null)}
+          onSave={() => {
+            setEditingOrderId(null)
+            fetchOrders() // Refresh orders list
+          }}
+        />
       )}
     </div>
   )
