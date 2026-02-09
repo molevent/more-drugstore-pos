@@ -1077,27 +1077,25 @@ export default function POSPage() {
         </Link>
       </div>
 
-      {/* Held Bills Section - Always Visible at Top */}
-      <div className={`mb-4 mx-4 sm:mx-0 p-3 rounded-lg border ${heldBills.length > 0 ? 'bg-[#F9E4B7]/50 border-[#D4756A]/30' : 'bg-[#B8C9B8]/10 border-[#B8C9B8]/30'}`}>
-        <div className="flex items-center justify-between mb-2">
-          <span className={`text-sm font-medium ${heldBills.length > 0 ? 'text-[#A67B5B]' : 'text-[#7D735F]'}`}>
-            บิลที่พักไว้ ({heldBills.length})
-          </span>
-          {heldBills.length > 0 && (
+      {/* Held Bills Section - Only show when there are held bills */}
+      {heldBills.length > 0 && (
+        <div className="mb-4 mx-4 sm:mx-0 p-3 rounded-lg border bg-[#F9E4B7]/50 border-[#D4756A]/30">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-[#A67B5B]">
+              บิลที่พักไว้ ({heldBills.length})
+            </span>
             <button
               onClick={() => setShowHeldBills(true)}
               className="text-sm text-[#7D735F] hover:text-[#7D735F]/80 underline"
             >
               ดูทั้งหมด
             </button>
-          )}
+          </div>
+          <div className="text-xs text-[#A67B5B]/80">
+            ล่าสุด: {heldBills[heldBills.length - 1]?.name}
+          </div>
         </div>
-        <div className={`text-xs ${heldBills.length > 0 ? 'text-[#A67B5B]/80' : 'text-[#7D735F]'}`}>
-          {heldBills.length > 0 
-            ? `ล่าสุด: ${heldBills[heldBills.length - 1]?.name}` 
-            : 'ไม่มีบิลที่พักไว้'}
-        </div>
-      </div>
+      )}
 
       {showAlertHistory && (
         <div className="mb-4 bg-white rounded-lg shadow p-4 border border-[#B8C9B8]/30">
