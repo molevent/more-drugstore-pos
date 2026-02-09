@@ -90,7 +90,7 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FBFF]">
+    <div className="min-h-screen bg-white">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div 
