@@ -54,7 +54,7 @@ export default function Layout({ children }: LayoutProps) {
       items: [
         { name: t('nav.dashboard'), href: '/dashboard', icon: Home },
         { name: t('nav.pos'), href: '/pos', icon: ShoppingCart },
-        { name: 'รายงานการขาย', href: '/sales-orders', icon: ListOrdered },
+        { name: 'ยอดขาย/รายงาน', href: '/sales-orders', icon: ListOrdered },
       ]
     },
     {
