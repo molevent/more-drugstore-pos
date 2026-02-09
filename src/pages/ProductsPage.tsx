@@ -579,10 +579,21 @@ export default function ProductsPage() {
             }
           </h1>
         </div>
-        <Button variant="primary" onClick={() => setShowModal(true)} className="w-full sm:w-auto">
-          <Plus className="h-5 w-5 mr-2" />
-          {t('products.addProduct')}
-        </Button>
+        <div className="flex gap-2">
+          <Link 
+            to="/stock-management"
+            className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-full border border-amber-200 hover:bg-amber-100 hover:shadow-md transition-all"
+          >
+            <div className="h-8 w-8 rounded-full bg-amber-500 flex items-center justify-center shadow-sm">
+              <Boxes className="h-4 w-4 text-white" />
+            </div>
+            <span className="font-semibold text-gray-900 text-sm">จัดการสต็อก</span>
+          </Link>
+          <Button variant="primary" onClick={() => setShowModal(true)} className="w-full sm:w-auto">
+            <Plus className="h-5 w-5 mr-2" />
+            {t('products.addProduct')}
+          </Button>
+        </div>
       </div>
 
       {/* Subcategories Section - Show when viewing by category */}

@@ -59,12 +59,6 @@ export default function Layout({ children }: LayoutProps) {
       ]
     },
     {
-      title: 'จัดการสต็อก',
-      items: [
-        { name: 'จัดการสต็อก', href: '/stock-management', icon: Package },
-      ]
-    },
-    {
       title: 'สินค้า',
       items: [
         { name: t('nav.categories'), href: '/categories', icon: Package },
