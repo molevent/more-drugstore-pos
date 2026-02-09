@@ -117,6 +117,7 @@ export default function SalesOrdersPage() {
         id: order.id,
         order_number: order.order_number,
         customer_name: order.customer_name,
+        payment_method_name: order.payment_method_name,
         total: order.total,
         subtotal: order.subtotal,
         discount: order.discount,
