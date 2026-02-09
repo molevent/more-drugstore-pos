@@ -165,10 +165,10 @@ export default function Layout({ children }: LayoutProps) {
                               }
                             }}
                             className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                              isActive
-                                ? 'bg-[#7D735F] text-white'
-                                : 'text-[#4A4A4A] hover:bg-[#F9E4B7]/50'
-                            }`}
+                            isActive
+                              ? 'bg-[#7D735F] text-white'
+                              : 'text-[#4A4A4A] hover:bg-[#F9E4B7]/50'
+                          }`}
                           >
                             <item.icon className="h-5 w-5 mr-3" />
                             {item.name}
