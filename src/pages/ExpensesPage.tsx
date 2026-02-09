@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle } from 'lucide-react'
+import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle, Percent } from 'lucide-react'
 
 interface Expense {
   id: string
@@ -437,7 +438,18 @@ export default function ExpensesPage() {
           <Receipt className="h-8 w-8 text-blue-600" />
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">ค่าใช้จ่าย</h1>
         </div>
-        <p className="text-gray-600">บันทึกและติดตามค่าใช้จ่ายต่างๆ ของร้าน</p>
+        <div className="flex items-center justify-between">
+          <p className="text-gray-600">บันทึกและติดตามค่าใช้จ่ายต่างๆ ของร้าน</p>
+          <Link 
+            to="/withholding-tax"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl border border-orange-200 hover:shadow-md transition-all"
+          >
+            <div className="h-8 w-8 rounded-lg bg-orange-500 flex items-center justify-center">
+              <Percent className="h-4 w-4 text-white" />
+            </div>
+            <span className="font-medium text-gray-900 text-sm">หัก ณ ที่จ่าย</span>
+          </Link>
+        </div>
       </div>
 
       {/* View Mode Tabs */}
