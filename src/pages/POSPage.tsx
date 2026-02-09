@@ -1055,47 +1055,47 @@ export default function POSPage() {
         </div>
       </div>
 
-      {/* AI & Consultation Section - Now near the buttons */}
-      <div className="flex gap-2 mb-4 mx-4 sm:mx-0">
+      {/* AI & Consultation Section - Compact */}
+      <div className="flex gap-2 mb-2 mx-4 sm:mx-0">
         <Link 
           to="/ai-symptom-checker"
-          className="flex-1 flex items-center gap-3 px-5 py-3 bg-blue-50 rounded-full border border-blue-200 hover:bg-blue-100 hover:shadow-md transition-all"
+          className="flex-1 flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-full border border-blue-200 hover:bg-blue-100 hover:shadow-md transition-all"
         >
-          <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center shadow-sm">
-            <Brain className="h-5 w-5 text-white" />
+          <div className="h-7 w-7 rounded-full bg-blue-500 flex items-center justify-center shadow-sm flex-shrink-0">
+            <Brain className="h-3.5 w-3.5 text-white" />
           </div>
-          <span className="font-semibold text-gray-900">AI ช่วยแนะนำยา</span>
+          <span className="font-medium text-gray-900 text-sm truncate">AI ช่วยแนะนำยา</span>
         </Link>
         <Link 
           to="/consultation-history"
-          className="flex-1 flex items-center gap-3 px-5 py-3 bg-green-50 rounded-full border border-green-200 hover:bg-green-100 hover:shadow-md transition-all"
+          className="flex-1 flex items-center gap-2 px-3 py-2 bg-green-50 rounded-full border border-green-200 hover:bg-green-100 hover:shadow-md transition-all"
         >
-          <div className="h-10 w-10 rounded-full bg-green-500 flex items-center justify-center shadow-sm">
-            <FileText className="h-5 w-5 text-white" />
+          <div className="h-7 w-7 rounded-full bg-green-500 flex items-center justify-center shadow-sm flex-shrink-0">
+            <FileText className="h-3.5 w-3.5 text-white" />
           </div>
-          <span className="font-semibold text-gray-900">ประวัติการปรึกษา</span>
+          <span className="font-medium text-gray-900 text-sm truncate">ประวัติการปรึกษา</span>
         </Link>
       </div>
 
-      {/* Categories & Medicine Labels Link */}
-      <div className="flex gap-2 mb-4 mx-4 sm:mx-0">
+      {/* Categories & Medicine Labels Link - Compact */}
+      <div className="flex gap-2 mb-3 mx-4 sm:mx-0">
         <Link 
           to="/categories"
-          className="flex-1 flex items-center gap-3 px-5 py-3 bg-indigo-50 rounded-full border border-indigo-200 hover:bg-indigo-100 hover:shadow-md transition-all"
+          className="flex-1 flex items-center gap-2 px-3 py-2 bg-indigo-50 rounded-full border border-indigo-200 hover:bg-indigo-100 hover:shadow-md transition-all"
         >
-          <div className="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center shadow-sm">
-            <Package className="h-5 w-5 text-white" />
+          <div className="h-7 w-7 rounded-full bg-indigo-500 flex items-center justify-center shadow-sm flex-shrink-0">
+            <Package className="h-3.5 w-3.5 text-white" />
           </div>
-          <span className="font-semibold text-gray-900">หมวดหมู่สินค้า</span>
+          <span className="font-medium text-gray-900 text-sm truncate">หมวดหมู่สินค้า</span>
         </Link>
         <Link 
           to="/medicine-labels"
-          className="flex-1 flex items-center gap-3 px-5 py-3 bg-purple-50 rounded-full border border-purple-200 hover:bg-purple-100 hover:shadow-md transition-all"
+          className="flex-1 flex items-center gap-2 px-3 py-2 bg-purple-50 rounded-full border border-purple-200 hover:bg-purple-100 hover:shadow-md transition-all"
         >
-          <div className="h-10 w-10 rounded-full bg-purple-500 flex items-center justify-center shadow-sm">
-            <Printer className="h-5 w-5 text-white" />
+          <div className="h-7 w-7 rounded-full bg-purple-500 flex items-center justify-center shadow-sm flex-shrink-0">
+            <Printer className="h-3.5 w-3.5 text-white" />
           </div>
-          <span className="font-semibold text-gray-900">พิมพ์ฉลากยา</span>
+          <span className="font-medium text-gray-900 text-sm truncate">พิมพ์ฉลากยา</span>
         </Link>
       </div>
 
