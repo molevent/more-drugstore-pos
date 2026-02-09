@@ -1016,7 +1016,7 @@ export default function POSPage() {
       <div className="flex items-center justify-between mb-6 px-4 sm:px-0">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30 flex items-center justify-center">
-            <Store className="h-5 w-5 text-white" />
+            <ShoppingCart className="h-5 w-5 text-white" />
           </div>
           <div>
             <h1 className="text-xl font-semibold text-gray-900 tracking-tight">ขายสินค้า</h1>
