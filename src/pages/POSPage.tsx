@@ -1215,41 +1215,6 @@ export default function POSPage() {
               </div>
             </form>
 
-            {/* Sales Channel Selection */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-600 mb-2">
-                ช่องทางการขาย
-              </label>
-              <div className="grid grid-cols-4 gap-2">
-                {SALES_CHANNELS.map((channel) => {
-                  const Icon = channel.icon
-                  const isSelected = salesChannel === channel.id
-                  return (
-                    <button
-                      key={channel.id}
-                      onClick={() => setSalesChannel(channel.id)}
-                      className={`flex items-center justify-center gap-2 px-3 py-3 rounded-lg border-2 transition-all ${
-                        isSelected
-                          ? 'border-[#7D735F] bg-[#7D735F]/10 text-gray-600 ring-2 ring-[#7D735F]/30'
-                          : 'border-[#B8C9B8]/50 bg-white text-gray-600 hover:border-[#7D735F]/50'
-                      }`}
-                    >
-                      <Icon className={`h-5 w-5 ${isSelected ? 'text-gray-600' : ''}`} />
-                      <span className={`text-sm font-medium ${isSelected ? 'font-bold' : ''}`}>{channel.name}</span>
-                      {isSelected && (
-                        <span className="ml-1 text-xs bg-[#7D735F] text-white px-1.5 py-0.5 rounded-full">✓</span>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-              {salesChannel && (
-                <p className="mt-2 text-sm text-gray-600 font-medium">
-                  กำลังขายผ่าน: {SALES_CHANNELS.find(c => c.id === salesChannel)?.name}
-                </p>
-              )}
-            </div>
-
             <div className="space-y-2">
               {items.length === 0 ? (
                 <div className="text-center py-12 text-gray-600">
@@ -1353,6 +1318,41 @@ export default function POSPage() {
                     </div>
                   </div>
                 ))
+              )}
+            </div>
+
+            {/* Sales Channel Selection */}
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-600 mb-2">
+                ช่องทางการขาย
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {SALES_CHANNELS.map((channel) => {
+                  const Icon = channel.icon
+                  const isSelected = salesChannel === channel.id
+                  return (
+                    <button
+                      key={channel.id}
+                      onClick={() => setSalesChannel(channel.id)}
+                      className={`flex items-center justify-center gap-2 px-3 py-3 rounded-lg border-2 transition-all ${
+                        isSelected
+                          ? 'border-[#7D735F] bg-[#7D735F]/10 text-gray-600 ring-2 ring-[#7D735F]/30'
+                          : 'border-[#B8C9B8]/50 bg-white text-gray-600 hover:border-[#7D735F]/50'
+                      }`}
+                    >
+                      <Icon className={`h-5 w-5 ${isSelected ? 'text-gray-600' : ''}`} />
+                      <span className={`text-sm font-medium ${isSelected ? 'font-bold' : ''}`}>{channel.name}</span>
+                      {isSelected && (
+                        <span className="ml-1 text-xs bg-[#7D735F] text-white px-1.5 py-0.5 rounded-full">✓</span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+              {salesChannel && (
+                <p className="mt-2 text-sm text-gray-600 font-medium">
+                  กำลังขายผ่าน: {SALES_CHANNELS.find(c => c.id === salesChannel)?.name}
+                </p>
               )}
             </div>
           </Card>
