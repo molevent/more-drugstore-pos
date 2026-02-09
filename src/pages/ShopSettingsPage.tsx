@@ -16,7 +16,6 @@ interface ShopInfo {
 
 export default function ShopSettingsPage() {
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [shopInfo, setShopInfo] = useState<ShopInfo>({
     name: 'More Drug Store',
@@ -32,7 +31,6 @@ export default function ShopSettingsPage() {
 
   const fetchShopInfo = async () => {
     try {
-      setLoading(true)
       const { data, error } = await supabase
         .from('shop_settings')
         .select('*')
@@ -54,8 +52,6 @@ export default function ShopSettingsPage() {
       }
     } catch (error) {
       console.error('Error:', error)
-    } finally {
-      setLoading(false)
     }
   }
 
