@@ -215,42 +215,47 @@ export default function SalesOrdersPage() {
   const totalOrders = filteredOrders.length
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">รายการขายทั้งหมด</h1>
+    <div className="min-h-screen bg-[#F5F5DC]">
+      <div className="flex items-center justify-between mb-6 px-4 sm:px-0">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-[#455A64] shadow-lg flex items-center justify-center">
+            <Receipt className="h-5 w-5 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-[#455A64]">รายการขายทั้งหมด</h1>
+        </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 px-4 sm:px-0">
+        <Card className="bg-[#F0E4CC]/50 border-[#C9C4B5]/30">
           <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Receipt className="h-6 w-6 text-blue-600" />
+            <div className="p-3 bg-[#B2E6CE] rounded-xl">
+              <Receipt className="h-6 w-6 text-[#455A64]" />
             </div>
             <div className="ml-4">
-              <p className="text-sm text-gray-500">จำนวนรายการขาย</p>
-              <p className="text-2xl font-bold text-gray-900">{totalOrders.toLocaleString()}</p>
+              <p className="text-sm text-[#455A64]/70">จำนวนรายการขาย</p>
+              <p className="text-2xl font-bold text-[#455A64]">{totalOrders.toLocaleString()}</p>
             </div>
           </div>
         </Card>
-        <Card>
+        <Card className="bg-[#F0E4CC]/50 border-[#C9C4B5]/30">
           <div className="flex items-center">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <Receipt className="h-6 w-6 text-green-600" />
+            <div className="p-3 bg-[#B2E6CE] rounded-xl">
+              <Receipt className="h-6 w-6 text-[#455A64]" />
             </div>
             <div className="ml-4">
-              <p className="text-sm text-gray-500">ยอดขายรวม</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalSales)}</p>
+              <p className="text-sm text-[#455A64]/70">ยอดขายรวม</p>
+              <p className="text-2xl font-bold text-[#455A64]">{formatCurrency(totalSales)}</p>
             </div>
           </div>
         </Card>
       </div>
 
       {/* Filters */}
-      <Card className="mb-6">
+      <Card className="mb-6 px-4 sm:px-0 bg-white/80 border-[#C9C4B5]/20">
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#455A64] mb-1">
               <Search className="h-4 w-4 inline mr-1" />
               ค้นหา
             </label>
@@ -262,7 +267,7 @@ export default function SalesOrdersPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#455A64] mb-1">
               <Calendar className="h-4 w-4 inline mr-1" />
               จากวันที่
             </label>
@@ -273,7 +278,7 @@ export default function SalesOrdersPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#455A64] mb-1">
               <Calendar className="h-4 w-4 inline mr-1" />
               ถึงวันที่
             </label>
@@ -295,66 +300,66 @@ export default function SalesOrdersPage() {
       </Card>
 
       {/* Orders Table */}
-      <Card>
+      <Card className="px-4 sm:px-0 bg-white/80 border-[#C9C4B5]/20">
         {loading ? (
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-sm text-gray-600 mt-2">กำลังโหลด...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#455A64] mx-auto"></div>
+            <p className="text-sm text-[#455A64]/70 mt-2">กำลังโหลด...</p>
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <Receipt className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+          <div className="text-center py-8 text-[#455A64]/70">
+            <Receipt className="h-16 w-16 mx-auto mb-4 text-[#B2E6CE]" />
             <p>ไม่พบรายการขาย</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-[#C9C4B5]/30">
+              <thead className="bg-[#F0E4CC]/50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#455A64] uppercase tracking-wider">
                     เลขที่ออเดอร์
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#455A64] uppercase tracking-wider">
                     วันที่
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#455A64] uppercase tracking-wider">
                     ช่องทาง
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#455A64] uppercase tracking-wider">
                     ลูกค้า
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-[#455A64] uppercase tracking-wider">
                     จำนวนรายการ
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-[#455A64] uppercase tracking-wider">
                     ยอดรวม
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-xs font-medium text-[#455A64] uppercase tracking-wider">
                     ดูรายละเอียด
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-[#C9C4B5]/20">
                 {filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
+                  <tr key={order.id} className="hover:bg-[#F0E4CC]/30 transition-colors">
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="font-medium text-gray-900">{order.order_number}</span>
+                      <span className="font-medium text-[#455A64]">{order.order_number}</span>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#455A64]/70">
                       {formatDate(order.created_at)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                      <span className="px-2 py-1 bg-[#B2E6CE]/50 text-[#455A64] text-xs rounded-full">
                         {getPlatformName(order.platform_id)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#455A64]/70">
                       {order.customer_name || '-'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 text-right">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#455A64]/70 text-right">
                       {order.order_items_count} รายการ
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-[#455A64] text-right">
                       {formatCurrency(order.total)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center">
@@ -389,16 +394,16 @@ export default function SalesOrdersPage() {
 
               {loadingDetail ? (
                 <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="text-sm text-gray-600 mt-2">กำลังโหลด...</p>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6D96A6] mx-auto"></div>
+                  <p className="text-sm text-[#6D96A6]/70 mt-2">กำลังโหลด...</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {/* Order Info */}
-                  <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                  <div className="grid grid-cols-2 gap-4 bg-[#F0E4D6]/50 p-4 rounded-lg">
                     <div>
-                      <p className="text-sm text-gray-500">วันที่</p>
-                      <p className="font-medium">{formatDate(selectedOrder.created_at)}</p>
+                      <p className="text-sm text-[#CCBAA5]">วันที่</p>
+                      <p className="font-medium text-[#6D96A6]">{formatDate(selectedOrder.created_at)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">ช่องทาง</p>

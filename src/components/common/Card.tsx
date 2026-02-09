@@ -8,10 +8,10 @@ interface CardProps {
 
 export default function Card({ children, className = '', title }: CardProps) {
   return (
-    <div className={`bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-gray-200/50 border border-white/60 overflow-hidden ${className}`}>
+    <div className={`bg-[#FAF9F6] rounded-2xl shadow-lg shadow-[#5F8B8B]/10 border border-[#8B968B]/20 overflow-hidden ${className}`}>
       {title && (
-        <div className="px-6 py-4 border-b border-gray-100/50 bg-gradient-to-r from-gray-50/50 to-white/50">
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+        <div className="px-6 py-4 border-b border-[#8B968B]/20 bg-gradient-to-r from-[#FEF4E0]/50 to-[#FAF9F6]/50">
+          <h3 className="text-lg font-semibold text-[#1A3A1A]">{title}</h3>
         </div>
       )}
       <div className="p-6">{children}</div>
