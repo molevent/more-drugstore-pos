@@ -15,7 +15,8 @@ import {
   Settings,
   Bike,
   AlertTriangle,
-  ClipboardList
+  ClipboardList,
+  ArrowRightLeft
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Card from '../components/common/Card'
@@ -249,6 +250,14 @@ export default function SettingsPage() {
       title: 'รายงานการปรับยอดสต็อก',
       subtitle: 'ตรวจสอบการปรับยอดสต็อกโดยผู้ใช้งาน',
       link: '/stock-adjustment-report'
+    },
+    {
+      icon: ArrowRightLeft,
+      iconBg: 'bg-purple-100',
+      iconColor: 'text-purple-600',
+      title: 'รายงานการโอนสินค้าระหว่างคลัง',
+      subtitle: 'ตรวจสอบการเคลื่อนย้ายสินค้าระหว่างคลัง',
+      link: '/stock-transfer-report'
     },
   ]
   

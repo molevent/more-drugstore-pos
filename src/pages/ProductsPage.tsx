@@ -222,6 +222,8 @@ export default function ProductsPage() {
   const [labelSubTab, setLabelSubTab] = useState<'thai' | 'english' | 'custom'>('thai')
   const [movementHistory, setMovementHistory] = useState<any[]>([])
   const [movementLoading, setMovementLoading] = useState(false)
+  const [warehouses, setWarehouses] = useState<any[]>([])
+  const [productWarehouseStocks, setProductWarehouseStocks] = useState<Record<string, number>>({})
   const [showCategoryTable, setShowCategoryTable] = useState(true)
   const [formData, setFormData] = useState<ProductFormData>(initialFormData)
   const [showSearchModal, setShowSearchModal] = useState(false)
@@ -241,6 +243,7 @@ export default function ProductsPage() {
   useEffect(() => {
     fetchProducts()
     fetchCategories()
+    fetchWarehouses()
     
     // Check URL query parameter for filters
     const params = new URLSearchParams(location.search)
@@ -254,6 +257,34 @@ export default function ProductsPage() {
   const fetchCategories = async () => {
     const { data } = await supabase.from('categories').select('*').order('sort_order')
     if (data) setCategories(data)
+  }
+
+  const fetchWarehouses = async () => {
+    const { data } = await supabase.from('warehouses').select('*').order('is_main', { ascending: false })
+    if (data) setWarehouses(data)
+  }
+
+  const fetchProductWarehouseStocks = async (productId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('product_stock')
+        .select('*')
+        .eq('product_id', productId)
+      
+      if (error) {
+        console.error('Error fetching product warehouse stocks:', error)
+        return
+      }
+      
+      const stockMap: Record<string, number> = {}
+      data?.forEach((ps: any) => {
+        stockMap[ps.warehouse_id] = ps.quantity
+      })
+      
+      setProductWarehouseStocks(stockMap)
+    } catch (err) {
+      console.error('Exception fetching product warehouse stocks:', err)
+    }
   }
 
   const filteredProducts = products.filter(p => {
@@ -288,6 +319,7 @@ export default function ProductsPage() {
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product)
+    setProductWarehouseStocks({})
     setFormData({
       barcode: product.barcode,
       sku: product.sku,
@@ -377,7 +409,15 @@ export default function ProductsPage() {
     })
     setImagePreviews(product.image_urls?.slice(0, 9).concat(Array(9 - (product.image_urls?.length || 0)).fill('')) || Array(9).fill(''))
     setActiveTab('dashboard')
-    setShowCategoryTable(!product.category_id) // Collapse if has category
+    setShowCategoryTable(!product.category_id)
+    setInventorySubTab('general')
+    
+    // Fetch warehouse stocks and movement history for this product
+    if (product.id) {
+      fetchProductWarehouseStocks(product.id)
+      fetchMovementHistory(product.id)
+    }
+    
     setShowModal(true)
   }
 
@@ -1969,44 +2009,32 @@ export default function ProductsPage() {
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* Main Warehouse */}
-                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Warehouse className="h-5 w-5 text-blue-600" />
-                            <span className="font-semibold text-blue-800">คลังสินค้าหลัก</span>
-                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">หลัก</span>
+                        {warehouses.length === 0 ? (
+                          <div className="col-span-2 text-center py-8 text-gray-500">
+                            <p>ไม่พบข้อมูลคลังสินค้า</p>
                           </div>
-                          <div className="text-3xl font-bold text-blue-700">{formData.stock_quantity}</div>
-                          <div className="text-sm text-gray-600">{formData.unit}</div>
-                        </div>
-
-                        {/* Other warehouses - placeholder until data is loaded */}
-                        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Warehouse className="h-5 w-5 text-gray-500" />
-                            <span className="font-semibold text-gray-700">คลังสินค้าสาขา 2</span>
-                          </div>
-                          <div className="text-3xl font-bold text-gray-600">0</div>
-                          <div className="text-sm text-gray-500">{formData.unit}</div>
-                        </div>
-
-                        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Warehouse className="h-5 w-5 text-gray-500" />
-                            <span className="font-semibold text-gray-700">คลังสินค้า Fulfillment</span>
-                          </div>
-                          <div className="text-3xl font-bold text-gray-600">0</div>
-                          <div className="text-sm text-gray-500">{formData.unit}</div>
-                        </div>
-
-                        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Warehouse className="h-5 w-5 text-gray-500" />
-                            <span className="font-semibold text-gray-700">คลังสินค้าเก่า/ชำรุด</span>
-                          </div>
-                          <div className="text-3xl font-bold text-gray-600">0</div>
-                          <div className="text-sm text-gray-500">{formData.unit}</div>
-                        </div>
+                        ) : (
+                          warehouses.map((warehouse) => {
+                            const stockQuantity = warehouse.is_main 
+                              ? formData.stock_quantity 
+                              : (productWarehouseStocks[warehouse.id] || 0)
+                            const isMain = warehouse.is_main
+                            
+                            return (
+                              <div key={warehouse.id} className={`rounded-lg p-4 border ${isMain ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100' : 'bg-gray-50 border-gray-200'}`}>
+                                <div className="flex items-center gap-2 mb-3">
+                                  <Warehouse className={`h-5 w-5 ${isMain ? 'text-blue-600' : 'text-gray-500'}`} />
+                                  <span className={`font-semibold ${isMain ? 'text-blue-800' : 'text-gray-700'}`}>{warehouse.name}</span>
+                                  {isMain && (
+                                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">หลัก</span>
+                                  )}
+                                </div>
+                                <div className={`text-3xl font-bold ${isMain ? 'text-blue-700' : 'text-gray-600'}`}>{stockQuantity}</div>
+                                <div className="text-sm text-gray-500">{formData.unit}</div>
+                              </div>
+                            )
+                          })
+                        )}
                       </div>
 
                       <div className="mt-4 text-center">
