@@ -798,12 +798,15 @@ export default function POSPage() {
         </div>
         
         <div style="border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
-          ${items.map(item => `
+          ${items.map(item => {
+            const price = item.custom_price ?? item.product.base_price
+            const isFree = price === 0
+            return `
             <div style="display: flex; justify-content: space-between; margin: 5px 0; font-size: 12px;">
-              <span>${item.product.name_th} x${item.quantity}</span>
-              <span>฿${(item.product.base_price * item.quantity).toFixed(2)}</span>
+              <span>${isFree ? '🎁 ของแถม: ' : ''}${item.product.name_th} x${item.quantity}</span>
+              <span>${isFree ? 'ฟรี' : '฿' + (price * item.quantity).toFixed(2)}</span>
             </div>
-          `).join('')}
+          `}).join('')}
         </div>
         
         <div style="text-align: right; margin-bottom: 10px;">
@@ -1467,21 +1470,31 @@ export default function POSPage() {
                     )}
                     
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-gray-900 truncate">{item.product.name_th}</h3>
+                      <h3 className="font-medium text-gray-900 truncate">
+                        {item.custom_price === 0 ? (
+                          <span className="text-orange-500">🎁 ของแถม:</span>
+                        ) : null}
+                        {item.product.name_th}
+                      </h3>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-sm text-gray-600">ราคา:</span>
                         <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
+                          type="text"
+                          inputMode="decimal"
                           value={item.custom_price ?? getProductPriceForChannel(item.product, salesChannel as SalesChannel)}
                           onChange={(e) => {
-                            const value = parseFloat(e.target.value)
-                            if (!isNaN(value) && value >= 0) {
-                              updateCustomPrice(item.product.id, value)
+                            const value = e.target.value
+                            // Allow empty value for easier editing
+                            if (value === '') {
+                              updateCustomPrice(item.product.id, 0)
+                              return
+                            }
+                            const numValue = parseFloat(value)
+                            if (!isNaN(numValue) && numValue >= 0) {
+                              updateCustomPrice(item.product.id, numValue)
                             }
                           }}
-                          className="w-20 text-sm h-6 py-0 border-[#B8C9B8]/50"
+                          className="w-24 text-sm h-6 py-0 border-[#B8C9B8]/50"
                         />
                         {item.custom_price !== undefined && item.custom_price !== null && (
                           <span className="text-xs text-[#D4756A]">(แก้ไข)</span>
