@@ -61,7 +61,6 @@ export default function Layout({ children }: LayoutProps) {
     {
       title: 'สินค้า',
       items: [
-        { name: t('nav.categories'), href: '/categories', icon: Package },
         { name: t('nav.products'), href: '/products', icon: Package },
       ]
     },

@@ -1077,11 +1077,20 @@ export default function POSPage() {
         </Link>
       </div>
 
-      {/* Medicine Labels Link */}
-      <div className="mb-4 mx-4 sm:mx-0">
+      {/* Categories & Medicine Labels Link */}
+      <div className="flex gap-2 mb-4 mx-4 sm:mx-0">
+        <Link 
+          to="/categories"
+          className="flex-1 flex items-center gap-3 px-5 py-3 bg-indigo-50 rounded-full border border-indigo-200 hover:bg-indigo-100 hover:shadow-md transition-all"
+        >
+          <div className="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center shadow-sm">
+            <Package className="h-5 w-5 text-white" />
+          </div>
+          <span className="font-semibold text-gray-900">หมวดหมู่สินค้า</span>
+        </Link>
         <Link 
           to="/medicine-labels"
-          className="flex items-center gap-3 px-5 py-3 bg-purple-50 rounded-full border border-purple-200 hover:bg-purple-100 hover:shadow-md transition-all w-fit"
+          className="flex-1 flex items-center gap-3 px-5 py-3 bg-purple-50 rounded-full border border-purple-200 hover:bg-purple-100 hover:shadow-md transition-all"
         >
           <div className="h-10 w-10 rounded-full bg-purple-500 flex items-center justify-center shadow-sm">
             <Printer className="h-5 w-5 text-white" />
