@@ -12,7 +12,8 @@ import {
   ExternalLink, 
   CheckCircle, 
   XCircle,
-  Warehouse
+  Warehouse,
+  FolderTree
 } from 'lucide-react'
 import { useState } from 'react'
 import Card from '../components/common/Card'
@@ -161,12 +162,12 @@ export default function SettingsPage() {
       link: '/settings/users'
     },
     {
-      icon: Warehouse,
-      iconBg: 'bg-amber-100',
-      iconColor: 'text-amber-600',
-      title: 'คลังสินค้า',
-      subtitle: 'จัดการคลังสินค้าและสต็อก',
-      link: '/warehouse-management'
+      icon: FolderTree,
+      iconBg: 'bg-indigo-100',
+      iconColor: 'text-indigo-600',
+      title: 'หมวดหมู่สินค้า',
+      subtitle: 'จัดการหมวดหมู่และหมวดหมู่ย่อย',
+      link: '/categories-management'
     },
   ]
   

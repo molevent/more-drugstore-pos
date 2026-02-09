@@ -3,6 +3,7 @@ import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import POSPage from './pages/POSPage'
 import CategoriesPage from './pages/CategoriesPage'
+import CategoriesManagementPage from './pages/CategoriesManagementPage'
 import AISymptomCheckerForm from './pages/AISymptomCheckerForm'
 import ConsultationHistoryPage from './pages/ConsultationHistoryPage'
 import StockManagementPage from './pages/StockManagementPage'
@@ -42,6 +43,7 @@ function App() {
                     <Route path="/stock-management" element={<StockManagementPage />} />
                     <Route path="/medicine-labels" element={<MedicineLabelPage />} />
                     <Route path="/categories" element={<CategoriesPage />} />
+                    <Route path="/categories-management" element={<CategoriesManagementPage />} />
                     <Route path="/products" element={<ProductsPage />} />
                     <Route path="/inventory" element={<InventoryPage />} />
                     <Route path="/warehouse-management" element={<WarehouseManagementPage />} />
