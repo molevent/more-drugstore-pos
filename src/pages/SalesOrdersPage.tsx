@@ -216,7 +216,7 @@ export default function SalesOrdersPage() {
     const matchesCustomerName = order.customer_name && order.customer_name.toLowerCase().includes(searchTerm.toLowerCase())
     // Check if any order items contain the search term in product_name
     const matchesProductName = order.order_items?.some((item: OrderItem) => 
-      item.product_name.toLowerCase().includes(searchTerm.toLowerCase())
+      item.product_name?.toLowerCase().includes(searchTerm.toLowerCase())
     )
     return matchesOrderNumber || matchesCustomerName || matchesProductName
   })
