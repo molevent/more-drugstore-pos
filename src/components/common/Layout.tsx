@@ -123,10 +123,7 @@ export default function Layout({ children }: LayoutProps) {
           <div className="flex-1 overflow-y-auto py-4 px-3">
             <nav className="space-y-1">
               {navigationSections.map((section, sectionIndex) => (
-                <div key={sectionIndex} className="mb-4">
-                  <h3 className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    {section.title}
-                  </h3>
+                <div key={sectionIndex} className="mb-2">
                   <div className="space-y-1">
                     {section.items.map((item) => {
                       const isActive = location.pathname === item.href
