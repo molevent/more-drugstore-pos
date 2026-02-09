@@ -1,10 +1,88 @@
 import { Link } from 'react-router-dom'
+import { useLanguage } from '../contexts/LanguageContext'
+import { 
+  CreditCard, 
+  Store, 
+  Users, 
+  FileText, 
+  Pencil, 
+  Trash2,
+  Building2,
+  Plug,
+  Save, 
+  ExternalLink, 
+  CheckCircle, 
+  XCircle
+} from 'lucide-react'
+import { useState } from 'react'
 import Card from '../components/common/Card'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
-import { useLanguage } from '../contexts/LanguageContext'
-import { Save, ExternalLink, CheckCircle, XCircle, CreditCard, ChevronRight } from 'lucide-react'
-import { useState } from 'react'
+import React from 'react'
+
+interface SettingsCardProps {
+  icon: React.ElementType
+  iconBg: string
+  iconColor: string
+  title: string
+  subtitle: string
+  details?: { icon?: React.ElementType; label?: string; value: string }[]
+  status?: { text: string; bgColor: string; textColor: string }
+  link: string
+}
+
+function SettingsCard({ icon: Icon, iconBg, iconColor, title, subtitle, details, status, link }: SettingsCardProps) {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <div className="p-5">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className={`h-12 w-12 rounded-2xl ${iconBg} flex items-center justify-center`}>
+              <Icon className={`h-6 w-6 ${iconColor}`} />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">{title}</h3>
+              <p className="text-sm text-gray-500">{subtitle}</p>
+            </div>
+          </div>
+          {status && (
+            <span className={`px-3 py-1 rounded-full text-xs font-medium ${status.bgColor} ${status.textColor}`}>
+              {status.text}
+            </span>
+          )}
+        </div>
+
+        {/* Details */}
+        {details && (
+          <div className="space-y-2 mb-4">
+            {details.map((detail, index) => (
+              <div key={index} className="flex items-center gap-2 text-sm text-gray-600">
+                {detail.icon && <detail.icon className="h-4 w-4 text-gray-400" />}
+                {detail.label && <span className="text-gray-400">{detail.label}</span>}
+                <span className="text-gray-700">{detail.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="flex gap-2 p-3 bg-gray-50 border-t border-gray-100">
+        <Link 
+          to={link}
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-white rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+        >
+          <Pencil className="h-4 w-4" />
+          แก้ไข
+        </Link>
+        <button className="flex items-center justify-center p-2.5 bg-white rounded-xl border border-gray-200 text-red-500 hover:bg-red-50 transition-colors">
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  )
+}
 
 export default function SettingsPage() {
   const { t } = useLanguage()
@@ -21,40 +99,100 @@ export default function SettingsPage() {
   })
 
   const handleSaveFlowAccount = () => {
-    // TODO: Save to Supabase/localStorage
     alert('บันทึกการตั้งค่า FlowAccount สำเร็จ')
   }
 
   const handleConnectFlowAccount = () => {
-    // TODO: Implement OAuth flow
     window.open('https://developer.flowaccount.com/oauth/authorize', '_blank')
   }
+
+  const settingsItems = [
+    {
+      icon: CreditCard,
+      iconBg: 'bg-blue-100',
+      iconColor: 'text-blue-600',
+      title: 'ช่องทางการชำระเงิน',
+      subtitle: 'ตั้งค่าวิธีการรับเงิน',
+      status: { text: 'เปิดใช้งาน', bgColor: 'bg-green-100', textColor: 'text-green-700' },
+      link: '/payment-methods'
+    },
+    {
+      icon: Store,
+      iconBg: 'bg-green-100',
+      iconColor: 'text-green-600',
+      title: 'ข้อมูลร้าน',
+      subtitle: 'More Drug Store',
+      details: [
+        { value: '02-123-4567' },
+        { value: 'contact@moredrugstore.com' },
+        { value: '123 ถนนสุขุมวิท กรุงเทพฯ' },
+      ],
+      link: '/settings/shop'
+    },
+    {
+      icon: Building2,
+      iconBg: 'bg-purple-100',
+      iconColor: 'text-purple-600',
+      title: 'การเชื่อมต่อ FlowAccount',
+      subtitle: 'บัญชีและใบกำกับภาษี',
+      status: flowAccount.connected 
+        ? { text: 'เชื่อมต่อแล้ว', bgColor: 'bg-green-100', textColor: 'text-green-700' }
+        : { text: 'ยังไม่เชื่อมต่อ', bgColor: 'bg-red-100', textColor: 'text-red-700' },
+      link: '/settings/flowaccount'
+    },
+    {
+      icon: Plug,
+      iconBg: 'bg-orange-100',
+      iconColor: 'text-orange-600',
+      title: 'การเชื่อมต่อ ZortOut',
+      subtitle: 'ระบบจัดการสต็อก',
+      status: { text: 'ยังไม่เชื่อมต่อ', bgColor: 'bg-gray-100', textColor: 'text-gray-600' },
+      link: '/settings/zortout'
+    },
+    {
+      icon: Users,
+      iconBg: 'bg-pink-100',
+      iconColor: 'text-pink-600',
+      title: 'การจัดการผู้ใช้',
+      subtitle: 'ผู้ใช้งานในระบบ',
+      details: [
+        { value: '1 ผู้ใช้งาน' },
+      ],
+      link: '/settings/users'
+    },
+    {
+      icon: FileText,
+      iconBg: 'bg-cyan-100',
+      iconColor: 'text-cyan-600',
+      title: 'รายงาน',
+      subtitle: 'ดูรายงานต่างๆ',
+      link: '/reports'
+    },
+  ]
   
   return (
     <div>
       <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">{t('settings.title')}</h1>
 
-      <div className="space-y-6">
-        <Card title="การตั้งค่าระบบ">
-          <div className="space-y-3">
-            <Link 
-              to="/payment-methods" 
-              className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <CreditCard className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">ช่องทางการชำระเงิน</p>
-                  <p className="text-sm text-gray-500">ตั้งค่าวิธีการรับเงิน</p>
-                </div>
-              </div>
-              <ChevronRight className="h-5 w-5 text-gray-400" />
-            </Link>
-          </div>
-        </Card>
+      {/* Grid of Settings Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        {settingsItems.map((item, index) => (
+          <SettingsCard
+            key={index}
+            icon={item.icon}
+            iconBg={item.iconBg}
+            iconColor={item.iconColor}
+            title={item.title}
+            subtitle={item.subtitle}
+            details={item.details}
+            status={item.status}
+            link={item.link}
+          />
+        ))}
+      </div>
 
+      {/* Legacy Settings Sections - Keep for backward compatibility */}
+      <div className="space-y-6 hidden">
         <Card title="ข้อมูลร้าน">
           <div className="space-y-4">
             <Input label="ชื่อร้าน" placeholder="More Drug Store" />
@@ -76,7 +214,6 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            {/* Connection Status */}
             <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
               {flowAccount.connected ? (
                 <>
@@ -95,7 +232,7 @@ export default function SettingsPage() {
               label="Client ID" 
               placeholder="flow_xxxxxxxxxxxxxxxx"
               value={flowAccount.clientId}
-              onChange={(e) => setFlowAccount({...flowAccount, clientId: e.target.value})}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFlowAccount({...flowAccount, clientId: e.target.value})}
             />
             
             <Input 
@@ -103,14 +240,14 @@ export default function SettingsPage() {
               type="password"
               placeholder="••••••••"
               value={flowAccount.clientSecret}
-              onChange={(e) => setFlowAccount({...flowAccount, clientSecret: e.target.value})}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFlowAccount({...flowAccount, clientSecret: e.target.value})}
             />
             
             <Input 
               label="Redirect URI" 
               placeholder="https://your-app.com/auth/flowaccount/callback"
               value={flowAccount.redirectUri}
-              onChange={(e) => setFlowAccount({...flowAccount, redirectUri: e.target.value})}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFlowAccount({...flowAccount, redirectUri: e.target.value})}
             />
 
             <div className="grid grid-cols-2 gap-4">
@@ -119,14 +256,14 @@ export default function SettingsPage() {
                 type="password"
                 placeholder="••••••••"
                 value={flowAccount.accessToken}
-                onChange={(e) => setFlowAccount({...flowAccount, accessToken: e.target.value})}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFlowAccount({...flowAccount, accessToken: e.target.value})}
               />
               <Input 
                 label="Refresh Token" 
                 type="password"
                 placeholder="••••••••"
                 value={flowAccount.refreshToken}
-                onChange={(e) => setFlowAccount({...flowAccount, refreshToken: e.target.value})}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFlowAccount({...flowAccount, refreshToken: e.target.value})}
               />
             </div>
 
@@ -140,33 +277,6 @@ export default function SettingsPage() {
                 เชื่อมต่อกับ FlowAccount
               </Button>
             </div>
-
-            <div className="text-xs text-gray-500 pt-2 border-t">
-              <p>ขั้นตอนการเชื่อมต่อ:</p>
-              <ol className="list-decimal list-inside space-y-1 mt-1">
-                <li>สมัคร Developer Account ที่ <a href="https://developer.flowaccount.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">developer.flowaccount.com</a></li>
-                <li>สร้าง App และรับ Client ID และ Client Secret</li>
-                <li>กรอกข้อมูลด้านบนและบันทึก</li>
-                <li>คลิก "เชื่อมต่อกับ FlowAccount" เพื่ออนุญาตการเข้าถึง</li>
-              </ol>
-            </div>
-          </div>
-        </Card>
-
-        <Card title="การเชื่อมต่อ ZortOut">
-          <div className="space-y-4">
-            <Input label="API URL" placeholder="https://api.zortout.com" />
-            <Input label="API Key" type="password" placeholder="••••••••" />
-            <Button variant="primary">
-              <Save className="h-5 w-5 mr-2" />
-              บันทึก
-            </Button>
-          </div>
-        </Card>
-
-        <Card title="การจัดการผู้ใช้">
-          <div className="text-center py-8 text-gray-500">
-            <p>ฟังก์ชันการจัดการผู้ใช้จะพร้อมใช้งานเร็วๆ นี้</p>
           </div>
         </Card>
       </div>
