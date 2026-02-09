@@ -12,25 +12,25 @@ export default function DashboardPage() {
       name: t('dashboard.todaySales'),
       value: '฿0',
       icon: DollarSign,
-      color: 'bg-green-500',
+      color: 'text-green-600',
     },
     {
       name: t('dashboard.salesCount'),
       value: '0',
       icon: TrendingUp,
-      color: 'bg-blue-500',
+      color: 'text-blue-600',
     },
     {
       name: t('dashboard.totalProducts'),
       value: '0',
       icon: Package,
-      color: 'bg-purple-500',
+      color: 'text-purple-600',
     },
     {
       name: t('dashboard.lowStock'),
       value: '0',
       icon: AlertTriangle,
-      color: 'bg-red-500',
+      color: 'text-red-600',
     },
   ]
 
@@ -47,8 +47,8 @@ export default function DashboardPage() {
         {stats.map((stat) => (
           <Card key={stat.name}>
             <div className="flex items-center">
-              <div className={`${stat.color} p-3 rounded-lg`}>
-                <stat.icon className="h-6 w-6 text-white" />
+              <div className="p-3">
+                <stat.icon className={`h-8 w-8 ${stat.color}`} />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">{stat.name}</p>
