@@ -110,7 +110,6 @@ export default function SalesChannelsSettingsPage() {
           {/* Channel List - Summary Card Style */}
           <div className="space-y-4">
             {SALES_CHANNELS.map((channel) => {
-              const Icon = channel.icon
               const selectedPaymentId = channelPaymentMap[channel.id]
               const selectedPaymentName = getPaymentMethodName(selectedPaymentId)
 
