@@ -1465,9 +1465,6 @@ export default function POSPage() {
                   </div>
                 )}
               </div>
-              {selectedCustomer?.id === 'default' && (
-                <p className="text-xs text-gray-600 mt-1">ค่าเริ่มต้น: ลูกค้าทั่วไป</p>
-              )}
             </div>
 
             {/* Sales Channel Info */}
