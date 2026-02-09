@@ -189,10 +189,7 @@ export default function SalesOrdersPage() {
 
       const { data: items, error: itemsError } = await supabase
         .from('order_items')
-        .select(`
-          *,
-          products(name)
-        `)
+        .select('*')
         .eq('order_id', orderId)
 
       if (itemsError) {
@@ -524,7 +521,7 @@ export default function SalesOrdersPage() {
                         <tbody className="divide-y divide-gray-200">
                           {selectedOrder.order_items?.map((item) => (
                             <tr key={item.id}>
-                              <td className="px-3 py-2">{item.product_name || item.products?.name || 'สินค้า'}</td>
+                              <td className="px-3 py-2">{item.product_name || 'สินค้า'}</td>
                               <td className="px-3 py-2 text-right">{item.quantity}</td>
                               <td className="px-3 py-2 text-right">{formatCurrency(item.unit_price)}</td>
                               <td className="px-3 py-2 text-right font-medium">{formatCurrency(item.total_price)}</td>
