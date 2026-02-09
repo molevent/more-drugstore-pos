@@ -1055,36 +1055,26 @@ export default function POSPage() {
         </div>
       </div>
 
-      {/* AI & Consultation Section */}
-      <div className="mb-4 mx-4 sm:mx-0">
-        <Card title="AI & ปรึกษา">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Link 
-              to="/ai-symptom-checker"
-              className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl hover:shadow-md transition-all"
-            >
-              <div className="h-10 w-10 rounded-xl bg-blue-500 flex items-center justify-center">
-                <Brain className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">AI ช่วยแนะนำยา</p>
-                <p className="text-sm text-gray-500">ตรวจสอบอาการและแนะนำยา</p>
-              </div>
-            </Link>
-            <Link 
-              to="/consultation-history"
-              className="flex items-center gap-3 p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-xl hover:shadow-md transition-all"
-            >
-              <div className="h-10 w-10 rounded-xl bg-green-500 flex items-center justify-center">
-                <FileText className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">ประวัติการปรึกษา</p>
-                <p className="text-sm text-gray-500">ดูประวัติการปรึกษาย้อนหลัง</p>
-              </div>
-            </Link>
+      {/* AI & Consultation Section - Now near the buttons */}
+      <div className="flex gap-2 mb-4 mx-4 sm:mx-0">
+        <Link 
+          to="/ai-symptom-checker"
+          className="flex-1 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200 hover:shadow-md transition-all"
+        >
+          <div className="h-8 w-8 rounded-lg bg-blue-500 flex items-center justify-center">
+            <Brain className="h-4 w-4 text-white" />
           </div>
-        </Card>
+          <span className="font-medium text-gray-900 text-sm">AI ช่วยแนะนำยา</span>
+        </Link>
+        <Link 
+          to="/consultation-history"
+          className="flex-1 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-50 to-green-100 rounded-xl border border-green-200 hover:shadow-md transition-all"
+        >
+          <div className="h-8 w-8 rounded-lg bg-green-500 flex items-center justify-center">
+            <FileText className="h-4 w-4 text-white" />
+          </div>
+          <span className="font-medium text-gray-900 text-sm">ประวัติการปรึกษา</span>
+        </Link>
       </div>
 
       {/* Held Bills Section - Always Visible at Top */}

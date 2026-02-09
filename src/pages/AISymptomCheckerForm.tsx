@@ -5,7 +5,7 @@ import { analyzeSymptoms } from '../services/gemini'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Brain, AlertTriangle, Pill, ShoppingCart, Save, Loader2, X, CheckCircle } from 'lucide-react'
+import { Brain, AlertTriangle, Pill, ShoppingCart, Save, Loader2, X, CheckCircle, ArrowLeft } from 'lucide-react'
 
 interface ConsultationData {
   patientName: string
@@ -240,12 +240,18 @@ export default function AISymptomCheckerForm() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <Brain className="h-8 w-8 text-blue-600" />
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">AI ช่วยแนะนำยา</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <Brain className="h-8 w-8 text-blue-600" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">AI ช่วยแนะนำยา</h1>
+          </div>
+          <p className="text-gray-600">กรอกข้อมูลผู้ป่วยและอาการในแบบฟอร์มเดียว</p>
         </div>
-        <p className="text-gray-600">กรอกข้อมูลผู้ป่วยและอาการในแบบฟอร์มเดียว</p>
+        <Button variant="secondary" onClick={() => navigate('/pos')}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          กลับไป POS
+        </Button>
       </div>
 
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">

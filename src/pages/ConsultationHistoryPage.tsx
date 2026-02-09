@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { FileText, Search, Calendar, User, Phone, Thermometer, Eye, ShoppingCart, Pill, Trash2 } from 'lucide-react'
+import { FileText, Search, Calendar, User, Phone, Thermometer, Eye, ShoppingCart, Pill, Trash2, ArrowLeft } from 'lucide-react'
 
 interface Consultation {
   id: string
@@ -346,12 +346,18 @@ export default function ConsultationHistoryPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <FileText className="h-8 w-8 text-blue-600" />
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">ประวัติการปรึกษา</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <FileText className="h-8 w-8 text-blue-600" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">ประวัติการปรึกษา</h1>
+          </div>
+          <p className="text-gray-600">รายการบันทึกการปรึกษาผู้ป่วยทั้งหมด</p>
         </div>
-        <p className="text-gray-600">รายการบันทึกการปรึกษาผู้ป่วยทั้งหมด</p>
+        <Button variant="secondary" onClick={() => navigate('/pos')}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          กลับไป POS
+        </Button>
       </div>
 
       {/* Search Bar */}
