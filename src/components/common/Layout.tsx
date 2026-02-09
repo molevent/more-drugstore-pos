@@ -165,11 +165,11 @@ export default function Layout({ children }: LayoutProps) {
                           }}
                           className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all ${
                             isActive
-                              ? 'bg-white text-black shadow-sm border-l-4 border-[#0D9488]'
+                              ? 'bg-white text-black shadow-sm border-l-4 border-blue-500'
                               : 'text-gray-700 hover:bg-white/60 hover:text-black'
                           }`}
                         >
-                          <item.icon className={`h-5 w-5 mr-3 ${isActive ? 'text-[#0D9488]' : 'text-gray-500'}`} />
+                          <item.icon className={`h-5 w-5 mr-3 ${isActive ? 'text-blue-500' : 'text-gray-500'}`} />
                           {item.name}
                         </Link>
                       )
