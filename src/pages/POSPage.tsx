@@ -138,6 +138,99 @@ export default function POSPage() {
   const { items, addItem, removeItem, updateQuantity, updateCustomPrice, clearCart, getTotal, getSubtotal, getTotalDiscount, setItems, setSalesChannel: setCartSalesChannel } = useCartStore()
   const { getProductByBarcode, products, fetchProducts } = useProductStore()
 
+  // Edit order state
+  const [editOrderId, setEditOrderId] = useState<string | null>(null)
+
+  // Check for edit query parameter on mount and load order data
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const editId = params.get('edit')
+    if (editId) {
+      console.log('POS: Loading order for editing:', editId)
+      setEditOrderId(editId)
+      loadOrderForEditing(editId)
+    }
+  }, [])
+
+  // Function to load order data for editing
+  const loadOrderForEditing = async (orderId: string) => {
+    try {
+      console.log('Fetching order data for editing:', orderId)
+      
+      // Fetch order details
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .single()
+      
+      if (orderError) {
+        console.error('Error fetching order:', orderError)
+        alert('ไม่สามารถโหลดข้อมูลออเดอร์ได้')
+        return
+      }
+      
+      if (!order) {
+        alert('ไม่พบออเดอร์นี้')
+        return
+      }
+      
+      // Fetch order items with product details
+      const { data: orderItems, error: itemsError } = await supabase
+        .from('order_items')
+        .select(`
+          *,
+          product:products(*)
+        `)
+        .eq('order_id', orderId)
+      
+      if (itemsError) {
+        console.error('Error fetching order items:', itemsError)
+        alert('ไม่สามารถโหลดรายการสินค้าได้')
+        return
+      }
+      
+      // Clear current cart
+      clearCart()
+      
+      // Set sales channel
+      if (order.platform_id) {
+        setSalesChannel(order.platform_id)
+      }
+      
+      // Set customer
+      if (order.customer_name) {
+        setSelectedCustomer({ id: 'loaded', name: order.customer_name, type: 'buyer' })
+      }
+      
+      // Set payment method
+      if (order.payment_method) {
+        const method = paymentMethods.find(m => m.name === order.payment_method)
+        if (method) {
+          setSelectedPaymentMethod(method.id)
+        }
+      }
+      
+      // Add items to cart
+      let addedCount = 0
+      if (orderItems && orderItems.length > 0) {
+        for (const item of orderItems) {
+          if (item.product) {
+            addItem(item.product, item.quantity)
+            addedCount++
+          }
+        }
+      }
+      
+      console.log(`Loaded order ${orderId}: ${addedCount} items`)
+      alert(`กำลังแก้ไขออเดอร์: ${order.order_number}\nโหลดสินค้า ${addedCount} รายการ`)
+      
+    } catch (err) {
+      console.error('Exception loading order for editing:', err)
+      alert('เกิดข้อผิดพลาดในการโหลดออเดอร์')
+    }
+  }
+
   // Load products and customers on mount
   useEffect(() => {
     console.log('POS: Loading products...')
@@ -539,51 +632,104 @@ export default function POSPage() {
     if (confirmed) {
       // Save order to database
       try {
-        const orderNumber = `ORD${Date.now()}`
-        const subtotal = getSubtotal()
-        const discount = getTotalDiscount()
-        const total = getTotal()
         const paymentMethodName = paymentMethods.find(m => m.id === selectedPaymentMethod)?.name || 'เงินสด'
-        const { data: orderData, error: orderError } = await supabase
-          .from('orders')
-          .insert({
-            order_number: orderNumber,
-            user_id: (await supabase.auth.getUser()).data.user?.id,
-            customer_name: selectedCustomer?.name || 'ลูกค้าทั่วไป',
-            subtotal: subtotal,
-            discount: discount,
-            total: total,
-            payment_method: paymentMethodName,
-          })
-          .select()
-          .single()
+        
+        if (editOrderId) {
+          // Update existing order
+          const { error: updateError } = await supabase
+            .from('orders')
+            .update({
+              customer_name: selectedCustomer?.name || 'ลูกค้าทั่วไป',
+              subtotal: getSubtotal(),
+              discount: getTotalDiscount(),
+              total: getTotal(),
+              payment_method: paymentMethodName,
+              platform_id: salesChannel,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', editOrderId)
 
-        if (orderError) {
-          console.error('Error saving order:', orderError)
-          alert('ไม่สามารถบันทึกออเดอร์ได้')
-          return
+          if (updateError) {
+            console.error('Error updating order:', updateError)
+            alert('ไม่สามารถอัพเดตออเดอร์ได้')
+            return
+          }
+
+          // Delete old order items
+          await supabase
+            .from('order_items')
+            .delete()
+            .eq('order_id', editOrderId)
+
+          // Insert new order items
+          const orderItems = items.map(item => ({
+            order_id: editOrderId,
+            product_id: item.product.id,
+            product_name: item.product.name_th,
+            quantity: item.quantity,
+            unit_price: item.product.base_price,
+            discount: item.discount || 0,
+            total_price: item.product.base_price * item.quantity - (item.discount || 0),
+          }))
+
+          const { error: itemsError } = await supabase
+            .from('order_items')
+            .insert(orderItems)
+
+          if (itemsError) {
+            console.error('Error saving order items:', itemsError)
+          }
+
+          alert('แก้ไขออเดอร์สำเร็จ!')
+          
+          // Clear edit mode
+          setEditOrderId(null)
+          // Remove query parameter
+          window.history.replaceState({}, '', '/pos')
+        } else {
+          // Create new order
+          const orderNumber = `ORD${Date.now()}`
+          const { data: orderData, error: orderError } = await supabase
+            .from('orders')
+            .insert({
+              order_number: orderNumber,
+              user_id: (await supabase.auth.getUser()).data.user?.id,
+              customer_name: selectedCustomer?.name || 'ลูกค้าทั่วไป',
+              subtotal: getSubtotal(),
+              discount: getTotalDiscount(),
+              total: getTotal(),
+              payment_method: paymentMethodName,
+            })
+            .select()
+            .single()
+
+          if (orderError) {
+            console.error('Error saving order:', orderError)
+            alert('ไม่สามารถบันทึกออเดอร์ได้')
+            return
+          }
+
+          // Save order items
+          const orderItems = items.map(item => ({
+            order_id: orderData.id,
+            product_id: item.product.id,
+            product_name: item.product.name_th,
+            quantity: item.quantity,
+            unit_price: item.product.base_price,
+            discount: item.discount || 0,
+            total_price: item.product.base_price * item.quantity - (item.discount || 0),
+          }))
+
+          const { error: itemsError } = await supabase
+            .from('order_items')
+            .insert(orderItems)
+
+          if (itemsError) {
+            console.error('Error saving order items:', itemsError)
+          }
+
+          alert(`ขายสำเร็จ! เลขออเดอร์: ${orderNumber}`)
         }
-
-        // Save order items
-        const orderItems = items.map(item => ({
-          order_id: orderData.id,
-          product_id: item.product.id,
-          product_name: item.product.name_th,
-          quantity: item.quantity,
-          unit_price: item.product.base_price,
-          discount: item.discount || 0,
-          total_price: item.product.base_price * item.quantity - (item.discount || 0),
-        }))
-
-        const { error: itemsError } = await supabase
-          .from('order_items')
-          .insert(orderItems)
-
-        if (itemsError) {
-          console.error('Error saving order items:', itemsError)
-        }
-
-        alert(`ขายสำเร็จ! เลขออเดอร์: ${orderNumber}`)
         
         clearCart()
         setSalesChannel('walk-in')
@@ -1528,6 +1674,13 @@ export default function POSPage() {
             </div>
 
             <div className="space-y-2">
+              {editOrderId && (
+                <div className="bg-amber-100 border border-amber-300 rounded-lg px-4 py-2 text-center">
+                  <span className="text-amber-800 text-sm font-medium">
+                    โหมดแก้ไขออเดอร์ #{editOrderId.slice(0, 8)}
+                  </span>
+                </div>
+              )}
               <Button
                 variant="primary"
                 size="lg"
@@ -1535,7 +1688,7 @@ export default function POSPage() {
                 onClick={handleCheckout}
                 disabled={items.length === 0}
               >
-                ชำระเงิน
+                {editOrderId ? 'บันทึกการแก้ไข' : 'ชำระเงิน'}
               </Button>
               <div className="grid grid-cols-2 gap-2">
                 <Button

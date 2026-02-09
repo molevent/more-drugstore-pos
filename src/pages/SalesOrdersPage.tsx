@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { ListOrdered, Search, Calendar, Eye } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { ListOrdered, Search, Calendar, Eye, Edit } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
@@ -47,6 +48,7 @@ const SALES_CHANNELS: Record<string, string> = {
 }
 
 export default function SalesOrdersPage() {
+  const navigate = useNavigate()
   const [orders, setOrders] = useState<SalesOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -210,8 +212,8 @@ export default function SalesOrdersPage() {
   }
 
   const handleEditOrder = (orderId: string) => {
-    // Navigate to POS page with order ID for editing
-    window.location.href = `/pos?edit=${orderId}`
+    console.log('Navigating to edit order:', orderId)
+    navigate(`/pos?edit=${orderId}`)
   }
 
   const closeDetailModal = () => {
@@ -398,6 +400,7 @@ export default function SalesOrdersPage() {
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button variant="primary" size="sm" onClick={() => handleEditOrder(order.id)}>
+                          <Edit className="h-4 w-4 mr-1" />
                           แก้ไข
                         </Button>
                       </div>
