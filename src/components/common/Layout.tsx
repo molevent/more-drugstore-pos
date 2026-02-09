@@ -2,6 +2,7 @@ import { ReactNode, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { 
   Home,
+  ListOrdered,
   ShoppingCart, 
   Package, 
   Warehouse, 
@@ -59,7 +60,7 @@ export default function Layout({ children }: LayoutProps) {
       items: [
         { name: t('nav.dashboard'), href: '/dashboard', icon: Home },
         { name: t('nav.pos'), href: '/pos', icon: ShoppingCart },
-        { name: 'รายการขายทั้งหมด', href: '/sales-orders', icon: Receipt },
+        { name: 'รายการขายทั้งหมด', href: '/sales-orders', icon: ListOrdered },
       ]
     },
     {
