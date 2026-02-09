@@ -4,7 +4,7 @@ import { useProductStore } from '../stores/productStore'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Package, Receipt, AlertTriangle, History, Bell, Camera, Brain, FileText } from 'lucide-react'
+import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Package, Receipt, AlertTriangle, History, Bell, Camera, Brain, FileText, CreditCard } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { Product } from '../types/database'
 import { supabase } from '../services/supabase'
@@ -1489,9 +1489,18 @@ export default function POSPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-[#7D735F] bg-[#B8C9B8]/20 p-2 rounded-full">
-                  ยังไม่มีวิธีการชำระเงิน
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-[#7D735F] bg-[#B8C9B8]/20 px-3 py-2 rounded-full flex-1">
+                    ยังไม่มีวิธีการชำระเงิน
+                  </p>
+                  <Link
+                    to="/payment-methods"
+                    className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-full border border-blue-200 hover:bg-blue-100 transition-all text-sm"
+                  >
+                    <CreditCard className="h-4 w-4 text-blue-600" />
+                    <span className="font-medium text-blue-700">เพิ่มวิธีชำระ</span>
+                  </Link>
+                </div>
               )}
             </div>
 
