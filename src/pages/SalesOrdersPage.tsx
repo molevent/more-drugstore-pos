@@ -225,12 +225,12 @@ export default function SalesOrdersPage() {
   const totalOrders = filteredOrders.length
 
   return (
-    <div className="min-h-screen bg-[#F8FBFF]">
+    <div className="min-h-screen bg-white">
       <div className="flex items-center justify-between mb-6 px-4 sm:px-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <ListOrdered className="h-7 w-7 text-blue-600" />
-            รายการขายทั้งหมด
+            รายงานการขาย
           </h1>
           <p className="text-gray-600 mt-1">รายการขายและยอดขายรวม</p>
         </div>
