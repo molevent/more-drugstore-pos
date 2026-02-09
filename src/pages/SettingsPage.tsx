@@ -14,7 +14,7 @@ import {
   FolderTree,
   Warehouse
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Card from '../components/common/Card'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
@@ -84,6 +84,32 @@ function SettingsCard({ icon: Icon, iconBg, iconColor, title, subtitle, details,
 export default function SettingsPage() {
   const { t } = useLanguage()
   
+  // Shop info state
+  const [shopInfo, setShopInfo] = useState({
+    name: 'More Drug Store',
+    phone: '02-123-4567',
+    email: 'contact@moredrugstore.com',
+    address: '123 ถนนสุขุมวิท กรุงเทพฯ'
+  })
+
+  // Load shop info from localStorage on mount
+  useEffect(() => {
+    const localData = localStorage.getItem('shop_settings')
+    if (localData) {
+      try {
+        const parsed = JSON.parse(localData)
+        setShopInfo({
+          name: parsed.name || 'More Drug Store',
+          phone: parsed.phone || '02-123-4567',
+          email: parsed.email || 'contact@moredrugstore.com',
+          address: parsed.address || '123 ถนนสุขุมวิท กรุงเทพฯ'
+        })
+      } catch (e) {
+        console.error('Error parsing shop settings:', e)
+      }
+    }
+  }, [])
+  
   // FlowAccount settings state
   const [flowAccount, setFlowAccount] = useState({
     enabled: false,
@@ -119,11 +145,11 @@ export default function SettingsPage() {
       iconBg: 'bg-green-100',
       iconColor: 'text-green-600',
       title: 'ข้อมูลร้าน',
-      subtitle: 'More Drug Store',
+      subtitle: shopInfo.name,
       details: [
-        { value: '02-123-4567' },
-        { value: 'contact@moredrugstore.com' },
-        { value: '123 ถนนสุขุมวิท กรุงเทพฯ' },
+        { value: shopInfo.phone },
+        { value: shopInfo.email },
+        { value: shopInfo.address },
       ],
       link: '/settings/shop'
     },
