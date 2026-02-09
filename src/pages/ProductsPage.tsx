@@ -570,7 +570,7 @@ export default function ProductsPage() {
               กลับ
             </Button>
           )}
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Package className="h-7 w-7 text-blue-600" />
             {selectedCategory && selectedCategory !== 'uncategorized'
               ? categories.find(c => c.id === selectedCategory)?.name_th || t('products.title')
