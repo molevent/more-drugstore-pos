@@ -1055,21 +1055,21 @@ export default function POSPage() {
       </div>
 
       {/* Held Bills Section - Always Visible at Top */}
-      <div className={`mb-4 mx-4 sm:mx-0 p-3 rounded-lg border ${heldBills.length > 0 ? 'bg-[#E6B87E]/30 border-[#E6B87E]' : 'bg-[#8B968B]/10 border-[#8B968B]/20'}`}>
+      <div className={`mb-4 mx-4 sm:mx-0 p-3 rounded-lg border ${heldBills.length > 0 ? 'bg-[#F9E4B7]/50 border-[#D4756A]/30' : 'bg-[#B8C9B8]/10 border-[#B8C9B8]/30'}`}>
         <div className="flex items-center justify-between mb-2">
-          <span className={`text-sm font-medium ${heldBills.length > 0 ? 'text-[#8B4513]' : 'text-[#8B968B]'}`}>
+          <span className={`text-sm font-medium ${heldBills.length > 0 ? 'text-[#A67B5B]' : 'text-[#7D735F]'}`}>
             บิลที่พักไว้ ({heldBills.length})
           </span>
           {heldBills.length > 0 && (
             <button
               onClick={() => setShowHeldBills(true)}
-              className="text-sm text-[#5F8B8B] hover:text-[#5F8B8B]/80 underline"
+              className="text-sm text-[#7D735F] hover:text-[#7D735F]/80 underline"
             >
               ดูทั้งหมด
             </button>
           )}
         </div>
-        <div className={`text-xs ${heldBills.length > 0 ? 'text-[#8B4513]/80' : 'text-[#8B968B]'}`}>
+        <div className={`text-xs ${heldBills.length > 0 ? 'text-[#A67B5B]/80' : 'text-[#7D735F]'}`}>
           {heldBills.length > 0 
             ? `ล่าสุด: ${heldBills[heldBills.length - 1]?.name}` 
             : 'ไม่มีบิลที่พักไว้'}
@@ -1077,22 +1077,22 @@ export default function POSPage() {
       </div>
 
       {showAlertHistory && (
-        <div className="mb-4 bg-[#FAF9F6] rounded-lg shadow p-4 border border-[#5F8B8B]/20">
+        <div className="mb-4 bg-white rounded-lg shadow p-4 border border-[#B8C9B8]/30">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-[#5F8B8B]" />
-              <h3 className="font-semibold text-[#1A3A1A]">ประวัติการแจ้งเตือน</h3>
+              <Bell className="h-5 w-5 text-[#7D735F]" />
+              <h3 className="font-semibold text-[#4A4A4A]">ประวัติการแจ้งเตือน</h3>
             </div>
             <button
               onClick={() => setShowAlertHistory(false)}
-              className="text-[#8B968B] hover:text-[#1A3A1A]"
+              className="text-[#7D735F] hover:text-[#4A4A4A]"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
           
           {savedAlertLogs.length === 0 ? (
-            <div className="text-center py-4 text-[#8B968B]">
+            <div className="text-center py-4 text-[#7D735F]">
               <p>ไม่มีประวัติการแจ้งเตือน</p>
             </div>
           ) : (
@@ -1106,17 +1106,17 @@ export default function POSPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <p className="font-semibold text-sm text-[#1A3A1A]">{log.product_name}</p>
-                      <p className="font-medium text-sm text-[#1A3A1A]">{log.alert_title}</p>
+                      <p className="font-semibold text-sm text-[#4A4A4A]">{log.product_name}</p>
+                      <p className="font-medium text-sm text-[#4A4A4A]">{log.alert_title}</p>
                       {log.alert_message && (
-                        <p className="text-sm text-[#8B968B] mt-1">{log.alert_message}</p>
+                        <p className="text-sm text-[#7D735F] mt-1">{log.alert_message}</p>
                       )}
-                      <p className="text-xs text-[#8B968B]/70 mt-1">
+                      <p className="text-xs text-[#7D735F]/70 mt-1">
                         {formatAlertDate(log.created_at)}
                       </p>
                     </div>
                     {!log.acknowledged && (
-                      <span className="px-2 py-1 bg-[#C45D5D] text-white text-xs rounded-full">
+                      <span className="px-2 py-1 bg-[#D4756A] text-white text-xs rounded-full">
                         ใหม่
                       </span>
                     )}
@@ -1137,15 +1137,15 @@ export default function POSPage() {
                 onClick={() => setShowStockOnly(!showStockOnly)}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
                   showStockOnly
-                    ? 'bg-[#0D5D4F]/20 text-[#0D5D4F] border border-[#0D5D4F]'
-                    : 'bg-[#8B968B]/10 text-[#8B968B] border border-[#8B968B]/30 hover:bg-[#8B968B]/20'
+                    ? 'bg-[#A67B5B]/20 text-[#A67B5B] border border-[#A67B5B]'
+                    : 'bg-[#B8C9B8]/20 text-[#7D735F] border border-[#B8C9B8]/50 hover:bg-[#B8C9B8]/30'
                 }`}
               >
                 <Package className="h-4 w-4" />
                 {showStockOnly ? 'เฉพาะสินค้ามี stock' : 'แสดงทั้งหมด'}
               </button>
               {showStockOnly && (
-                <span className="text-xs text-[#0D5D4F]">กรอง: สินค้าคงเหลือ {'>'} 0</span>
+                <span className="text-xs text-[#A67B5B]">กรอง: สินค้าคงเหลือ {'>'} 0</span>
               )}
             </div>
 
@@ -1159,41 +1159,41 @@ export default function POSPage() {
                     onChange={(e) => setBarcode(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="สแกนหรือพิมพ์บาร์โค้ดสินค้า"
-                    className="w-full px-3 py-2 border border-[#8B968B]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5F8B8B] focus:border-transparent text-[#1A3A1A] placeholder-[#8B968B]/50 bg-[#FAF9F6]"
+                    className="w-full px-3 py-2 border border-[#B8C9B8]/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7D735F] focus:border-transparent text-[#4A4A4A] placeholder-[#7D735F]/50 bg-white"
                     autoFocus
                   />
                   
                   {/* Autocomplete Dropdown */}
                   {showDropdown && searchResults.length > 0 && (
-                    <div className="absolute z-[9999] w-full mt-1 bg-[#FAF9F6] border-2 border-[#5F8B8B] rounded-lg shadow-2xl max-h-80 overflow-y-auto">
+                    <div className="absolute z-[9999] w-full mt-1 bg-white border-2 border-[#7D735F] rounded-lg shadow-2xl max-h-80 overflow-y-auto">
                       {searchResults.map((product, index) => (
                         <div
                           key={product.id}
                           onClick={() => addProductToCart(product)}
-                          className={`px-4 py-3 cursor-pointer border-b border-[#8B968B]/20 last:border-b-0 hover:bg-[#E6B87E]/20 ${
-                            index === selectedIndex ? 'bg-[#E6B87E]/20' : ''
+                          className={`px-4 py-3 cursor-pointer border-b border-[#B8C9B8]/20 last:border-b-0 hover:bg-[#F9E4B7]/30 ${
+                            index === selectedIndex ? 'bg-[#F9E4B7]/30' : ''
                           }`}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <p className="font-medium text-[#1A3A1A]">{product.name_th}</p>
+                              <p className="font-medium text-[#4A4A4A]">{product.name_th}</p>
                               {product.name_en && (
-                                <p className="text-sm text-[#8B968B]">{product.name_en}</p>
+                                <p className="text-sm text-[#7D735F]">{product.name_en}</p>
                               )}
-                              <p className="text-xs text-[#8B968B]/70 mt-1">
+                              <p className="text-xs text-[#7D735F]/70 mt-1">
                                 บาร์โค้ด: {product.barcode}
                               </p>
                             </div>
                             <div className="text-right ml-4">
-                              <p className="font-bold text-[#5F8B8B]">
+                              <p className="font-bold text-[#7D735F]">
                                 ฿{getProductPriceForChannel(product, salesChannel as SalesChannel).toFixed(2)}
                               </p>
                               {getProductPriceForChannel(product, salesChannel as SalesChannel) !== product.base_price && (
-                                <p className="text-xs text-[#8B968B]/60 line-through">
+                                <p className="text-xs text-[#7D735F]/60 line-through">
                                   ฿{product.base_price.toFixed(2)}
                                 </p>
                               )}
-                              <p className="text-xs text-[#8B968B]">
+                              <p className="text-xs text-[#7D735F]">
                                 คงเหลือ: {product.stock_quantity}
                               </p>
                             </div>
@@ -1219,36 +1219,36 @@ export default function POSPage() {
 
             <div className="space-y-2">
               {items.length === 0 ? (
-                <div className="text-center py-12 text-[#8B968B]">
-                  <div className="h-20 w-20 mx-auto mb-4 rounded-2xl bg-[#FEF4E0] flex items-center justify-center">
-                    <ShoppingCart className="h-10 w-10 text-[#8B968B]/50" />
+                <div className="text-center py-12 text-[#7D735F]">
+                  <div className="h-20 w-20 mx-auto mb-4 rounded-2xl bg-[#F5F0E6] flex items-center justify-center">
+                    <ShoppingCart className="h-10 w-10 text-[#B8C9B8]" />
                   </div>
-                  <p className="text-sm font-medium text-[#1A3A1A]">ยังไม่มีสินค้าในตะกร้า</p>
-                  <p className="text-xs text-[#8B968B]/70 mt-1">สแกนบาร์โค้ดเพื่อเพิ่มสินค้า</p>
+                  <p className="text-sm font-medium text-[#4A4A4A]">ยังไม่มีสินค้าในตะกร้า</p>
+                  <p className="text-xs text-[#7D735F]/70 mt-1">สแกนบาร์โค้ดเพื่อเพิ่มสินค้า</p>
                 </div>
               ) : (
                 items.map((item) => (
                   <div
                     key={item.product.id}
-                    className="flex items-center gap-3 p-4 bg-[#FAF9F6] rounded-2xl shadow-sm border border-[#8B968B]/20 hover:shadow-md transition-shadow"
+                    className="flex items-center gap-3 p-4 bg-white rounded-2xl shadow-sm border border-[#B8C9B8]/30 hover:shadow-md transition-shadow"
                   >
                     {/* Product Image */}
                     {item.product.image_url ? (
                       <img
                         src={item.product.image_url}
                         alt={item.product.name_th}
-                        className="h-14 w-14 object-cover rounded-lg border border-[#8B968B]/30 flex-shrink-0"
+                        className="h-14 w-14 object-cover rounded-lg border border-[#B8C9B8]/30 flex-shrink-0"
                       />
                     ) : (
-                      <div className="h-14 w-14 bg-[#FEF4E0] rounded-lg border border-[#8B968B]/30 flex items-center justify-center flex-shrink-0">
-                        <Package className="h-6 w-6 text-[#8B968B]" />
+                      <div className="h-14 w-14 bg-[#F5F0E6] rounded-lg border border-[#B8C9B8]/30 flex items-center justify-center flex-shrink-0">
+                        <Package className="h-6 w-6 text-[#B8C9B8]" />
                       </div>
                     )}
                     
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-[#1A3A1A] truncate">{item.product.name_th}</h3>
+                      <h3 className="font-medium text-[#4A4A4A] truncate">{item.product.name_th}</h3>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-sm text-[#8B968B]">ราคา:</span>
+                        <span className="text-sm text-[#7D735F]">ราคา:</span>
                         <Input
                           type="number"
                           min="0"
@@ -1260,13 +1260,13 @@ export default function POSPage() {
                               updateCustomPrice(item.product.id, value)
                             }
                           }}
-                          className="w-20 text-sm h-6 py-0 border-[#8B968B]/30"
+                          className="w-20 text-sm h-6 py-0 border-[#B8C9B8]/50"
                         />
                         {item.custom_price !== undefined && item.custom_price !== null && (
-                          <span className="text-xs text-[#C45D5D]">(แก้ไข)</span>
+                          <span className="text-xs text-[#D4756A]">(แก้ไข)</span>
                         )}
                       </div>
-                      <p className="text-xs text-[#8B968B]/60 line-through">
+                      <p className="text-xs text-[#7D735F]/60 line-through">
                         ราคาปกติ: ฿{getProductPriceForChannel(item.product, salesChannel as SalesChannel).toFixed(2)}
                       </p>
                     </div>
@@ -1307,7 +1307,7 @@ export default function POSPage() {
                       >
                         +
                       </Button>
-                      <span className="font-medium text-[#1A3A1A] w-20 text-right">
+                      <span className="font-medium text-[#4A4A4A] w-20 text-right">
                         ฿{((item.custom_price ?? getProductPriceForChannel(item.product, salesChannel as SalesChannel)) * item.quantity).toFixed(2)}
                       </span>
                       <Button
@@ -1329,54 +1329,54 @@ export default function POSPage() {
           <Card title="สรุปรายการ">
             {/* Customer Selection */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-[#8B968B] mb-2">
+              <label className="block text-sm font-medium text-[#7D735F] mb-2">
                 ลูกค้า
               </label>
               <div className="relative" ref={customerDropdownRef}>
                 {selectedCustomer && selectedCustomer.id !== 'default' ? (
-                  <div className="flex items-center gap-2 p-2 bg-[#5F8B8B]/10 border border-[#5F8B8B]/30 rounded-lg">
-                    <User className="h-4 w-4 text-[#5F8B8B]" />
+                  <div className="flex items-center gap-2 p-2 bg-[#7D735F]/10 border border-[#7D735F]/30 rounded-lg">
+                    <User className="h-4 w-4 text-[#7D735F]" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#1A3A1A] truncate">{selectedCustomer.name}</p>
+                      <p className="text-sm font-medium text-[#4A4A4A] truncate">{selectedCustomer.name}</p>
                       {selectedCustomer.phone && (
-                        <p className="text-xs text-[#5F8B8B]">{selectedCustomer.phone}</p>
+                        <p className="text-xs text-[#7D735F]">{selectedCustomer.phone}</p>
                       )}
                     </div>
                     <button
                       onClick={handleClearCustomer}
-                      className="text-[#5F8B8B]/60 hover:text-[#5F8B8B]"
+                      className="text-[#7D735F]/60 hover:text-[#7D735F]"
                     >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                 ) : (
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8B968B]" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7D735F]" />
                     <input
                       type="text"
                       value={customerSearch}
                       onChange={(e) => setCustomerSearch(e.target.value)}
                       placeholder="พิมพ์ชื่อลูกค้า (ลูกค้าทั่วไป)"
-                      className="w-full pl-9 pr-3 py-2 border border-[#8B968B]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5F8B8B] text-sm bg-[#FAF9F6]"
+                      className="w-full pl-9 pr-3 py-2 border border-[#B8C9B8]/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7D735F] text-sm bg-white"
                     />
                   </div>
                 )}
 
                 {/* Customer Dropdown */}
                 {showCustomerDropdown && customerResults.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-[#FAF9F6] border border-[#8B968B]/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-[#B8C9B8]/30 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {customerResults.map((customer) => (
                       <div
                         key={customer.id}
                         onClick={() => handleSelectCustomer(customer)}
-                        className="px-3 py-2 cursor-pointer hover:bg-[#E6B87E]/20 border-b border-[#8B968B]/10 last:border-b-0"
+                        className="px-3 py-2 cursor-pointer hover:bg-[#F9E4B7]/30 border-b border-[#B8C9B8]/20 last:border-b-0"
                       >
                         <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-[#8B968B]" />
+                          <User className="h-4 w-4 text-[#B8C9B8]" />
                           <div className="flex-1">
-                            <p className="font-medium text-sm text-[#1A3A1A]">{customer.name}</p>
+                            <p className="font-medium text-sm text-[#4A4A4A]">{customer.name}</p>
                             {customer.phone && (
-                              <p className="text-xs text-[#8B968B]">{customer.phone}</p>
+                              <p className="text-xs text-[#7D735F]">{customer.phone}</p>
                             )}
                           </div>
                         </div>
@@ -1387,8 +1387,8 @@ export default function POSPage() {
 
                 {/* Add New Contact Button - Show when searching but no results */}
                 {customerSearch.trim().length > 0 && !showCustomerDropdown && (
-                  <div className="absolute z-50 w-full mt-1 bg-[#FAF9F6] border border-[#8B968B]/20 rounded-lg shadow-lg p-3">
-                    <p className="text-sm text-[#8B968B] mb-2">ไม่พบลูกค้า "{customerSearch}"</p>
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-[#B8C9B8]/30 rounded-lg shadow-lg p-3">
+                    <p className="text-sm text-[#7D735F] mb-2">ไม่พบลูกค้า "{customerSearch}"</p>
                     <Button
                       type="button"
                       variant="secondary"
@@ -1407,13 +1407,13 @@ export default function POSPage() {
                 )}
               </div>
               {selectedCustomer?.id === 'default' && (
-                <p className="text-xs text-[#8B968B] mt-1">ค่าเริ่มต้น: ลูกค้าทั่วไป</p>
+                <p className="text-xs text-[#7D735F] mt-1">ค่าเริ่มต้น: ลูกค้าทั่วไป</p>
               )}
             </div>
 
             {/* Sales Channel Selection */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-[#8B968B] mb-2">
+              <label className="block text-sm font-medium text-[#7D735F] mb-2">
                 ช่องทางการขาย
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -1426,21 +1426,21 @@ export default function POSPage() {
                       onClick={() => setSalesChannel(channel.id)}
                       className={`flex items-center justify-center gap-2 px-3 py-3 rounded-lg border-2 transition-all ${
                         isSelected
-                          ? 'border-[#5F8B8B] bg-[#5F8B8B]/10 text-[#5F8B8B] ring-2 ring-[#5F8B8B]/30'
-                          : 'border-[#8B968B]/30 bg-[#FAF9F6] text-[#8B968B] hover:border-[#5F8B8B]/50'
+                          ? 'border-[#7D735F] bg-[#7D735F]/10 text-[#7D735F] ring-2 ring-[#7D735F]/30'
+                          : 'border-[#B8C9B8]/50 bg-white text-[#7D735F] hover:border-[#7D735F]/50'
                       }`}
                     >
-                      <Icon className={`h-5 w-5 ${isSelected ? 'text-[#5F8B8B]' : ''}`} />
+                      <Icon className={`h-5 w-5 ${isSelected ? 'text-[#7D735F]' : ''}`} />
                       <span className={`text-sm font-medium ${isSelected ? 'font-bold' : ''}`}>{channel.name}</span>
                       {isSelected && (
-                        <span className="ml-1 text-xs bg-[#5F8B8B] text-white px-1.5 py-0.5 rounded-full">✓</span>
+                        <span className="ml-1 text-xs bg-[#7D735F] text-white px-1.5 py-0.5 rounded-full">✓</span>
                       )}
                     </button>
                   )
                 })}
               </div>
               {salesChannel && (
-                <p className="mt-2 text-sm text-[#5F8B8B] font-medium">
+                <p className="mt-2 text-sm text-[#7D735F] font-medium">
                   กำลังขายผ่าน: {SALES_CHANNELS.find(c => c.id === salesChannel)?.name}
                 </p>
               )}
@@ -1448,7 +1448,7 @@ export default function POSPage() {
 
             {/* Payment Method Selection */}
             <div className="mb-4">
-              <label className="block text-xs font-medium text-[#8B968B] mb-2">
+              <label className="block text-xs font-medium text-[#7D735F] mb-2">
                 วิธีชำระ
               </label>
               {paymentMethods.length > 0 ? (
@@ -1459,8 +1459,8 @@ export default function POSPage() {
                       onClick={() => setSelectedPaymentMethod(method.id)}
                       className={`px-4 py-2 rounded-full border-2 transition-all text-sm whitespace-nowrap ${
                         selectedPaymentMethod === method.id
-                          ? 'border-[#0D5D4F] bg-[#0D5D4F] text-white font-medium shadow-md'
-                          : 'border-[#8B968B]/40 bg-[#FAF9F6] text-[#8B968B] hover:border-[#0D5D4F]/50 hover:bg-[#0D5D4F]/10'
+                          ? 'border-[#A67B5B] bg-[#A67B5B] text-white font-medium shadow-md'
+                          : 'border-[#B8C9B8]/50 bg-white text-[#7D735F] hover:border-[#A67B5B]/50 hover:bg-[#A67B5B]/10'
                       }`}
                     >
                       {method.name}
@@ -1468,23 +1468,23 @@ export default function POSPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-[#8B968B] bg-[#8B968B]/10 p-2 rounded-full">
+                <p className="text-xs text-[#7D735F] bg-[#B8C9B8]/20 p-2 rounded-full">
                   ยังไม่มีวิธีการชำระเงิน
                 </p>
               )}
             </div>
 
             <div className="space-y-3 mb-6">
-              <div className="flex justify-between text-[#8B968B]">
+              <div className="flex justify-between text-[#7D735F]">
                 <span>ยอดรวม</span>
                 <span>฿{getSubtotal().toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-[#8B968B]">
+              <div className="flex justify-between text-[#7D735F]">
                 <span>ส่วนลด</span>
                 <span>฿0.00</span>
               </div>
-              <div className="border-t border-[#8B968B]/30 pt-3">
-                <div className="flex justify-between text-xl font-bold text-[#1A3A1A]">
+              <div className="border-t border-[#B8C9B8]/50 pt-3">
+                <div className="flex justify-between text-xl font-bold text-[#4A4A4A]">
                   <span>ยอดชำระ</span>
                   <span>฿{getTotal().toFixed(2)}</span>
                 </div>

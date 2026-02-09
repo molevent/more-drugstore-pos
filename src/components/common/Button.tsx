@@ -15,10 +15,10 @@ export default function Button({
   const baseStyles = 'font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed'
   
   const variantStyles = {
-    primary: 'bg-[#5F8B8B] text-white hover:bg-[#5F8B8B]/90 focus:ring-[#5F8B8B]/50',
-    secondary: 'bg-[#8B968B]/20 text-[#1A3A1A] hover:bg-[#8B968B]/30 focus:ring-[#8B968B]/50',
-    danger: 'bg-[#C45D5D] text-white hover:bg-[#C45D5D]/90 focus:ring-[#C45D5D]/50',
-    success: 'bg-[#0D5D4F] text-white hover:bg-[#0D5D4F]/90 focus:ring-[#0D5D4F]/50',
+    primary: 'bg-[#7D735F] text-white hover:bg-[#7D735F]/90 focus:ring-[#7D735F]/50',
+    secondary: 'bg-[#B8C9B8]/30 text-[#4A4A4A] hover:bg-[#B8C9B8]/50 focus:ring-[#B8C9B8]/50',
+    danger: 'bg-[#D4756A] text-white hover:bg-[#D4756A]/90 focus:ring-[#D4756A]/50',
+    success: 'bg-[#A67B5B] text-white hover:bg-[#A67B5B]/90 focus:ring-[#A67B5B]/50',
   }
   
   const sizeStyles = {

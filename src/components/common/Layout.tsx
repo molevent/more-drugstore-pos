@@ -114,7 +114,7 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6]">
+    <div className="min-h-screen bg-[#F5F0E6]">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div 
@@ -124,11 +124,11 @@ export default function Layout({ children }: LayoutProps) {
       )}
       
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#FEF4E0] shadow-lg transform transition-transform duration-300 ease-in-out ${
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#F5F0E6] shadow-lg transform transition-transform duration-300 ease-in-out ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } lg:translate-x-0`}>
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between h-20 px-6 bg-[#5F8B8B] border-b border-[#5F8B8B]/20">
+          <div className="flex items-center justify-between h-20 px-6 bg-[#7D735F] border-b border-[#7D735F]/20">
             <img 
               src="/logo.png" 
               alt="More Drug Store" 
@@ -146,7 +146,7 @@ export default function Layout({ children }: LayoutProps) {
             <nav className="px-3 space-y-6">
               {navigationSections.map((section, sectionIndex) => (
                 <div key={sectionIndex}>
-                  <h3 className="px-3 mb-2 text-xs font-semibold text-[#5F8B8B] uppercase tracking-wider">
+                  <h3 className="px-3 mb-2 text-xs font-semibold text-[#7D735F] uppercase tracking-wider">
                     {section.title}
                   </h3>
                   <div className="space-y-1">
@@ -164,8 +164,8 @@ export default function Layout({ children }: LayoutProps) {
                           }}
                           className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                             isActive
-                              ? 'bg-[#5F8B8B] text-white'
-                              : 'text-[#1A3A1A] hover:bg-[#E6B87E]/30'
+                              ? 'bg-[#7D735F] text-white'
+                              : 'text-[#4A4A4A] hover:bg-[#F9E4B7]/50'
                           }`}
                         >
                           <item.icon className="h-5 w-5 mr-3" />
@@ -179,17 +179,17 @@ export default function Layout({ children }: LayoutProps) {
             </nav>
           </div>
 
-          <div className="border-t border-[#5F8B8B]/20 p-4">
+          <div className="border-t border-[#7D735F]/20 p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex-1">
-                <p className="text-sm font-medium text-[#1A3A1A]">{user?.full_name}</p>
-                <p className="text-xs text-[#5F8B8B]">{user?.role}</p>
+                <p className="text-sm font-medium text-[#4A4A4A]">{user?.full_name}</p>
+                <p className="text-xs text-[#7D735F]">{user?.role}</p>
               </div>
               <LanguageSwitcher />
             </div>
             <button
               onClick={handleSignOut}
-              className="flex items-center w-full px-3 py-2 text-sm text-[#C45D5D] hover:bg-[#C45D5D]/10 rounded-lg transition-colors"
+              className="flex items-center w-full px-3 py-2 text-sm text-[#D4756A] hover:bg-[#D4756A]/10 rounded-lg transition-colors"
             >
               <LogOut className="h-4 w-4 mr-3" />
               {t('nav.logout')}
@@ -199,7 +199,7 @@ export default function Layout({ children }: LayoutProps) {
       </div>
 
       <div className="lg:pl-64 flex flex-col flex-1">
-        <header className="lg:hidden bg-[#5F8B8B] shadow-sm border-b border-[#5F8B8B]/20 sticky top-0 z-30">
+        <header className="lg:hidden bg-[#7D735F] shadow-sm border-b border-[#7D735F]/20 sticky top-0 z-30">
           <div className="flex items-center justify-between h-16 px-4">
             <button
               onClick={() => setSidebarOpen(true)}
