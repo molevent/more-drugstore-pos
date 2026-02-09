@@ -1180,18 +1180,6 @@ export default function POSPage() {
                     className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-base"
                     autoFocus
                   />
-                  <Button type="submit" variant="primary" className="rounded-full p-2 h-10 w-10">
-                    <Scan className="h-5 w-5" />
-                  </Button>
-                  <Button 
-                    type="button" 
-                    variant="secondary"
-                    onClick={handleOpenCamera}
-                    title="ถ่ายรูปบาร์โค้ด"
-                    className="rounded-full p-2 h-10 w-10"
-                  >
-                    <Camera className="h-5 w-5" />
-                  </Button>
                 </div>
                   
                   {/* Autocomplete Dropdown */}
