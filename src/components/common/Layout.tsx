@@ -164,13 +164,15 @@ export default function Layout({ children }: LayoutProps) {
                               setSidebarOpen(false)
                             }
                           }}
-                          className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                          className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all ${
                             isActive
-                              ? 'bg-white text-black shadow-sm border-l-4 border-blue-500'
-                              : 'text-gray-700 hover:bg-white/60 hover:text-black'
+                              ? 'bg-blue-50 text-blue-600'
+                              : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                           }`}
                         >
-                          <item.icon className={`h-5 w-5 mr-3 ${isActive ? 'text-blue-500' : 'text-gray-500'}`} />
+                          <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${isActive ? 'bg-blue-500' : 'bg-gray-100'}`}>
+                            <item.icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-gray-500'}`} />
+                          </div>
                           {item.name}
                         </Link>
                       )
