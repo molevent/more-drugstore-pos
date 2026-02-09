@@ -5,7 +5,6 @@ import {
   Store, 
   Users, 
   Pencil, 
-  Trash2,
   Building2,
   Plug,
   Save, 
@@ -76,9 +75,6 @@ function SettingsCard({ icon: Icon, iconBg, iconColor, title, subtitle, details,
             <Pencil className="h-4 w-4" />
             <span className="text-xs">แก้ไข</span>
           </Link>
-          <button className="flex items-center justify-center p-2 bg-gray-50 rounded-full border border-gray-200 text-red-500 hover:bg-red-50 transition-colors">
-            <Trash2 className="h-4 w-4" />
-          </button>
         </div>
       </div>
     </div>
