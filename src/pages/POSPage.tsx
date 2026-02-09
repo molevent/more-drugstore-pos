@@ -1185,10 +1185,11 @@ export default function POSPage() {
                 </label>
                 <button
                   onClick={() => setShowChannelPaymentSettings(true)}
-                  className="text-xs text-blue-600 hover:text-blue-800 underline"
+                  className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-medium hover:bg-blue-100 border border-blue-200"
                   title="ตั้งค่าวิธีชำระเริ่มต้นสำหรับแต่ละช่องทาง"
                 >
-                  ตั้งค่าวิธีชำระเริ่มต้น
+                  <CreditCard className="h-3 w-3" />
+                  ตั้งค่า
                 </button>
               </div>
               <div className="grid grid-cols-4 gap-2">
