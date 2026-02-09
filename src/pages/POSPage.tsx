@@ -97,10 +97,42 @@ export default function POSPage() {
   const [showHeldBills, setShowHeldBills] = useState(false)
   const [holdBillName, setHoldBillName] = useState('')
   const [showHoldBillModal, setShowHoldBillModal] = useState(false)
+  const [showChannelPaymentSettings, setShowChannelPaymentSettings] = useState(false)
 
   // Payment methods states
   const [paymentMethods, setPaymentMethods] = useState<Array<{id: string; name: string; is_active: boolean}>>([])
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('')
+
+  // Default payment method mapping for each sales channel
+  const [channelPaymentMap, setChannelPaymentMap] = useState<Record<string, string>>(() => {
+    const saved = localStorage.getItem('pos_channel_payment_map')
+    return saved ? JSON.parse(saved) : {}
+  })
+
+  // Load channel payment map from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('pos_channel_payment_map')
+    if (saved) {
+      setChannelPaymentMap(JSON.parse(saved))
+    }
+  }, [])
+
+  // Save channel payment map to localStorage when changed
+  useEffect(() => {
+    localStorage.setItem('pos_channel_payment_map', JSON.stringify(channelPaymentMap))
+  }, [channelPaymentMap])
+
+  // Auto-select default payment method when sales channel changes
+  useEffect(() => {
+    if (salesChannel && channelPaymentMap[salesChannel]) {
+      const defaultPaymentId = channelPaymentMap[salesChannel]
+      // Only set if the payment method exists and is active
+      const methodExists = paymentMethods.find(m => m.id === defaultPaymentId && m.is_active)
+      if (methodExists) {
+        setSelectedPaymentMethod(defaultPaymentId)
+      }
+    }
+  }, [salesChannel, channelPaymentMap, paymentMethods])
 
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -1147,9 +1179,18 @@ export default function POSPage() {
           <Card>
             {/* Sales Channel Selection */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-600 mb-2">
-                ช่องทางการขาย
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-600">
+                  ช่องทางการขาย
+                </label>
+                <button
+                  onClick={() => setShowChannelPaymentSettings(true)}
+                  className="text-xs text-blue-600 hover:text-blue-800 underline"
+                  title="ตั้งค่าวิธีชำระเริ่มต้นสำหรับแต่ละช่องทาง"
+                >
+                  ตั้งค่าวิธีชำระเริ่มต้น
+                </button>
+              </div>
               <div className="grid grid-cols-4 gap-2">
                 {SALES_CHANNELS.map((channel) => {
                   const Icon = channel.icon
@@ -2101,6 +2142,65 @@ export default function POSPage() {
                 onClick={handleAddNewContact}
               >
                 บันทึก
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Channel Payment Settings Modal */}
+      {showChannelPaymentSettings && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-bold text-gray-900">ตั้งค่าวิธีชำระเริ่มต้น</h2>
+              <button
+                onClick={() => setShowChannelPaymentSettings(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              <p className="text-sm text-gray-600">
+                เลือกวิธีชำระเงินเริ่มต้นสำหรับแต่ละช่องทางการขาย เมื่อเปลี่ยนช่องทางการขาย ระบบจะเลือกวิธีชำระเงินอัตโนมัติ
+              </p>
+              {SALES_CHANNELS.map((channel) => (
+                <div key={channel.id} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <channel.icon className="h-5 w-5 text-gray-600" />
+                    <span className="font-medium text-gray-900">{channel.name}</span>
+                  </div>
+                  <select
+                    value={channelPaymentMap[channel.id] || ''}
+                    onChange={(e) => {
+                      const paymentId = e.target.value
+                      if (paymentId) {
+                        setChannelPaymentMap(prev => ({ ...prev, [channel.id]: paymentId }))
+                      } else {
+                        setChannelPaymentMap(prev => {
+                          const { [channel.id]: _, ...rest } = prev
+                          return rest
+                        })
+                      }
+                    }}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">-- ไม่ตั้งค่า --</option>
+                    {paymentMethods.filter(m => m.is_active).map((method) => (
+                      <option key={method.id} value={method.id}>{method.name}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 border-t bg-gray-50">
+              <Button
+                variant="primary"
+                className="w-full"
+                onClick={() => setShowChannelPaymentSettings(false)}
+              >
+                บันทึกการตั้งค่า
               </Button>
             </div>
           </div>
