@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { ListOrdered, Search, Calendar, Eye, Edit } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -48,7 +48,6 @@ const SALES_CHANNELS: Record<string, string> = {
 }
 
 export default function SalesOrdersPage() {
-  const navigate = useNavigate()
   const [orders, setOrders] = useState<SalesOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -209,11 +208,6 @@ export default function SalesOrdersPage() {
     } finally {
       setLoadingDetail(false)
     }
-  }
-
-  const handleEditOrder = (orderId: string) => {
-    console.log('Navigating to edit order:', orderId)
-    navigate(`/pos?edit=${orderId}`)
   }
 
   const closeDetailModal = () => {
@@ -399,10 +393,13 @@ export default function SalesOrdersPage() {
                         <Button variant="secondary" size="sm" onClick={() => handleViewOrder(order.id)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="primary" size="sm" onClick={() => handleEditOrder(order.id)}>
+                        <Link
+                          to={`/pos?edit=${order.id}`}
+                          className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-[#7D735F] text-white hover:bg-[#7D735F]/90 transition-colors"
+                        >
                           <Edit className="h-4 w-4 mr-1" />
                           แก้ไข
-                        </Button>
+                        </Link>
                       </div>
                     </td>
                   </tr>
