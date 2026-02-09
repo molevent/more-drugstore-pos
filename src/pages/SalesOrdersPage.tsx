@@ -388,21 +388,20 @@ export default function SalesOrdersPage() {
                       {formatCurrency(order.total)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center">
-                      <div className="flex items-center gap-2 justify-center">
+                      <div className="flex items-center gap-2 justify-center relative z-10">
                         <Button variant="secondary" size="sm" onClick={() => handleViewOrder(order.id)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            console.log('Edit button clicked for order:', order.id)
-                            window.location.href = `/pos?edit=${order.id}`
+                        <a
+                          href={`/pos?edit=${order.id}`}
+                          className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-[#7D735F] text-white hover:bg-[#7D735F]/90 transition-colors relative z-20"
+                          onClick={(e) => {
+                            console.log('Edit link clicked, order.id:', order.id, 'href:', e.currentTarget.href)
                           }}
-                          className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-[#7D735F] text-white hover:bg-[#7D735F]/90 transition-colors"
                         >
                           <Edit className="h-4 w-4 mr-1" />
                           แก้ไข
-                        </button>
+                        </a>
                       </div>
                     </td>
                   </tr>
