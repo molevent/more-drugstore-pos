@@ -1053,18 +1053,14 @@ export default function POSPage() {
           to="/ai-symptom-checker"
           className="flex-1 flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-full border border-blue-200 hover:bg-blue-100 hover:shadow-md transition-all"
         >
-          <div className="h-7 w-7 rounded-full bg-blue-500 flex items-center justify-center shadow-sm flex-shrink-0">
-            <Brain className="h-3.5 w-3.5 text-white" />
-          </div>
+          <Brain className="h-5 w-5 text-blue-600 flex-shrink-0" />
           <span className="font-medium text-gray-900 text-sm truncate">AI ช่วยแนะนำยา</span>
         </Link>
         <Link 
           to="/consultation-history"
           className="flex-1 flex items-center gap-2 px-3 py-2 bg-green-50 rounded-full border border-green-200 hover:bg-green-100 hover:shadow-md transition-all"
         >
-          <div className="h-7 w-7 rounded-full bg-green-500 flex items-center justify-center shadow-sm flex-shrink-0">
-            <FileText className="h-3.5 w-3.5 text-white" />
-          </div>
+          <FileText className="h-5 w-5 text-green-600 flex-shrink-0" />
           <span className="font-medium text-gray-900 text-sm truncate">ประวัติการปรึกษา</span>
         </Link>
       </div>
@@ -1075,18 +1071,14 @@ export default function POSPage() {
           to="/categories"
           className="flex-1 flex items-center gap-2 px-3 py-2 bg-indigo-50 rounded-full border border-indigo-200 hover:bg-indigo-100 hover:shadow-md transition-all"
         >
-          <div className="h-7 w-7 rounded-full bg-indigo-500 flex items-center justify-center shadow-sm flex-shrink-0">
-            <Package className="h-3.5 w-3.5 text-white" />
-          </div>
+          <Package className="h-5 w-5 text-indigo-600 flex-shrink-0" />
           <span className="font-medium text-gray-900 text-sm truncate">หมวดหมู่สินค้า</span>
         </Link>
         <Link 
           to="/medicine-labels"
           className="flex-1 flex items-center gap-2 px-3 py-2 bg-purple-50 rounded-full border border-purple-200 hover:bg-purple-100 hover:shadow-md transition-all"
         >
-          <div className="h-7 w-7 rounded-full bg-purple-500 flex items-center justify-center shadow-sm flex-shrink-0">
-            <Printer className="h-3.5 w-3.5 text-white" />
-          </div>
+          <Printer className="h-5 w-5 text-purple-600 flex-shrink-0" />
           <span className="font-medium text-gray-900 text-sm truncate">พิมพ์ฉลากยา</span>
         </Link>
       </div>
