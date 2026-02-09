@@ -34,9 +34,12 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
   const [searchTerm, setSearchTerm] = useState('')
   const [searchResults, setSearchResults] = useState<Product[]>([])
   const [showSearch, setShowSearch] = useState(false)
+  const [paymentMethods, setPaymentMethods] = useState<Array<{id: string; name: string}>>([])
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('')
 
   useEffect(() => {
     loadOrderData()
+    fetchPaymentMethods()
   }, [orderId])
 
   const loadOrderData = async () => {
@@ -64,6 +67,7 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
       if (itemsError) throw itemsError
       
       setOrder(orderData)
+      setSelectedPaymentMethod(orderData?.payment_method || '')
       
       // Format items for editing
       const formattedItems = itemsData?.map((item: any) => ({
@@ -159,6 +163,21 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
     setItems(updatedItems)
   }
 
+  const fetchPaymentMethods = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name')
+      
+      if (error) throw error
+      setPaymentMethods(data || [])
+    } catch (err) {
+      console.error('Error fetching payment methods:', err)
+    }
+  }
+
   const calculateTotals = () => {
     const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0)
     const discount = items.reduce((sum, item) => sum + item.discount, 0)
@@ -177,13 +196,14 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
       
       const { subtotal, discount, total } = calculateTotals()
       
-      // Update order
+      // Update order with payment method
       const { error: orderError } = await supabase
         .from('orders')
         .update({
           subtotal,
           discount,
           total,
+          payment_method: selectedPaymentMethod,
           updated_at: new Date().toISOString()
         })
         .eq('id', orderId)
@@ -250,6 +270,21 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
             <p className="text-sm text-gray-500 mt-1">
               ลูกค้า: {order?.customer_name || '-'}
             </p>
+            <div className="mt-2">
+              <label className="text-sm text-gray-600">ช่องทางการชำระเงิน:</label>
+              <select
+                value={selectedPaymentMethod}
+                onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                className="ml-2 px-3 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">-- เลือกช่องทาง --</option>
+                {paymentMethods.map((method) => (
+                  <option key={method.id} value={method.name}>
+                    {method.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <button
             onClick={onClose}
