@@ -12,6 +12,7 @@ interface ShopInfo {
   phone: string
   tax_id: string
   email: string
+  line: string
 }
 
 export default function ShopSettingsPage() {
@@ -22,7 +23,8 @@ export default function ShopSettingsPage() {
     address: '123 ถนนสุขุมวิท กรุงเทพฯ',
     phone: '02-123-4567',
     tax_id: '',
-    email: 'contact@moredrugstore.com'
+    email: 'contact@moredrugstore.com',
+    line: ''
   })
 
   useEffect(() => {
@@ -59,7 +61,8 @@ export default function ShopSettingsPage() {
           address: data.address || '',
           phone: data.phone || '',
           tax_id: data.tax_id || '',
-          email: data.email || ''
+          email: data.email || '',
+          line: data.line || ''
         }
         setShopInfo(shopData)
         // Update localStorage with latest data
@@ -84,6 +87,7 @@ export default function ShopSettingsPage() {
           phone: shopInfo.phone,
           tax_id: shopInfo.tax_id,
           email: shopInfo.email,
+          line: shopInfo.line,
           updated_at: new Date().toISOString()
         }, { onConflict: 'id' })
       
@@ -161,6 +165,13 @@ export default function ShopSettingsPage() {
             value={shopInfo.tax_id}
             onChange={(e) => setShopInfo({ ...shopInfo, tax_id: e.target.value })}
             placeholder="x-xxxx-xxxxx-xx-x"
+          />
+
+          <Input
+            label="Line ID"
+            value={shopInfo.line}
+            onChange={(e) => setShopInfo({ ...shopInfo, line: e.target.value })}
+            placeholder="@more_drugstore"
           />
 
           <div className="flex gap-3 pt-4">

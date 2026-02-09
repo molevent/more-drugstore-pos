@@ -146,11 +146,6 @@ export default function SettingsPage() {
       iconColor: 'text-green-600',
       title: 'ข้อมูลร้าน',
       subtitle: shopInfo.name,
-      details: [
-        { value: shopInfo.phone },
-        { value: shopInfo.email },
-        { value: shopInfo.address },
-      ],
       link: '/settings/shop'
     },
     {
