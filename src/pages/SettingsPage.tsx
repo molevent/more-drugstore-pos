@@ -71,12 +71,12 @@ function SettingsCard({ icon: Icon, iconBg, iconColor, title, subtitle, details,
         <div className="flex gap-2 mt-3">
           <Link 
             to={link}
-            className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-gray-50 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-gray-50 rounded-full border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
           >
             <Pencil className="h-4 w-4" />
-            แก้ไข
+            <span className="text-xs">แก้ไข</span>
           </Link>
-          <button className="flex items-center justify-center p-2 bg-gray-50 rounded-lg border border-gray-200 text-red-500 hover:bg-red-50 transition-colors">
+          <button className="flex items-center justify-center p-2 bg-gray-50 rounded-full border border-gray-200 text-red-500 hover:bg-red-50 transition-colors">
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
