@@ -4,7 +4,6 @@ import {
   CreditCard, 
   Store, 
   Users, 
-  Pencil, 
   Building2,
   Plug,
   Save, 
@@ -37,7 +36,10 @@ interface SettingsCardProps {
 
 function SettingsCard({ icon: Icon, iconBg, iconColor, title, subtitle, details, status, link }: SettingsCardProps) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+    <Link 
+      to={link}
+      className="block bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-blue-200 transition-all cursor-pointer"
+    >
       <div className="p-5">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
@@ -69,19 +71,8 @@ function SettingsCard({ icon: Icon, iconBg, iconColor, title, subtitle, details,
             ))}
           </div>
         )}
-
-        {/* Actions - Compact inline, aligned right */}
-        <div className="flex gap-2 mt-3 justify-end">
-          <Link 
-            to={link}
-            className="flex items-center justify-center gap-2 py-2 px-4 bg-gray-50 rounded-full border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
-          >
-            <Pencil className="h-4 w-4" />
-            <span className="text-xs">แก้ไข</span>
-          </Link>
-        </div>
       </div>
-    </div>
+    </Link>
   )
 }
 
