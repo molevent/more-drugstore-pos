@@ -1005,7 +1005,7 @@ export default function POSPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-100">
+    <div className="min-h-screen bg-[#FFEFE4]">
       <div className="flex items-center justify-between mb-6 px-4 sm:px-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -1049,30 +1049,30 @@ export default function POSPage() {
       <div className="flex flex-wrap gap-2 mb-3 mx-4 sm:mx-0">
         <Link 
           to="/ai-symptom-checker"
-          className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-full border border-blue-200 hover:bg-blue-100 hover:shadow-md transition-all"
+          className="flex items-center gap-2 px-3 py-2 bg-[#DFEAF5] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
         >
-          <Brain className="h-5 w-5 text-blue-600 flex-shrink-0" />
+          <Brain className="h-5 w-5 text-[#7D735F] flex-shrink-0" />
           <span className="font-medium text-gray-900 text-sm whitespace-nowrap">AI ช่วยแนะนำยา</span>
         </Link>
         <Link 
           to="/consultation-history"
-          className="flex items-center gap-2 px-3 py-2 bg-blue-50/50 rounded-full border border-blue-200 hover:bg-blue-100 hover:shadow-md transition-all"
+          className="flex items-center gap-2 px-3 py-2 bg-[#DFEAF5]/50 rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
           title="ประวัติการปรึกษา"
         >
-          <FileText className="h-5 w-5 text-blue-600 flex-shrink-0" />
+          <FileText className="h-5 w-5 text-[#7D735F] flex-shrink-0" />
         </Link>
         <Link 
           to="/categories"
-          className="flex items-center gap-2 px-3 py-2 bg-indigo-50 rounded-full border border-indigo-200 hover:bg-indigo-100 hover:shadow-md transition-all"
+          className="flex items-center gap-2 px-3 py-2 bg-[#D1D1E1] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
         >
-          <Package className="h-5 w-5 text-indigo-600 flex-shrink-0" />
+          <Package className="h-5 w-5 text-[#7D735F] flex-shrink-0" />
           <span className="font-medium text-gray-900 text-sm whitespace-nowrap">หมวดหมู่สินค้า</span>
         </Link>
         <Link 
           to="/medicine-labels"
-          className="flex items-center gap-2 px-3 py-2 bg-purple-50 rounded-full border border-purple-200 hover:bg-purple-100 hover:shadow-md transition-all"
+          className="flex items-center gap-2 px-3 py-2 bg-[#D5EAE7] rounded-full border border-[#B8C9B8] hover:bg-[#D1D1E1] hover:shadow-md transition-all"
         >
-          <Printer className="h-5 w-5 text-purple-600 flex-shrink-0" />
+          <Printer className="h-5 w-5 text-[#7D735F] flex-shrink-0" />
           <span className="font-medium text-gray-900 text-sm whitespace-nowrap">พิมพ์ฉลากยา</span>
         </Link>
       </div>
