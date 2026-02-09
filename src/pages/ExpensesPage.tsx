@@ -159,9 +159,9 @@ export default function ExpensesPage() {
       resetForm()
       setShowModal(false)
       fetchExpenses()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving expense:', error)
-      alert('เกิดข้อผิดพลาดในการบันทึก')
+      alert('เกิดข้อผิดพลาดในการบันทึก: ' + (error.message || error.details || 'Unknown error'))
     }
   }
 
