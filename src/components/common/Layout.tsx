@@ -114,7 +114,7 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F8F3]">
+    <div className="min-h-screen bg-white">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div 
@@ -124,7 +124,7 @@ export default function Layout({ children }: LayoutProps) {
       )}
       
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#F8F8F3] shadow-lg transform transition-transform duration-300 ease-in-out ${
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } lg:translate-x-0`}>
         <div className="flex flex-col h-full">
