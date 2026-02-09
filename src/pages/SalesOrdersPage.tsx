@@ -273,7 +273,7 @@ export default function SalesOrdersPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <ListOrdered className="h-7 w-7 text-blue-600" />
-            ยอดขาย/รายงาน
+            รายการขาย
           </h1>
           <p className="text-gray-600 mt-1">รายการขายและยอดขายรวม</p>
         </div>
