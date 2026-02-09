@@ -164,7 +164,7 @@ export default function Layout({ children }: LayoutProps) {
                                 setSidebarOpen(false)
                               }
                             }}
-                            className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                            className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors bg-white ${
                             isActive
                               ? 'bg-[#7D735F] text-white'
                               : 'text-[#4A4A4A] hover:bg-[#F9E4B7]/50'
