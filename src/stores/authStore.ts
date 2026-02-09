@@ -58,31 +58,45 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
   
   initialize: async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    
-    if (session?.user) {
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', session.user.id)
-        .single()
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
       
-      if (userData) {
-        set({ user: userData, loading: false })
-      } else {
-        console.error('User profile not found during init:', userError)
-        const basicUser = {
-          id: session.user.id,
-          email: session.user.email || '',
-          full_name: session.user.email?.split('@')[0] || 'User',
-          role: 'cashier' as const,
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+      if (session?.user) {
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+        
+        if (userData) {
+          set({ user: userData, loading: false })
+        } else {
+          console.error('User profile not found during init:', userError)
+          const basicUser = {
+            id: session.user.id,
+            email: session.user.email || '',
+            full_name: session.user.email?.split('@')[0] || 'User',
+            role: 'cashier' as const,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+          set({ user: basicUser, loading: false })
         }
-        set({ user: basicUser, loading: false })
+      } else {
+        set({ loading: false })
       }
-    } else {
+    } catch (err: any) {
+      // Handle Supabase AbortError (lock acquisition issue)
+      if (err?.name === 'AbortError' || err?.message?.includes('aborted')) {
+        console.log('Supabase auth initialization aborted, retrying...')
+        // Retry after a short delay
+        setTimeout(() => {
+          useAuthStore.getState().initialize()
+        }, 500)
+        return
+      }
+      console.error('Error during auth initialization:', err)
       set({ loading: false })
     }
     
