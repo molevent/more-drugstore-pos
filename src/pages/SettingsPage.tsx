@@ -206,11 +206,14 @@ export default function SettingsPage() {
   
   return (
     <div>
-      <div className="flex items-center gap-3 mb-4 sm:mb-6">
-        <div className="h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center">
-          <Settings className="h-6 w-6 text-gray-900" />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Settings className="h-7 w-7 text-blue-600" />
+            {t('settings.title')}
+          </h1>
+          <p className="text-gray-600 mt-1">ตั้งค่าระบบและการเชื่อมต่อ</p>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('settings.title')}</h1>
       </div>
 
       {/* Business Settings Section */}

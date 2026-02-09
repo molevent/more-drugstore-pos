@@ -36,13 +36,13 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-6">
-        <div className="h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center">
-          <Home className="h-6 w-6 text-gray-900" />
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('dashboard.title')}</h1>
-          <p className="text-sm sm:text-base text-gray-600">
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Home className="h-7 w-7 text-blue-600" />
+            {t('dashboard.title')}
+          </h1>
+          <p className="text-gray-600 mt-1">
             {t('dashboard.welcome')}, {user?.full_name} ({user?.role})
           </p>
         </div>

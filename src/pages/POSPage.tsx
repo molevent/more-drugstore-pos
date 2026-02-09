@@ -1007,14 +1007,12 @@ export default function POSPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-100">
       <div className="flex items-center justify-between mb-6 px-4 sm:px-0">
-        <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center">
-            <ShoppingCart className="h-6 w-6 text-gray-900" />
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900 tracking-tight">ขายสินค้า</h1>
-            <p className="text-xs text-gray-500">POS System</p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <ShoppingCart className="h-7 w-7 text-blue-600" />
+            ขายสินค้า
+          </h1>
+          <p className="text-gray-600 mt-1">POS System</p>
         </div>
         <div className="flex gap-2">
           <Button

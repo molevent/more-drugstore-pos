@@ -226,13 +226,13 @@ export default function SalesOrdersPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FBFF]">
-      {/* Header */}
       <div className="flex items-center justify-between mb-6 px-4 sm:px-0">
-        <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center">
-            <ListOrdered className="h-6 w-6 text-gray-900" />
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">รายการขายทั้งหมด</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <ListOrdered className="h-7 w-7 text-blue-600" />
+            รายการขายทั้งหมด
+          </h1>
+          <p className="text-gray-600 mt-1">รายการขายและยอดขายรวม</p>
         </div>
       </div>
 

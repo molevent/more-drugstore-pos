@@ -9,11 +9,12 @@ export default function InventoryPage() {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
-        <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center">
-            <Package className="h-6 w-6 text-gray-900" />
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('inventory.title')}</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Package className="h-7 w-7 text-blue-600" />
+            {t('inventory.title')}
+          </h1>
+          <p className="text-gray-600 mt-1">สต็อกสินค้าและการจัดการคลัง</p>
         </div>
         <Button variant="primary">
           <RefreshCw className="h-5 w-5 mr-2" />

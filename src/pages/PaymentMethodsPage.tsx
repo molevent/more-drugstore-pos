@@ -164,14 +164,12 @@ export default function PaymentMethodsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
-        <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center">
-            <CreditCard className="h-6 w-6 text-gray-900" />
-          </div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">ช่องทางการชำระเงิน</h1>
-            <p className="text-gray-600 mt-1">จัดการช่องทางการชำระเงินสำหรับหน้า POS</p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <CreditCard className="h-7 w-7 text-blue-600" />
+            ช่องทางการชำระเงิน
+          </h1>
+          <p className="text-gray-600 mt-1">จัดการช่องทางการชำระเงินสำหรับหน้า POS</p>
         </div>
         <Button onClick={openAddModal} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
