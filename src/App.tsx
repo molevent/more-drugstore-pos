@@ -19,6 +19,7 @@ import ExpensesPage from './pages/ExpensesPage'
 import ReportsPage from './pages/ReportsPage'
 import ContactsPage from './pages/ContactsPage'
 import SalesOrdersPage from './pages/SalesOrdersPage'
+import NegativeStockReportPage from './pages/NegativeStockReportPage'
 import SettingsPage from './pages/SettingsPage'
 import ShopSettingsPage from './pages/ShopSettingsPage'
 import SalesChannelsSettingsPage from './pages/SalesChannelsSettingsPage'
@@ -57,6 +58,7 @@ function App() {
                     <Route path="/reports" element={<ReportsPage />} />
                     <Route path="/contacts" element={<ContactsPage />} />
                     <Route path="/sales-orders" element={<SalesOrdersPage />} />
+                    <Route path="/negative-stock-report" element={<NegativeStockReportPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/settings/shop" element={<ShopSettingsPage />} />
                     <Route path="/settings/sales-channels" element={<SalesChannelsSettingsPage />} />

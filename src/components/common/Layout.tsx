@@ -10,7 +10,7 @@ import {
   Menu,
   X,
   Users,
-  Receipt
+  AlertTriangle
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -70,9 +70,9 @@ export default function Layout({ children }: LayoutProps) {
       ]
     },
     {
-      title: 'เอกสาร',
+      title: 'รายงาน',
       items: [
-        { name: 'ค่าใช้จ่าย', href: '/expenses', icon: Receipt },
+        { name: 'สินค้าติดลบ', href: '/negative-stock-report', icon: AlertTriangle },
       ]
     },
     {
