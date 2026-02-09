@@ -226,7 +226,7 @@ export default function POSPage() {
   }
 
   const handleClearCustomer = () => {
-    setSelectedCustomer({ id: 'default', name: 'ลูกค้าทั่วไป', type: 'buyer' })
+    setSelectedCustomer(null)
     setCustomerSearch('')
   }
 
@@ -1392,20 +1392,18 @@ export default function POSPage() {
                 ลูกค้า
               </label>
               <div className="relative" ref={customerDropdownRef}>
-                {selectedCustomer && selectedCustomer.id !== 'default' ? (
-                  <div className="flex items-center gap-2 p-2 bg-[#7D735F]/10 border border-[#7D735F]/30 rounded-lg">
-                    <User className="h-4 w-4 text-gray-600" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{selectedCustomer.name}</p>
-                      {selectedCustomer.phone && (
-                        <p className="text-xs text-gray-600">{selectedCustomer.phone}</p>
-                      )}
+                {selectedCustomer ? (
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <User className="h-5 w-5 text-gray-500" />
+                      <span className="text-gray-900 font-medium">{selectedCustomer.name}</span>
                     </div>
                     <button
                       onClick={handleClearCustomer}
-                      className="text-gray-600/60 hover:text-gray-600"
+                      className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+                      title="เปลี่ยนลูกค้า"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-4 w-4 text-gray-400" />
                     </button>
                   </div>
                 ) : (
@@ -1415,8 +1413,9 @@ export default function POSPage() {
                       type="text"
                       value={customerSearch}
                       onChange={(e) => setCustomerSearch(e.target.value)}
-                      placeholder="พิมพ์ชื่อลูกค้า (ลูกค้าทั่วไป)"
-                      className="w-full pl-9 pr-3 py-2 border border-[#B8C9B8]/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7D735F] text-sm bg-white"
+                      placeholder="พิมพ์ชื่อลูกค้า..."
+                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                      autoFocus
                     />
                   </div>
                 )}
