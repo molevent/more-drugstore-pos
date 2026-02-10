@@ -4,6 +4,7 @@ import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
 import { FileText, Plus, Trash2, X, Search, CheckCircle, Package, AlertCircle, ShoppingCart } from 'lucide-react'
+import { zortOutService } from '../services/zortout'
 import type { Product } from '../types/database'
 
 interface PurchaseOrder {
@@ -186,7 +187,8 @@ export default function PurchaseOrderPage() {
     try {
       const totals = calculateItemTotals()
       
-      const { error } = await supabase
+      // 1. Add PO item
+      const { error: itemError } = await supabase
         .from('purchase_order_items')
         .insert([{
           purchase_order_id: selectedPO.id,
@@ -201,7 +203,87 @@ export default function PurchaseOrderPage() {
           notes: itemFormData.notes
         }])
       
-      if (error) throw error
+      if (itemError) throw itemError
+      
+      // 2. Get product info
+      const product = products.find(p => p.id === itemFormData.product_id)
+      if (!product) throw new Error('Product not found')
+      
+      const quantityBefore = product.stock_quantity || 0
+      const quantityAfter = quantityBefore + itemFormData.quantity
+      
+      // 3. Add stock batch
+      const batchNumber = `PO-${selectedPO.po_number}-${Date.now()}`
+      const { data: batchData, error: batchError } = await supabase
+        .from('stock_batches')
+        .insert([{
+          product_id: itemFormData.product_id,
+          batch_number: batchNumber,
+          quantity: itemFormData.quantity,
+          cost_per_unit: itemFormData.unit_price,
+          supplier: selectedPO.supplier_name,
+          expiry_date: selectedPO.expected_delivery_date || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          notes: `รับจาก PO: ${selectedPO.po_number}`
+        }])
+        .select()
+        .single()
+      
+      if (batchError) console.warn('Batch creation warning:', batchError)
+      
+      // 4. Update product stock quantity
+      const { error: updateError } = await supabase
+        .from('products')
+        .update({ stock_quantity: quantityAfter })
+        .eq('id', itemFormData.product_id)
+      
+      if (updateError) throw updateError
+      
+      // 5. Record stock movement
+      const { data: userData } = await supabase.auth.getUser()
+      const { error: movementError } = await supabase
+        .from('stock_movements')
+        .insert({
+          product_id: itemFormData.product_id,
+          batch_id: batchData?.id || null,
+          movement_type: 'purchase',
+          quantity: itemFormData.quantity,
+          quantity_before: quantityBefore,
+          quantity_after: quantityAfter,
+          unit_cost: itemFormData.unit_price,
+          total_cost: totals.subtotal,
+          reference_type: 'purchase_order',
+          reference_id: selectedPO.id,
+          reason: `รับสินค้าจาก ${selectedPO.supplier_name}`,
+          notes: `PO: ${selectedPO.po_number}`,
+          created_by: userData?.user?.id
+        })
+      
+      if (movementError) console.warn('Movement recording warning:', movementError)
+      
+      // 6. Sync to ZortOut (async - don't block UI)
+      if (product.barcode) {
+        zortOutService.updateProductStockBySkuForReceiving(
+          product.barcode,
+          itemFormData.quantity,
+          quantityAfter
+        ).then(result => {
+          if (result.success) {
+            console.log('Stock synced to ZortOut:', product.name_th, '+', itemFormData.quantity)
+          } else {
+            console.warn('Failed to sync stock to ZortOut:', result.error)
+          }
+        }).catch(err => {
+          console.error('Error syncing stock to ZortOut:', err)
+        })
+      }
+      
+      // 7. Update PO status to 'received' if first item
+      if (selectedPO.status === 'draft' || selectedPO.status === 'sent') {
+        await supabase
+          .from('purchase_orders')
+          .update({ status: 'received' })
+          .eq('id', selectedPO.id)
+      }
       
       setItemFormData({
         product_id: '',
@@ -213,7 +295,8 @@ export default function PurchaseOrderPage() {
       })
       
       fetchPurchaseOrders()
-      alert('เพิ่มรายการสินค้าเรียบร้อย')
+      fetchProducts() // Refresh product stock
+      alert('เพิ่มรายการสินค้าและรับเข้าสต็อกเรียบร้อย')
     } catch (error: any) {
       alert('Error adding item: ' + error.message)
     }
