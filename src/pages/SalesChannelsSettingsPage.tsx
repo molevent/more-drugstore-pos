@@ -91,11 +91,17 @@ export default function SalesChannelsSettingsPage() {
     const savedChannels = localStorage.getItem('pos_sales_channels')
     if (savedChannels) {
       try {
-        const customChannels = JSON.parse(savedChannels)
-        setSalesChannels([...DEFAULT_SALES_CHANNELS, ...customChannels])
+        const parsedChannels = JSON.parse(savedChannels)
+        // Use saved channels directly (includes defaults with any modifications)
+        setSalesChannels(parsedChannels)
       } catch (error) {
         console.error('Error parsing saved channels:', error)
+        // Fallback to defaults on error
+        setSalesChannels(DEFAULT_SALES_CHANNELS)
       }
+    } else {
+      // First time load - use defaults
+      setSalesChannels(DEFAULT_SALES_CHANNELS)
     }
   }, [])
 

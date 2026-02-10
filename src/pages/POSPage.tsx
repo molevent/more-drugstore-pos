@@ -61,14 +61,19 @@ export default function POSPage() {
     const savedChannels = localStorage.getItem('pos_sales_channels')
     if (savedChannels) {
       try {
-        const customChannels = JSON.parse(savedChannels)
-        // Merge default and custom channels, then sort by sortOrder
-        const allChannels = [...DEFAULT_salesChannels, ...customChannels]
+        const parsedChannels = JSON.parse(savedChannels)
+        // Use saved channels directly (includes defaults with any modifications/deletions)
+        const sortedChannels = parsedChannels
           .sort((a: SalesChannelConfig, b: SalesChannelConfig) => (a.sortOrder || 0) - (b.sortOrder || 0))
-        setSalesChannels(allChannels)
+        setSalesChannels(sortedChannels)
       } catch (error) {
         console.error('Error parsing saved channels:', error)
+        // Fallback to defaults on error
+        setSalesChannels(DEFAULT_salesChannels)
       }
+    } else {
+      // First time load - use defaults
+      setSalesChannels(DEFAULT_salesChannels)
     }
   }, [])
 
