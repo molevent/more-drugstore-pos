@@ -456,16 +456,15 @@ export default function ProductsPage() {
   const fetchMovementHistory = async (productId: string) => {
     setMovementLoading(true)
     try {
-      // Fetch stock transfers for this product
-      const { data: transfers, error } = await supabase
-        .from('stock_transfers')
+      // Fetch stock movements for this product (including PO movements)
+      const { data: movements, error } = await supabase
+        .from('stock_movements')
         .select(`
           *,
-          from_warehouse:warehouses!from_warehouse_id(name),
-          to_warehouse:warehouses!to_warehouse_id(name)
+          batch:stock_batches(batch_number)
         `)
         .eq('product_id', productId)
-        .order('transfer_date', { ascending: false })
+        .order('movement_date', { ascending: false })
         .limit(50)
       
       if (error) {
@@ -475,18 +474,27 @@ export default function ProductsPage() {
       }
       
       // Transform data for display
-      const movements = transfers?.map((t: any) => ({
-        id: t.id,
-        date: t.transfer_date,
-        type: t.transfer_type === 'in' ? 'ซื้อเข้า' : t.transfer_type === 'out' ? 'ขายออก' : 'โอนย้าย',
-        quantity: t.quantity,
-        from: t.from_warehouse?.name || '-',
-        to: t.to_warehouse?.name || '-',
-        partner: t.partner_name || '-',
-        notes: t.notes || ''
+      const transformed = movements?.map((m: any) => ({
+        id: m.id,
+        date: m.movement_date,
+        type: m.movement_type === 'purchase' ? 'ซื้อเข้า' 
+          : m.movement_type === 'sale' ? 'ขายออก'
+          : m.movement_type === 'adjustment' ? 'ปรับสต็อก'
+          : m.movement_type === 'return' ? 'รับคืน'
+          : 'โอนย้าย',
+        quantity: m.quantity,
+        quantity_before: m.quantity_before,
+        quantity_after: m.quantity_after,
+        from: m.reference_type === 'purchase_order' ? `PO: ${m.notes || '-'}` : m.reason || '-',
+        to: m.batch?.batch_number ? `Batch: ${m.batch.batch_number}` : '-',
+        partner: m.reason || '-',
+        notes: m.notes || '',
+        unit_cost: m.unit_cost,
+        reference_type: m.reference_type,
+        reference_id: m.reference_id
       })) || []
       
-      setMovementHistory(movements)
+      setMovementHistory(transformed)
     } catch (err) {
       console.error('Exception fetching movement history:', err)
       setMovementHistory([])

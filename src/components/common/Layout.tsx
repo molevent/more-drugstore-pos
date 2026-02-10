@@ -11,7 +11,9 @@ import {
   X,
   Users,
   Wallet,
-  RefreshCw
+  RefreshCw,
+  Package,
+  History
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -62,6 +64,8 @@ export default function Layout({ children }: LayoutProps) {
       title: 'สินค้า',
       items: [
         { name: t('nav.products'), href: '/products', icon: Boxes },
+        { name: 'จัดการสต็อก', href: '/stock-management', icon: Package },
+        { name: 'ใบสั่งซื้อ', href: '/purchase-orders', icon: History },
       ]
     },
     {
