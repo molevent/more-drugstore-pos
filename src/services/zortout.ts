@@ -93,7 +93,23 @@ export class ZortOutService {
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ZortOutResponse<T>> {
-    const url = `${ZORTOUT_BASE_URL}${endpoint}`
+    // Parse endpoint to separate path and query params
+    const [path, queryString] = endpoint.split('?')
+    
+    // Build URL with path as query param for Netlify Function proxy
+    let url = `${ZORTOUT_BASE_URL}`
+    const params = new URLSearchParams()
+    params.set('path', path)
+    
+    // Add original query params
+    if (queryString) {
+      const originalParams = new URLSearchParams(queryString)
+      originalParams.forEach((value, key) => {
+        params.set(key, value)
+      })
+    }
+    
+    url += '?' + params.toString()
     
     const headers = {
       'Content-Type': 'application/json',
@@ -103,7 +119,7 @@ export class ZortOutService {
       ...options.headers
     }
 
-    console.log('ZortOut API Request:', { url, method: options.method || 'GET', headers: { storename: headers.storename, apikey: headers.apikey?.slice(0, 10) + '...' } })
+    console.log('ZortOut API Request:', { url, method: options.method || 'GET', endpoint, headers: { storename: headers.storename, apikey: headers.apikey?.slice(0, 10) + '...' } })
 
     try {
       const response = await fetch(url, {
