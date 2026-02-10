@@ -548,9 +548,10 @@ export default function PurchaseOrderPage() {
 
       if (result.success) {
         alert(`Sync PO ไปยัง ZortOut สำเร็จ! (PO ID: ${result.poId})`)
-        // Update PO status in ZortOut to Success (completed, no waiting)
+        // Update PO status in ZortOut to Success with actionDate to immediately transfer stock
         if (result.poId) {
-          await zortOutService.updatePurchaseOrderStatus(result.poId.toString(), 'Success', warehousecode)
+          const today = new Date().toISOString().split('T')[0]
+          await zortOutService.updatePurchaseOrderStatus(result.poId.toString(), 'Success', warehousecode, today)
         }
       } else {
         alert(`Sync ไม่สำเร็จ: ${result.error}`)
