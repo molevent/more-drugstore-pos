@@ -479,6 +479,7 @@ export class ZortOutService {
     customerphone?: string
     customeremail?: string
     customeridnumber?: string
+    customercode?: string
     purchaseorderdate: string
     amount: number
     vatamount?: number
@@ -507,6 +508,7 @@ export class ZortOutService {
         customerphone: poData.customerphone || '',
         customeremail: poData.customeremail || '',
         customeridnumber: poData.customeridnumber || '',
+        customercode: poData.customercode || '',
         purchaseorderdate: poData.purchaseorderdate,
         amount: poData.amount,
         vatamount: poData.vatamount || 0,

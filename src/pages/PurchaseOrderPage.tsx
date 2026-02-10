@@ -31,6 +31,7 @@ interface Contact {
   phone: string
   email: string
   company_name: string
+  code?: string
 }
 
 interface POItem {
@@ -472,10 +473,17 @@ export default function PurchaseOrderPage() {
       const warehouse = warehouses.find(w => w.id === po.warehouse_id)
       const warehousecode = warehouse?.code || ''
 
+      // Find contact code from supplier name
+      const contact = contacts.find(c => 
+        c.company_name === po.supplier_name || c.name === po.supplier_name
+      )
+      const customercode = contact?.code || ''
+
       const result = await zortOutService.addPurchaseOrder({
         number: po.po_number,
         customername: po.supplier_name,
         customerphone: po.supplier_contact || '',
+        customercode: customercode,
         purchaseorderdate: po.order_date,
         amount: po.total_amount,
         vatamount: po.tax_amount || 0,
