@@ -433,6 +433,19 @@ export default function PurchaseOrderPage() {
   }
 
   const filteredPOs = purchaseOrders.filter(po => {
+    // Handle combined status+payment filters
+    if (statusFilter === 'waiting_transfer') {
+      return po.status === 'sent' && po.payment_status !== 'paid'
+    }
+    if (statusFilter === 'transfer_completed') {
+      return po.status === 'received' && po.payment_status !== 'paid'
+    }
+    if (statusFilter === 'waiting_payment') {
+      return (po.status === 'sent' || po.status === 'received') && po.payment_status === 'unpaid'
+    }
+    if (statusFilter === 'payment_completed') {
+      return po.payment_status === 'paid'
+    }
     const matchesStatus = !statusFilter || po.status === statusFilter
     const matchesSearch = !searchTerm || 
       po.po_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -584,27 +597,27 @@ export default function PurchaseOrderPage() {
             <div className="text-2xl font-bold text-gray-900">{purchaseOrders.length}</div>
           </Card>
           <Card className="bg-white">
-            <div className="text-sm text-gray-500">ร่าง</div>
-            <div className="text-2xl font-bold text-gray-600">
-              {purchaseOrders.filter(po => po.status === 'draft').length}
+            <div className="text-sm text-orange-600">รอโอนสินค้า</div>
+            <div className="text-2xl font-bold text-orange-700">
+              {purchaseOrders.filter(po => po.status === 'sent' && po.payment_status !== 'paid').length}
             </div>
           </Card>
           <Card className="bg-white">
-            <div className="text-sm text-blue-600">ส่งแล้ว</div>
-            <div className="text-2xl font-bold text-blue-700">
-              {purchaseOrders.filter(po => po.status === 'sent').length}
-            </div>
-          </Card>
-          <Card className="bg-white">
-            <div className="text-sm text-yellow-600">รับบางส่วน</div>
-            <div className="text-2xl font-bold text-yellow-700">
-              {purchaseOrders.filter(po => po.status === 'partial').length}
-            </div>
-          </Card>
-          <Card className="bg-white">
-            <div className="text-sm text-green-600">รับครบ</div>
+            <div className="text-sm text-green-600">โอนสินค้าสำเร็จ</div>
             <div className="text-2xl font-bold text-green-700">
-              {purchaseOrders.filter(po => po.status === 'received').length}
+              {purchaseOrders.filter(po => po.status === 'received' && po.payment_status !== 'paid').length}
+            </div>
+          </Card>
+          <Card className="bg-white">
+            <div className="text-sm text-red-600">รอชำระเงิน</div>
+            <div className="text-2xl font-bold text-red-700">
+              {purchaseOrders.filter(po => (po.status === 'sent' || po.status === 'received') && po.payment_status === 'unpaid').length}
+            </div>
+          </Card>
+          <Card className="bg-white">
+            <div className="text-sm text-blue-600">ชำระเงินสำเร็จ</div>
+            <div className="text-2xl font-bold text-blue-700">
+              {purchaseOrders.filter(po => po.payment_status === 'paid').length}
             </div>
           </Card>
         </div>
@@ -630,6 +643,10 @@ export default function PurchaseOrderPage() {
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">สถานะทั้งหมด</option>
+              <option value="waiting_transfer">รอโอนสินค้า</option>
+              <option value="transfer_completed">โอนสินค้าสำเร็จ</option>
+              <option value="waiting_payment">รอชำระเงิน</option>
+              <option value="payment_completed">ชำระเงินสำเร็จ</option>
               <option value="draft">ร่าง</option>
               <option value="sent">ส่งแล้ว</option>
               <option value="partial">รับบางส่วน</option>

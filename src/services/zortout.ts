@@ -83,6 +83,9 @@ interface ZortOutResponse<T> {
   count: number
   orderid?: number
   id?: number
+  purchaseorderid?: number
+  data?: { id?: number }
+  result?: { id?: number }
 }
 
 export class ZortOutService {
@@ -557,16 +560,20 @@ export class ZortOutService {
       })
 
       console.log('ZortOut AddPurchaseOrder Response:', result)
+      console.log('Response keys:', Object.keys(result))
 
       if (result.res !== 200 && result.resCode !== '200') {
         return { success: false, error: result.resDesc || `Failed to create purchase order (res: ${result.res}, resCode: ${result.resCode})` }
       }
 
       // Try to get PO ID from different possible response fields
-      const poId = result.id || result.orderid
+      // ZortOut might return: id, orderid, data.id, result.id, purchaseorderid
+      const poId = result.id || result.orderid || result.purchaseorderid || result.data?.id || result.result?.id
+      console.log('Extracted PO ID:', poId, 'from fields:', { id: result.id, orderid: result.orderid, purchaseorderid: result.purchaseorderid, dataId: result.data?.id, resultId: result.result?.id })
+      
       if (!poId) {
-        console.error('No PO ID in response:', result)
-        return { success: false, error: 'No PO ID returned from ZortOut' }
+        console.error('No PO ID in response:', JSON.stringify(result, null, 2))
+        return { success: false, error: `No PO ID returned from ZortOut. Response: ${JSON.stringify(result)}` }
       }
 
       return { success: true, poId }
