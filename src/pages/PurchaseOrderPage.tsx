@@ -553,6 +553,13 @@ export default function PurchaseOrderPage() {
           const today = new Date().toISOString().split('T')[0]
           await zortOutService.updatePurchaseOrderStatus(result.poId.toString(), 'Success', warehousecode, today)
         }
+        // Update local PO status to 'received' (โอนสินค้าสำเร็จ)
+        await supabase
+          .from('purchase_orders')
+          .update({ status: 'received', updated_at: new Date().toISOString() })
+          .eq('id', po.id)
+        // Refresh PO list
+        fetchPurchaseOrders()
       } else {
         alert(`Sync ไม่สำเร็จ: ${result.error}`)
       }
