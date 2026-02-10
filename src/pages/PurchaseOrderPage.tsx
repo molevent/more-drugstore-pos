@@ -531,8 +531,8 @@ export default function PurchaseOrderPage() {
 
       if (result.success) {
         alert(`Sync PO ไปยัง ZortOut สำเร็จ! (PO ID: ${result.poId})`)
-        // Update PO status in ZortOut to Pending
-        await zortOutService.updatePurchaseOrderStatus(po.po_number, 'Pending', warehousecode)
+        // Update PO status in ZortOut to Pending using ZortOut PO ID
+        await zortOutService.updatePurchaseOrderStatus(result.poId!.toString(), 'Pending', warehousecode)
       } else {
         alert(`Sync ไม่สำเร็จ: ${result.error}`)
       }
