@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Store, Bike, ShoppingCart, X, CreditCard, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, Store, Bike, ShoppingCart, CreditCard, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
 import { supabase } from '../services/supabase'
@@ -16,13 +16,14 @@ interface SalesChannel {
   name: string
   icon: string
   isCustom?: boolean
+  sortOrder?: number
 }
 
 const DEFAULT_SALES_CHANNELS: SalesChannel[] = [
-  { id: 'walk-in', name: 'หน้าร้าน', icon: 'store' },
-  { id: 'grab', name: 'GRAB', icon: 'bike' },
-  { id: 'shopee', name: 'SHOPEE', icon: 'shoppingcart' },
-  { id: 'lineman', name: 'LINEMAN', icon: 'bike' },
+  { id: 'walk-in', name: 'หน้าร้าน', icon: 'store', sortOrder: 0 },
+  { id: 'grab', name: 'GRAB', icon: 'bike', sortOrder: 1 },
+  { id: 'shopee', name: 'SHOPEE', icon: 'shoppingcart', sortOrder: 2 },
+  { id: 'lineman', name: 'LINEMAN', icon: 'bike', sortOrder: 3 },
 ]
 
 const ICON_OPTIONS = [
@@ -101,7 +102,8 @@ export default function SalesChannelsSettingsPage() {
       id: `custom-${Date.now()}`,
       name: newChannelName.trim(),
       icon: selectedIcon,
-      isCustom: true
+      isCustom: true,
+      sortOrder: salesChannels.length
     }
     
     setSalesChannels([...salesChannels, newChannel])
@@ -120,10 +122,6 @@ export default function SalesChannelsSettingsPage() {
     })
   }
 
-  const getPaymentMethodName = (paymentId: string) => {
-    return paymentMethods.find(m => m.id === paymentId)?.name || ''
-  }
-
   const handleClearPayment = (channelId: string) => {
     setChannelPaymentMap(prev => {
       const { [channelId]: _, ...rest } = prev
@@ -135,6 +133,25 @@ export default function SalesChannelsSettingsPage() {
     if (paymentId) {
       setChannelPaymentMap(prev => ({ ...prev, [channelId]: paymentId }))
     }
+  }
+
+  const handleMoveChannel = (index: number, direction: 'up' | 'down') => {
+    const newChannels = [...salesChannels]
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
+    
+    if (targetIndex < 0 || targetIndex >= newChannels.length) return
+    
+    // Swap channels
+    const temp = newChannels[index]
+    newChannels[index] = newChannels[targetIndex]
+    newChannels[targetIndex] = temp
+    
+    // Update sortOrder for all channels
+    newChannels.forEach((channel, i) => {
+      channel.sortOrder = i
+    })
+    
+    setSalesChannels(newChannels)
   }
 
   const getIconComponent = (iconId: string) => {
@@ -182,64 +199,77 @@ export default function SalesChannelsSettingsPage() {
           </div>
 
           {/* Channel List - Summary Card Style */}
-          <div className="space-y-4">
-            {salesChannels.map((channel: SalesChannel) => {
+          <div className="space-y-3">
+            {salesChannels.map((channel: SalesChannel, index: number) => {
               const selectedPaymentId = channelPaymentMap[channel.id]
-              const selectedPaymentName = getPaymentMethodName(selectedPaymentId)
               const ChannelIcon = getIconComponent(channel.icon)
 
               return (
-                <div key={channel.id}>
-                  {/* Channel Label */}
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-600">
-                      <ChannelIcon className="h-4 w-4" />
-                      {channel.name}
-                    </label>
-                    {channel.isCustom && (
-                      <button
-                        onClick={() => handleDeleteChannel(channel.id)}
-                        className="p-1 hover:bg-red-100 rounded-full transition-colors"
-                        title="ลบช่องทางการขาย"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </button>
-                    )}
+                <div key={channel.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                  {/* Reordering Buttons */}
+                  <div className="flex flex-col gap-0.5">
+                    <button
+                      onClick={() => handleMoveChannel(index, 'up')}
+                      disabled={index === 0}
+                      className="p-1 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
+                      title="ขึ้น"
+                    >
+                      <ChevronUp className="h-3 w-3 text-gray-600" />
+                    </button>
+                    <button
+                      onClick={() => handleMoveChannel(index, 'down')}
+                      disabled={index === salesChannels.length - 1}
+                      className="p-1 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
+                      title="ลง"
+                    >
+                      <ChevronDown className="h-3 w-3 text-gray-600" />
+                    </button>
                   </div>
 
-                  {/* Selected Payment Display */}
-                  {selectedPaymentId ? (
-                    <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
-                      <div className="flex items-center gap-3">
-                        <CreditCard className="h-5 w-5 text-gray-500" />
-                        <span className="text-gray-900 font-medium">{selectedPaymentName}</span>
-                      </div>
-                      <button
-                        onClick={() => handleClearPayment(channel.id)}
-                        className="p-1 hover:bg-gray-200 rounded-full transition-colors"
-                        title="ล้างการเลือก"
-                      >
-                        <X className="h-4 w-4 text-gray-400" />
-                      </button>
-                    </div>
-                  ) : (
-                    /* Payment Method Selection */
-                    <div className="flex flex-wrap gap-2">
-                      {paymentMethods.length > 0 ? (
-                        paymentMethods.map((method) => (
-                          <button
-                            key={method.id}
-                            onClick={() => handleSelectPayment(channel.id, method.id)}
-                            className="px-4 py-2 rounded-full border-2 border-gray-200 bg-white text-gray-600 text-sm hover:border-blue-400 hover:bg-blue-50 transition-all"
-                          >
-                            {method.name}
-                          </button>
-                        ))
-                      ) : (
-                        <p className="text-sm text-gray-500">ยังไม่มีวิธีการชำระเงิน</p>
+                  {/* Channel Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ChannelIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                      <span className="text-sm font-medium text-gray-700 truncate">{channel.name}</span>
+                      {channel.isCustom && (
+                        <button
+                          onClick={() => handleDeleteChannel(channel.id)}
+                          className="p-1 hover:bg-red-100 rounded-full transition-colors flex-shrink-0"
+                          title="ลบช่องทางการขาย"
+                        >
+                          <Trash2 className="h-3 w-3 text-red-500" />
+                        </button>
                       )}
                     </div>
-                  )}
+
+                    {/* Payment Method Dropdown */}
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      {paymentMethods.length > 0 ? (
+                        <select
+                          value={selectedPaymentId || ''}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            if (value) {
+                              handleSelectPayment(channel.id, value)
+                            } else {
+                              handleClearPayment(channel.id)
+                            }
+                          }}
+                          className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#7D735F] focus:border-[#7D735F]"
+                        >
+                          <option value="">เลือกวิธีชำระเงิน...</option>
+                          {paymentMethods.map((method) => (
+                            <option key={method.id} value={method.id}>
+                              {method.name}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="text-sm text-gray-500">ยังไม่มีวิธีการชำระเงิน</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )
             })}

@@ -25,11 +25,26 @@ interface Contact {
   phone?: string
 }
 
-const SALES_CHANNELS = [
-  { id: 'walk-in', name: 'หน้าร้าน', icon: Store },
-  { id: 'grab', name: 'GRAB', icon: Bike },
-  { id: 'shopee', name: 'SHOPEE', icon: ShoppingCart },
-  { id: 'lineman', name: 'LINEMAN', icon: Bike },
+interface SalesChannelConfig {
+  id: string
+  name: string
+  icon: string
+  isCustom?: boolean
+  sortOrder?: number
+}
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  store: Store,
+  bike: Bike,
+  shoppingcart: ShoppingCart,
+  creditcard: CreditCard,
+}
+
+const DEFAULT_salesChannels: SalesChannelConfig[] = [
+  { id: 'walk-in', name: 'หน้าร้าน', icon: 'store', sortOrder: 0 },
+  { id: 'grab', name: 'GRAB', icon: 'bike', sortOrder: 1 },
+  { id: 'shopee', name: 'SHOPEE', icon: 'shoppingcart', sortOrder: 2 },
+  { id: 'lineman', name: 'LINEMAN', icon: 'bike', sortOrder: 3 },
 ]
 
 export default function POSPage() {
@@ -38,6 +53,28 @@ export default function POSPage() {
   const [showDropdown, setShowDropdown] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(-1)
   const [salesChannel, setSalesChannel] = useState('walk-in')
+  const [salesChannels, setSalesChannels] = useState<SalesChannelConfig[]>(DEFAULT_salesChannels)
+  
+  // Load sales channels from localStorage
+  useEffect(() => {
+    const savedChannels = localStorage.getItem('pos_sales_channels')
+    if (savedChannels) {
+      try {
+        const customChannels = JSON.parse(savedChannels)
+        // Merge default and custom channels, then sort by sortOrder
+        const allChannels = [...DEFAULT_salesChannels, ...customChannels]
+          .sort((a: SalesChannelConfig, b: SalesChannelConfig) => (a.sortOrder || 0) - (b.sortOrder || 0))
+        setSalesChannels(allChannels)
+      } catch (error) {
+        console.error('Error parsing saved channels:', error)
+      }
+    }
+  }, [])
+  
+  // Helper function to get icon component
+  const getIconComponent = (iconId: string) => {
+    return ICON_MAP[iconId] || Store
+  }
   
   // Customer search states
   const [customerSearch, setCustomerSearch] = useState('')
@@ -643,7 +680,7 @@ export default function POSPage() {
       return
     }
 
-    const channelName = SALES_CHANNELS.find(c => c.id === salesChannel)?.name || 'หน้าร้าน'
+    const channelName = salesChannels.find(c => c.id === salesChannel)?.name || 'หน้าร้าน'
     const paymentMethodName = paymentMethods.find(m => m.id === selectedPaymentMethod)?.name || 'เงินสด'
     const confirmed = confirm(`ยืนยันการขายผ่าน ${channelName}\nวิธีชำระ: ${paymentMethodName}\nยอดชำระ: ฿${getTotal().toFixed(2)}`)
     
@@ -762,7 +799,7 @@ export default function POSPage() {
   const proceedWithCheckout = () => {
     setShowAlertModal(false)
     
-    const channelName = SALES_CHANNELS.find(c => c.id === salesChannel)?.name || 'หน้าร้าน'
+    const channelName = salesChannels.find(c => c.id === salesChannel)?.name || 'หน้าร้าน'
     const confirmed = confirm(`ยืนยันการขายผ่าน ${channelName}\nยอดชำระ: ฿${getTotal().toFixed(2)}`)
     
     if (confirmed) {
@@ -794,7 +831,7 @@ export default function POSPage() {
         
         <div style="margin-bottom: 10px;">
           <p style="margin: 3px 0; font-size: 11px;">ลูกค้า: ${selectedCustomer?.name || 'ลูกค้าทั่วไป'}</p>
-          <p style="margin: 3px 0; font-size: 11px;">ช่องทาง: ${SALES_CHANNELS.find(c => c.id === salesChannel)?.name || 'หน้าร้าน'}</p>
+          <p style="margin: 3px 0; font-size: 11px;">ช่องทาง: ${salesChannels.find(c => c.id === salesChannel)?.name || 'หน้าร้าน'}</p>
         </div>
         
         <div style="border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
@@ -1015,7 +1052,7 @@ export default function POSPage() {
 
   // Get platform name
   const getPlatformName = (platformId: string) => {
-    const channel = SALES_CHANNELS.find(c => c.id === platformId)
+    const channel = salesChannels.find(c => c.id === platformId)
     return channel?.name || platformId
   }
 
@@ -1347,8 +1384,8 @@ export default function POSPage() {
                 ช่องทางการขาย
               </label>
               <div className="grid grid-cols-4 gap-2">
-                {SALES_CHANNELS.map((channel) => {
-                  const Icon = channel.icon
+                {salesChannels.map((channel: SalesChannelConfig) => {
+                  const Icon = getIconComponent(channel.icon)
                   const isSelected = salesChannel === channel.id
                   return (
                     <button
@@ -1647,7 +1684,7 @@ export default function POSPage() {
             {salesChannel && (
               <div className="mb-3 p-2 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600">
-                  กำลังขายผ่าน: <span className="font-medium text-gray-900">{SALES_CHANNELS.find(c => c.id === salesChannel)?.name}</span>
+                  กำลังขายผ่าน: <span className="font-medium text-gray-900">{salesChannels.find(c => c.id === salesChannel)?.name}</span>
                 </p>
               </div>
             )}
@@ -2164,7 +2201,7 @@ export default function POSPage() {
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-gray-900">{bill.name}</span>
                             <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
-                              {SALES_CHANNELS.find(c => c.id === bill.salesChannel)?.name || 'หน้าร้าน'}
+                              {salesChannels.find(c => c.id === bill.salesChannel)?.name || 'หน้าร้าน'}
                             </span>
                           </div>
                           <p className="text-xs text-gray-500 mt-1">
