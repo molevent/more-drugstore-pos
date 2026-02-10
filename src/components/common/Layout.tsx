@@ -81,15 +81,10 @@ export default function Layout({ children }: LayoutProps) {
       ]
     },
     {
-      title: 'เชื่อมต่อ',
-      items: [
-        { name: 'ZortOut Sync', href: '/zortout-sync', icon: RefreshCw },
-      ]
-    },
-    {
       title: 'ตั้งค่า',
       items: [
         { name: t('nav.settings'), href: '/settings', icon: Settings },
+        { name: 'ZortOut Sync', href: '/zortout-sync', icon: RefreshCw },
       ]
     }
   ]
