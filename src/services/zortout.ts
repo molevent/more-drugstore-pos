@@ -79,6 +79,8 @@ interface ZortOutResponse<T> {
   res: number
   resCode?: string
   resDesc?: string
+  resDesc2?: string
+  resDesc3?: string
   list: T[]
   count: number
   orderid?: number
@@ -86,6 +88,7 @@ interface ZortOutResponse<T> {
   purchaseorderid?: number
   data?: { id?: number }
   result?: { id?: number }
+  detail?: { id?: number; number?: string }
 }
 
 export class ZortOutService {
@@ -567,9 +570,9 @@ export class ZortOutService {
       }
 
       // Try to get PO ID from different possible response fields
-      // ZortOut might return: id, orderid, data.id, result.id, purchaseorderid
-      const poId = result.id || result.orderid || result.purchaseorderid || result.data?.id || result.result?.id
-      console.log('Extracted PO ID:', poId, 'from fields:', { id: result.id, orderid: result.orderid, purchaseorderid: result.purchaseorderid, dataId: result.data?.id, resultId: result.result?.id })
+      // ZortOut might return: id, orderid, detail.id, resDesc (which contains the ID as string)
+      const poId = result.detail?.id || result.id || result.orderid || result.purchaseorderid || result.data?.id || result.result?.id || (result.resDesc ? parseInt(result.resDesc) : undefined)
+      console.log('Extracted PO ID:', poId, 'from fields:', { detailId: result.detail?.id, id: result.id, orderid: result.orderid, purchaseorderid: result.purchaseorderid, dataId: result.data?.id, resultId: result.result?.id, resDesc: result.resDesc })
       
       if (!poId) {
         console.error('No PO ID in response:', JSON.stringify(result, null, 2))
