@@ -602,7 +602,7 @@ export class ZortOutService {
       }
 
       const payload: any = {
-        id: number,
+        number: number,
         status: statusMap[status] || 1
       }
 
@@ -614,7 +614,7 @@ export class ZortOutService {
         payload.actionDate = actionDate
       }
 
-      const result = await this.request('/Order/UpdateOrderStatus', {
+      const result = await this.request('/PurchaseOrder/UpdatePurchaseOrderStatus', {
         method: 'POST',
         body: JSON.stringify(payload)
       })
