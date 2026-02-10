@@ -227,9 +227,9 @@ export default function SettingsPage() {
       iconColor: 'text-[#A67B5B]',
       title: 'การเชื่อมต่อ ZortOut',
       subtitle: 'ระบบจัดการสต็อก',
-      status: { text: 'ยังไม่เชื่อมต่อ', bgColor: 'bg-[#F5F0E6]', textColor: 'text-[#7D735F]' },
+      status: { text: 'พร้อมใช้งาน', bgColor: 'bg-[#B8C9B8]/10', textColor: 'text-[#7D735F]' },
       details: undefined,
-      link: '/settings/zortout'
+      link: '/zortout-sync'
     },
   ]
 

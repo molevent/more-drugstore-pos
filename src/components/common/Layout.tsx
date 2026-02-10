@@ -11,7 +11,6 @@ import {
   X,
   Users,
   Wallet,
-  RefreshCw,
   Package,
   History
 } from 'lucide-react'
@@ -84,7 +83,6 @@ export default function Layout({ children }: LayoutProps) {
       title: 'ตั้งค่า',
       items: [
         { name: t('nav.settings'), href: '/settings', icon: Settings },
-        { name: 'ZortOut Sync', href: '/zortout-sync', icon: RefreshCw },
       ]
     }
   ]
