@@ -151,31 +151,31 @@ export class ZortOutService {
   // ==================== PRODUCTS ====================
   
   async getProducts(page: number = 1, limit: number = 200): Promise<ZortOutProduct[]> {
-    const data = await this.request<ZortOutProduct>(`/Product/GetProducts?page=${page}&limit=${limit}`)
+    const data = await this.request<ZortOutProduct>(`/Products/GetProducts?page=${page}&limit=${limit}`)
     return data.list || []
   }
 
   async getProductBySku(sku: string): Promise<ZortOutProduct | null> {
-    const data = await this.request<ZortOutProduct>(`/Product/GetProductBySku?sku=${encodeURIComponent(sku)}`)
+    const data = await this.request<ZortOutProduct>(`/Products/GetProductBySku?sku=${encodeURIComponent(sku)}`)
     return data.list?.[0] || null
   }
 
   async addProduct(product: Partial<ZortOutProduct>): Promise<any> {
-    return this.request('/Product/AddProduct', {
+    return this.request('/Products/AddProduct', {
       method: 'POST',
       body: JSON.stringify(product)
     })
   }
 
   async updateProduct(product: Partial<ZortOutProduct> & { id: number }): Promise<any> {
-    return this.request('/Product/UpdateProduct', {
+    return this.request('/Products/UpdateProduct', {
       method: 'POST',
       body: JSON.stringify(product)
     })
   }
 
   async updateStock(productId: number, quantity: number, warehouseId?: number): Promise<any> {
-    return this.request('/Product/UpdateStock', {
+    return this.request('/Products/UpdateStock', {
       method: 'POST',
       body: JSON.stringify({
         productid: productId,
