@@ -257,14 +257,15 @@ export default function ZortOutSyncPage() {
             name_th: zProduct.name,
             name_en: zProduct.name,
             sku: zProduct.sku,
-            barcode: zProduct.barcode,
-            price: zProduct.price,
-            cost_price: zProduct.cost,
-            stock_quantity: zProduct.stockquantity,
-            unit: zProduct.unit,
+            barcode: zProduct.barcode || zProduct.sku,
+            base_price: zProduct.price || 0,
+            cost_price: zProduct.cost || 0,
+            stock_quantity: zProduct.stockquantity || 0,
+            min_stock_level: 10,
+            unit: zProduct.unit || 'ชิ้น',
             category: zProduct.category,
             description: zProduct.description,
-            is_active: zProduct.active
+            is_active: zProduct.active ?? true
           }
 
           if (existing) {
@@ -274,8 +275,9 @@ export default function ZortOutSyncPage() {
             await supabase.from('products').insert(productData)
             result.imported++
           }
-        } catch (err) {
+        } catch (err: any) {
           console.error('Error syncing product:', zProduct.sku, err)
+          console.error('Error details:', err.message, err.details, err.hint)
           result.errors++
         }
       }
