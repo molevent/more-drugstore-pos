@@ -3,7 +3,7 @@ import { supabase } from '../services/supabase'
 import { zortOutService } from '../services/zortout'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Package, Plus, History, Search, Edit } from 'lucide-react'
+import { Package, Plus, History, Search, Edit, ExternalLink } from 'lucide-react'
 
 interface Product {
   id: string
@@ -31,13 +31,18 @@ interface StockBatch {
 interface StockMovement {
   id: string
   product_id: string
+  batch_id: string
   movement_type: string
   quantity: number
   quantity_before: number
   quantity_after: number
+  unit_cost: number
+  total_cost: number
   reason: string
   notes: string
   movement_date: string
+  reference_type: string
+  reference_id: string
   created_by: string
 }
 
@@ -510,11 +515,20 @@ export default function StockManagementPage() {
                           }`}>
                             {getMovementTypeLabel(movement.movement_type)}
                           </span>
+                          {movement.reference_type === 'purchase_order' && (
+                            <span className="ml-2 inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
+                              <ExternalLink className="inline h-3 w-3 mr-1" />
+                              {movement.notes || 'PO'}
+                            </span>
+                          )}
                           <p className="text-sm text-gray-900 mt-1">
                             {movement.quantity > 0 ? '+' : ''}{movement.quantity} {selectedProduct.unit_of_measure}
                           </p>
                           {movement.reason && (
                             <p className="text-xs text-gray-600">{movement.reason}</p>
+                          )}
+                          {movement.unit_cost > 0 && (
+                            <p className="text-xs text-gray-500">ราคา: ฿{movement.unit_cost}/{selectedProduct.unit_of_measure}</p>
                           )}
                         </div>
                         <div className="text-right">

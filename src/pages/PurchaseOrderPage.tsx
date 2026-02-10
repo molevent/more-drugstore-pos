@@ -93,7 +93,8 @@ export default function PurchaseOrderPage() {
     unit_price: 0,
     discount_percent: 0,
     tax_percent: 7,
-    notes: ''
+    notes: '',
+    price_includes_vat: false
   })
 
   useEffect(() => {
@@ -120,7 +121,13 @@ export default function PurchaseOrderPage() {
 
   const fetchWarehouses = async () => {
     const { data } = await supabase.from('warehouses').select('*').order('name')
-    if (data) setWarehouses(data)
+    if (data) {
+      setWarehouses(data)
+      // Set default warehouse to first one if poFormData.warehouse_id is empty
+      if (data.length > 0 && !poFormData.warehouse_id) {
+        setPoFormData(prev => ({ ...prev, warehouse_id: data[0].id }))
+      }
+    }
   }
 
   // Fetch contacts that are sellers or both (can supply products)
@@ -161,9 +168,23 @@ export default function PurchaseOrderPage() {
     const subtotal = itemFormData.quantity * itemFormData.unit_price
     const discountAmount = subtotal * (itemFormData.discount_percent / 100)
     const afterDiscount = subtotal - discountAmount
-    const taxAmount = afterDiscount * (itemFormData.tax_percent / 100)
-    const total = afterDiscount + taxAmount
-    return { subtotal, discountAmount, taxAmount, total }
+    
+    // Calculate tax based on whether price includes VAT or not
+    let taxAmount = 0
+    let finalSubtotal = afterDiscount
+    
+    if (itemFormData.price_includes_vat) {
+      // Price includes VAT: need to extract tax from the amount
+      // VAT amount = total * (tax_rate / (100 + tax_rate))
+      taxAmount = afterDiscount * (itemFormData.tax_percent / (100 + itemFormData.tax_percent))
+      finalSubtotal = afterDiscount - taxAmount
+    } else {
+      // Price excludes VAT: add tax on top
+      taxAmount = afterDiscount * (itemFormData.tax_percent / 100)
+    }
+    
+    const total = finalSubtotal + taxAmount
+    return { subtotal, discountAmount, taxAmount, total, finalSubtotal }
   }
 
   const handleCreatePO = async (e: React.FormEvent) => {
@@ -317,7 +338,8 @@ export default function PurchaseOrderPage() {
         unit_price: 0,
         discount_percent: 0,
         tax_percent: 7,
-        notes: ''
+        notes: '',
+        price_includes_vat: false
       })
       
       fetchPurchaseOrders()
@@ -798,6 +820,22 @@ export default function PurchaseOrderPage() {
                       onChange={(e) => setItemFormData({ ...itemFormData, tax_percent: parseFloat(e.target.value) || 0 })}
                     />
                   </div>
+                </div>
+                {/* VAT Toggle */}
+                <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="price_includes_vat"
+                    checked={itemFormData.price_includes_vat}
+                    onChange={(e) => setItemFormData({ ...itemFormData, price_includes_vat: e.target.checked })}
+                    className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  />
+                  <label htmlFor="price_includes_vat" className="text-sm text-gray-700 cursor-pointer">
+                    ราคาที่ระบุ <strong>รวม VAT แล้ว</strong> (Price includes VAT)
+                  </label>
+                  <span className="text-xs text-gray-500 ml-auto">
+                    {itemFormData.price_includes_vat ? 'ระบบจะแยก VAT ออกจากราคา' : 'ระบบจะคิด VAT เพิ่มจากราคา'}
+                  </span>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">หมายเหตุ</label>
