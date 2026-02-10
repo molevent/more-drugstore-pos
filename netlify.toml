@@ -1,13 +1,7 @@
 [build]
   command = "npm run build"
   publish = "dist"
-
-# Proxy ZortOut API calls to bypass CORS
-[[redirects]]
-  from = "/api/zortout/*"
-  to = "https://open-api.zortout.com/v4/:splat"
-  status = 200
-  force = true
+  functions = "netlify/functions"
 
 [[redirects]]
   from = "/*"

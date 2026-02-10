@@ -1,5 +1,5 @@
-// Use Netlify proxy to bypass CORS when calling ZortOut API
-const ZORTOUT_BASE_URL = '/api/zortout'
+// Use Netlify Function proxy to bypass CORS
+const ZORTOUT_BASE_URL = '/.netlify/functions/zortout-proxy'
 
 interface ZortOutCredentials {
   storename: string
