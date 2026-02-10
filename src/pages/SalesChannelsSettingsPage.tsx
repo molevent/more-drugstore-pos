@@ -170,7 +170,7 @@ export default function SalesChannelsSettingsPage() {
           <ArrowLeft className="h-5 w-5 text-gray-600" />
         </button>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Store className="h-7 w-7 text-blue-600" />
+          <Store className="h-7 w-7 text-[#7D735F]" />
           ตั้งค่าช่องทางการขาย
         </h1>
       </div>
@@ -198,20 +198,20 @@ export default function SalesChannelsSettingsPage() {
             </Button>
           </div>
 
-          {/* Channel List - Summary Card Style */}
+          {/* Channel List - Box Style */}
           <div className="space-y-3">
             {salesChannels.map((channel: SalesChannel, index: number) => {
               const selectedPaymentId = channelPaymentMap[channel.id]
               const ChannelIcon = getIconComponent(channel.icon)
 
               return (
-                <div key={channel.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                <div key={channel.id} className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
                   {/* Reordering Buttons */}
                   <div className="flex flex-col gap-0.5">
                     <button
                       onClick={() => handleMoveChannel(index, 'up')}
                       disabled={index === 0}
-                      className="p-1 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
+                      className="p-1 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
                       title="ขึ้น"
                     >
                       <ChevronUp className="h-3 w-3 text-gray-600" />
@@ -219,7 +219,7 @@ export default function SalesChannelsSettingsPage() {
                     <button
                       onClick={() => handleMoveChannel(index, 'down')}
                       disabled={index === salesChannels.length - 1}
-                      className="p-1 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
+                      className="p-1 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
                       title="ลง"
                     >
                       <ChevronDown className="h-3 w-3 text-gray-600" />
@@ -228,9 +228,11 @@ export default function SalesChannelsSettingsPage() {
 
                   {/* Channel Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <ChannelIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                      <span className="text-sm font-medium text-gray-700 truncate">{channel.name}</span>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 rounded-lg bg-[#F5F0E6] flex items-center justify-center">
+                        <ChannelIcon className="h-4 w-4 text-[#7D735F] flex-shrink-0" />
+                      </div>
+                      <span className="text-sm font-medium text-gray-900 truncate">{channel.name}</span>
                       {channel.isCustom && (
                         <button
                           onClick={() => handleDeleteChannel(channel.id)}
@@ -242,29 +244,33 @@ export default function SalesChannelsSettingsPage() {
                       )}
                     </div>
 
-                    {/* Payment Method Dropdown */}
+                    {/* Payment Method Box Selection */}
                     <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-gray-400 flex-shrink-0" />
                       {paymentMethods.length > 0 ? (
-                        <select
-                          value={selectedPaymentId || ''}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            if (value) {
-                              handleSelectPayment(channel.id, value)
-                            } else {
-                              handleClearPayment(channel.id)
-                            }
-                          }}
-                          className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#7D735F] focus:border-[#7D735F]"
-                        >
-                          <option value="">เลือกวิธีชำระเงิน...</option>
+                        <div className="flex flex-wrap gap-2 flex-1">
                           {paymentMethods.map((method) => (
-                            <option key={method.id} value={method.id}>
-                              {method.name}
-                            </option>
+                            <button
+                              key={method.id}
+                              onClick={() => {
+                                if (selectedPaymentId === method.id) {
+                                  handleClearPayment(channel.id)
+                                } else {
+                                  handleSelectPayment(channel.id, method.id)
+                                }
+                              }}
+                              className={`px-3 py-1.5 rounded-lg border-2 text-sm font-medium transition-all ${
+                                selectedPaymentId === method.id
+                                  ? 'border-[#7D735F] bg-[#F5F0E6] text-[#5A5346]'
+                                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                              }`}
+                            >
+                              <div className="flex items-center gap-1.5">
+                                <CreditCard className="h-3.5 w-3.5" />
+                                {method.name}
+                              </div>
+                            </button>
                           ))}
-                        </select>
+                        </div>
                       ) : (
                         <span className="text-sm text-gray-500">ยังไม่มีวิธีการชำระเงิน</span>
                       )}
