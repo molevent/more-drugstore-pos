@@ -88,7 +88,8 @@ export default function PurchaseOrderPage() {
     expected_delivery_date: '',
     warehouse_id: '',
     reference: '',
-    notes: ''
+    notes: '',
+    status: 'draft'
   })
 
   const [itemFormData, setItemFormData] = useState({
@@ -206,7 +207,7 @@ export default function PurchaseOrderPage() {
         .insert([{
           ...poFormData,
           po_number: poNumber,
-          status: 'draft',
+          status: poFormData.status,
           payment_status: 'unpaid',
           reference: poFormData.reference || ''
         }])
@@ -224,7 +225,8 @@ export default function PurchaseOrderPage() {
         expected_delivery_date: '',
         warehouse_id: '',
         reference: '',
-        notes: ''
+        notes: '',
+        status: 'draft'
       })
       fetchPurchaseOrders()
       
@@ -861,6 +863,18 @@ export default function PurchaseOrderPage() {
                     {warehouses.map((w) => (
                       <option key={w.id} value={w.id}>{w.name}</option>
                     ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">สถานะ</label>
+                  <select
+                    value={poFormData.status}
+                    onChange={(e) => setPoFormData({ ...poFormData, status: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="draft">รอโอนสินค้า</option>
+                    <option value="success">โอนสินค้าสำเร็จ (เข้าคลังทันที)</option>
                   </select>
                 </div>
                 <div>
