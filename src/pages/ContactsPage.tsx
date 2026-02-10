@@ -25,6 +25,7 @@ interface Contact {
   address?: string
   company_name?: string
   tax_id?: string
+  code?: string
   notes?: string
   created_at: string
 }
@@ -44,6 +45,7 @@ export default function ContactsPage() {
     address: '',
     company_name: '',
     tax_id: '',
+    code: '',
     notes: ''
   })
 
@@ -158,6 +160,7 @@ export default function ContactsPage() {
       address: '',
       company_name: '',
       tax_id: '',
+      code: '',
       notes: ''
     })
   }
@@ -172,6 +175,7 @@ export default function ContactsPage() {
       address: contact.address || '',
       company_name: contact.company_name || '',
       tax_id: contact.tax_id || '',
+      code: contact.code || '',
       notes: contact.notes || ''
     })
     setShowModal(true)
@@ -436,6 +440,17 @@ export default function ContactsPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="เลข 13 หลัก"
                   maxLength={13}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">รหัสผู้ติดต่อ (Code)</label>
+                <input
+                  type="text"
+                  value={formData.code}
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="รหัสสำหรับ ZortOut (เช่น C001)"
                 />
               </div>
 
