@@ -194,7 +194,7 @@ export class ZortOutService {
     endDate?: string,
     salesChannel?: string
   ): Promise<ZortOutOrder[]> {
-    let url = `/Order/GetOrders?page=${page}&limit=${limit}`
+    let url = `/Orders/GetOrders?page=${page}&limit=${limit}`
     if (startDate) url += `&startdate=${startDate}`
     if (endDate) url += `&enddate=${endDate}`
     if (salesChannel) url += `&saleschannel=${encodeURIComponent(salesChannel)}`
@@ -204,7 +204,7 @@ export class ZortOutService {
   }
 
   async addOrder(order: Partial<ZortOutOrder>): Promise<any> {
-    return this.request('/Order/AddOrder', {
+    return this.request('/Orders/AddOrder', {
       method: 'POST',
       body: JSON.stringify(order)
     })
@@ -266,7 +266,7 @@ export class ZortOutService {
         notes: orderData.notes || ''
       }
 
-      const result = await this.request('/Order/AddOrder', {
+      const result = await this.request('/Orders/AddOrder', {
         method: 'POST',
         body: JSON.stringify(orderPayload)
       })
