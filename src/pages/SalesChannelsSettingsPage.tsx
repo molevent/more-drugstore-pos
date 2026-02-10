@@ -173,6 +173,11 @@ export default function SalesChannelsSettingsPage() {
           <Store className="h-7 w-7 text-[#7D735F]" />
           ตั้งค่าช่องทางการขาย
         </h1>
+        
+        {/* Description moved under header title */}
+        <p className="text-sm text-gray-600 ml-[52px]">
+          เลือกวิธีชำระเงินเริ่มต้นสำหรับแต่ละช่องทาง ระบบจะเลือกวิธีชำระเงินอัตโนมัติตามที่ตั้งค่าไว้
+        </p>
       </div>
 
       {/* Main Card - Summary Style */}
@@ -180,11 +185,6 @@ export default function SalesChannelsSettingsPage() {
         <div className="p-5">
           {/* Title */}
           <h2 className="text-lg font-semibold text-gray-900 mb-4">ช่องทางการขาย</h2>
-
-          {/* Description */}
-          <p className="text-sm text-gray-600 mb-6">
-            เลือกวิธีชำระเงินเริ่มต้นสำหรับแต่ละช่องทาง ระบบจะเลือกวิธีชำระเงินอัตโนมัติตามที่ตั้งค่าไว้
-          </p>
 
           {/* Add New Channel Button */}
           <div className="mb-6">
@@ -244,33 +244,28 @@ export default function SalesChannelsSettingsPage() {
                       )}
                     </div>
 
-                    {/* Payment Method Box Selection */}
+                    {/* Payment Method Dropdown */}
                     <div className="flex items-center gap-2">
                       {paymentMethods.length > 0 ? (
-                        <div className="flex flex-wrap gap-2 flex-1">
+                        <select
+                          value={selectedPaymentId || ''}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            if (value) {
+                              handleSelectPayment(channel.id, value)
+                            } else {
+                              handleClearPayment(channel.id)
+                            }
+                          }}
+                          className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#7D735F] focus:border-[#7D735F]"
+                        >
+                          <option value="">เลือกวิธีชำระเงิน...</option>
                           {paymentMethods.map((method) => (
-                            <button
-                              key={method.id}
-                              onClick={() => {
-                                if (selectedPaymentId === method.id) {
-                                  handleClearPayment(channel.id)
-                                } else {
-                                  handleSelectPayment(channel.id, method.id)
-                                }
-                              }}
-                              className={`px-3 py-1.5 rounded-lg border-2 text-sm font-medium transition-all ${
-                                selectedPaymentId === method.id
-                                  ? 'border-[#7D735F] bg-[#F5F0E6] text-[#5A5346]'
-                                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                              }`}
-                            >
-                              <div className="flex items-center gap-1.5">
-                                <CreditCard className="h-3.5 w-3.5" />
-                                {method.name}
-                              </div>
-                            </button>
+                            <option key={method.id} value={method.id}>
+                              {method.name}
+                            </option>
                           ))}
-                        </div>
+                        </select>
                       ) : (
                         <span className="text-sm text-gray-500">ยังไม่มีวิธีการชำระเงิน</span>
                       )}
