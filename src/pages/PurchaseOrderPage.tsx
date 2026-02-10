@@ -574,18 +574,22 @@ export default function PurchaseOrderPage() {
         alert(`PO นี้มีอยู่ใน ZortOut แล้ว (ID: ${zortOutPOId}) - ข้ามการสร้างใหม่`)
       }
 
-      // Update status in ZortOut
+      // Update status in ZortOut - always transfer stock immediately to main warehouse
       if (zortOutPOId) {
         const today = new Date().toISOString().split('T')[0]
         const warehouse = warehouses.find(w => w.id === po.warehouse_id)
         const warehousecode = warehouse?.code || ''
         
-        if (po.status === 'success') {
-          await zortOutService.updatePurchaseOrderStatus(zortOutPOId, 'Success', warehousecode, today)
-          alert('สถานะ: โอนสินค้าเข้าคลังสำเร็จ (ZortOut)')
-        } else {
-          await zortOutService.updatePurchaseOrderStatus(zortOutPOId, 'Waiting', warehousecode, today)
-          alert('สถานะ: รอโอนสินค้า (ZortOut) - สามารถโอนเข้าคลังภายหลังได้')
+        // Always use Success status to transfer stock immediately
+        await zortOutService.updatePurchaseOrderStatus(zortOutPOId, 'Success', warehousecode, today)
+        alert('โอนสินค้าเข้าคลัง ' + (warehouse?.name || 'หลัก') + ' สำเร็จ (ZortOut)')
+        
+        // Update local status to received if not already
+        if (po.status !== 'received') {
+          await supabase
+            .from('purchase_orders')
+            .update({ status: 'received', updated_at: new Date().toISOString() })
+            .eq('id', po.id)
         }
       }
 
