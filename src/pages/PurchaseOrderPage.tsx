@@ -22,6 +22,8 @@ interface PurchaseOrder {
   discount_amount: number
   net_amount: number
   notes: string
+  zortout_po_id?: string
+  reference?: string
   created_at: string
 }
 
@@ -505,73 +507,89 @@ export default function PurchaseOrderPage() {
 
     setIsSyncing(true)
     try {
-      // Prepare items for ZortOut
-      const zortItems = poItems.map(item => {
-        const product = products.find(p => p.id === item.product_id)
-        return {
-          sku: product?.barcode || product?.sku || item.product_id,
-          name: item.product?.name_th || product?.name_th || 'Unknown',
-          quantity: item.quantity,
-          pricepernumber: item.unit_price,
-          totalprice: item.total_amount,
-          discount: item.discount_amount > 0 ? item.discount_amount.toString() : '',
-          vat_status: item.tax_amount > 0 ? 2 : 0 // 2 = Have Vat, 0 = Follow Vat Type
-        }
-      })
-
-      // Calculate VAT type
-      let vattype = 1 // No Vat (default)
-      const totalTax = po.tax_amount || 0
-      if (totalTax > 0) {
-        vattype = 2 // Exclude Vat
-      }
-
-      // Get warehouse code
-      const warehouse = warehouses.find(w => w.id === po.warehouse_id)
-      const warehousecode = warehouse?.code || ''
-
-      // Find contact code from supplier name
-      const contact = contacts.find(c => 
-        c.company_name === po.supplier_name || c.name === po.supplier_name
-      )
-      const customercode = contact?.code || ''
-
-      const result = await zortOutService.addPurchaseOrder({
-        number: po.po_number,
-        customername: po.supplier_name,
-        customerphone: po.supplier_contact || '',
-        customercode: customercode,
-        purchaseorderdate: po.order_date,
-        amount: po.total_amount,
-        vatamount: po.tax_amount || 0,
-        vattype: vattype as 1 | 2 | 3,
-        warehousecode: warehousecode,
-        discount: po.discount_amount > 0 ? po.discount_amount.toString() : '',
-        description: po.notes || '',
-        reference: '',
-        items: zortItems
-      })
-
-      if (result.success) {
-        alert(`Sync PO ไปยัง ZortOut สำเร็จ! (PO ID: ${result.poId})`)
-        // Check PO status to determine stock transfer behavior
-        if (result.poId) {
-          const today = new Date().toISOString().split('T')[0]
-          if (po.status === 'success') {
-            // Status = success: transfer stock immediately in ZortOut
-            await zortOutService.updatePurchaseOrderStatus(result.poId.toString(), 'Success', warehousecode, today)
-            alert('สถานะ: โอนสินค้าเข้าคลังสำเร็จ (ZortOut)')
-          } else {
-            // Status = draft: keep as Waiting in ZortOut (no immediate transfer)
-            await zortOutService.updatePurchaseOrderStatus(result.poId.toString(), 'Waiting', warehousecode, today)
-            alert('สถานะ: รอโอนสินค้า (ZortOut) - สามารถโอนเข้าคลังภายหลังได้')
+      // Check if PO already has ZortOut ID
+      let zortOutPOId = po.zortout_po_id
+      
+      if (!zortOutPOId) {
+        // PO not yet created in ZortOut - create it now
+        const zortItems = poItems.map(item => {
+          const product = products.find(p => p.id === item.product_id)
+          return {
+            sku: product?.barcode || product?.sku || item.product_id,
+            name: item.product?.name_th || product?.name_th || 'Unknown',
+            quantity: item.quantity,
+            pricepernumber: item.unit_price,
+            totalprice: item.total_amount,
+            discount: item.discount_amount > 0 ? item.discount_amount.toString() : '',
+            vat_status: item.tax_amount > 0 ? 2 : 0
           }
+        })
+
+        let vattype = 1
+        const totalTax = po.tax_amount || 0
+        if (totalTax > 0) {
+          vattype = 2
         }
-        // Refresh PO list
-        fetchPurchaseOrders()
+
+        const warehouse = warehouses.find(w => w.id === po.warehouse_id)
+        const warehousecode = warehouse?.code || ''
+
+        const contact = contacts.find(c => 
+          c.company_name === po.supplier_name || c.name === po.supplier_name
+        )
+        const customercode = contact?.code || ''
+
+        const result = await zortOutService.addPurchaseOrder({
+          number: po.po_number,
+          customername: po.supplier_name,
+          customerphone: po.supplier_contact || '',
+          customercode: customercode,
+          purchaseorderdate: po.order_date,
+          amount: po.total_amount,
+          vatamount: po.tax_amount || 0,
+          vattype: vattype as 1 | 2 | 3,
+          warehousecode: warehousecode,
+          discount: po.discount_amount > 0 ? po.discount_amount.toString() : '',
+          description: po.notes || '',
+          reference: po.reference || '',
+          items: zortItems
+        })
+
+        if (!result.success) {
+          alert(`Sync ไม่สำเร็จ: ${result.error}`)
+          setIsSyncing(false)
+          return
+        }
+
+        if (result.poId) {
+          zortOutPOId = result.poId.toString()
+          // Save ZortOut PO ID to database
+          await supabase
+            .from('purchase_orders')
+            .update({ zortout_po_id: zortOutPOId, updated_at: new Date().toISOString() })
+            .eq('id', po.id)
+          alert(`Sync PO ไปยัง ZortOut สำเร็จ! (PO ID: ${zortOutPOId})`)
+        }
       } else {
-        alert(`Sync ไม่สำเร็จ: ${result.error}`)
+        alert(`PO นี้มีอยู่ใน ZortOut แล้ว (ID: ${zortOutPOId}) - ข้ามการสร้างใหม่`)
       }
+
+      // Update status in ZortOut
+      if (zortOutPOId) {
+        const today = new Date().toISOString().split('T')[0]
+        const warehouse = warehouses.find(w => w.id === po.warehouse_id)
+        const warehousecode = warehouse?.code || ''
+        
+        if (po.status === 'success') {
+          await zortOutService.updatePurchaseOrderStatus(zortOutPOId, 'Success', warehousecode, today)
+          alert('สถานะ: โอนสินค้าเข้าคลังสำเร็จ (ZortOut)')
+        } else {
+          await zortOutService.updatePurchaseOrderStatus(zortOutPOId, 'Waiting', warehousecode, today)
+          alert('สถานะ: รอโอนสินค้า (ZortOut) - สามารถโอนเข้าคลังภายหลังได้')
+        }
+      }
+
+      fetchPurchaseOrders()
     } catch (error: any) {
       console.error('Error syncing PO to ZortOut:', error)
       alert(`เกิดข้อผิดพลาด: ${error.message}`)
