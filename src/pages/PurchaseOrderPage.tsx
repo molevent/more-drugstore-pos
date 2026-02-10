@@ -14,7 +14,7 @@ interface PurchaseOrder {
   supplier_contact: string
   order_date: string
   expected_delivery_date: string
-  status: 'draft' | 'sent' | 'partial' | 'received' | 'cancelled'
+  status: 'draft' | 'sent' | 'partial' | 'received' | 'cancelled' | 'success'
   payment_status: 'unpaid' | 'partial' | 'paid'
   warehouse_id: string
   total_amount: number
@@ -554,16 +554,19 @@ export default function PurchaseOrderPage() {
 
       if (result.success) {
         alert(`Sync PO ไปยัง ZortOut สำเร็จ! (PO ID: ${result.poId})`)
-        // Update PO status in ZortOut to Success with actionDate to immediately transfer stock
+        // Check PO status to determine stock transfer behavior
         if (result.poId) {
           const today = new Date().toISOString().split('T')[0]
-          await zortOutService.updatePurchaseOrderStatus(result.poId.toString(), 'Success', warehousecode, today)
+          if (po.status === 'success') {
+            // Status = success: transfer stock immediately in ZortOut
+            await zortOutService.updatePurchaseOrderStatus(result.poId.toString(), 'Success', warehousecode, today)
+            alert('สถานะ: โอนสินค้าเข้าคลังสำเร็จ (ZortOut)')
+          } else {
+            // Status = draft: keep as Waiting in ZortOut (no immediate transfer)
+            await zortOutService.updatePurchaseOrderStatus(result.poId.toString(), 'Waiting', warehousecode, today)
+            alert('สถานะ: รอโอนสินค้า (ZortOut) - สามารถโอนเข้าคลังภายหลังได้')
+          }
         }
-        // Update local PO status to 'success' (โอนสินค้าสำเร็จ)
-        await supabase
-          .from('purchase_orders')
-          .update({ status: 'success', updated_at: new Date().toISOString() })
-          .eq('id', po.id)
         // Refresh PO list
         fetchPurchaseOrders()
       } else {
@@ -1069,6 +1072,32 @@ export default function PurchaseOrderPage() {
                 <div>
                   <p className="text-sm text-gray-600">คลัง</p>
                   <p className="font-medium">{warehouses.find(w => w.id === selectedPO.warehouse_id)?.name || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">สถานะ</p>
+                  <select
+                    value={selectedPO.status}
+                    onChange={async (e) => {
+                      const newStatus = e.target.value
+                      const { error } = await supabase
+                        .from('purchase_orders')
+                        .update({ status: newStatus, updated_at: new Date().toISOString() })
+                        .eq('id', selectedPO.id)
+                      if (!error) {
+                        setSelectedPO({ ...selectedPO, status: newStatus as any })
+                        fetchPurchaseOrders()
+                      } else {
+                        alert('เกิดข้อผิดพลาดในการอัปเดตสถานะ')
+                      }
+                    }}
+                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="draft">รอโอนสินค้า</option>
+                    <option value="success">โอนสินค้าสำเร็จ</option>
+                  </select>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {selectedPO.status === 'success' ? 'ส่งไป ZortOut: โอนเข้าคลังทันที' : 'ส่งไป ZortOut: รอโอนเข้าคลัง'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">ยอดรวม</p>

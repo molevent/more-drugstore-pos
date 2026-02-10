@@ -595,14 +595,14 @@ export class ZortOutService {
     try {
       const statusMap: Record<string, number> = {
         'Pending': 1,
-        'Success': 1,
-        'Waiting': 3,
+        'Success': 4,
+        'Waiting': 1,
         'Shipping': 6,
-        'Voided': 4
+        'Voided': 5
       }
 
       const payload: any = {
-        number: number,
+        id: number,
         status: statusMap[status] || 1
       }
 
@@ -614,18 +614,18 @@ export class ZortOutService {
         payload.actionDate = actionDate
       }
 
-      const result = await this.request('/PurchaseOrder/UpdatePurchaseOrderStatus', {
+      const result = await this.request('/Order/UpdateOrderStatus', {
         method: 'POST',
         body: JSON.stringify(payload)
       })
 
       if (result.res !== 200 && result.resCode !== '200') {
-        return { success: false, error: result.resDesc || 'Failed to update purchase order status' }
+        return { success: false, error: result.resDesc || 'Failed to update order status' }
       }
 
       return { success: true }
     } catch (error: any) {
-      console.error('Error updating purchase order status in ZortOut:', error)
+      console.error('Error updating order status in ZortOut:', error)
       return { success: false, error: error.message }
     }
   }
