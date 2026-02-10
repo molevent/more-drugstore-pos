@@ -202,7 +202,9 @@ export default function PurchaseOrderPage() {
         .insert([{
           ...poFormData,
           po_number: poNumber,
-          status: 'draft'
+          status: 'draft',
+          payment_status: 'unpaid',
+          reference: poFormData.reference || ''
         }])
         .select()
         .single()
