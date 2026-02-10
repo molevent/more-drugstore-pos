@@ -3,7 +3,7 @@ import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { FileText, Plus, Trash2, X, Search, CheckCircle, Package, AlertCircle, ShoppingCart } from 'lucide-react'
+import { FileText, Plus, Trash2, X, Search, CheckCircle, Package, AlertCircle, ShoppingCart, Eye, History } from 'lucide-react'
 import { zortOutService } from '../services/zortout'
 import type { Product } from '../types/database'
 
@@ -33,10 +33,33 @@ interface Contact {
   company_name: string
 }
 
+interface POItem {
+  id: string
+  purchase_order_id: string
+  product_id: string
+  quantity: number
+  unit_price: number
+  discount_percent: number
+  discount_amount: number
+  tax_percent: number
+  tax_amount: number
+  total_amount: number
+  notes: string
+  product?: {
+    name_th: string
+    sku: string
+  }
+}
+
 interface Warehouse {
   id: string
   name: string
   code: string
+}
+
+const formatDate = (dateString: string) => {
+  if (!dateString) return '-'
+  return new Date(dateString).toLocaleDateString('th-TH')
 }
 
 export default function PurchaseOrderPage() {
@@ -50,6 +73,9 @@ export default function PurchaseOrderPage() {
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null)
   const [statusFilter, setStatusFilter] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [poItems, setPoItems] = useState<POItem[]>([])
+  const [poMovements, setPoMovements] = useState<any[]>([])
   const [selectedContactId, setSelectedContactId] = useState('')
 
   const [poFormData, setPoFormData] = useState({
@@ -352,10 +378,52 @@ export default function PurchaseOrderPage() {
     return matchesStatus && matchesSearch
   })
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '-'
-    return new Date(dateString).toLocaleDateString('th-TH')
+  // Fetch PO items with product details
+  const fetchPOItems = async (poId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('purchase_order_items')
+        .select(`
+          *,
+          product:products(name_th, sku)
+        `)
+        .eq('purchase_order_id', poId)
+      
+      if (error) throw error
+      setPoItems(data || [])
+    } catch (error) {
+      console.error('Error fetching PO items:', error)
+    }
   }
+
+  // Fetch stock movements related to PO
+  const fetchPOMovements = async (poId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('stock_movements')
+        .select(`
+          *,
+          product:products(name_th, unit_of_measure)
+        `)
+        .eq('reference_type', 'purchase_order')
+        .eq('reference_id', poId)
+        .order('movement_date', { ascending: false })
+      
+      if (error) throw error
+      setPoMovements(data || [])
+    } catch (error) {
+      console.error('Error fetching PO movements:', error)
+    }
+  }
+
+  const openPODetail = (po: PurchaseOrder) => {
+    setSelectedPO(po)
+    fetchPOItems(po.id)
+    fetchPOMovements(po.id)
+    setShowDetailModal(true)
+  }
+
+  // Delete the duplicate formatDate function below
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -464,9 +532,9 @@ export default function PurchaseOrderPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredPOs.map((po) => (
-                    <tr key={po.id} className="hover:bg-gray-50">
+                    <tr key={po.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => openPODetail(po)}>
                       <td className="px-4 py-4">
-                        <div className="font-medium text-gray-900">{po.po_number}</div>
+                        <div className="font-medium text-blue-600 hover:underline">{po.po_number}</div>
                         <div className="text-sm text-gray-500">
                           {warehouses.find(w => w.id === po.warehouse_id)?.name || 'ไม่ระบุคลัง'}
                         </div>
@@ -494,16 +562,32 @@ export default function PurchaseOrderPage() {
                           <Button
                             variant="secondary"
                             size="sm"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openPODetail(po)
+                            }}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            ดู
+                          </Button>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
                               setSelectedPO(po)
                               setShowItemModal(true)
                             }}
                           >
-                            เพิ่มสินค้า
+                            <Plus className="h-4 w-4 mr-1" />
+                            รับสินค้า
                           </Button>
                           <select
                             value={po.status}
-                            onChange={(e) => handleUpdateStatus(po, e.target.value)}
+                            onChange={(e) => {
+                              e.stopPropagation()
+                              handleUpdateStatus(po, e.target.value)
+                            }}
                             className="text-sm px-2 py-1 border border-gray-300 rounded"
                           >
                             <option value="draft">ร่าง</option>
@@ -513,7 +597,10 @@ export default function PurchaseOrderPage() {
                             <option value="cancelled">ยกเลิก</option>
                           </select>
                           <button
-                            onClick={() => handleDeletePO(po.id)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeletePO(po.id)
+                            }}
                             className="p-1 text-red-600 hover:bg-red-100 rounded"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -750,6 +837,120 @@ export default function PurchaseOrderPage() {
             </div>
           </div>
         )}
+        {/* PO Detail Modal */}
+        {showDetailModal && selectedPO && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">{selectedPO.po_number}</h2>
+                  <p className="text-sm text-gray-500">{selectedPO.supplier_name}</p>
+                </div>
+                <div className="flex gap-2">
+                  {getStatusBadge(selectedPO.status)}
+                  <button onClick={() => setShowDetailModal(false)} className="text-gray-400 hover:text-gray-600">
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+              </div>
+
+              {/* PO Info */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="text-sm text-gray-600">วันที่สั่ง</p>
+                  <p className="font-medium">{formatDate(selectedPO.order_date)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">วันที่รับ</p>
+                  <p className="font-medium">{formatDate(selectedPO.expected_delivery_date)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">คลัง</p>
+                  <p className="font-medium">{warehouses.find(w => w.id === selectedPO.warehouse_id)?.name || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">ยอดรวม</p>
+                  <p className="font-medium text-blue-600">฿{selectedPO.total_amount?.toLocaleString() || '0'}</p>
+                </div>
+              </div>
+
+              {/* PO Items */}
+              <div className="mb-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-3">รายการสินค้า</h3>
+                {poItems.length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">ยังไม่มีรายการสินค้า</p>
+                ) : (
+                  <table className="min-w-full divide-y divide-gray-200 border rounded-lg">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">สินค้า</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">จำนวน</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">ราคา/หน่วย</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">ยอดรวม</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {poItems.map((item) => (
+                        <tr key={item.id}>
+                          <td className="px-4 py-2">
+                            <div className="font-medium text-gray-900">{item.product?.name_th || 'Unknown'}</div>
+                            <div className="text-sm text-gray-500">{item.product?.sku || ''}</div>
+                          </td>
+                          <td className="px-4 py-2 text-right">{item.quantity}</td>
+                          <td className="px-4 py-2 text-right">฿{item.unit_price?.toLocaleString()}</td>
+                          <td className="px-4 py-2 text-right font-medium">฿{item.total_amount?.toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              {/* Stock Movements */}
+              {poMovements.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center">
+                    <History className="h-5 w-5 mr-2" />
+                    รายการเคลื่อนไหวสต็อก
+                  </h3>
+                  <div className="space-y-2">
+                    {poMovements.map((movement) => (
+                      <div key={movement.id} className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex justify-between">
+                          <div>
+                            <span className="inline-block px-2 py-1 bg-green-100 text-green-700 rounded text-xs">
+                              รับเข้า
+                            </span>
+                            <p className="font-medium text-gray-900 mt-1">{movement.product?.name_th}</p>
+                            <p className="text-sm text-gray-600">+{movement.quantity} {movement.product?.unit_of_measure || 'ชิ้น'}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-gray-600">{new Date(movement.movement_date).toLocaleDateString('th-TH')}</p>
+                            <p className="text-xs text-gray-500">{movement.quantity_before} → {movement.quantity_after}</p>
+                          </div>
+                        </div>
+                        {movement.batch_id && (
+                          <p className="text-xs text-gray-500 mt-1">Batch: {movement.batch_id.slice(0, 8)}...</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+                <Button variant="primary" onClick={() => { setShowDetailModal(false); setShowItemModal(true); }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  รับสินค้าเพิ่ม
+                </Button>
+                <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
+                  ปิด
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   )
