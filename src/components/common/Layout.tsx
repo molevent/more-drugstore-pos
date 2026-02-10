@@ -10,8 +10,7 @@ import {
   Menu,
   X,
   Users,
-  Wallet,
-  Check
+  Wallet
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -137,15 +136,12 @@ export default function Layout({ children }: LayoutProps) {
                           }}
                           className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all border-2 ${
                             isActive
-                              ? 'bg-[#F5F0E6] text-[#7D735F] border-[#7D735F]'
+                              ? 'bg-[#F5F0E6] text-gray-900 border-[#7D735F]'
                               : 'text-gray-700 border-transparent hover:border-[#7D735F]'
                           }`}
                         >
-                          <item.icon className={`h-5 w-5 ${isActive ? 'text-[#7D735F]' : 'text-gray-500'}`} />
+                          <item.icon className={`h-5 w-5 ${isActive ? 'text-gray-900' : 'text-gray-500'}`} />
                           <span className="flex-1">{item.name}</span>
-                          {isActive && (
-                            <Check className="h-4 w-4 text-[#7D735F]" />
-                          )}
                         </Link>
                       )
                     })}
