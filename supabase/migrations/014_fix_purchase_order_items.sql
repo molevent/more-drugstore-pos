@@ -1,6 +1,18 @@
 -- Fix: Add missing columns to purchase_order_items if they don't exist
 -- This fixes "Could not find the 'discount_amount' column" error
 
+-- Add discount_percent column if not exists
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'purchase_order_items' 
+        AND column_name = 'discount_percent'
+    ) THEN
+        ALTER TABLE purchase_order_items ADD COLUMN discount_percent DECIMAL(5, 2) DEFAULT 0;
+    END IF;
+END $$;
+
 -- Add discount_amount column if not exists
 DO $$
 BEGIN
@@ -10,6 +22,18 @@ BEGIN
         AND column_name = 'discount_amount'
     ) THEN
         ALTER TABLE purchase_order_items ADD COLUMN discount_amount DECIMAL(12, 2) DEFAULT 0;
+    END IF;
+END $$;
+
+-- Add tax_percent column if not exists
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'purchase_order_items' 
+        AND column_name = 'tax_percent'
+    ) THEN
+        ALTER TABLE purchase_order_items ADD COLUMN tax_percent DECIMAL(5, 2) DEFAULT 7;
     END IF;
 END $$;
 
