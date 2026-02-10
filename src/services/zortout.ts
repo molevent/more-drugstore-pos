@@ -151,31 +151,31 @@ export class ZortOutService {
   // ==================== PRODUCTS ====================
   
   async getProducts(page: number = 1, limit: number = 200): Promise<ZortOutProduct[]> {
-    const data = await this.request<ZortOutProduct>(`/Products/GetProducts?page=${page}&limit=${limit}`)
+    const data = await this.request<ZortOutProduct>(`/Product/GetProducts?page=${page}&limit=${limit}`)
     return data.list || []
   }
 
   async getProductBySku(sku: string): Promise<ZortOutProduct | null> {
-    const data = await this.request<ZortOutProduct>(`/Products/GetProductBySku?sku=${encodeURIComponent(sku)}`)
+    const data = await this.request<ZortOutProduct>(`/Product/GetProductBySku?sku=${encodeURIComponent(sku)}`)
     return data.list?.[0] || null
   }
 
   async addProduct(product: Partial<ZortOutProduct>): Promise<any> {
-    return this.request('/Products/AddProduct', {
+    return this.request('/Product/AddProduct', {
       method: 'POST',
       body: JSON.stringify(product)
     })
   }
 
   async updateProduct(product: Partial<ZortOutProduct> & { id: number }): Promise<any> {
-    return this.request('/Products/UpdateProduct', {
+    return this.request('/Product/UpdateProduct', {
       method: 'POST',
       body: JSON.stringify(product)
     })
   }
 
   async updateStock(productId: number, quantity: number, warehouseId?: number): Promise<any> {
-    return this.request('/Products/UpdateStock', {
+    return this.request('/Product/UpdateStock', {
       method: 'POST',
       body: JSON.stringify({
         productid: productId,
@@ -194,7 +194,7 @@ export class ZortOutService {
     endDate?: string,
     salesChannel?: string
   ): Promise<ZortOutOrder[]> {
-    let url = `/Orders/GetOrders?page=${page}&limit=${limit}`
+    let url = `/Order/GetOrders?page=${page}&limit=${limit}`
     if (startDate) url += `&startdate=${startDate}`
     if (endDate) url += `&enddate=${endDate}`
     if (salesChannel) url += `&saleschannel=${encodeURIComponent(salesChannel)}`
@@ -204,7 +204,7 @@ export class ZortOutService {
   }
 
   async addOrder(order: Partial<ZortOutOrder>): Promise<any> {
-    return this.request('/Orders/AddOrder', {
+    return this.request('/Order/AddOrder', {
       method: 'POST',
       body: JSON.stringify(order)
     })
