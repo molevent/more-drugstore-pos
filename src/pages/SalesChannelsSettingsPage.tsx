@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Store, Bike, ShoppingCart, Bike as BikeIcon, X, CreditCard } from 'lucide-react'
+import { ArrowLeft, Store, Bike, ShoppingCart, X, CreditCard, Plus, Trash2 } from 'lucide-react'
 import Button from '../components/common/Button'
+import Input from '../components/common/Input'
 import { supabase } from '../services/supabase'
 
 interface PaymentMethod {
@@ -10,11 +11,25 @@ interface PaymentMethod {
   is_active: boolean
 }
 
-const SALES_CHANNELS = [
-  { id: 'walk-in', name: 'หน้าร้าน', icon: Store },
-  { id: 'grab', name: 'GRAB', icon: Bike },
-  { id: 'shopee', name: 'SHOPEE', icon: ShoppingCart },
-  { id: 'lineman', name: 'LINEMAN', icon: BikeIcon },
+interface SalesChannel {
+  id: string
+  name: string
+  icon: string
+  isCustom?: boolean
+}
+
+const DEFAULT_SALES_CHANNELS: SalesChannel[] = [
+  { id: 'walk-in', name: 'หน้าร้าน', icon: 'store' },
+  { id: 'grab', name: 'GRAB', icon: 'bike' },
+  { id: 'shopee', name: 'SHOPEE', icon: 'shoppingcart' },
+  { id: 'lineman', name: 'LINEMAN', icon: 'bike' },
+]
+
+const ICON_OPTIONS = [
+  { id: 'store', name: 'ร้านค้า', component: Store },
+  { id: 'bike', name: 'จักรยาน', component: Bike },
+  { id: 'shoppingcart', name: 'ตะกร้า', component: ShoppingCart },
+  { id: 'creditcard', name: 'บัตร', component: CreditCard },
 ]
 
 export default function SalesChannelsSettingsPage() {
@@ -22,6 +37,10 @@ export default function SalesChannelsSettingsPage() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
   const [channelPaymentMap, setChannelPaymentMap] = useState<Record<string, string>>({})
   const [saved, setSaved] = useState(false)
+  const [salesChannels, setSalesChannels] = useState<SalesChannel[]>(DEFAULT_SALES_CHANNELS)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [newChannelName, setNewChannelName] = useState('')
+  const [selectedIcon, setSelectedIcon] = useState('store')
 
   // Load payment methods
   useEffect(() => {
@@ -49,18 +68,56 @@ export default function SalesChannelsSettingsPage() {
     fetchPaymentMethods()
   }, [])
 
-  // Load saved channel payment map
+  // Load saved channel payment map and custom channels
   useEffect(() => {
-    const saved = localStorage.getItem('pos_channel_payment_map')
-    if (saved) {
-      setChannelPaymentMap(JSON.parse(saved))
+    const savedMap = localStorage.getItem('pos_channel_payment_map')
+    if (savedMap) {
+      setChannelPaymentMap(JSON.parse(savedMap))
+    }
+    
+    const savedChannels = localStorage.getItem('pos_sales_channels')
+    if (savedChannels) {
+      try {
+        const customChannels = JSON.parse(savedChannels)
+        setSalesChannels([...DEFAULT_SALES_CHANNELS, ...customChannels])
+      } catch (error) {
+        console.error('Error parsing saved channels:', error)
+      }
     }
   }, [])
 
   const handleSave = () => {
     localStorage.setItem('pos_channel_payment_map', JSON.stringify(channelPaymentMap))
+    const customChannels = salesChannels.filter(c => c.isCustom)
+    localStorage.setItem('pos_sales_channels', JSON.stringify(customChannels))
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
+  }
+
+  const handleAddChannel = () => {
+    if (!newChannelName.trim()) return
+    
+    const newChannel: SalesChannel = {
+      id: `custom-${Date.now()}`,
+      name: newChannelName.trim(),
+      icon: selectedIcon,
+      isCustom: true
+    }
+    
+    setSalesChannels([...salesChannels, newChannel])
+    setNewChannelName('')
+    setSelectedIcon('store')
+    setShowAddModal(false)
+  }
+
+  const handleDeleteChannel = (channelId: string) => {
+    if (!confirm('ต้องการลบช่องทางการขายนี้?')) return
+    setSalesChannels(salesChannels.filter(c => c.id !== channelId))
+    // Also remove from payment map
+    setChannelPaymentMap(prev => {
+      const { [channelId]: _, ...rest } = prev
+      return rest
+    })
   }
 
   const getPaymentMethodName = (paymentId: string) => {
@@ -78,6 +135,11 @@ export default function SalesChannelsSettingsPage() {
     if (paymentId) {
       setChannelPaymentMap(prev => ({ ...prev, [channelId]: paymentId }))
     }
+  }
+
+  const getIconComponent = (iconId: string) => {
+    const icon = ICON_OPTIONS.find(i => i.id === iconId)
+    return icon ? icon.component : Store
   }
 
   return (
@@ -107,18 +169,43 @@ export default function SalesChannelsSettingsPage() {
             เลือกวิธีชำระเงินเริ่มต้นสำหรับแต่ละช่องทาง ระบบจะเลือกวิธีชำระเงินอัตโนมัติตามที่ตั้งค่าไว้
           </p>
 
+          {/* Add New Channel Button */}
+          <div className="mb-6">
+            <Button
+              variant="secondary"
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              เพิ่มช่องทางการขาย
+            </Button>
+          </div>
+
           {/* Channel List - Summary Card Style */}
           <div className="space-y-4">
-            {SALES_CHANNELS.map((channel) => {
+            {salesChannels.map((channel: SalesChannel) => {
               const selectedPaymentId = channelPaymentMap[channel.id]
               const selectedPaymentName = getPaymentMethodName(selectedPaymentId)
+              const ChannelIcon = getIconComponent(channel.icon)
 
               return (
                 <div key={channel.id}>
                   {/* Channel Label */}
-                  <label className="block text-sm font-medium text-gray-600 mb-2">
-                    {channel.name}
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-600">
+                      <ChannelIcon className="h-4 w-4" />
+                      {channel.name}
+                    </label>
+                    {channel.isCustom && (
+                      <button
+                        onClick={() => handleDeleteChannel(channel.id)}
+                        className="p-1 hover:bg-red-100 rounded-full transition-colors"
+                        title="ลบช่องทางการขาย"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </button>
+                    )}
+                  </div>
 
                   {/* Selected Payment Display */}
                   {selectedPaymentId ? (
@@ -184,6 +271,77 @@ export default function SalesChannelsSettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Add Channel Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">เพิ่มช่องทางการขาย</h3>
+            
+            {/* Channel Name Input */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                ชื่อช่องทางการขาย
+              </label>
+              <Input
+                value={newChannelName}
+                onChange={(e) => setNewChannelName(e.target.value)}
+                placeholder="เช่น PANDA GO, ROBINHOOD"
+                className="w-full"
+              />
+            </div>
+
+            {/* Icon Selection */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                เลือกไอคอน
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {ICON_OPTIONS.map((icon) => {
+                  const IconComponent = icon.component
+                  return (
+                    <button
+                      key={icon.id}
+                      onClick={() => setSelectedIcon(icon.id)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${
+                        selectedIcon === icon.id
+                          ? 'border-[#7D735F] bg-[#F5F0E6]'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <IconComponent className="h-4 w-4" />
+                      <span className="text-sm">{icon.name}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex gap-3">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowAddModal(false)
+                  setNewChannelName('')
+                  setSelectedIcon('store')
+                }}
+                className="flex-1"
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleAddChannel}
+                disabled={!newChannelName.trim()}
+                className="flex-1"
+              >
+                เพิ่ม
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
