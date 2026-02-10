@@ -689,7 +689,7 @@ export class ZortOutService {
 }
 
 export const zortOutService = new ZortOutService({
-  storename: 'moredrugstore',
+  storename: 'moredrugstore.cm@gmail.com',
   apikey: '2qxdu3x9UrF25s4inXnrQrLyhLaRIcIoFJJUl427uNE=',
   apisecret: 'WJVD5cuM8bnQdFueTQOH5gc3Uy/8xpMcnvxTnBQRwg='
 })
