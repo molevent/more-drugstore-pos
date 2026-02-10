@@ -3,7 +3,7 @@ import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Warehouse, Plus, Edit, Trash2, X, ArrowRightLeft } from 'lucide-react'
+import { Warehouse, Plus, Edit, Trash2, X, ArrowRightLeft, History, Package, ArrowDownLeft, ArrowUpRight, ArrowLeftRight } from 'lucide-react'
 import type { Product } from '../types/database'
 
 interface WarehouseType {
@@ -44,8 +44,29 @@ export default function WarehouseManagementPage() {
     notes: ''
   })
   const [lastActivityDates, setLastActivityDates] = useState<Record<string, string>>({})
+  const [showHistoryModal, setShowHistoryModal] = useState(false)
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string | null>(null)
+  const [stockMovements, setStockMovements] = useState<Array<{
+    id: string
+    product_id: string
+    product_name: string
+    from_warehouse_id: string
+    to_warehouse_id: string
+    quantity: number
+    movement_type: 'in' | 'out' | 'transfer'
+    created_at: string
+    created_by: string
+    notes: string
+  }>>([])
+  const [currentUser, setCurrentUser] = useState<string>('')
 
   useEffect(() => {
+    // Get current user
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setCurrentUser(data.user.email || data.user.id)
+      }
+    })
     fetchWarehouses()
     fetchProducts()
     fetchProductStocks()
@@ -156,10 +177,11 @@ export default function WarehouseManagementPage() {
   const handleTransfer = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      // Create stock transfer record
+      // Create stock transfer record with user info
       await supabase.from('stock_transfers').insert([{
         ...transferData,
-        transfer_date: new Date().toISOString()
+        transfer_date: new Date().toISOString(),
+        created_by: currentUser
       }])
 
       // Update source warehouse stock
@@ -231,6 +253,70 @@ export default function WarehouseManagementPage() {
     return stocks
   }
 
+  const fetchStockMovements = async (warehouseId: string) => {
+    try {
+      // Fetch transfers where this warehouse is source or destination
+      const { data: transfers, error } = await supabase
+        .from('stock_transfers')
+        .select(`
+          *,
+          product:products(name_th)
+        `)
+        .or(`from_warehouse_id.eq.${warehouseId},to_warehouse_id.eq.${warehouseId}`)
+        .order('transfer_date', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching stock movements:', error)
+        return
+      }
+
+      const movements = transfers?.map((transfer: any) => ({
+        id: transfer.id,
+        product_id: transfer.product_id,
+        product_name: transfer.product?.name_th || 'ไม่ทราบชื่อ',
+        from_warehouse_id: transfer.from_warehouse_id,
+        to_warehouse_id: transfer.to_warehouse_id,
+        quantity: transfer.quantity,
+        movement_type: transfer.from_warehouse_id === warehouseId ? 'out' : 'in' as 'in' | 'out' | 'transfer',
+        created_at: transfer.transfer_date,
+        created_by: transfer.created_by || 'ไม่ทราบ',
+        notes: transfer.notes || ''
+      })) || []
+
+      setStockMovements(movements)
+    } catch (err) {
+      console.error('Exception fetching stock movements:', err)
+    }
+  }
+
+  const handleViewHistory = (warehouseId: string) => {
+    setSelectedWarehouseId(warehouseId)
+    fetchStockMovements(warehouseId)
+    setShowHistoryModal(true)
+  }
+
+  const getMovementIcon = (type: 'in' | 'out' | 'transfer') => {
+    switch (type) {
+      case 'in':
+        return <ArrowDownLeft className="h-4 w-4 text-green-500" />
+      case 'out':
+        return <ArrowUpRight className="h-4 w-4 text-red-500" />
+      case 'transfer':
+        return <ArrowLeftRight className="h-4 w-4 text-blue-500" />
+    }
+  }
+
+  const getMovementLabel = (type: 'in' | 'out' | 'transfer') => {
+    switch (type) {
+      case 'in':
+        return 'รับเข้า'
+      case 'out':
+        return 'โอนออก'
+      case 'transfer':
+        return 'โอนย้าย'
+    }
+  }
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
@@ -271,6 +357,13 @@ export default function WarehouseManagementPage() {
                 </div>
               </div>
               <div className="flex gap-1">
+                <button
+                  onClick={() => handleViewHistory(warehouse.id)}
+                  className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-100 rounded"
+                  title="ดูประวัติการเคลื่อนไหว"
+                >
+                  <History className="h-4 w-4" />
+                </button>
                 <button
                   onClick={() => handleEdit(warehouse)}
                   className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-100 rounded"
@@ -454,6 +547,107 @@ export default function WarehouseManagementPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* History Modal */}
+      {showHistoryModal && selectedWarehouseId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <History className="h-6 w-6 text-green-600" />
+                  ประวัติการเคลื่อนไหว
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  {warehouses.find(w => w.id === selectedWarehouseId)?.name}
+                </p>
+              </div>
+              <button onClick={() => setShowHistoryModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-auto p-6">
+              {stockMovements.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <Package className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                  <p>ไม่มีประวัติการเคลื่อนไหว</p>
+                  <p className="text-sm mt-2">ยังไม่มีการรับเข้าหรือโอนออกสินค้า</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {stockMovements.map((movement) => {
+                    const fromWarehouse = warehouses.find(w => w.id === movement.from_warehouse_id)
+                    const toWarehouse = warehouses.find(w => w.id === movement.to_warehouse_id)
+                    return (
+                      <div key={movement.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-full ${
+                              movement.movement_type === 'in' ? 'bg-green-100' :
+                              movement.movement_type === 'out' ? 'bg-red-100' : 'bg-blue-100'
+                            }`}>
+                              {getMovementIcon(movement.movement_type)}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-gray-900">{movement.product_name}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                  movement.movement_type === 'in' ? 'bg-green-100 text-green-700' :
+                                  movement.movement_type === 'out' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+                                }`}>
+                                  {getMovementLabel(movement.movement_type)}
+                                </span>
+                              </div>
+                              <div className="text-sm text-gray-500 mt-1">
+                                {movement.movement_type === 'in' && (
+                                  <span>รับเข้าจาก {fromWarehouse?.name || 'ไม่ทราบ'}</span>
+                                )}
+                                {movement.movement_type === 'out' && (
+                                  <span>โอนไป {toWarehouse?.name || 'ไม่ทราบ'}</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+                                <span className="flex items-center gap-1">
+                                  <Package className="h-3 w-3" />
+                                  {movement.quantity} ชิ้น
+                                </span>
+                                <span>{new Date(movement.created_at).toLocaleString('th-TH')}</span>
+                                {movement.created_by && movement.created_by !== 'ไม่ทราบ' && (
+                                  <span>โดย: {movement.created_by}</span>
+                                )}
+                              </div>
+                              {movement.notes && (
+                                <div className="mt-2 text-sm text-gray-600 bg-white p-2 rounded">
+                                  หมายเหตุ: {movement.notes}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className={`font-semibold ${
+                              movement.movement_type === 'in' ? 'text-green-600' :
+                              movement.movement_type === 'out' ? 'text-red-600' : 'text-blue-600'
+                            }`}>
+                              {movement.movement_type === 'in' ? '+' : '-'}{movement.quantity}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4 border-t bg-gray-50 rounded-b-lg">
+              <Button variant="secondary" onClick={() => setShowHistoryModal(false)} className="w-full">
+                ปิด
+              </Button>
+            </div>
           </div>
         </div>
       )}
