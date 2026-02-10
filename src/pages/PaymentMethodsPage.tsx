@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { CreditCard, Plus, Edit2, Trash2 } from 'lucide-react'
+import { CreditCard, Plus, Edit2, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
@@ -160,6 +160,66 @@ export default function PaymentMethodsPage() {
     })
   }
 
+  const handleMovePaymentMethod = async (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
+    if (targetIndex < 0 || targetIndex >= paymentMethods.length) return
+
+    const newMethods = [...paymentMethods]
+    // Swap items
+    const temp = newMethods[index]
+    newMethods[index] = newMethods[targetIndex]
+    newMethods[targetIndex] = temp
+
+    // Update sort_order for all items
+    const updatedMethods = newMethods.map((method, i) => ({
+      ...method,
+      sort_order: i + 1
+    }))
+
+    setPaymentMethods(updatedMethods)
+
+    // Update in database
+    try {
+      const updates = updatedMethods.map(method => ({
+        id: method.id,
+        sort_order: method.sort_order
+      }))
+
+      const { error } = await supabase
+        .from('payment_methods')
+        .upsert(updates, { onConflict: 'id' })
+
+      if (error) {
+        console.error('Error updating sort order:', error)
+        // Revert on error
+        fetchPaymentMethods()
+      }
+    } catch (err) {
+      console.error('Exception updating sort order:', err)
+      fetchPaymentMethods()
+    }
+  }
+
+  const toggleActive = async (method: PaymentMethod) => {
+    try {
+      const { error } = await supabase
+        .from('payment_methods')
+        .update({ is_active: !method.is_active })
+        .eq('id', method.id)
+
+      if (error) {
+        console.error('Error toggling active state:', error)
+        alert('ไม่สามารถเปลี่ยนสถานะได้')
+        return
+      }
+
+      fetchPaymentMethods()
+    } catch (err) {
+      console.error('Exception toggling active state:', err)
+      alert('เกิดข้อผิดพลาด')
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -193,7 +253,27 @@ export default function PaymentMethodsPage() {
                 key={method.id}
                 className="flex items-center justify-between py-4 px-4 hover:bg-gray-50 transition-colors"
               >
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
+                  {/* Reordering Buttons */}
+                  <div className="flex flex-col gap-0.5">
+                    <button
+                      onClick={() => handleMovePaymentMethod(index, 'up')}
+                      disabled={index === 0}
+                      className="p-1 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
+                      title="ขึ้น"
+                    >
+                      <ChevronUp className="h-3 w-3 text-gray-600" />
+                    </button>
+                    <button
+                      onClick={() => handleMovePaymentMethod(index, 'down')}
+                      disabled={index === paymentMethods.length - 1}
+                      className="p-1 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
+                      title="ลง"
+                    >
+                      <ChevronDown className="h-3 w-3 text-gray-600" />
+                    </button>
+                  </div>
+
                   <div className="flex items-center justify-center h-8 w-8 bg-gray-100 rounded-lg text-gray-500 text-sm font-medium">
                     {method.sort_order || index + 1}
                   </div>
@@ -216,6 +296,21 @@ export default function PaymentMethodsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  {/* Toggle Active Switch */}
+                  <button
+                    onClick={() => toggleActive(method)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      method.is_active ? 'bg-green-500' : 'bg-gray-300'
+                    }`}
+                    title={method.is_active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        method.is_active ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+
                   <button
                     onClick={() => openEditModal(method)}
                     className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
