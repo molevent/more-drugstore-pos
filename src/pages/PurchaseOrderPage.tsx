@@ -87,6 +87,7 @@ export default function PurchaseOrderPage() {
     order_date: new Date().toISOString().split('T')[0],
     expected_delivery_date: '',
     warehouse_id: '',
+    reference: '',
     notes: ''
   })
 
@@ -216,6 +217,7 @@ export default function PurchaseOrderPage() {
         order_date: new Date().toISOString().split('T')[0],
         expected_delivery_date: '',
         warehouse_id: '',
+        reference: '',
         notes: ''
       })
       fetchPurchaseOrders()
@@ -531,8 +533,10 @@ export default function PurchaseOrderPage() {
 
       if (result.success) {
         alert(`Sync PO ไปยัง ZortOut สำเร็จ! (PO ID: ${result.poId})`)
-        // Update PO status in ZortOut to Pending using ZortOut PO ID
-        await zortOutService.updatePurchaseOrderStatus(result.poId!.toString(), 'Pending', warehousecode)
+        // Update PO status in ZortOut to Waiting using ZortOut PO ID
+        if (result.poId) {
+          await zortOutService.updatePurchaseOrderStatus(result.poId.toString(), 'Waiting', warehousecode)
+        }
       } else {
         alert(`Sync ไม่สำเร็จ: ${result.error}`)
       }
@@ -827,6 +831,14 @@ export default function PurchaseOrderPage() {
                       <option key={w.id} value={w.id}>{w.name}</option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">อ้างอิง (เลขที่ใบกำกับภาษี/ใบเสร็จ)</label>
+                  <Input
+                    value={poFormData.reference}
+                    onChange={(e) => setPoFormData({ ...poFormData, reference: e.target.value })}
+                    placeholder="INV-2024-001"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">หมายเหตุ</label>

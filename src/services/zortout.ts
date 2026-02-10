@@ -562,7 +562,14 @@ export class ZortOutService {
         return { success: false, error: result.resDesc || `Failed to create purchase order (res: ${result.res}, resCode: ${result.resCode})` }
       }
 
-      return { success: true, poId: result.id }
+      // Try to get PO ID from different possible response fields
+      const poId = result.id || result.orderid
+      if (!poId) {
+        console.error('No PO ID in response:', result)
+        return { success: false, error: 'No PO ID returned from ZortOut' }
+      }
+
+      return { success: true, poId }
     } catch (error: any) {
       console.error('Error creating purchase order in ZortOut:', error)
       return { success: false, error: error.message }
