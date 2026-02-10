@@ -98,7 +98,7 @@ export default function PurchaseOrderPage() {
     discount_percent: 0,
     tax_percent: 7,
     notes: '',
-    price_includes_vat: false
+    price_includes_vat: true
   })
 
   useEffect(() => {
@@ -127,8 +127,12 @@ export default function PurchaseOrderPage() {
     const { data } = await supabase.from('warehouses').select('*').order('name')
     if (data) {
       setWarehouses(data)
-      // Set default warehouse to first one if poFormData.warehouse_id is empty
-      if (data.length > 0 && !poFormData.warehouse_id) {
+      // Set default warehouse to 'คลังสินค้าหลัก' (main warehouse) if available
+      const mainWarehouse = data.find(w => w.name === 'คลังสินค้าหลัก' || w.code === 'MAIN')
+      if (mainWarehouse && !poFormData.warehouse_id) {
+        setPoFormData(prev => ({ ...prev, warehouse_id: mainWarehouse.id }))
+      } else if (data.length > 0 && !poFormData.warehouse_id) {
+        // Fallback to first warehouse if main not found
         setPoFormData(prev => ({ ...prev, warehouse_id: data[0].id }))
       }
     }
@@ -553,10 +557,10 @@ export default function PurchaseOrderPage() {
           const today = new Date().toISOString().split('T')[0]
           await zortOutService.updatePurchaseOrderStatus(result.poId.toString(), 'Success', warehousecode, today)
         }
-        // Update local PO status to 'received' (โอนสินค้าสำเร็จ)
+        // Update local PO status to 'success' (โอนสินค้าสำเร็จ)
         await supabase
           .from('purchase_orders')
-          .update({ status: 'received', updated_at: new Date().toISOString() })
+          .update({ status: 'success', updated_at: new Date().toISOString() })
           .eq('id', po.id)
         // Refresh PO list
         fetchPurchaseOrders()
