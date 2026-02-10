@@ -15,6 +15,7 @@ interface PurchaseOrder {
   order_date: string
   expected_delivery_date: string
   status: 'draft' | 'sent' | 'partial' | 'received' | 'cancelled'
+  payment_status: 'unpaid' | 'partial' | 'paid'
   warehouse_id: string
   total_amount: number
   tax_amount: number
@@ -374,6 +375,23 @@ export default function PurchaseOrderPage() {
     }
   }
 
+  const handleMarkAsReceivedAndPaid = async (po: PurchaseOrder) => {
+    if (!confirm('ยืนยันการรับสินค้าครบและชำระเงินแล้ว?')) return
+    try {
+      await supabase
+        .from('purchase_orders')
+        .update({ 
+          status: 'received',
+          payment_status: 'paid'
+        })
+        .eq('id', po.id)
+      fetchPurchaseOrders()
+      alert('อัปเดตสถานะเป็น "รับครบและชำระแล้ว" เรียบร้อย')
+    } catch (error: any) {
+      alert(error.message)
+    }
+  }
+
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { color: string; icon: any; label: string }> = {
       draft: { color: 'bg-gray-100 text-gray-700', icon: FileText, label: 'ร่าง' },
@@ -390,6 +408,22 @@ export default function PurchaseOrderPage() {
       <span className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
         <Icon className="h-3 w-3" />
         {config.label}
+      </span>
+    )
+  }
+
+  const getPaymentStatusBadge = (paymentStatus: string) => {
+    const config: Record<string, { color: string; label: string }> = {
+      unpaid: { color: 'bg-red-100 text-red-700', label: 'ยังไม่ชำระ' },
+      partial: { color: 'bg-yellow-100 text-yellow-700', label: 'ชำระบางส่วน' },
+      paid: { color: 'bg-green-100 text-green-700', label: 'ชำระครบ' }
+    }
+    
+    const status = config[paymentStatus] || config.unpaid
+    
+    return (
+      <span className={`px-2 py-0.5 rounded text-xs ${status.color}`}>
+        {status.label}
       </span>
     )
   }
@@ -645,6 +679,7 @@ export default function PurchaseOrderPage() {
                       </td>
                       <td className="px-4 py-4">
                         {getStatusBadge(po.status)}
+                        <div className="mt-1">{getPaymentStatusBadge(po.payment_status || 'unpaid')}</div>
                       </td>
                       <td className="px-4 py-4">
                         <div className="text-sm font-medium text-gray-900">
@@ -1066,6 +1101,14 @@ export default function PurchaseOrderPage() {
                 >
                   <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
                   {isSyncing ? 'กำลัง Sync...' : 'Sync ไป ZortOut'}
+                </Button>
+                <Button 
+                  variant="primary" 
+                  onClick={() => selectedPO && handleMarkAsReceivedAndPaid(selectedPO)}
+                  disabled={!selectedPO || selectedPO.status === 'received'}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  รับครบและชำระ
                 </Button>
                 <Button variant="primary" onClick={() => { setShowDetailModal(false); setShowItemModal(true); }}>
                   <Plus className="h-4 w-4 mr-2" />
