@@ -602,7 +602,7 @@ export class ZortOutService {
       }
 
       const payload: any = {
-        number: number,
+        id: number,
         status: statusMap[status] || 1
       }
 
