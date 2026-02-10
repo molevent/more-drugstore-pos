@@ -23,6 +23,15 @@ interface PurchaseOrder {
   created_at: string
 }
 
+interface Contact {
+  id: string
+  name: string
+  type: 'buyer' | 'seller' | 'both'
+  phone: string
+  email: string
+  company_name: string
+}
+
 interface Warehouse {
   id: string
   name: string
@@ -33,12 +42,14 @@ export default function PurchaseOrderPage() {
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [warehouses, setWarehouses] = useState<Warehouse[]>([])
+  const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [showItemModal, setShowItemModal] = useState(false)
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null)
   const [statusFilter, setStatusFilter] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedContactId, setSelectedContactId] = useState('')
 
   const [poFormData, setPoFormData] = useState({
     supplier_name: '',
@@ -62,6 +73,7 @@ export default function PurchaseOrderPage() {
     fetchPurchaseOrders()
     fetchProducts()
     fetchWarehouses()
+    fetchContacts()
   }, [])
 
   const fetchPurchaseOrders = async () => {
@@ -82,6 +94,16 @@ export default function PurchaseOrderPage() {
   const fetchWarehouses = async () => {
     const { data } = await supabase.from('warehouses').select('*').order('name')
     if (data) setWarehouses(data)
+  }
+
+  // Fetch contacts that are sellers or both (can supply products)
+  const fetchContacts = async () => {
+    const { data } = await supabase
+      .from('contacts')
+      .select('*')
+      .in('type', ['seller', 'both'])
+      .order('name')
+    if (data) setContacts(data)
   }
 
   // Generate PO number: PO-YYYY-XXXXX
@@ -136,6 +158,7 @@ export default function PurchaseOrderPage() {
       if (error) throw error
       
       setShowModal(false)
+      setSelectedContactId('') // Reset selected contact
       setPoFormData({
         supplier_name: '',
         supplier_contact: '',
@@ -433,6 +456,32 @@ export default function PurchaseOrderPage() {
                 </button>
               </div>
               <form onSubmit={handleCreatePO} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">เลือกคู่ค้า (ซัพพลายเออร์)</label>
+                  <select
+                    value={selectedContactId}
+                    onChange={(e) => {
+                      const contactId = e.target.value
+                      setSelectedContactId(contactId)
+                      const contact = contacts.find(c => c.id === contactId)
+                      if (contact) {
+                        setPoFormData({
+                          ...poFormData,
+                          supplier_name: contact.company_name || contact.name,
+                          supplier_contact: contact.phone || contact.email || ''
+                        })
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">-- เลือกจากผู้ติดต่อ --</option>
+                    {contacts.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.company_name || c.name} {c.phone && `(${c.phone})`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อซัพพลายเออร์ *</label>
                   <Input
