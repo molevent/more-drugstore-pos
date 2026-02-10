@@ -136,7 +136,7 @@ export default function Layout({ children }: LayoutProps) {
                           }}
                           className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all border-2 ${
                             isActive
-                              ? 'bg-[#F5F0E6] text-gray-900 border-[#7D735F]'
+                              ? 'bg-[#F5F0E6] text-gray-900 border-[#7D735F] shadow-md'
                               : 'text-gray-700 border-transparent hover:border-[#7D735F]'
                           }`}
                         >
