@@ -31,6 +31,7 @@ interface SalesChannelConfig {
   icon: string
   isCustom?: boolean
   sortOrder?: number
+  isVisibleOnPOS?: boolean
 }
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -70,6 +71,9 @@ export default function POSPage() {
       }
     }
   }, [])
+
+  // Filter visible channels for display
+  const visibleChannels = salesChannels.filter(c => c.isVisibleOnPOS !== false)
   
   // Helper function to get icon component
   const getIconComponent = (iconId: string) => {
@@ -1394,7 +1398,7 @@ export default function POSPage() {
                 ช่องทางการขาย
               </label>
               <div className="grid grid-cols-4 gap-2">
-                {salesChannels.map((channel: SalesChannelConfig) => {
+                {visibleChannels.map((channel: SalesChannelConfig) => {
                   const Icon = getIconComponent(channel.icon)
                   const isSelected = salesChannel === channel.id
                   return (

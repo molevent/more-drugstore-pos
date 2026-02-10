@@ -19,6 +19,7 @@ interface SalesChannel {
   isCustom?: boolean
   sortOrder?: number
   visiblePaymentMethods?: string[]
+  isVisibleOnPOS?: boolean
 }
 
 const DEFAULT_SALES_CHANNELS: SalesChannel[] = [
@@ -101,8 +102,8 @@ export default function SalesChannelsSettingsPage() {
   const handleSave = () => {
     localStorage.setItem('pos_channel_payment_map', JSON.stringify(channelPaymentMap))
     localStorage.setItem('pos_channel_visible_payments', JSON.stringify(channelVisiblePayments))
-    const customChannels = salesChannels.filter(c => c.isCustom)
-    localStorage.setItem('pos_sales_channels', JSON.stringify(customChannels))
+    // Save all channels with their visibility settings
+    localStorage.setItem('pos_sales_channels', JSON.stringify(salesChannels))
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
   }
@@ -212,6 +213,14 @@ export default function SalesChannelsSettingsPage() {
   const isPaymentVisible = (channelId: string, paymentId: string) => {
     const visible = channelVisiblePayments[channelId] || []
     return visible.includes(paymentId)
+  }
+
+  const toggleVisibleOnPOS = (channelId: string) => {
+    setSalesChannels(prev => prev.map(c =>
+      c.id === channelId
+        ? { ...c, isVisibleOnPOS: c.isVisibleOnPOS !== false }
+        : c
+    ))
   }
 
   return (
@@ -329,6 +338,22 @@ export default function SalesChannelsSettingsPage() {
                               <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{channel.code || '-'}</span>
                             </div>
                           </div>
+
+                          {/* Toggle Visible on POS */}
+                          <button
+                            onClick={() => toggleVisibleOnPOS(channel.id)}
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                              channel.isVisibleOnPOS !== false ? 'bg-green-500' : 'bg-gray-300'
+                            }`}
+                            title={channel.isVisibleOnPOS !== false ? 'แสดงบน POS' : 'ซ่อนบน POS'}
+                          >
+                            <span
+                              className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                                channel.isVisibleOnPOS !== false ? 'translate-x-5' : 'translate-x-1'
+                              }`}
+                            />
+                          </button>
+
                           <button
                             onClick={() => startEditingChannel(channel)}
                             className="p-1 hover:bg-blue-100 rounded-full transition-colors flex-shrink-0"
