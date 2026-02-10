@@ -350,27 +350,32 @@ export default function SalesChannelsSettingsPage() {
                     {/* Default Payment Dropdown */}
                     <div className="mb-3">
                       <label className="text-xs text-gray-500 mb-1 block">วิธีชำระเงินเริ่มต้น</label>
-                      <div className="flex items-center gap-2">
+                      <div className="relative">
                         {paymentMethods.length > 0 ? (
-                          <select
-                            value={selectedPaymentId || ''}
-                            onChange={(e) => {
-                              const value = e.target.value
-                              if (value) {
-                                handleSelectPayment(channel.id, value)
-                              } else {
-                                handleClearPayment(channel.id)
-                              }
-                            }}
-                            className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#7D735F] focus:border-[#7D735F]"
-                          >
-                            <option value="">เลือกวิธีชำระเงิน...</option>
-                            {paymentMethods.map((method) => (
-                              <option key={method.id} value={method.id}>
-                                {method.name}
-                              </option>
-                            ))}
-                          </select>
+                          <>
+                            <select
+                              value={selectedPaymentId || ''}
+                              onChange={(e) => {
+                                const value = e.target.value
+                                if (value) {
+                                  handleSelectPayment(channel.id, value)
+                                } else {
+                                  handleClearPayment(channel.id)
+                                }
+                              }}
+                              className="w-full appearance-none text-sm border border-gray-300 rounded-lg px-3 py-2 pr-10 bg-white focus:outline-none focus:ring-2 focus:ring-[#7D735F] focus:border-[#7D735F] cursor-pointer"
+                            >
+                              <option value="">เลือกวิธีชำระเงิน...</option>
+                              {paymentMethods.map((method) => (
+                                <option key={method.id} value={method.id}>
+                                  {method.name}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                              <ChevronDown className="h-4 w-4 text-gray-500" />
+                            </div>
+                          </>
                         ) : (
                           <span className="text-sm text-gray-500">ยังไม่มีวิธีการชำระเงิน</span>
                         )}
