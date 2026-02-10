@@ -23,12 +23,20 @@ exports.handler = async (event, context) => {
 
   // Parse query string
   const queryString = event.queryStringParameters || {}
-  const queryParams = new URLSearchParams(queryString).toString()
+  
+  // Extract the path parameter (e.g., /Product/GetProducts)
+  const path = queryString.path || '/PurchaseOrder/AddPurchaseOrder'
+  
+  // Build remaining query params (excluding path)
+  const otherParams = { ...queryString }
+  delete otherParams.path
+  
+  const remainingQuery = new URLSearchParams(otherParams).toString()
   
   // Build target URL
-  let targetUrl = 'https://open-api.zortout.com/v4/PurchaseOrder/AddPurchaseOrder'
-  if (queryParams) {
-    targetUrl += '?' + queryParams
+  let targetUrl = `https://open-api.zortout.com/v4${path}`
+  if (remainingQuery) {
+    targetUrl += '?' + remainingQuery
   }
 
   // Get headers (handle case variations)
