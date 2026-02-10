@@ -3,7 +3,7 @@ import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { FileText, Plus, Trash2, X, Search, CheckCircle, Package, AlertCircle, ShoppingCart, Eye, History } from 'lucide-react'
+import { FileText, Plus, Trash2, X, Search, CheckCircle, Package, AlertCircle, ShoppingCart, Eye, History, RefreshCw } from 'lucide-react'
 import { zortOutService } from '../services/zortout'
 import type { Product } from '../types/database'
 
@@ -77,6 +77,7 @@ export default function PurchaseOrderPage() {
   const [poItems, setPoItems] = useState<POItem[]>([])
   const [poMovements, setPoMovements] = useState<any[]>([])
   const [selectedContactId, setSelectedContactId] = useState('')
+  const [isSyncing, setIsSyncing] = useState(false)
 
   const [poFormData, setPoFormData] = useState({
     supplier_name: '',
@@ -435,6 +436,69 @@ export default function PurchaseOrderPage() {
       setPoMovements(data || [])
     } catch (error) {
       console.error('Error fetching PO movements:', error)
+    }
+  }
+
+  const syncPOToZortOut = async (po: PurchaseOrder) => {
+    if (!poItems || poItems.length === 0) {
+      alert('ไม่มีรายการสินค้าใน PO นี้')
+      return
+    }
+
+    setIsSyncing(true)
+    try {
+      // Prepare items for ZortOut
+      const zortItems = poItems.map(item => {
+        const product = products.find(p => p.id === item.product_id)
+        return {
+          sku: product?.barcode || product?.sku || item.product_id,
+          name: item.product?.name_th || product?.name_th || 'Unknown',
+          quantity: item.quantity,
+          pricepernumber: item.unit_price,
+          totalprice: item.total_amount,
+          discount: item.discount_amount > 0 ? item.discount_amount.toString() : '',
+          vat_status: item.tax_amount > 0 ? 2 : 0 // 2 = Have Vat, 0 = Follow Vat Type
+        }
+      })
+
+      // Calculate VAT type
+      let vattype = 1 // No Vat (default)
+      const totalTax = po.tax_amount || 0
+      if (totalTax > 0) {
+        vattype = 2 // Exclude Vat
+      }
+
+      // Get warehouse code
+      const warehouse = warehouses.find(w => w.id === po.warehouse_id)
+      const warehousecode = warehouse?.code || ''
+
+      const result = await zortOutService.addPurchaseOrder({
+        number: po.po_number,
+        customername: po.supplier_name,
+        customerphone: po.supplier_contact || '',
+        purchaseorderdate: po.order_date,
+        amount: po.total_amount,
+        vatamount: po.tax_amount || 0,
+        vattype: vattype as 1 | 2 | 3,
+        warehousecode: warehousecode,
+        discount: po.discount_amount > 0 ? po.discount_amount.toString() : '',
+        description: po.notes || '',
+        reference: '',
+        items: zortItems
+      })
+
+      if (result.success) {
+        alert(`Sync PO ไปยัง ZortOut สำเร็จ! (PO ID: ${result.poId})`)
+        // Update PO status in ZortOut to Pending
+        await zortOutService.updatePurchaseOrderStatus(po.po_number, 'Pending', warehousecode)
+      } else {
+        alert(`Sync ไม่สำเร็จ: ${result.error}`)
+      }
+    } catch (error: any) {
+      console.error('Error syncing PO to ZortOut:', error)
+      alert(`เกิดข้อผิดพลาด: ${error.message}`)
+    } finally {
+      setIsSyncing(false)
     }
   }
 
@@ -977,6 +1041,14 @@ export default function PurchaseOrderPage() {
               )}
 
               <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+                <Button
+                  variant="secondary"
+                  onClick={() => selectedPO && syncPOToZortOut(selectedPO)}
+                  disabled={isSyncing || poItems.length === 0}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                  {isSyncing ? 'กำลัง Sync...' : 'Sync ไป ZortOut'}
+                </Button>
                 <Button variant="primary" onClick={() => { setShowDetailModal(false); setShowItemModal(true); }}>
                   <Plus className="h-4 w-4 mr-2" />
                   รับสินค้าเพิ่ม

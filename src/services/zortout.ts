@@ -48,6 +48,32 @@ interface ZortOutDocument {
   total: number
 }
 
+interface ZortOutPurchaseOrder {
+  id: number
+  number: string
+  customername: string
+  customerphone: string
+  customeremail: string
+  customeridnumber: string
+  status: string
+  paymentstatus: string
+  amount: number
+  vatamount: number
+  purchaseorderdate: string
+  warehousecode: string
+  list: Array<{
+    productid: number
+    sku: string
+    name: string
+    number: number
+    pricepernumber: number
+    totalprice: number
+    discount: string
+    vat_status: number
+  }>
+  createddatetime: string
+}
+
 interface ZortOutResponse<T> {
   res: number
   resCode?: string
@@ -412,6 +438,178 @@ export class ZortOutService {
     })
 
     return { orders, products: recentProducts }
+  }
+
+  // ==================== PURCHASE ORDERS ====================
+
+  async addPurchaseOrder(poData: {
+    number: string
+    customername: string
+    customerphone?: string
+    customeremail?: string
+    customeridnumber?: string
+    purchaseorderdate: string
+    amount: number
+    vatamount?: number
+    vattype?: 1 | 2 | 3  // 1=No Vat, 2=Exclude, 3=Include
+    warehousecode?: string
+    discount?: string
+    description?: string
+    reference?: string
+    items: Array<{
+      sku: string
+      name: string
+      quantity: number
+      pricepernumber: number
+      totalprice: number
+      discount?: string
+      vat_status?: number
+    }>
+  }): Promise<{ success: boolean; poId?: number; error?: string }> {
+    try {
+      // Generate unique number to prevent duplicates
+      const uniqueNumber = `PO-${poData.number}-${Date.now()}`
+
+      const payload = {
+        number: poData.number,
+        customername: poData.customername,
+        customerphone: poData.customerphone || '',
+        customeremail: poData.customeremail || '',
+        customeridnumber: poData.customeridnumber || '',
+        purchaseorderdate: poData.purchaseorderdate,
+        amount: poData.amount,
+        vatamount: poData.vatamount || 0,
+        vattype: poData.vattype || 1,
+        warehousecode: poData.warehousecode || '',
+        discount: poData.discount || '',
+        description: poData.description || '',
+        reference: poData.reference || '',
+        status: 'Pending', // Default status
+        list: poData.items.map(item => ({
+          sku: item.sku,
+          name: item.name,
+          number: item.quantity,
+          pricepernumber: item.pricepernumber,
+          totalprice: item.totalprice,
+          discount: item.discount || '',
+          vat_status: item.vat_status || 0,
+          producttype: 0 // Product type
+        }))
+      }
+
+      const result = await this.request(`/PurchaseOrder/AddPurchaseOrder?uniquenumber=${encodeURIComponent(uniqueNumber)}`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })
+
+      if (result.res !== 200 && result.resCode !== '200') {
+        return { success: false, error: result.resDesc || 'Failed to create purchase order' }
+      }
+
+      return { success: true, poId: result.id }
+    } catch (error: any) {
+      console.error('Error creating purchase order in ZortOut:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  async updatePurchaseOrderStatus(
+    number: string,
+    status: 'Pending' | 'Success' | 'Waiting' | 'Shipping' | 'Voided',
+    warehousecode?: string,
+    actionDate?: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const statusMap: Record<string, number> = {
+        'Pending': 1,
+        'Success': 1,
+        'Waiting': 3,
+        'Shipping': 6,
+        'Voided': 4
+      }
+
+      const payload: any = {
+        number: number,
+        status: statusMap[status] || 1
+      }
+
+      if (warehousecode) {
+        payload.warehousecode = warehousecode
+      }
+
+      if (actionDate) {
+        payload.actionDate = actionDate
+      }
+
+      const result = await this.request('/PurchaseOrder/UpdatePurchaseOrderStatus', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })
+
+      if (result.res !== 200 && result.resCode !== '200') {
+        return { success: false, error: result.resDesc || 'Failed to update purchase order status' }
+      }
+
+      return { success: true }
+    } catch (error: any) {
+      console.error('Error updating purchase order status in ZortOut:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  async addPurchaseOrderPayment(poData: {
+    number: string
+    paymentamount: number
+    paymentmethod: string
+    paymentdate?: string
+  }): Promise<{ success: boolean; error?: string }> {
+    try {
+      const payload = {
+        number: poData.number,
+        paymentamount: poData.paymentamount,
+        paymentmethod: poData.paymentmethod,
+        paymentdate: poData.paymentdate || new Date().toISOString().slice(0, 16).replace('T', ' ')
+      }
+
+      const result = await this.request('/PurchaseOrder/UpdatePurchaseOrderPayment', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })
+
+      if (result.res !== 200 && result.resCode !== '200') {
+        return { success: false, error: result.resDesc || 'Failed to add purchase order payment' }
+      }
+
+      return { success: true }
+    } catch (error: any) {
+      console.error('Error adding purchase order payment to ZortOut:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  async getPurchaseOrders(
+    page: number = 1,
+    limit: number = 200,
+    startDate?: string,
+    endDate?: string
+  ): Promise<ZortOutPurchaseOrder[]> {
+    let url = `/PurchaseOrder/GetPurchaseOrders?page=${page}&limit=${limit}`
+    if (startDate) url += `&purchaseorderdateafter=${startDate}`
+    if (endDate) url += `&purchaseorderdatebefore=${endDate}`
+
+    const data = await this.request<ZortOutPurchaseOrder>(url)
+    return data.list || []
+  }
+
+  async getPurchaseOrderByNumber(number: string): Promise<ZortOutPurchaseOrder | null> {
+    try {
+      const url = `/PurchaseOrder/GetPurchaseOrders?page=1&limit=1&keyword=${encodeURIComponent(number)}`
+      const data = await this.request<ZortOutPurchaseOrder>(url)
+      return data.list?.find(po => po.number === number) || null
+    } catch (error) {
+      console.error('Error getting purchase order by number:', error)
+      return null
+    }
   }
 
   // ==================== POLLING ====================
