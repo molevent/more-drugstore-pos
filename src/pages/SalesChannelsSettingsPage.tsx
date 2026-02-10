@@ -218,7 +218,7 @@ export default function SalesChannelsSettingsPage() {
   const toggleVisibleOnPOS = (channelId: string) => {
     setSalesChannels(prev => prev.map(c =>
       c.id === channelId
-        ? { ...c, isVisibleOnPOS: c.isVisibleOnPOS !== false }
+        ? { ...c, isVisibleOnPOS: c.isVisibleOnPOS === false ? true : false }
         : c
     ))
   }
@@ -343,7 +343,7 @@ export default function SalesChannelsSettingsPage() {
                           <button
                             onClick={() => toggleVisibleOnPOS(channel.id)}
                             className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                              channel.isVisibleOnPOS !== false ? 'bg-green-500' : 'bg-gray-300'
+                              channel.isVisibleOnPOS !== false ? 'bg-[#A8C5A8]' : 'bg-gray-300'
                             }`}
                             title={channel.isVisibleOnPOS !== false ? 'แสดงบน POS' : 'ซ่อนบน POS'}
                           >
