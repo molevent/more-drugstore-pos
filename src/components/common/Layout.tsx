@@ -137,7 +137,7 @@ export default function Layout({ children }: LayoutProps) {
                           className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all border-2 ${
                             isActive
                               ? 'bg-[#7D735F] text-white border-transparent'
-                              : 'text-gray-700 border-transparent hover:border-[#F5F0E6]'
+                              : 'text-gray-700 border-transparent hover:border-[#7D735F]'
                           }`}
                         >
                           <item.icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-gray-500'}`} />
