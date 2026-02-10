@@ -102,17 +102,33 @@ export class ZortOutService {
       ...options.headers
     }
 
-    const response = await fetch(url, {
-      ...options,
-      headers
-    })
+    console.log('ZortOut API Request:', { url, method: options.method || 'GET', headers: { storename: headers.storename, apikey: headers.apikey?.slice(0, 10) + '...' } })
 
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`ZortOut API Error: ${response.status} - ${error}`)
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers
+      })
+
+      console.log('ZortOut API Response:', { status: response.status, statusText: response.statusText, ok: response.ok })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('ZortOut API Error Response:', errorText)
+        throw new Error(`ZortOut API Error: ${response.status} - ${errorText}`)
+      }
+
+      const data = await response.json()
+      console.log('ZortOut API Response Data:', data)
+      return data
+    } catch (error: any) {
+      console.error('ZortOut API Request Failed:', {
+        url,
+        error: error.message,
+        type: error.name
+      })
+      throw error
     }
-
-    return response.json()
   }
 
   // ==================== PRODUCTS ====================
