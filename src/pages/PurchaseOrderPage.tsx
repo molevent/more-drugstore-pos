@@ -1043,6 +1043,16 @@ export default function PurchaseOrderPage() {
               <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
                 <Button
                   variant="secondary"
+                  size="sm"
+                  onClick={async () => {
+                    const result = await zortOutService.testPurchaseOrderAPI()
+                    alert(result.available ? '✅ ' + result.message : '❌ ' + result.message)
+                  }}
+                >
+                  ทดสอบ PO API
+                </Button>
+                <Button
+                  variant="secondary"
                   onClick={() => selectedPO && syncPOToZortOut(selectedPO)}
                   disabled={isSyncing || poItems.length === 0}
                 >

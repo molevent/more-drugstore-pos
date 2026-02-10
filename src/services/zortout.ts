@@ -440,7 +440,21 @@ export class ZortOutService {
     return { orders, products: recentProducts }
   }
 
-  // ==================== PURCHASE ORDERS ====================
+  // Test if PurchaseOrder API is available for this account
+  async testPurchaseOrderAPI(): Promise<{ available: boolean; message: string }> {
+    try {
+      const result = await this.request('/PurchaseOrder/GetPurchaseOrders?page=1&limit=1')
+      console.log('PurchaseOrder API Test Result:', result)
+      
+      if (result.res === 200 || result.resCode === '200') {
+        return { available: true, message: 'Purchase Order API is available' }
+      }
+      return { available: false, message: result.resDesc || 'API returned error' }
+    } catch (error: any) {
+      console.error('PurchaseOrder API Test Error:', error)
+      return { available: false, message: error.message }
+    }
+  }
 
   async addPurchaseOrder(poData: {
     number: string
