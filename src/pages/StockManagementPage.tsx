@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
+import { zortOutService } from '../services/zortout'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import { Package, Plus, History, Search, Edit } from 'lucide-react'
@@ -160,6 +161,30 @@ export default function StockManagementPage() {
 
       if (updateError) throw updateError
 
+      // Sync to ZortOut when receiving stock (purchase/return types)
+      if (adjustmentData.type === 'purchase' || adjustmentData.type === 'return') {
+        try {
+          const product = products.find(p => p.id === selectedProduct.id)
+          if (product) {
+            zortOutService.updateProductStockBySkuForReceiving(
+              product.barcode || product.id,
+              quantityChange,
+              newQuantity
+            ).then(result => {
+              if (result.success) {
+                console.log('Stock synced to ZortOut:', product.name_th, '+', quantityChange)
+              } else {
+                console.warn('Failed to sync stock to ZortOut:', result.error)
+              }
+            }).catch(err => {
+              console.error('Error syncing stock to ZortOut:', err)
+            })
+          }
+        } catch (syncError) {
+          console.error('Exception during ZortOut stock sync:', syncError)
+        }
+      }
+
       // รีเฟรชข้อมูล
       await fetchProducts()
       await fetchMovements(selectedProduct.id)
@@ -218,6 +243,28 @@ export default function StockManagementPage() {
         })
 
       if (movementError) throw movementError
+
+      // Sync to ZortOut - add stock when receiving batch
+      try {
+        const product = products.find(p => p.id === selectedProduct.id)
+        if (product) {
+          zortOutService.updateProductStockBySkuForReceiving(
+            product.barcode || product.id,
+            batchData.quantity,
+            newQuantity
+          ).then(result => {
+            if (result.success) {
+              console.log('Stock synced to ZortOut (batch):', product.name_th, '+', batchData.quantity)
+            } else {
+              console.warn('Failed to sync batch stock to ZortOut:', result.error)
+            }
+          }).catch(err => {
+            console.error('Error syncing batch stock to ZortOut:', err)
+          })
+        }
+      } catch (syncError) {
+        console.error('Exception during ZortOut batch stock sync:', syncError)
+      }
 
       // รีเฟรชข้อมูล
       await fetchProducts()

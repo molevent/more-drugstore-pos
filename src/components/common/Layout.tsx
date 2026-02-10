@@ -10,7 +10,8 @@ import {
   Menu,
   X,
   Users,
-  Wallet
+  Wallet,
+  RefreshCw
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -73,6 +74,12 @@ export default function Layout({ children }: LayoutProps) {
       title: 'บัญชี',
       items: [
         { name: 'ค่าใช้จ่าย', href: '/expenses', icon: Wallet },
+      ]
+    },
+    {
+      title: 'เชื่อมต่อ',
+      items: [
+        { name: 'ZortOut Sync', href: '/zortout-sync', icon: RefreshCw },
       ]
     },
     {

@@ -26,6 +26,7 @@ import AbnormalOrdersReportPage from './pages/AbnormalOrdersReportPage'
 import SettingsPage from './pages/SettingsPage'
 import ShopSettingsPage from './pages/ShopSettingsPage'
 import SalesChannelsSettingsPage from './pages/SalesChannelsSettingsPage'
+import ZortOutSyncPage from './pages/ZortOutSyncPage'
 import AuthGuard from './components/auth/AuthGuard'
 import Layout from './components/common/Layout'
 import { LanguageProvider } from './contexts/LanguageContext'
@@ -68,6 +69,7 @@ function App() {
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/settings/shop" element={<ShopSettingsPage />} />
                     <Route path="/settings/sales-channels" element={<SalesChannelsSettingsPage />} />
+                    <Route path="/zortout-sync" element={<ZortOutSyncPage />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   </Routes>
                 </Layout>

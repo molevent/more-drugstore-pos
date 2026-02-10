@@ -9,6 +9,7 @@ import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Package
 import { Link } from 'react-router-dom'
 import type { Product } from '../types/database'
 import { supabase } from '../services/supabase'
+import { zortOutService } from '../services/zortout'
 
 interface SavedOrder {
   id: string
@@ -800,6 +801,41 @@ export default function POSPage() {
 
           if (itemsError) {
             console.error('Error saving order items:', itemsError)
+          }
+
+          // Sync to ZortOut (async - don't block UI)
+          try {
+            const zortItems = items.map(item => ({
+              sku: item.product.sku || item.product.barcode || '',
+              name: item.product.name_th,
+              quantity: item.quantity,
+              price: item.custom_price ?? item.product.base_price
+            }))
+
+            zortOutService.syncOrderAndStockToZortOut({
+              customername: selectedCustomer?.name || 'ลูกค้าทั่วไป',
+              items: zortItems,
+              total: getTotal(),
+              paymentmethod: paymentMethodName,
+              notes: `ออเดอร์จาก POS - ${orderNumber}`
+            }).then(result => {
+              if (result.orderSuccess) {
+                console.log('Order synced to ZortOut:', result.orderId)
+              } else {
+                console.warn('Failed to sync order to ZortOut:', result.error)
+              }
+              
+              // Log stock update results
+              result.stockUpdates.forEach(update => {
+                if (!update.success) {
+                  console.warn(`Failed to update stock for ${update.sku}:`, update.error)
+                }
+              })
+            }).catch(err => {
+              console.error('Error syncing to ZortOut:', err)
+            })
+          } catch (syncError) {
+            console.error('Exception during ZortOut sync:', syncError)
           }
 
           alert(`ขายสำเร็จ! เลขออเดอร์: ${orderNumber}`)
