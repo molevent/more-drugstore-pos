@@ -1205,7 +1205,7 @@ export default function POSPage() {
       <div className="flex items-center justify-between mb-6 px-4 sm:px-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <ShoppingCart className="h-7 w-7 text-blue-600" />
+            <ShoppingCart className="h-7 w-7 text-black" />
             ขายสินค้า
           </h1>
           <p className="text-gray-600 mt-1">POS System</p>
@@ -1247,21 +1247,21 @@ export default function POSPage() {
           to="/ai-symptom-checker"
           className="flex items-center gap-2 px-3 py-2 bg-[#DFEAF5] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
         >
-          <Brain className="h-5 w-5 text-[#7D735F] flex-shrink-0" />
+          <Brain className="h-5 w-5 text-black flex-shrink-0" />
           <span className="font-medium text-gray-900 text-sm whitespace-nowrap">AI ช่วยแนะนำยา</span>
         </Link>
         <Link 
           to="/categories"
           className="flex items-center gap-2 px-3 py-2 bg-[#D1D1E1] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
         >
-          <Package className="h-5 w-5 text-[#7D735F] flex-shrink-0" />
+          <Package className="h-5 w-5 text-black flex-shrink-0" />
           <span className="font-medium text-gray-900 text-sm whitespace-nowrap">หมวดหมู่สินค้า</span>
         </Link>
         <Link 
           to="/medicine-labels"
           className="flex items-center gap-2 px-3 py-2 bg-[#D5EAE7] rounded-full border border-[#B8C9B8] hover:bg-[#D1D1E1] hover:shadow-md transition-all"
         >
-          <Printer className="h-5 w-5 text-[#7D735F] flex-shrink-0" />
+          <Printer className="h-5 w-5 text-black flex-shrink-0" />
           <span className="font-medium text-gray-900 text-sm whitespace-nowrap">พิมพ์ฉลากยา</span>
         </Link>
       </div>
