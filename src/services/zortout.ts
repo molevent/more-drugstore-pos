@@ -614,7 +614,7 @@ export class ZortOutService {
         payload.actionDate = actionDate
       }
 
-      const result = await this.request('/PurchaseOrder/UpdatePurchaseOrderStatus', {
+      const result = await this.request('/Order/UpdateOrderStatus', {
         method: 'POST',
         body: JSON.stringify(payload)
       })
