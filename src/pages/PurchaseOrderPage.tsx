@@ -84,6 +84,30 @@ export default function PurchaseOrderPage() {
     if (data) setWarehouses(data)
   }
 
+  // Generate PO number: PO-YYYY-XXXXX
+  const generatePONumber = async (): Promise<string> => {
+    const year = new Date().getFullYear()
+    const prefix = `PO-${year}-`
+    
+    // Get the latest PO number for this year
+    const { data } = await supabase
+      .from('purchase_orders')
+      .select('po_number')
+      .ilike('po_number', `${prefix}%`)
+      .order('po_number', { ascending: false })
+      .limit(1)
+    
+    let nextNumber = 1
+    if (data && data.length > 0) {
+      const lastNumber = parseInt(data[0].po_number.replace(prefix, ''))
+      if (!isNaN(lastNumber)) {
+        nextNumber = lastNumber + 1
+      }
+    }
+    
+    return `${prefix}${String(nextNumber).padStart(5, '0')}`
+  }
+
   const calculateItemTotals = () => {
     const subtotal = itemFormData.quantity * itemFormData.unit_price
     const discountAmount = subtotal * (itemFormData.discount_percent / 100)
@@ -96,9 +120,16 @@ export default function PurchaseOrderPage() {
   const handleCreatePO = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
+      // Generate PO number
+      const poNumber = await generatePONumber()
+      
       const { data, error } = await supabase
         .from('purchase_orders')
-        .insert([poFormData])
+        .insert([{
+          ...poFormData,
+          po_number: poNumber,
+          status: 'draft'
+        }])
         .select()
         .single()
       
