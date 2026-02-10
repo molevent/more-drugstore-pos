@@ -497,13 +497,20 @@ export class ZortOutService {
         }))
       }
 
+      console.log('ZortOut AddPurchaseOrder Request:', {
+        url: `/PurchaseOrder/AddPurchaseOrder?uniquenumber=${uniqueNumber}`,
+        payload: JSON.stringify(payload, null, 2)
+      })
+
       const result = await this.request(`/PurchaseOrder/AddPurchaseOrder?uniquenumber=${encodeURIComponent(uniqueNumber)}`, {
         method: 'POST',
         body: JSON.stringify(payload)
       })
 
+      console.log('ZortOut AddPurchaseOrder Response:', result)
+
       if (result.res !== 200 && result.resCode !== '200') {
-        return { success: false, error: result.resDesc || 'Failed to create purchase order' }
+        return { success: false, error: result.resDesc || `Failed to create purchase order (res: ${result.res}, resCode: ${result.resCode})` }
       }
 
       return { success: true, poId: result.id }
