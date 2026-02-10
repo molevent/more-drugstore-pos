@@ -146,11 +146,21 @@ export default function POSPage() {
     return saved ? JSON.parse(saved) : {}
   })
 
-  // Load channel payment map from localStorage on mount
+  // Visible payment methods for each sales channel
+  const [channelVisiblePayments, setChannelVisiblePayments] = useState<Record<string, string[]>>(() => {
+    const saved = localStorage.getItem('pos_channel_visible_payments')
+    return saved ? JSON.parse(saved) : {}
+  })
+
+  // Load channel payment map and visible payments from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('pos_channel_payment_map')
     if (saved) {
       setChannelPaymentMap(JSON.parse(saved))
+    }
+    const savedVisible = localStorage.getItem('pos_channel_visible_payments')
+    if (savedVisible) {
+      setChannelVisiblePayments(JSON.parse(savedVisible))
     }
   }, [])
 
@@ -1694,36 +1704,48 @@ export default function POSPage() {
               <label className="block text-xs font-medium text-gray-600 mb-2">
                 วิธีชำระ
               </label>
-              {paymentMethods.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {paymentMethods.map((method) => (
-                    <button
-                      key={method.id}
-                      onClick={() => setSelectedPaymentMethod(method.id)}
-                      className={`px-4 py-2 rounded-full border-2 transition-all text-sm whitespace-nowrap ${
-                        selectedPaymentMethod === method.id
-                          ? 'border-[#A67B5B] bg-[#A67B5B] text-white font-medium shadow-md'
-                          : 'border-[#B8C9B8]/50 bg-white text-gray-600 hover:border-[#A67B5B]/50 hover:bg-[#A67B5B]/10'
-                      }`}
-                    >
-                      {method.name}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <p className="text-xs text-gray-600 bg-[#B8C9B8]/20 px-3 py-2 rounded-full flex-1">
-                    ยังไม่มีวิธีการชำระเงิน
-                  </p>
-                  <Link
-                    to="/payment-methods"
-                    className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-full border border-blue-200 hover:bg-blue-100 transition-all text-sm"
-                  >
-                    <CreditCard className="h-4 w-4 text-blue-600" />
-                    <span className="font-medium text-blue-700">เพิ่มวิธีชำระ</span>
-                  </Link>
-                </div>
-              )}
+              {(() => {
+                // Get visible payment methods for current sales channel
+                const visiblePaymentIds = channelVisiblePayments[salesChannel] || []
+                const visibleMethods = visiblePaymentIds.length > 0
+                  ? paymentMethods.filter(m => visiblePaymentIds.includes(m.id) && m.is_active)
+                  : paymentMethods.filter(m => m.is_active) // Show all if none configured
+                
+                if (visibleMethods.length > 0) {
+                  return (
+                    <div className="flex flex-wrap gap-2">
+                      {visibleMethods.map((method) => (
+                        <button
+                          key={method.id}
+                          onClick={() => setSelectedPaymentMethod(method.id)}
+                          className={`px-4 py-2 rounded-full border-2 transition-all text-sm whitespace-nowrap ${
+                            selectedPaymentMethod === method.id
+                              ? 'border-[#A67B5B] bg-[#A67B5B] text-white font-medium shadow-md'
+                              : 'border-[#B8C9B8]/50 bg-white text-gray-600 hover:border-[#A67B5B]/50 hover:bg-[#A67B5B]/10'
+                          }`}
+                        >
+                          {method.name}
+                        </button>
+                      ))}
+                    </div>
+                  )
+                } else {
+                  return (
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs text-gray-600 bg-[#B8C9B8]/20 px-3 py-2 rounded-full flex-1">
+                        ยังไม่มีวิธีการชำระเงินสำหรับช่องทางนี้
+                      </p>
+                      <Link
+                        to="/settings/sales-channels"
+                        className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-full border border-blue-200 hover:bg-blue-100 transition-all text-sm"
+                      >
+                        <CreditCard className="h-4 w-4 text-blue-600" />
+                        <span className="font-medium text-blue-700">ตั้งค่า</span>
+                      </Link>
+                    </div>
+                  )
+                }
+              })()}
             </div>
 
             <div className="space-y-3 mb-6">
