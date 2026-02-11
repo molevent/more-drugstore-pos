@@ -4,7 +4,7 @@ import { zortOutService } from '../services/zortout'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import SalesChannelCSVImportModal from '../components/common/SalesChannelCSVImportModal'
-import { Package, Plus, History, Search, Edit, ExternalLink, Trash2, Tag, DollarSign, Printer, CheckSquare, Square, X, FileSpreadsheet, Barcode } from 'lucide-react'
+import { Package, Plus, History, Search, Edit, ExternalLink, Trash2, Tag, DollarSign, Printer, CheckSquare, Square, X, FileSpreadsheet, Barcode, AlertTriangle } from 'lucide-react'
 
 interface Product {
   id: string
@@ -521,6 +521,14 @@ export default function StockManagementPage() {
           >
             <Barcode className="h-4 w-4" />
             ระบบนับสต็อก
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => window.location.href = '/manual-stock-cut-report'}
+            className="flex items-center gap-2"
+          >
+            <AlertTriangle className="h-4 w-4" />
+            รายงานตัดสต็อกแมนนวล
           </Button>
           <Button
             variant="secondary"

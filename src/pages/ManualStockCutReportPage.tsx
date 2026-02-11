@@ -55,10 +55,20 @@ export default function ManualStockCutReportPage() {
   const [loading, setLoading] = useState(false)
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'resolved'>('pending')
   const [selectedChannel, setSelectedChannel] = useState<string>('all')
+  
+  // Date range filter
+  const [startDate, setStartDate] = useState<string>(() => {
+    const today = new Date()
+    return today.toISOString().split('T')[0]
+  })
+  const [endDate, setEndDate] = useState<string>(() => {
+    const today = new Date()
+    return today.toISOString().split('T')[0]
+  })
 
   useEffect(() => {
     checkStockConflicts()
-  }, [])
+  }, [startDate, endDate])
 
   useEffect(() => {
     filterConflicts()
@@ -67,7 +77,7 @@ export default function ManualStockCutReportPage() {
   const checkStockConflicts = async () => {
     setLoading(true)
     try {
-      // Get recent orders with their items
+      // Get orders within date range with their items
       const { data: orders, error: ordersError } = await supabase
         .from('orders')
         .select(`
@@ -81,7 +91,8 @@ export default function ManualStockCutReportPage() {
             quantity
           )
         `)
-        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+        .gte('created_at', `${startDate}T00:00:00.000Z`)
+        .lte('created_at', `${endDate}T23:59:59.999Z`)
         .eq('status', 'completed')
 
       if (ordersError) throw ordersError
@@ -228,6 +239,26 @@ export default function ManualStockCutReportPage() {
       {/* Filters */}
       <Card className="mb-6">
         <div className="flex flex-wrap items-center gap-4">
+          {/* Date Range */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">วันที่:</span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+            />
+            <span className="text-gray-400">-</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+            />
+          </div>
+
+          <div className="h-6 w-px bg-gray-300" />
+
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-gray-500" />
             <span className="text-sm text-gray-600">สถานะ:</span>
