@@ -764,6 +764,20 @@ export default function POSPage() {
         } else {
           // Create new order
           const orderNumber = `ORD${Date.now()}`
+          
+          // Map payment method name to enum value
+          const paymentMethodEnumMap: Record<string, string> = {
+            'เงินสด': 'cash',
+            'โอนเงิน': 'transfer',
+            'บัตรเครดิต': 'credit_card',
+            'พร้อมเพย์': 'promptpay',
+            'Cash': 'cash',
+            'Transfer': 'transfer',
+            'Credit Card': 'credit_card',
+            'PromptPay': 'promptpay'
+          }
+          const paymentMethodEnum = paymentMethodEnumMap[paymentMethodName] || 'cash'
+          
           const { data: orderData, error: orderError } = await supabase
             .from('orders')
             .insert({
@@ -773,7 +787,9 @@ export default function POSPage() {
               subtotal: getSubtotal(),
               discount: getTotalDiscount(),
               total: getTotal(),
-              payment_method: paymentMethodName,
+              payment_method: paymentMethodEnum,
+              platform_id: salesChannel,
+              payment_status: 'paid',
             })
             .select()
             .single()
