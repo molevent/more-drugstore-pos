@@ -778,6 +778,27 @@ export default function POSPage() {
           }
           const paymentMethodEnum = paymentMethodEnumMap[paymentMethodName] || 'cash'
           
+          // Get platform UUID from database
+          const channelCodeMap: Record<string, string> = {
+            'walk-in': 'WALKIN',
+            'grab': 'GRAB',
+            'shopee': 'SHOPEE',
+            'lineman': 'LINEMAN'
+          }
+          const platformCode = channelCodeMap[salesChannel] || 'WALKIN'
+          
+          const { data: platformData, error: platformError } = await supabase
+            .from('platforms')
+            .select('id')
+            .eq('code', platformCode)
+            .single()
+          
+          if (platformError) {
+            console.error('Error fetching platform:', platformError)
+            alert('ไม่สามารถหาข้อมูลช่องทางการขายได้')
+            return
+          }
+          
           const { data: orderData, error: orderError } = await supabase
             .from('orders')
             .insert({
@@ -788,7 +809,7 @@ export default function POSPage() {
               discount: getTotalDiscount(),
               total: getTotal(),
               payment_method: paymentMethodEnum,
-              platform_id: salesChannel,
+              platform_id: platformData.id,
               payment_status: 'paid',
             })
             .select()
