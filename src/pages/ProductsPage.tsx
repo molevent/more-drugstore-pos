@@ -509,6 +509,14 @@ export default function ProductsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate: at least one of name_th, sku, or barcode is required
+    if (!formData.name_th.trim() && !formData.sku.trim() && !formData.barcode.trim()) {
+      setSaveMessage({ type: 'error', text: 'กรุณากรอกอย่างน้อย 1 อย่าง: Product Name, SKU หรือ Barcode' })
+      alert('กรุณากรอกอย่างน้อย 1 อย่าง: Product Name, SKU หรือ Barcode')
+      return
+    }
+    
     setIsSaving(true)
     setSaveMessage(null)
     
@@ -647,7 +655,8 @@ export default function ProductsPage() {
       setSaveMessage({ type: 'success', text: editingProduct ? 'บันทึกการแก้ไขสินค้าสำเร็จ!' : 'สร้างสินค้าใหม่สำเร็จ!' })
       setShowModal(false)
       resetForm()
-      fetchProducts()
+      // Skip fetchProducts to make save faster - user can refresh manually if needed
+      // fetchProducts()
     } catch (error: any) {
       console.error('Error saving product:', error)
       const errorMsg = error?.message || error?.error_description || 'ไม่สามารถบันทึกสินค้าได้ กรุณาลองใหม่อีกครั้ง'
@@ -1536,13 +1545,12 @@ export default function ProductsPage() {
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <LabelWithTooltip label="Code/SKU (รหัสสินค้า)" tooltip="จำเป็น (แนะนำแยกตามหมวด เช่น PHA-001)" required />
+                      <LabelWithTooltip label="Code/SKU (รหัสสินค้า)" tooltip="จำเป็นอย่างน้อย 1 อย่าง: SKU, Barcode หรือ Product Name" />
                       <input
                         type="text"
                         value={formData.sku}
                         onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
                       />
                     </div>
                     <div>
@@ -1564,13 +1572,12 @@ export default function ProductsPage() {
                   </div>
 
                   <div>
-                    <LabelWithTooltip label="Product Name (ชื่อภาษาไทย)" tooltip="ชื่อสินค้าภาษาไทย" required />
+                    <LabelWithTooltip label="Product Name (ชื่อภาษาไทย)" tooltip="จำเป็นอย่างน้อย 1 อย่าง: SKU, Barcode หรือ Product Name" />
                     <input
                       type="text"
                       value={formData.name_th}
                       onChange={(e) => setFormData({ ...formData, name_th: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
                     />
                   </div>
 
@@ -1943,7 +1950,7 @@ export default function ProductsPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <LabelWithTooltip label="Selling Price (Incl. VAT)" tooltip="ราคาขายหน้าร้าน (รวมภาษีแล้ว)" required />
+                      <LabelWithTooltip label="Selling Price (Incl. VAT)" tooltip="ราคาขายหน้าร้าน (รวมภาษีแล้ว)" />
                       <input
                         type="number"
                         step="0.01"
@@ -1961,7 +1968,6 @@ export default function ProductsPage() {
                           })
                         }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
                       />
                     </div>
                     <div>
@@ -2000,13 +2006,12 @@ export default function ProductsPage() {
                       />
                     </div>
                     <div>
-                      <LabelWithTooltip label="Unit (หน่วยนับ)" tooltip="เช่น กล่อง, แผง, ชิ้น, ขวด" required />
+                      <LabelWithTooltip label="Unit (หน่วยนับ)" tooltip="เช่น กล่อง, แผง, ชิ้น, ขวด" />
                       <input
                         type="text"
                         value={formData.unit}
                         onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
                       />
                     </div>
                   </div>
@@ -2055,23 +2060,21 @@ export default function ProductsPage() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
-                          <LabelWithTooltip label="Remaining Qty" tooltip="จำนวนสินค้าคงเหลือปัจจุบัน" required />
+                          <LabelWithTooltip label="Remaining Qty" tooltip="จำนวนสินค้าคงเหลือปัจจุบัน" />
                           <input
                             type="number"
                             value={formData.stock_quantity}
                             onChange={(e) => setFormData({ ...formData, stock_quantity: parseInt(e.target.value) || 0 })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
                           />
                         </div>
                         <div>
-                          <LabelWithTooltip label="จำนวนขั้นต่ำ (Min Stock)" tooltip="จุดแจ้งเตือนเมื่อของใกล้หมด" required />
+                          <LabelWithTooltip label="จำนวนขั้นต่ำ (Min Stock)" tooltip="จุดแจ้งเตือนเมื่อของใกล้หมด" />
                           <input
                             type="number"
                             value={formData.min_stock_level}
                             onChange={(e) => setFormData({ ...formData, min_stock_level: parseInt(e.target.value) || 0 })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
                           />
                         </div>
                         <div>
