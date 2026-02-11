@@ -241,6 +241,8 @@ export default function ProductsPage() {
     hasExpiry: false,
     activeOnly: true
   })
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveMessage, setSaveMessage] = useState<{type: 'success' | 'error', text: string} | null>(null)
 
   useEffect(() => {
     fetchProducts()
@@ -507,6 +509,8 @@ export default function ProductsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+      setIsSaving(true)
+      setSaveMessage(null)
     try {
       let imageUrls: string[] = [...(formData.image_urls || [])]
 
@@ -631,13 +635,18 @@ export default function ProductsPage() {
         if (error) throw error
       }
 
-      alert(t('products.saveSuccess'))
+      alert(editingProduct ? 'บันทึกการแก้ไขสินค้าสำเร็จ!' : 'สร้างสินค้าใหม่สำเร็จ!')
+      setSaveMessage({ type: 'success', text: editingProduct ? 'บันทึกการแก้ไขสินค้าสำเร็จ!' : 'สร้างสินค้าใหม่สำเร็จ!' })
       setShowModal(false)
       resetForm()
       fetchProducts()
     } catch (error: any) {
       console.error('Error saving product:', error)
-      alert(error.message)
+      const errorMsg = error?.message || error?.error_description || 'ไม่สามารถบันทึกสินค้าได้ กรุณาลองใหม่อีกครั้ง'
+      setSaveMessage({ type: 'error', text: errorMsg })
+      alert('บันทึกไม่สำเร็จ: ' + errorMsg)
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -3080,15 +3089,21 @@ export default function ProductsPage() {
               )}
 
               {/* Form Actions */}
+              {saveMessage && (
+                <div className={`p-3 rounded-lg ${saveMessage.type === 'success' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'}`}>
+                  {saveMessage.type === 'success' ? '✓ ' : '✗ '}{saveMessage.text}
+                </div>
+              )}
               <div className="flex gap-3 pt-6 border-t mt-6">
-                <Button type="submit" variant="primary" className="flex-1">
-                  {t('common.save')}
+                <Button type="submit" variant="primary" className="flex-1" disabled={isSaving}>
+                  {isSaving ? 'กำลังบันทึก...' : t('common.save')}
                 </Button>
                 <Button
                   type="button"
                   variant="secondary"
                   onClick={() => { setShowModal(false); resetForm(); }}
                   className="flex-1"
+                  disabled={isSaving}
                 >
                   {t('common.cancel')}
                 </Button>
