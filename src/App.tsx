@@ -27,6 +27,7 @@ import NearExpiryReportPage from './pages/NearExpiryReportPage'
 import StockCheckReportPage from './pages/StockCheckReportPage'
 import SalesReportPage from './pages/SalesReportPage'
 import ManualStockCutReportPage from './pages/ManualStockCutReportPage'
+import StockReplenishmentReportPage from './pages/StockReplenishmentReportPage'
 import ReorderReportPage from './pages/ReorderReportPage'
 import StockRefillReportPage from './pages/StockRefillReportPage'
 import StockCountingPage from './pages/StockCountingPage'
@@ -78,6 +79,7 @@ function App() {
                     <Route path="/stock-check-report" element={<StockCheckReportPage />} />
                     <Route path="/sales-report" element={<SalesReportPage />} />
                     <Route path="/manual-stock-cut-report" element={<ManualStockCutReportPage />} />
+                    <Route path="/stock-replenishment-report" element={<StockReplenishmentReportPage />} />
                     <Route path="/reorder-report" element={<ReorderReportPage />} />
                     <Route path="/stock-refill-report" element={<StockRefillReportPage />} />
                     <Route path="/stock-counting" element={<StockCountingPage />} />
