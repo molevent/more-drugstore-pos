@@ -16,7 +16,8 @@ import {
   Bike,
   AlertTriangle,
   ClipboardList,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Wallet
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Card from '../components/common/Card'
@@ -235,6 +236,14 @@ export default function SettingsPage() {
 
   // Audit Section Items
   const auditItems = [
+    {
+      icon: Wallet,
+      iconBg: 'bg-[#B8C9B8]/10',
+      iconColor: 'text-[#B8C9B8]',
+      title: 'รายงานปิดร้าน / นับเงิน',
+      subtitle: 'ตรวจสอบประวัติการปิดร้านและยอดเงินในเก๊ะ',
+      link: '/cashier-closing-report'
+    },
     {
       icon: AlertTriangle,
       iconBg: 'bg-[#D4756A]/10',
