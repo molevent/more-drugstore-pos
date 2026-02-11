@@ -1,3 +1,5 @@
+const fetch = require('node-fetch')
+
 exports.handler = async (event, context) => {
   // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
@@ -97,6 +99,7 @@ exports.handler = async (event, context) => {
     }
   } catch (error) {
     console.error('=== PROXY ERROR ===', error)
+    console.error('Error stack:', error.stack)
     return {
       statusCode: 500,
       headers: {
@@ -104,7 +107,8 @@ exports.handler = async (event, context) => {
       },
       body: JSON.stringify({ 
         error: error.message,
-        type: error.name 
+        type: error.name,
+        stack: error.stack?.substring(0, 500)
       })
     }
   }
