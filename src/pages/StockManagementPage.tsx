@@ -3,7 +3,7 @@ import { supabase } from '../services/supabase'
 import { zortOutService } from '../services/zortout'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Package, Plus, History, Search, Edit, ExternalLink } from 'lucide-react'
+import { Package, Plus, History, Search, Edit, ExternalLink, Trash2, Tag, DollarSign, Printer, CheckSquare, Square, X, FileSpreadsheet, Settings, BarChart3, ShoppingCart, AlertTriangle, ClipboardCheck, ArrowUpCircle } from 'lucide-react'
 
 interface Product {
   id: string
@@ -15,6 +15,10 @@ interface Product {
   reorder_point: number
   unit_of_measure: string
   location: string
+  brand?: string
+  cost_price?: number
+  selling_price_excl_vat?: number
+  selling_price_incl_vat?: number
 }
 
 interface StockBatch {
@@ -49,19 +53,28 @@ interface StockMovement {
 export default function StockManagementPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set())
+  const [selectAll, setSelectAll] = useState(false)
   const [batches, setBatches] = useState<StockBatch[]>([])
   const [movements, setMovements] = useState<StockMovement[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [showAdjustModal, setShowAdjustModal] = useState(false)
   const [showBatchModal, setShowBatchModal] = useState(false)
+  const [batchAction, setBatchAction] = useState<'brand' | 'cost' | 'price' | 'delete' | 'print' | null>(null)
+  const [batchEditData, setBatchEditData] = useState({
+    brand: '',
+    cost_price: 0,
+    selling_price_excl_vat: 0,
+    selling_price_incl_vat: 0
+  })
   const [adjustmentData, setAdjustmentData] = useState({
     type: 'adjustment' as string,
     quantity: 0,
     reason: '',
     notes: ''
   })
-  const [batchData, setBatchData] = useState({
+  const [batchFormData, setBatchFormData] = useState({
     batch_number: '',
     lot_number: '',
     expiry_date: '',
@@ -218,32 +231,32 @@ export default function StockManagementPage() {
         .from('stock_batches')
         .insert({
           product_id: selectedProduct.id,
-          batch_number: batchData.batch_number,
-          lot_number: batchData.lot_number,
-          expiry_date: batchData.expiry_date,
-          quantity: batchData.quantity,
-          supplier: batchData.supplier,
-          cost_per_unit: batchData.cost_per_unit,
+          batch_number: batchFormData.batch_number,
+          lot_number: batchFormData.lot_number,
+          expiry_date: batchFormData.expiry_date,
+          quantity: batchFormData.quantity,
+          supplier: batchFormData.supplier,
+          cost_per_unit: batchFormData.cost_per_unit,
           created_by: userData?.user?.id
         })
 
       if (batchError) throw batchError
 
       // บันทึกการรับสินค้าเข้า
-      const newQuantity = selectedProduct.stock_quantity + batchData.quantity
+      const newQuantity = selectedProduct.stock_quantity + batchFormData.quantity
 
       const { error: movementError } = await supabase
         .from('stock_movements')
         .insert({
           product_id: selectedProduct.id,
           movement_type: 'purchase',
-          quantity: batchData.quantity,
+          quantity: batchFormData.quantity,
           quantity_before: selectedProduct.stock_quantity,
           quantity_after: newQuantity,
-          unit_cost: batchData.cost_per_unit,
-          total_cost: batchData.quantity * batchData.cost_per_unit,
-          reason: `รับสินค้า Batch: ${batchData.batch_number}`,
-          notes: `Supplier: ${batchData.supplier}`,
+          unit_cost: batchFormData.cost_per_unit,
+          total_cost: batchFormData.quantity * batchFormData.cost_per_unit,
+          reason: `รับสินค้า Batch: ${batchFormData.batch_number}`,
+          notes: `Supplier: ${batchFormData.supplier}`,
           created_by: userData?.user?.id
         })
 
@@ -255,11 +268,11 @@ export default function StockManagementPage() {
         if (product) {
           zortOutService.updateProductStockBySkuForReceiving(
             product.barcode || product.id,
-            batchData.quantity,
+            batchFormData.quantity,
             newQuantity
           ).then(result => {
             if (result.success) {
-              console.log('Stock synced to ZortOut (batch):', product.name_th, '+', batchData.quantity)
+              console.log('Stock synced to ZortOut (batch):', product.name_th, '+', batchFormData.quantity)
             } else {
               console.warn('Failed to sync batch stock to ZortOut:', result.error)
             }
@@ -277,7 +290,7 @@ export default function StockManagementPage() {
       await fetchMovements(selectedProduct.id)
       
       setShowBatchModal(false)
-      setBatchData({
+      setBatchFormData({
         batch_number: '',
         lot_number: '',
         expiry_date: '',
@@ -328,6 +341,166 @@ export default function StockManagementPage() {
     return diffDays
   }
 
+  // Batch Selection Handlers
+  const toggleProductSelection = (productId: string) => {
+    const newSelected = new Set(selectedProducts)
+    if (newSelected.has(productId)) {
+      newSelected.delete(productId)
+    } else {
+      newSelected.add(productId)
+    }
+    setSelectedProducts(newSelected)
+    setSelectAll(newSelected.size === filteredProducts.length)
+  }
+
+  const toggleSelectAll = () => {
+    if (selectAll) {
+      setSelectedProducts(new Set())
+      setSelectAll(false)
+    } else {
+      const allIds = new Set(filteredProducts.map(p => p.id))
+      setSelectedProducts(allIds)
+      setSelectAll(true)
+    }
+  }
+
+  // Batch Operations
+  const handleBatchDelete = async () => {
+    if (selectedProducts.size === 0) return
+    if (!confirm(`ต้องการลบสินค้า ${selectedProducts.size} รายการ?`)) return
+    
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .in('id', Array.from(selectedProducts))
+      
+      if (error) throw error
+      
+      setSelectedProducts(new Set())
+      setSelectAll(false)
+      await fetchProducts()
+      alert(`ลบสินค้า ${selectedProducts.size} รายการเรียบร้อย`)
+    } catch (error) {
+      console.error('Error deleting products:', error)
+      alert('เกิดข้อผิดพลาดในการลบสินค้า')
+    }
+  }
+
+  const handleBatchBrand = async () => {
+    if (selectedProducts.size === 0 || !batchEditData.brand) return
+    
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ brand: batchEditData.brand })
+        .in('id', Array.from(selectedProducts))
+      
+      if (error) throw error
+      
+      setBatchAction(null)
+      setBatchEditData({ ...batchEditData, brand: '' })
+      await fetchProducts()
+      alert(`ตั้งแบรนด์ ${batchEditData.brand} ให้ ${selectedProducts.size} รายการเรียบร้อย`)
+    } catch (error) {
+      console.error('Error updating brand:', error)
+      alert('เกิดข้อผิดพลาดในการตั้งแบรนด์')
+    }
+  }
+
+  const handleBatchCost = async () => {
+    if (selectedProducts.size === 0 || batchEditData.cost_price === 0) return
+    
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ cost_price: batchEditData.cost_price })
+        .in('id', Array.from(selectedProducts))
+      
+      if (error) throw error
+      
+      setBatchAction(null)
+      setBatchEditData({ ...batchEditData, cost_price: 0 })
+      await fetchProducts()
+      alert(`ตั้งต้นทุน ฿${batchEditData.cost_price} ให้ ${selectedProducts.size} รายการเรียบร้อย`)
+    } catch (error) {
+      console.error('Error updating cost:', error)
+      alert('เกิดข้อผิดพลาดในการตั้งต้นทุน')
+    }
+  }
+
+  const handleBatchPrice = async () => {
+    if (selectedProducts.size === 0 || batchEditData.selling_price_excl_vat === 0) return
+    
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ 
+          selling_price_excl_vat: batchEditData.selling_price_excl_vat,
+          selling_price_incl_vat: batchEditData.selling_price_incl_vat
+        })
+        .in('id', Array.from(selectedProducts))
+      
+      if (error) throw error
+      
+      setBatchAction(null)
+      setBatchEditData({ 
+        ...batchEditData, 
+        selling_price_excl_vat: 0,
+        selling_price_incl_vat: 0 
+      })
+      await fetchProducts()
+      alert(`ตั้งราคาขายให้ ${selectedProducts.size} รายการเรียบร้อย`)
+    } catch (error) {
+      console.error('Error updating price:', error)
+      alert('เกิดข้อผิดพลาดในการตั้งราคา')
+    }
+  }
+
+  const handleBatchPrint = () => {
+    if (selectedProducts.size === 0) return
+    
+    const selectedProductsData = products.filter(p => selectedProducts.has(p.id))
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+
+    const barcodeHtml = selectedProductsData.map(product => `
+      <div style="display: inline-block; margin: 10px; padding: 10px; border: 1px solid #ccc; text-align: center; width: 200px;">
+        <div style="font-size: 12px; margin-bottom: 5px;">${product.name_th}</div>
+        <svg id="barcode-${product.id}" style="width: 100%;"></svg>
+        <div style="font-size: 14px; font-weight: bold;">${product.barcode}</div>
+        <div style="font-size: 12px; color: #666;">฿${product.selling_price_excl_vat || 0}</div>
+      </div>
+    `).join('')
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>พิมพ์บาร์โค้ด</title>
+          <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+        </head>
+        <body style="font-family: Arial, sans-serif;">
+          <h1 style="text-align: center;">บาร์โค้ด ${selectedProductsData.length} รายการ</h1>
+          <div>${barcodeHtml}</div>
+          <script>
+            window.onload = function() {
+              ${selectedProductsData.map(p => `
+                JsBarcode("#barcode-${p.id}", "${p.barcode}", {
+                  format: "CODE128",
+                  width: 2,
+                  height: 50,
+                  displayValue: false
+                });
+              `).join('')}
+              setTimeout(() => window.print(), 500);
+            }
+          </script>
+        </body>
+      </html>
+    `)
+    printWindow.document.close()
+  }
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -356,10 +529,96 @@ export default function StockManagementPage() {
         </div>
       </Card>
 
+      {/* Batch Operations Toolbar */}
+      {selectedProducts.size > 0 && (
+        <Card className="mb-4 bg-blue-50 border-blue-200">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm font-medium text-blue-900">
+              เลือก {selectedProducts.size} รายการ
+            </span>
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setBatchAction('brand')}
+                className="flex items-center gap-1"
+              >
+                <Tag className="h-4 w-4" />
+                ตั้งแบรนด์
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setBatchAction('cost')}
+                className="flex items-center gap-1"
+              >
+                <DollarSign className="h-4 w-4" />
+                ตั้งต้นทุน
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setBatchAction('price')}
+                className="flex items-center gap-1"
+              >
+                <DollarSign className="h-4 w-4" />
+                ตั้งราคาขาย
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleBatchPrint}
+                className="flex items-center gap-1"
+              >
+                <Printer className="h-4 w-4" />
+                พิมพ์บาร์โค้ด
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleBatchDelete}
+                className="flex items-center gap-1"
+              >
+                <Trash2 className="h-4 w-4" />
+                ลบ
+              </Button>
+            </div>
+            <button
+              onClick={() => {
+                setSelectedProducts(new Set())
+                setSelectAll(false)
+              }}
+              className="ml-auto text-sm text-gray-500 hover:text-gray-700"
+            >
+              <X className="h-4 w-4 inline" />
+              ยกเลิกการเลือก
+            </button>
+          </div>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Products List */}
         <Card>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">รายการสินค้า</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-900">รายการสินค้า</h2>
+            <button
+              onClick={toggleSelectAll}
+              className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              {selectAll ? (
+                <>
+                  <CheckSquare className="h-4 w-4" />
+                  ยกเลิกเลือกทั้งหมด
+                </>
+              ) : (
+                <>
+                  <Square className="h-4 w-4" />
+                  เลือกทั้งหมด ({filteredProducts.length})
+                </>
+              )}
+            </button>
+          </div>
           
           {loading ? (
             <p className="text-center text-gray-600">กำลังโหลด...</p>
@@ -367,6 +626,7 @@ export default function StockManagementPage() {
             <div className="space-y-2 max-h-[600px] overflow-y-auto">
               {filteredProducts.map((product) => {
                 const status = getStockStatus(product)
+                const isSelected = selectedProducts.has(product.id)
                 return (
                   <div
                     key={product.id}
@@ -377,7 +637,20 @@ export default function StockManagementPage() {
                         : 'border-gray-200 hover:bg-gray-50'
                     }`}
                   >
-                    <div className="flex justify-between items-start">
+                    <div className="flex items-start gap-3">
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleProductSelection(product.id)
+                        }}
+                        className="mt-1"
+                      >
+                        {isSelected ? (
+                          <CheckSquare className="h-5 w-5 text-blue-600" />
+                        ) : (
+                          <Square className="h-5 w-5 text-gray-400" />
+                        )}
+                      </div>
                       <div className="flex-1">
                         <h3 className="font-medium text-gray-900">{product.name_th}</h3>
                         <p className="text-sm text-gray-600">{product.barcode}</p>
@@ -653,8 +926,8 @@ export default function StockManagementPage() {
                 <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-2.5 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
                   <input
                     type="text"
-                    value={batchData.batch_number}
-                    onChange={(e) => setBatchData({...batchData, batch_number: e.target.value})}
+                    value={batchFormData.batch_number}
+                    onChange={(e) => setBatchFormData({...batchFormData, batch_number: e.target.value})}
                     className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-sm"
                     required
                   />
@@ -665,8 +938,8 @@ export default function StockManagementPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Lot Number</label>
                 <input
                   type="text"
-                  value={batchData.lot_number}
-                  onChange={(e) => setBatchData({...batchData, lot_number: e.target.value})}
+                  value={batchFormData.lot_number}
+                  onChange={(e) => setBatchFormData({...batchFormData, lot_number: e.target.value})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
@@ -675,8 +948,8 @@ export default function StockManagementPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">วันหมดอายุ *</label>
                 <input
                   type="date"
-                  value={batchData.expiry_date}
-                  onChange={(e) => setBatchData({...batchData, expiry_date: e.target.value})}
+                  value={batchFormData.expiry_date}
+                  onChange={(e) => setBatchFormData({...batchFormData, expiry_date: e.target.value})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   required
                 />
@@ -686,8 +959,8 @@ export default function StockManagementPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">จำนวน *</label>
                 <input
                   type="number"
-                  value={batchData.quantity}
-                  onChange={(e) => setBatchData({...batchData, quantity: parseInt(e.target.value) || 0})}
+                  value={batchFormData.quantity}
+                  onChange={(e) => setBatchFormData({...batchFormData, quantity: parseInt(e.target.value) || 0})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   min="1"
                   required
@@ -698,8 +971,8 @@ export default function StockManagementPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">ซัพพลายเออร์</label>
                 <input
                   type="text"
-                  value={batchData.supplier}
-                  onChange={(e) => setBatchData({...batchData, supplier: e.target.value})}
+                  value={batchFormData.supplier}
+                  onChange={(e) => setBatchFormData({...batchFormData, supplier: e.target.value})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
@@ -708,8 +981,8 @@ export default function StockManagementPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">ราคาต่อหน่วย</label>
                 <input
                   type="number"
-                  value={batchData.cost_per_unit}
-                  onChange={(e) => setBatchData({...batchData, cost_per_unit: parseFloat(e.target.value) || 0})}
+                  value={batchFormData.cost_per_unit}
+                  onChange={(e) => setBatchFormData({...batchFormData, cost_per_unit: parseFloat(e.target.value) || 0})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   min="0"
                   step="0.01"
@@ -721,7 +994,7 @@ export default function StockManagementPage() {
               <Button
                 variant="primary"
                 onClick={handleAddBatch}
-                disabled={!batchData.batch_number || !batchData.expiry_date || batchData.quantity === 0}
+                disabled={!batchFormData.batch_number || !batchFormData.expiry_date || batchFormData.quantity === 0}
               >
                 บันทึก
               </Button>
@@ -729,7 +1002,7 @@ export default function StockManagementPage() {
                 variant="secondary"
                 onClick={() => {
                   setShowBatchModal(false)
-                  setBatchData({
+                  setBatchFormData({
                     batch_number: '',
                     lot_number: '',
                     expiry_date: '',
@@ -738,6 +1011,137 @@ export default function StockManagementPage() {
                     cost_per_unit: 0
                   })
                 }}
+              >
+                ยกเลิก
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Batch Brand Modal */}
+      {batchAction === 'brand' && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">ตั้งแบรนด์สินค้า</h3>
+            <p className="text-sm text-gray-600 mb-4">เลือก {selectedProducts.size} รายการ</p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">แบรนด์</label>
+                <input
+                  type="text"
+                  value={batchEditData.brand}
+                  onChange={(e) => setBatchEditData({...batchEditData, brand: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  placeholder="ระบุชื่อแบรนด์..."
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <Button
+                variant="primary"
+                onClick={handleBatchBrand}
+                disabled={!batchEditData.brand}
+              >
+                บันทึก
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setBatchAction(null)}
+              >
+                ยกเลิก
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Batch Cost Modal */}
+      {batchAction === 'cost' && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">ตั้งต้นทุนสินค้า</h3>
+            <p className="text-sm text-gray-600 mb-4">เลือก {selectedProducts.size} รายการ</p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">ต้นทุน (฿)</label>
+                <input
+                  type="number"
+                  value={batchEditData.cost_price || ''}
+                  onChange={(e) => setBatchEditData({...batchEditData, cost_price: parseFloat(e.target.value) || 0})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <Button
+                variant="primary"
+                onClick={handleBatchCost}
+                disabled={batchEditData.cost_price === 0}
+              >
+                บันทึก
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setBatchAction(null)}
+              >
+                ยกเลิก
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Batch Price Modal */}
+      {batchAction === 'price' && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">ตั้งราคาขายสินค้า</h3>
+            <p className="text-sm text-gray-600 mb-4">เลือก {selectedProducts.size} รายการ</p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">ราคาขายไม่รวม VAT (฿)</label>
+                <input
+                  type="number"
+                  value={batchEditData.selling_price_excl_vat || ''}
+                  onChange={(e) => {
+                    const excl_vat = parseFloat(e.target.value) || 0
+                    const incl_vat = Math.round(excl_vat * 1.07 * 100) / 100
+                    setBatchEditData({
+                      ...batchEditData,
+                      selling_price_excl_vat: excl_vat,
+                      selling_price_incl_vat: incl_vat
+                    })
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">ราคาขายรวม VAT (฿)</label>
+                <input
+                  type="number"
+                  value={batchEditData.selling_price_incl_vat || ''}
+                  disabled
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100"
+                />
+                <p className="text-xs text-gray-500 mt-1">คำนวณอัตโนมัติ (VAT 7%)</p>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <Button
+                variant="primary"
+                onClick={handleBatchPrice}
+                disabled={batchEditData.selling_price_excl_vat === 0}
+              >
+                บันทึก
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setBatchAction(null)}
               >
                 ยกเลิก
               </Button>
