@@ -101,16 +101,56 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
   }
 
   const parseCSV = (csvText: string): CSVRow[] => {
-    const lines = csvText.trim().split('\n')
+    const rows: CSVRow[] = []
+    const lines = csvText.split('\n')
+    
     if (lines.length === 0) return []
 
     // Parse header
     const headerLine = lines[0]
     const headers = parseCSVLine(headerLine)
 
-    const rows: CSVRow[] = []
+    // Parse data rows handling multiline quoted fields
+    let currentLine = ''
+    let inQuotes = false
+    
     for (let i = 1; i < lines.length; i++) {
-      const values = parseCSVLine(lines[i])
+      const line = lines[i]
+      
+      // Check if we're inside quotes
+      for (let j = 0; j < line.length; j++) {
+        const char = line[j]
+        if (char === '"') {
+          // Check for escaped quotes
+          if (inQuotes && line[j + 1] === '"') {
+            j++ // Skip next quote
+          } else {
+            inQuotes = !inQuotes
+          }
+        }
+      }
+      
+      if (currentLine) {
+        currentLine += '\n' + line
+      } else {
+        currentLine = line
+      }
+      
+      // If we're not in quotes, this is a complete row
+      if (!inQuotes && currentLine.trim()) {
+        const values = parseCSVLine(currentLine)
+        const row: CSVRow = {}
+        headers.forEach((header, index) => {
+          row[header.trim()] = values[index]?.trim() || ''
+        })
+        rows.push(row)
+        currentLine = ''
+      }
+    }
+    
+    // Handle last row if exists
+    if (currentLine.trim() && !inQuotes) {
+      const values = parseCSVLine(currentLine)
       const row: CSVRow = {}
       headers.forEach((header, index) => {
         row[header.trim()] = values[index]?.trim() || ''
@@ -136,13 +176,13 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
           inQuotes = !inQuotes
         }
       } else if (char === ',' && !inQuotes) {
-        values.push(current)
+        values.push(current.trim())
         current = ''
       } else {
         current += char
       }
     }
-    values.push(current)
+    values.push(current.trim())
     return values
   }
 
@@ -178,13 +218,21 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
       errors.push('ต้องระบุชื่อสินค้า')
     }
 
-    // Parse numbers
-    const selling_price_incl_vat = parseFloat(priceStr) || 0
+    // Parse numbers - remove currency symbols and commas
+    const parsePrice = (priceStr: string): number => {
+      if (!priceStr) return 0
+      // Remove currency symbols, commas, spaces
+      const cleaned = priceStr.replace(/[฿,\s]/g, '')
+      const num = parseFloat(cleaned)
+      return isNaN(num) ? 0 : num
+    }
+
+    const selling_price_incl_vat = parsePrice(priceStr)
     // Calculate price excl. VAT: price / 1.07
     const base_price = selling_price_incl_vat > 0 
       ? parseFloat((selling_price_incl_vat / (1 + VAT_RATE)).toFixed(2))
       : 0
-    const cost_price = parseFloat(costStr) || 0
+    const cost_price = parsePrice(costStr)
     const stock_quantity = parseFloat(stockStr) || 0
 
     // Find category ID
