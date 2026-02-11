@@ -535,16 +535,68 @@ export default function ProductsPage() {
         sku: formData.sku,
         name_th: formData.name_th,
         name_en: formData.name_en,
+        product_type: formData.product_type,
         brand: formData.brand,
         is_active: formData.is_active,
+        stock_tracking_type: formData.stock_tracking_type,
         category_id: formData.category_id || null,
         base_price: formData.base_price,
         cost_price: formData.cost_price,
+        purchase_price_excl_vat: formData.purchase_price_excl_vat,
+        cost_per_unit: formData.cost_per_unit,
+        selling_price_excl_vat: formData.selling_price_excl_vat,
+        selling_price_incl_vat: formData.selling_price_incl_vat,
+        original_price: formData.original_price,
+        wholesale_price: formData.wholesale_price,
         unit: formData.unit,
         stock_quantity: formData.stock_quantity,
         min_stock_level: formData.min_stock_level,
         image_url: imageUrls[0] || '',
         image_urls: imageUrls.filter(url => url),
+        // Extended fields
+        description_th: formData.description_th,
+        description_en: formData.description_en,
+        indications: formData.indications,
+        usage_instructions: formData.usage_instructions,
+        active_ingredient: formData.active_ingredient,
+        internal_notes: formData.internal_notes,
+        tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(t => t) : [],
+        weight_grams: formData.weight_grams,
+        width_cm: formData.width_cm,
+        length_cm: formData.length_cm,
+        height_cm: formData.height_cm,
+        expiry_date: formData.expiry_date,
+        lot_number: formData.lot_number,
+        packaging_size: formData.packaging_size,
+        opening_stock_date: formData.opening_stock_date,
+        // Sales Channels
+        sell_on_pos: formData.sell_on_pos,
+        sell_on_grab: formData.sell_on_grab,
+        sell_on_lineman: formData.sell_on_lineman,
+        sell_on_lazada: formData.sell_on_lazada,
+        sell_on_shopee: formData.sell_on_shopee,
+        sell_on_line_shopping: formData.sell_on_line_shopping,
+        sell_on_tiktok: formData.sell_on_tiktok,
+        sell_on_consignment: formData.sell_on_consignment,
+        sell_on_website: formData.sell_on_website,
+        price_pos: formData.price_pos,
+        price_grab: formData.price_grab,
+        price_lineman: formData.price_lineman,
+        price_lazada: formData.price_lazada,
+        price_shopee: formData.price_shopee,
+        price_line_shopping: formData.price_line_shopping,
+        price_tiktok: formData.price_tiktok,
+        price_consignment: formData.price_consignment,
+        price_website: formData.price_website,
+        url_pos: formData.url_pos,
+        url_grab: formData.url_grab,
+        url_lineman: formData.url_lineman,
+        url_lazada: formData.url_lazada,
+        url_shopee: formData.url_shopee,
+        url_line_shopping: formData.url_line_shopping,
+        url_tiktok: formData.url_tiktok,
+        url_consignment: formData.url_consignment,
+        url_website: formData.url_website,
         // Alerts
         alert_out_of_stock: formData.alert_out_of_stock,
         alert_out_of_stock_message: formData.alert_out_of_stock_message,
@@ -1126,13 +1178,13 @@ export default function ProductsPage() {
                 <LayoutDashboard className="h-4 w-4" />
                 ภาพรวม
               </button>
-              <button
+                <button
                 type="button"
                 onClick={() => setActiveTab('identification')}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'identification' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'identification' ? 'bg-gray-200 text-gray-800 border border-gray-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
                 <Fingerprint className="h-4 w-4" />
-                ระบุตัวตน
+                รายละเอียดสินค้า
               </button>
               <button
                 type="button"
@@ -1222,7 +1274,7 @@ export default function ProductsPage() {
                           className="h-32 w-32 object-cover rounded-xl border-2 border-gray-200 shadow-sm"
                         />
                       ) : (
-                        <div className="h-32 w-32 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center">
+                        <div className="h-32 w-32 bg-gray-100 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center">
                           <Package className="h-12 w-12 text-gray-400" />
                         </div>
                       )}
@@ -1230,7 +1282,7 @@ export default function ProductsPage() {
                     
                     {/* Basic Info */}
                     <div className="flex-1 space-y-2">
-                      <div className="bg-blue-50 rounded-lg p-3">
+                      <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                         <div className="text-xs text-gray-500 uppercase tracking-wide">ชื่อสินค้า</div>
                         <div className="text-lg font-bold text-gray-900">{formData.name_th || '-'}</div>
                         {formData.name_en && (
@@ -1238,25 +1290,25 @@ export default function ProductsPage() {
                         )}
                         {/* Active Ingredient - ตัวยาสำคัญ */}
                         {formData.active_ingredient && (
-                          <div className="mt-2 text-sm font-medium text-indigo-700 bg-indigo-50 px-2 py-1 rounded inline-block">
+                          <div className="mt-2 text-sm font-medium text-gray-700 bg-gray-100 px-2 py-1 rounded inline-block">
                             ตัวยาสำคัญ: {formData.active_ingredient}
                           </div>
                         )}
                       </div>
                       
                       <div className="grid grid-cols-2 gap-2">
-                        <div className="bg-gray-50 rounded-lg p-2">
+                        <div className="bg-gray-50 rounded-lg p-2 border border-gray-100">
                           <div className="text-xs text-gray-500">Barcode</div>
                           <div className="text-sm font-medium text-gray-900 font-mono">{formData.barcode || '-'}</div>
                         </div>
-                        <div className="bg-gray-50 rounded-lg p-2">
+                        <div className="bg-gray-50 rounded-lg p-2 border border-gray-100">
                           <div className="text-xs text-gray-500">SKU</div>
                           <div className="text-sm font-medium text-gray-900">{formData.sku || '-'}</div>
                         </div>
                       </div>
                       
                       {formData.brand && (
-                        <div className="bg-gray-50 rounded-lg p-2">
+                        <div className="bg-gray-50 rounded-lg p-2 border border-gray-100">
                           <div className="text-xs text-gray-500">ยี่ห้อ</div>
                           <div className="text-sm font-medium text-gray-900">{formData.brand}</div>
                         </div>
@@ -1264,58 +1316,58 @@ export default function ProductsPage() {
                     </div>
                   </div>
 
-                  {/* Key Stats Grid */}
+                  {/* Key Stats Grid - Cleaner Design */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {/* Price */}
-                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-3 border border-green-100">
-                      <div className="text-xs text-green-600 font-medium">ราคาขาย (รวม VAT)</div>
-                      <div className="text-xl font-bold text-green-700">
+                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                      <div className="text-xs text-gray-500 font-medium">ราคาขาย (รวม VAT)</div>
+                      <div className="text-xl font-bold text-gray-800">
                         ฿{formData.selling_price_incl_vat > 0 ? formData.selling_price_incl_vat.toFixed(2) : formData.base_price.toFixed(2)}
                       </div>
                     </div>
                     
                     {/* Stock */}
-                    <div className={`rounded-lg p-3 border ${formData.stock_quantity <= formData.min_stock_level ? 'bg-gradient-to-br from-red-50 to-rose-50 border-red-100' : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100'}`}>
-                      <div className={`text-xs font-medium ${formData.stock_quantity <= formData.min_stock_level ? 'text-red-600' : 'text-blue-600'}`}>
+                    <div className={`rounded-lg p-3 border ${formData.stock_quantity <= formData.min_stock_level ? 'bg-gray-100 border-gray-300' : 'bg-gray-50 border-gray-200'}`}>
+                      <div className="text-xs font-medium text-gray-500">
                         สต็อกคงเหลือ
                       </div>
-                      <div className={`text-xl font-bold ${formData.stock_quantity <= formData.min_stock_level ? 'text-red-700' : 'text-blue-700'}`}>
+                      <div className={`text-xl font-bold ${formData.stock_quantity <= formData.min_stock_level ? 'text-red-600' : 'text-gray-800'}`}>
                         {formData.stock_quantity} {formData.unit}
                       </div>
                       {formData.stock_quantity <= formData.min_stock_level && (
-                        <div className="text-xs text-red-500">⚠️ ใกล้หมด</div>
+                        <div className="text-xs text-red-500">ใกล้หมด</div>
                       )}
                     </div>
                     
                     {/* Category */}
-                    <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-lg p-3 border border-purple-100">
-                      <div className="text-xs text-purple-600 font-medium">หมวดหมู่</div>
-                      <div className="text-sm font-bold text-purple-700">
+                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                      <div className="text-xs text-gray-500 font-medium">หมวดหมู่</div>
+                      <div className="text-sm font-bold text-gray-800">
                         {categories.find(c => c.id === formData.category_id)?.name_th || 'ไม่ระบุ'}
                       </div>
                     </div>
                     
                     {/* Expiry */}
-                    <div className={`rounded-lg p-3 border ${formData.expiry_date && new Date(formData.expiry_date) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'bg-gradient-to-br from-orange-50 to-amber-50 border-orange-100' : 'bg-gradient-to-br from-gray-50 to-slate-50 border-gray-100'}`}>
-                      <div className={`text-xs font-medium ${formData.expiry_date && new Date(formData.expiry_date) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'text-orange-600' : 'text-gray-600'}`}>
+                    <div className={`rounded-lg p-3 border ${formData.expiry_date && new Date(formData.expiry_date) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'bg-gray-100 border-gray-300' : 'bg-gray-50 border-gray-200'}`}>
+                      <div className={`text-xs font-medium ${formData.expiry_date && new Date(formData.expiry_date) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'text-orange-600' : 'text-gray-500'}`}>
                         วันหมดอายุ
                       </div>
-                      <div className={`text-sm font-bold ${formData.expiry_date && new Date(formData.expiry_date) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'text-orange-700' : 'text-gray-700'}`}>
+                      <div className={`text-sm font-bold ${formData.expiry_date && new Date(formData.expiry_date) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'text-orange-700' : 'text-gray-800'}`}>
                         {formData.expiry_date ? new Date(formData.expiry_date).toLocaleDateString('th-TH') : '-'}
                       </div>
                       {formData.expiry_date && new Date(formData.expiry_date) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && (
-                        <div className="text-xs text-orange-500">⚠️ ใกล้หมดอายุ</div>
+                        <div className="text-xs text-orange-500">ใกล้หมดอายุ</div>
                       )}
                     </div>
                   </div>
 
                   {/* Tags */}
                   {formData.tags && (
-                    <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                       <div className="text-xs text-gray-500 mb-1">Tag สินค้า</div>
                       <div className="flex flex-wrap gap-1">
                         {formData.tags.split(',').map((tag, idx) => (
-                          <span key={idx} className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                          <span key={idx} className="px-2 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full">
                             {tag.trim()}
                           </span>
                         ))}
@@ -1326,58 +1378,56 @@ export default function ProductsPage() {
                   {/* Indications & Usage */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {formData.indications && (
-                      <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-100">
-                        <div className="text-xs text-yellow-700 font-medium mb-1">สรรพคุณ / ข้อบ่งใช้</div>
+                      <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                        <div className="text-xs text-gray-600 font-medium mb-1">สรรพคุณ / ข้อบ่งใช้</div>
                         <div className="text-sm text-gray-700">{formData.indications}</div>
                       </div>
                     )}
                     {formData.usage_instructions && (
-                      <div className="bg-teal-50 rounded-lg p-3 border border-teal-100">
-                        <div className="text-xs text-teal-700 font-medium mb-1">คำแนะนำเพิ่มเติม</div>
+                      <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                        <div className="text-xs text-gray-600 font-medium mb-1">คำแนะนำเพิ่มเติม</div>
                         <div className="text-sm text-gray-700">{formData.usage_instructions}</div>
                       </div>
                     )}
                   </div>
 
-                  {/* Active Ingredient removed from here - moved to under product name */}
-
-                  {/* Sales Channels Icons */}
+                  {/* Sales Channels Icons - Muted Colors */}
                   <div className="bg-white rounded-lg p-2 border border-gray-200">
                     <div className="text-xs text-gray-500 mb-1">ช่องทางการขาย</div>
                     <div className="flex flex-nowrap gap-1.5 overflow-x-auto">
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_pos ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_pos ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
                         <Store className="h-3.5 w-3.5" />
                         <span>หน้าร้าน</span>
                       </div>
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_grab ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_grab ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
                         <ShoppingCart className="h-3.5 w-3.5" />
                         <span>Grab</span>
                       </div>
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_lineman ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_lineman ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
                         <Truck className="h-3.5 w-3.5" />
                         <span>Lineman</span>
                       </div>
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_lazada ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-400'}`}>
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_lazada ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
                         <Globe className="h-3.5 w-3.5" />
                         <span>Lazada</span>
                       </div>
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_shopee ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-400'}`}>
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_shopee ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
                         <ShoppingCart className="h-3.5 w-3.5" />
                         <span>Shopee</span>
                       </div>
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_line_shopping ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_line_shopping ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
                         <MessageCircle className="h-3.5 w-3.5" />
                         <span>LINE</span>
                       </div>
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_tiktok ? 'bg-black bg-opacity-10 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_tiktok ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
                         <Video className="h-3.5 w-3.5" />
                         <span>TikTok</span>
                       </div>
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_consignment ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-400'}`}>
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_consignment ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
                         <ShoppingCart className="h-3.5 w-3.5" />
                         <span>ฝากขาย</span>
                       </div>
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_website ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_website ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
                         <Globe className="h-3.5 w-3.5" />
                         <span>Website</span>
                       </div>
@@ -1450,10 +1500,22 @@ export default function ProductsPage() {
                 </div>
               )}
 
-              {/* Tab 1: Identification */}
+              {/* Tab 1: รายละเอียดสินค้า */}
               {activeTab === 'identification' && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">ข้อมูลการระบุตัวตน (Identification)</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">รายละเอียดสินค้า</h3>
+                  
+                  {/* Description Field - Added */}
+                  <div>
+                    <LabelWithTooltip label="คำอธิบายสินค้า" tooltip="คำอธิบายสั้นๆ สำหรับแสดงหน้าร้าน" />
+                    <textarea
+                      value={formData.description_th}
+                      onChange={(e) => setFormData({ ...formData, description_th: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
+                      rows={3}
+                      placeholder="คำอธิบายสินค้าที่จะแสดงให้ลูกค้าเห็น"
+                    />
+                  </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -1829,24 +1891,36 @@ export default function ProductsPage() {
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <LabelWithTooltip label="Purchasing Price (Excl. VAT)" tooltip="ราคาทุนซื้อล่าสุด (ไม่รวม VAT)" />
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={formData.purchase_price_excl_vat}
-                        onChange={(e) => setFormData({ ...formData, purchase_price_excl_vat: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
                       <LabelWithTooltip label="Cost/Unit" tooltip="ต้นทุนเฉลี่ยต่อหน่วย" />
                       <input
                         type="number"
                         step="0.01"
                         value={formData.cost_per_unit}
-                        onChange={(e) => setFormData({ ...formData, cost_per_unit: parseFloat(e.target.value) || 0 })}
+                        onChange={(e) => {
+                          const costPerUnit = parseFloat(e.target.value) || 0
+                          // Auto-calculate Purchasing Price (Excl. VAT) from Cost/Unit
+                          const vatRate = 0.07 // 7% VAT
+                          const purchasePriceExclVat = costPerUnit / (1 + vatRate)
+                          setFormData({ 
+                            ...formData, 
+                            cost_per_unit: costPerUnit,
+                            purchase_price_excl_vat: parseFloat(purchasePriceExclVat.toFixed(2))
+                          })
+                        }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
+                    </div>
+                    <div>
+                      <LabelWithTooltip label="Purchasing Price (Excl. VAT)" tooltip="ราคาทุนซื้อล่าสุด (ไม่รวม VAT) - คำนวณอัตโนมัติจาก Cost/Unit" />
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={formData.purchase_price_excl_vat}
+                        onChange={(e) => setFormData({ ...formData, purchase_price_excl_vat: parseFloat(e.target.value) || 0 })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                        readOnly
+                      />
+                      <p className="text-xs text-gray-500 mt-1">คำนวณอัตโนมัติจาก Cost/Unit (หัก VAT 7%)</p>
                     </div>
                   </div>
 
