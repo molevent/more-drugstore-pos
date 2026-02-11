@@ -26,6 +26,7 @@ import AbnormalOrdersReportPage from './pages/AbnormalOrdersReportPage'
 import NearExpiryReportPage from './pages/NearExpiryReportPage'
 import StockCheckReportPage from './pages/StockCheckReportPage'
 import SalesReportPage from './pages/SalesReportPage'
+import ManualStockCutReportPage from './pages/ManualStockCutReportPage'
 import SettingsPage from './pages/SettingsPage'
 import ShopSettingsPage from './pages/ShopSettingsPage'
 import SalesChannelsSettingsPage from './pages/SalesChannelsSettingsPage'
@@ -72,6 +73,7 @@ function App() {
                     <Route path="/near-expiry-report" element={<NearExpiryReportPage />} />
                     <Route path="/stock-check-report" element={<StockCheckReportPage />} />
                     <Route path="/sales-report" element={<SalesReportPage />} />
+                    <Route path="/manual-stock-cut-report" element={<ManualStockCutReportPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/settings/shop" element={<ShopSettingsPage />} />
                     <Route path="/settings/sales-channels" element={<SalesChannelsSettingsPage />} />
