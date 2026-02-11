@@ -551,10 +551,10 @@ export default function ProductsPage() {
       }
 
       const productData = {
-        barcode: formData.barcode,
-        sku: formData.sku,
-        name_th: formData.name_th,
-        name_en: formData.name_en,
+        barcode: formData.barcode || '',
+        sku: formData.sku || '',
+        name_th: formData.name_th || '',
+        name_en: formData.name_en || '',
         product_type: formData.product_type,
         brand: formData.brand,
         is_active: formData.is_active,
@@ -568,7 +568,7 @@ export default function ProductsPage() {
         selling_price_incl_vat: formData.selling_price_incl_vat,
         original_price: formData.original_price,
         wholesale_price: formData.wholesale_price,
-        unit: formData.unit,
+        unit: formData.unit || 'ชิ้น',
         stock_quantity: formData.stock_quantity,
         min_stock_level: formData.min_stock_level,
         image_url: imageUrls[0] || '',
