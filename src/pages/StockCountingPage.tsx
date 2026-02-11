@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { ScanLine, Package, CheckCircle, AlertCircle, Save, Trash2, Plus, Barcode, FileSpreadsheet, Pause, Play, Warehouse, Search, X, ChevronDown } from 'lucide-react'
+import { ScanLine, Package, CheckCircle, AlertCircle, Save, Trash2, Plus, Barcode, FileSpreadsheet, Pause, Play, Warehouse, Search, X, ChevronDown, Camera } from 'lucide-react'
+import BarcodeScannerModal from '../components/common/BarcodeScannerModal'
 
 // Default warehouses (can be moved to database later)
 const WAREHOUSES = [
@@ -67,6 +68,7 @@ export default function StockCountingPage() {
   const [selectedSession, setSelectedSession] = useState<CountingSession | null>(null)
   const [showSessionDetailModal, setShowSessionDetailModal] = useState(false)
   const [allProducts, setAllProducts] = useState<any[]>([])
+  const [showScannerModal, setShowScannerModal] = useState(false)
   
   const searchInputRef = useRef<HTMLInputElement>(null)
   const countInputRef = useRef<HTMLInputElement>(null)
@@ -261,7 +263,7 @@ export default function StockCountingPage() {
     saveSessionsToStorage(updatedSessions)
     setCurrentSession(session)
     
-    alert('บันทึกรอบการนับสำเร็จ')
+    alert('พักรอบการนับ ข้อมูลอยู่ในประวัติรอบการนับสต็อก')
   }
 
   // Complete session
@@ -351,7 +353,67 @@ export default function StockCountingPage() {
     return allProducts.filter(product => !countedProductIds.has(product.id) && product.stock_quantity > 0)
   }
 
-  // Export to CSV
+  // Get missing products for current counting (for report view)
+  const getCurrentMissingProducts = () => {
+    if (!allProducts.length) return []
+    const countedProductIds = new Set(countingItems.map(item => item.product_id))
+    return allProducts.filter(product => !countedProductIds.has(product.id) && product.stock_quantity > 0)
+  }
+
+  // Calculate missing products value
+  const calculateMissingValue = () => {
+    const missing = getCurrentMissingProducts()
+    return missing.reduce((sum, product) => sum + (product.stock_quantity * (product.cost_price || 0)), 0)
+  }
+
+  // Fetch all products when entering report mode
+  const loadAllProductsForReport = async () => {
+    try {
+      const { data: products, error } = await supabase
+        .from('products')
+        .select('id, barcode, sku, name_th, name_en, unit_of_measure, stock_quantity, cost_price')
+        .gt('stock_quantity', 0)
+        .order('name_th')
+      
+      if (error) throw error
+      setAllProducts(products || [])
+    } catch (error) {
+      console.error('Error fetching products for report:', error)
+    }
+  }
+
+  // Handle barcode detected from camera scanner
+  const handleBarcodeDetected = async (barcode: string) => {
+    setSearchInput(barcode)
+    setLoading(true)
+    try {
+      const { data: products, error } = await supabase
+        .from('products')
+        .select('id, barcode, sku, name_th, name_en, unit_of_measure, stock_quantity, cost_price')
+        .or(`barcode.ilike.%${barcode}%,sku.ilike.%${barcode}%`)
+        .limit(5)
+
+      if (error) throw error
+
+      if (!products || products.length === 0) {
+        alert(`ไม่พบสินค้าที่มีบาร์โค้ด ${barcode} ในระบบ`)
+        return
+      }
+
+      if (products.length === 1) {
+        addProductToCounting(products[0])
+        alert(`เพิ่มสินค้า: ${products[0].name_th}`)
+      } else {
+        setSearchResults(products)
+        setShowSearchResults(true)
+      }
+    } catch (error) {
+      console.error('Error searching by barcode:', error)
+      alert('เกิดข้อผิดพลาดในการค้นหาสินค้า')
+    } finally {
+      setLoading(false)
+    }
+  }
   const exportToCSV = () => {
     const summary = calculateSummary()
     const headers = ['บาร์โค้ด', 'SKU', 'ชื่อสินค้า', 'หน่วย', 'สต็อกระบบ', 'นับจริง', 'ผลต่าง', 'ต้นทุน', 'มูลค่าผลต่าง', 'สถานะ', 'คลัง']
@@ -471,6 +533,14 @@ export default function StockCountingPage() {
               <div className="flex items-center gap-2">
                 <Button
                   variant="secondary"
+                  onClick={() => setShowScannerModal(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Camera className="w-4 h-4" />
+                  กล้อง
+                </Button>
+                <Button
+                  variant="secondary"
                   onClick={startNewSession}
                   className="flex items-center gap-2"
                 >
@@ -499,8 +569,8 @@ export default function StockCountingPage() {
             </div>
           </Card>
 
-          {/* Search Input */}
-          <Card className="p-4">
+          {/* Search Input - Fixed z-index and overflow */}
+          <Card className="p-4 relative z-50">
             <div className="flex gap-2">
               <div className="relative flex-1 min-w-0">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -525,18 +595,20 @@ export default function StockCountingPage() {
                   className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
                 
-                {/* Search Results Dropdown */}
+                {/* Search Results Dropdown - Fixed visibility */}
                 {showSearchResults && searchResults.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border z-50 max-h-80 overflow-auto min-w-[400px]">
+                  <div className="fixed mt-1 bg-white rounded-lg shadow-xl border-2 border-gray-200 z-[9999] max-h-80 overflow-auto" style={{minWidth: '500px', maxWidth: '600px'}}>
                     {searchResults.map(product => (
                       <button
                         key={product.id}
                         onClick={() => addProductToCounting(product)}
-                        className="w-full text-left px-4 py-3 hover:bg-gray-100 border-b last:border-0"
+                        className="w-full text-left px-4 py-3 hover:bg-blue-50 border-b last:border-0 transition-colors"
                       >
-                        <div className="font-medium">{product.name_th}</div>
-                        <div className="text-sm text-gray-600">
-                          บาร์โค้ด: {product.barcode} | SKU: {product.sku} | สต็อก: {product.stock_quantity}
+                        <div className="font-medium text-gray-900">{product.name_th}</div>
+                        <div className="text-sm text-gray-600 flex gap-3">
+                          <span>บาร์โค้ด: {product.barcode}</span>
+                          <span>SKU: {product.sku}</span>
+                          <span className="text-blue-600">สต็อก: {product.stock_quantity}</span>
                         </div>
                       </button>
                     ))}
@@ -809,6 +881,20 @@ export default function StockCountingPage() {
       {/* Report View */}
       {viewMode === 'report' && (
         <div className="space-y-4">
+          {/* Load products when entering report view */}
+          {allProducts.length === 0 && (
+            <div className="text-center">
+              <Button
+                variant="secondary"
+                onClick={loadAllProductsForReport}
+                className="flex items-center gap-2"
+              >
+                <ScanLine className="w-4 h-4" />
+                โหลดข้อมูลสินค้าทั้งหมดเพื่อตรวจสอบรายการที่ไม่ได้นับ
+              </Button>
+            </div>
+          )}
+          
           <Card className="p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium">รายงานสรุปการนับสต็อก</h3>
@@ -825,7 +911,7 @@ export default function StockCountingPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="bg-blue-50 p-4 rounded-lg text-center">
                 <div className="text-3xl font-bold text-blue-600">{summary.totalItems}</div>
-                <div className="text-sm text-gray-600">รายการทั้งหมด</div>
+                <div className="text-sm text-gray-600">รายการที่นับ</div>
               </div>
               <div className="bg-green-50 p-4 rounded-lg text-center">
                 <div className="text-3xl font-bold text-green-600">{summary.matchedItems}</div>
@@ -842,6 +928,69 @@ export default function StockCountingPage() {
                 <div className="text-sm text-gray-600">มูลค่าผลต่างรวม</div>
               </div>
             </div>
+
+            {/* Missing Products Warning */}
+            {allProducts.length > 0 && getCurrentMissingProducts().length > 0 && (
+              <div className="mb-6 p-4 bg-amber-50 border-2 border-amber-300 rounded-lg">
+                <h4 className="font-medium text-amber-800 mb-3 flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-amber-600" />
+                  ⚠️ พบสินค้าที่มีในคลังแต่ไม่ได้นับ ({getCurrentMissingProducts().length} รายการ)
+                  <span className="text-xs font-normal text-amber-600">- อาจสูญหายหรือลืมนับ</span>
+                </h4>
+                <div className="overflow-x-auto max-h-64 overflow-y-auto border rounded-lg border-amber-200 mb-3">
+                  <table className="w-full text-sm">
+                    <thead className="bg-amber-100 sticky top-0">
+                      <tr>
+                        <th className="px-3 py-2 text-left">สินค้า</th>
+                        <th className="px-3 py-2 text-center">บาร์โค้ด</th>
+                        <th className="px-3 py-2 text-center">สต็อกระบบ</th>
+                        <th className="px-3 py-2 text-center">ต้นทุน/ชิ้น</th>
+                        <th className="px-3 py-2 text-right">มูลค่าที่อาจสูญหาย</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {getCurrentMissingProducts().slice(0, 20).map(product => (
+                        <tr key={product.id} className="bg-amber-50/50 hover:bg-amber-100">
+                          <td className="px-3 py-2">
+                            <div className="font-medium text-gray-900">{product.name_th}</div>
+                            <div className="text-xs text-gray-500">{product.unit_of_measure || 'ชิ้น'}</div>
+                          </td>
+                          <td className="px-3 py-2 text-center text-xs">{product.barcode || '-'}</td>
+                          <td className="px-3 py-2 text-center font-medium text-amber-700">{product.stock_quantity}</td>
+                          <td className="px-3 py-2 text-center">{(product.cost_price || 0).toLocaleString('th-TH', { style: 'currency', currency: 'THB' })}</td>
+                          <td className="px-3 py-2 text-right font-bold text-red-600">
+                            {(product.stock_quantity * (product.cost_price || 0)).toLocaleString('th-TH', { style: 'currency', currency: 'THB' })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {getCurrentMissingProducts().length > 20 && (
+                  <p className="text-sm text-amber-600 mb-3">
+                    และอีก {getCurrentMissingProducts().length - 20} รายการ...
+                  </p>
+                )}
+                <div className="flex items-center justify-between p-3 bg-amber-100 rounded-lg">
+                  <span className="font-medium text-amber-900">
+                    มูลค่าสินค้าที่อาจสูญหายรวม (สต็อกระบบ × ต้นทุน):
+                  </span>
+                  <span className="text-2xl font-bold text-red-700">
+                    {calculateMissingValue().toLocaleString('th-TH', { style: 'currency', currency: 'THB' })}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* All Products Counted Success Message */}
+            {allProducts.length > 0 && getCurrentMissingProducts().length === 0 && countingItems.length > 0 && (
+              <div className="mb-6 p-4 bg-green-50 border-2 border-green-300 rounded-lg text-center">
+                <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                <p className="font-medium text-green-800">
+                  ✅ นับสต็อกครบถ้วน! ไม่พบสินค้าที่มีในคลังแต่ยังไม่ได้นับ
+                </p>
+              </div>
+            )}
 
             {/* Overstock Items */}
             {summary.overstockItems.length > 0 && (
@@ -1028,6 +1177,13 @@ export default function StockCountingPage() {
           </Card>
         </div>
       )}
+
+      {/* Barcode Scanner Modal */}
+      <BarcodeScannerModal
+        isOpen={showScannerModal}
+        onClose={() => setShowScannerModal(false)}
+        onBarcodeDetected={handleBarcodeDetected}
+      />
 
       {/* New Session Modal */}
       {showNewSessionModal && (
