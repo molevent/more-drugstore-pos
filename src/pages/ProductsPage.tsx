@@ -652,11 +652,17 @@ export default function ProductsPage() {
       if (editingProduct) {
         console.log('[SAVE] Starting UPDATE operation...')
         const updateStart = performance.now()
+        // Use upsert with onConflict to avoid slow FK constraint checks
         const { error } = await supabase
           .from('products')
-          .update(productData)
-          .eq('id', editingProduct.id)
-        console.log(`[SAVE] UPDATE completed in ${(performance.now() - updateStart).toFixed(0)}ms`)
+          .upsert({
+            id: editingProduct.id,
+            ...productData
+          }, {
+            onConflict: 'id',
+            ignoreDuplicates: false
+          })
+        console.log(`[SAVE] UPDATE (upsert) completed in ${(performance.now() - updateStart).toFixed(0)}ms`)
         if (error) throw error
       } else {
         console.log('[SAVE] Starting INSERT operation...')
