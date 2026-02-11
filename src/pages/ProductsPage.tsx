@@ -594,10 +594,10 @@ export default function ProductsPage() {
         width_cm: formData.width_cm,
         length_cm: formData.length_cm,
         height_cm: formData.height_cm,
-        expiry_date: formData.expiry_date,
+        expiry_date: formData.expiry_date || null,
         lot_number: formData.lot_number,
         packaging_size: formData.packaging_size,
-        opening_stock_date: formData.opening_stock_date,
+        opening_stock_date: formData.opening_stock_date || null,
         // Sales Channels
         sell_on_pos: formData.sell_on_pos,
         sell_on_grab: formData.sell_on_grab,
