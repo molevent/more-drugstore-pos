@@ -4,7 +4,8 @@ import { zortOutService } from '../services/zortout'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import SalesChannelCSVImportModal from '../components/common/SalesChannelCSVImportModal'
-import { Package, Plus, History, Search, Edit, ExternalLink, Trash2, Tag, DollarSign, Printer, CheckSquare, Square, X, FileSpreadsheet } from 'lucide-react'
+import { Package, Plus, History, Search, Edit, ExternalLink, Trash2, Tag, DollarSign, Printer, CheckSquare, Square, X, FileSpreadsheet, Barcode } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 interface Product {
   id: string
@@ -513,14 +514,24 @@ export default function StockManagementPage() {
           </h1>
           <p className="text-gray-600 mt-1">ปรับยอดสต็อก, จัดการ Batch และติดตามการเคลื่อนไหว</p>
         </div>
-        <Button
-          variant="secondary"
-          onClick={() => setShowChannelImportModal(true)}
-          className="flex items-center gap-2"
-        >
-          <FileSpreadsheet className="h-4 w-4" />
-          นำเข้าช่องทางขาย
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="primary"
+            onClick={() => window.location.href = '/stock-counting'}
+            className="flex items-center gap-2"
+          >
+            <Barcode className="h-4 w-4" />
+            ระบบนับสต็อก
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => setShowChannelImportModal(true)}
+            className="flex items-center gap-2"
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            นำเข้าช่องทางขาย
+          </Button>
+        </div>
       </div>
 
       {/* Search Bar */}

@@ -64,6 +64,9 @@ export default function StockCountingPage() {
   const [viewMode, setViewMode] = useState<'counting' | 'sessions' | 'report'>('counting')
   const [showNewSessionModal, setShowNewSessionModal] = useState(false)
   const [lastAddedProduct, setLastAddedProduct] = useState<CountingItem | null>(null)
+  const [selectedSession, setSelectedSession] = useState<CountingSession | null>(null)
+  const [showSessionDetailModal, setShowSessionDetailModal] = useState(false)
+  const [allProducts, setAllProducts] = useState<any[]>([])
   
   const searchInputRef = useRef<HTMLInputElement>(null)
   const countInputRef = useRef<HTMLInputElement>(null)
@@ -320,6 +323,34 @@ export default function StockCountingPage() {
     setViewMode('counting')
   }
 
+  // View session details with missing products
+  const viewSessionDetail = async (session: CountingSession) => {
+    setSelectedSession(session)
+    setShowSessionDetailModal(true)
+    
+    // Fetch all products to find missing ones
+    try {
+      const { data: products, error } = await supabase
+        .from('products')
+        .select('id, barcode, sku, name_th, name_en, unit_of_measure, stock_quantity, cost_price')
+        .gt('stock_quantity', 0)
+        .order('name_th')
+      
+      if (error) throw error
+      setAllProducts(products || [])
+    } catch (error) {
+      console.error('Error fetching products:', error)
+    }
+  }
+
+  // Get missing products (products with stock but not counted)
+  const getMissingProducts = () => {
+    if (!selectedSession || !allProducts.length) return []
+    
+    const countedProductIds = new Set(selectedSession.items?.map(item => item.product_id) || [])
+    return allProducts.filter(product => !countedProductIds.has(product.id) && product.stock_quantity > 0)
+  }
+
   // Export to CSV
   const exportToCSV = () => {
     const summary = calculateSummary()
@@ -471,7 +502,7 @@ export default function StockCountingPage() {
           {/* Search Input */}
           <Card className="p-4">
             <div className="flex gap-2">
-              <div className="relative flex-1">
+              <div className="relative flex-1 min-w-0">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   ref={searchInputRef}
@@ -496,7 +527,7 @@ export default function StockCountingPage() {
                 
                 {/* Search Results Dropdown */}
                 {showSearchResults && searchResults.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border z-10 max-h-64 overflow-auto">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border z-50 max-h-80 overflow-auto min-w-[400px]">
                     {searchResults.map(product => (
                       <button
                         key={product.id}
@@ -748,6 +779,14 @@ export default function StockCountingPage() {
                       {session.status === 'in_progress' ? 'กำลังนับ' :
                        session.status === 'paused' ? 'พักไว้' : 'เสร็จสิ้น'}
                     </span>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => viewSessionDetail(session)}
+                      className="flex items-center gap-1"
+                    >
+                      ดูรายละเอียด
+                    </Button>
                     {session.status !== 'completed' && (
                       <Button
                         variant="secondary"
@@ -839,6 +878,153 @@ export default function StockCountingPage() {
                 </div>
               </div>
             )}
+          </Card>
+        </div>
+      )}
+
+      {/* Session Detail Modal */}
+      {showSessionDetailModal && selectedSession && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-auto p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-medium">{selectedSession.session_name}</h3>
+                <p className="text-sm text-gray-600">
+                  คลัง: {selectedSession.warehouse_name} | 
+                  {new Date(selectedSession.created_at).toLocaleString('th-TH')}
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowSessionDetailModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Summary Stats */}
+            <div className="grid grid-cols-4 gap-4 mb-6">
+              <div className="bg-blue-50 p-3 rounded-lg text-center">
+                <div className="text-xl font-bold text-blue-600">{selectedSession.total_items}</div>
+                <div className="text-xs text-gray-600">รายการที่นับ</div>
+              </div>
+              <div className="bg-green-50 p-3 rounded-lg text-center">
+                <div className="text-xl font-bold text-green-600">{selectedSession.matched_items}</div>
+                <div className="text-xs text-gray-600">ตรงกับระบบ</div>
+              </div>
+              <div className="bg-red-50 p-3 rounded-lg text-center">
+                <div className="text-xl font-bold text-red-600">{selectedSession.unmatched_items}</div>
+                <div className="text-xs text-gray-600">ไม่ตรง</div>
+              </div>
+              <div className="bg-yellow-50 p-3 rounded-lg text-center">
+                <div className="text-xl font-bold text-yellow-600">{getMissingProducts().length}</div>
+                <div className="text-xs text-gray-600">ยังไม่ได้นับ</div>
+              </div>
+            </div>
+
+            {/* Counted Items Table */}
+            <div className="mb-6">
+              <h4 className="font-medium mb-3 flex items-center gap-2">
+                <Package className="w-4 h-4" />
+                รายการที่นับแล้ว ({selectedSession.items?.length || 0} รายการ)
+              </h4>
+              {selectedSession.items && selectedSession.items.length > 0 ? (
+                <div className="overflow-x-auto max-h-64 overflow-y-auto border rounded-lg">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 sticky top-0">
+                      <tr>
+                        <th className="px-3 py-2 text-left">สินค้า</th>
+                        <th className="px-3 py-2 text-center">สต็อกระบบ</th>
+                        <th className="px-3 py-2 text-center">นับจริง</th>
+                        <th className="px-3 py-2 text-center">ผลต่าง</th>
+                        <th className="px-3 py-2 text-center">สถานะ</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {selectedSession.items.map(item => (
+                        <tr key={item.id} className={item.difference !== 0 ? 'bg-red-50' : 'bg-green-50'}>
+                          <td className="px-3 py-2">
+                            <div className="font-medium">{item.name_th}</div>
+                            <div className="text-xs text-gray-500">{item.barcode}</div>
+                          </td>
+                          <td className="px-3 py-2 text-center">{item.system_quantity}</td>
+                          <td className="px-3 py-2 text-center">{item.counted_quantity}</td>
+                          <td className={`px-3 py-2 text-center ${item.difference > 0 ? 'text-green-600' : item.difference < 0 ? 'text-red-600' : ''}`}>
+                            {item.difference > 0 ? `+${item.difference}` : item.difference}
+                          </td>
+                          <td className="px-3 py-2 text-center">
+                            {item.difference === 0 ? (
+                              <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">ตรง</span>
+                            ) : item.difference > 0 ? (
+                              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">เกิน</span>
+                            ) : (
+                              <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">ขาด</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-4">ไม่มีรายการที่นับ</p>
+              )}
+            </div>
+
+            {/* Missing Products */}
+            {getMissingProducts().length > 0 && (
+              <div className="mb-6">
+                <h4 className="font-medium mb-3 flex items-center gap-2 text-amber-700">
+                  <AlertCircle className="w-4 h-4" />
+                  สินค้าที่ยังไม่ได้นับ ({getMissingProducts().length} รายการ)
+                  <span className="text-xs font-normal text-gray-500">- มีในคลังแต่ยังไม่ได้นับ</span>
+                </h4>
+                <div className="overflow-x-auto max-h-64 overflow-y-auto border rounded-lg border-amber-200">
+                  <table className="w-full text-sm">
+                    <thead className="bg-amber-50 sticky top-0">
+                      <tr>
+                        <th className="px-3 py-2 text-left">สินค้า</th>
+                        <th className="px-3 py-2 text-center">สต็อกระบบ</th>
+                        <th className="px-3 py-2 text-left">หมายเหตุ</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {getMissingProducts().map(product => (
+                        <tr key={product.id} className="bg-amber-50/50">
+                          <td className="px-3 py-2">
+                            <div className="font-medium">{product.name_th}</div>
+                            <div className="text-xs text-gray-500">{product.barcode}</div>
+                          </td>
+                          <td className="px-3 py-2 text-center">{product.stock_quantity}</td>
+                          <td className="px-3 py-2 text-amber-700 text-xs">ยังไม่ได้นับ</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button
+                variant="secondary"
+                onClick={() => setShowSessionDetailModal(false)}
+              >
+                ปิด
+              </Button>
+              {selectedSession.status !== 'completed' && (
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setShowSessionDetailModal(false)
+                    resumeSession(selectedSession)
+                  }}
+                >
+                  <Play className="w-4 h-4 mr-1" />
+                  ทำต่อ
+                </Button>
+              )}
+            </div>
           </Card>
         </div>
       )}
