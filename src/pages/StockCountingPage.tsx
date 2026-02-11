@@ -106,6 +106,49 @@ export default function StockCountingPage() {
     }
   }
 
+  // Delete session
+  const deleteSession = (sessionId: string) => {
+    if (!confirm('ยืนยันการลบประวัติรอบการนับสต็อกนี้?')) return
+    
+    const updatedSessions = sessions.filter(s => s.id !== sessionId)
+    setSessions(updatedSessions)
+    saveSessionsToStorage(updatedSessions)
+    
+    // If deleting current session, clear it
+    if (currentSession?.id === sessionId) {
+      setCurrentSession(null)
+      setCountingItems([])
+    }
+  }
+
+  // Export all sessions to CSV
+  const exportAllSessionsToCSV = () => {
+    if (sessions.length === 0) {
+      alert('ไม่มีข้อมูลสำหรับ Export')
+      return
+    }
+
+    const headers = ['วันที่', 'ชื่อรอบ', 'คลัง', 'สถานะ', 'จำนวนรายการ', 'ตรงกับระบบ', 'ไม่ตรงกับระบบ', 'มูลค่าผลต่างรวม']
+    
+    const rows = sessions.map(session => [
+      new Date(session.created_at).toLocaleString('th-TH'),
+      session.session_name,
+      session.warehouse_name,
+      session.status === 'in_progress' ? 'กำลังนับ' : session.status === 'paused' ? 'พักไว้' : 'เสร็จสิ้น',
+      session.total_items,
+      session.matched_items,
+      session.unmatched_items,
+      session.total_value_difference
+    ])
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `stock_counting_sessions_${new Date().toISOString().split('T')[0]}.csv`
+    link.click()
+  }
+
   // Save sessions to localStorage
   const saveSessionsToStorage = (updatedSessions: CountingSession[]) => {
     try {
@@ -534,14 +577,6 @@ export default function StockCountingPage() {
               <div className="flex items-center gap-2">
                 <Button
                   variant="secondary"
-                  onClick={() => setShowScannerModal(true)}
-                  className="flex items-center gap-2"
-                >
-                  <Camera className="w-4 h-4" />
-                  กล้อง
-                </Button>
-                <Button
-                  variant="secondary"
                   onClick={startNewSession}
                   className="flex items-center gap-2"
                 >
@@ -616,15 +651,25 @@ export default function StockCountingPage() {
                   </div>
                 )}
               </div>
-              <Button
-                variant="primary"
-                onClick={handleSearch}
-                disabled={loading}
-                className="flex items-center gap-2"
-              >
-                <ScanLine className="w-4 h-4" />
-                ค้นหา
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowScannerModal(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Camera className="w-4 h-4" />
+                  กล้อง
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleSearch}
+                  disabled={loading}
+                  className="flex items-center gap-2"
+                >
+                  <ScanLine className="w-4 h-4" />
+                  ค้นหา
+                </Button>
+              </div>
             </div>
 
             {/* Quick Count Input for Last Added */}
@@ -809,14 +854,24 @@ export default function StockCountingPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-medium">ประวัติรอบการนับสต็อก</h3>
-            <Button
-              variant="primary"
-              onClick={startNewSession}
-              className="flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              เริ่มรอบใหม่
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                onClick={exportAllSessionsToCSV}
+                className="flex items-center gap-2"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                Export ทั้งหมด
+              </Button>
+              <Button
+                variant="primary"
+                onClick={startNewSession}
+                className="flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                เริ่มรอบใหม่
+              </Button>
+            </div>
           </div>
 
           {sessions.length === 0 ? (
@@ -831,8 +886,8 @@ export default function StockCountingPage() {
                   key={session.id}
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
                 >
-                  <div>
-                    <div className="font-medium">{session.session_name}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate">{session.session_name}</div>
                     <div className="text-sm text-gray-600">
                       คลัง: {session.warehouse_name} | 
                       รายการ: {session.total_items} | 
@@ -843,8 +898,8 @@ export default function StockCountingPage() {
                       {new Date(session.created_at).toLocaleString('th-TH')}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
+                  <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+                    <span className={`px-2 py-1 rounded-full text-xs whitespace-nowrap ${
                       session.status === 'in_progress' ? 'bg-green-100 text-green-700' :
                       session.status === 'paused' ? 'bg-yellow-100 text-yellow-700' :
                       'bg-gray-100 text-gray-700'
@@ -858,7 +913,7 @@ export default function StockCountingPage() {
                       onClick={() => viewSessionDetail(session)}
                       className="flex items-center gap-1"
                     >
-                      ดูรายละเอียด
+                      ดู
                     </Button>
                     {session.status !== 'completed' && (
                       <Button
@@ -871,6 +926,14 @@ export default function StockCountingPage() {
                         ทำต่อ
                       </Button>
                     )}
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => deleteSession(session.id)}
+                      className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
                   </div>
                 </div>
               ))}
