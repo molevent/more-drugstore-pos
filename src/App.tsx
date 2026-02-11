@@ -29,6 +29,7 @@ import SalesReportPage from './pages/SalesReportPage'
 import ManualStockCutReportPage from './pages/ManualStockCutReportPage'
 import ReorderReportPage from './pages/ReorderReportPage'
 import StockRefillReportPage from './pages/StockRefillReportPage'
+import StockCountingPage from './pages/StockCountingPage'
 import SettingsPage from './pages/SettingsPage'
 import ShopSettingsPage from './pages/ShopSettingsPage'
 import SalesChannelsSettingsPage from './pages/SalesChannelsSettingsPage'
@@ -78,6 +79,7 @@ function App() {
                     <Route path="/manual-stock-cut-report" element={<ManualStockCutReportPage />} />
                     <Route path="/reorder-report" element={<ReorderReportPage />} />
                     <Route path="/stock-refill-report" element={<StockRefillReportPage />} />
+                    <Route path="/stock-counting" element={<StockCountingPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/settings/shop" element={<ShopSettingsPage />} />
                     <Route path="/settings/sales-channels" element={<SalesChannelsSettingsPage />} />
