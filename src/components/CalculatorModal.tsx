@@ -75,6 +75,13 @@ export default function CalculatorModal({ isOpen, onClose }: CalculatorModalProp
     }
   }, [display, shouldResetDisplay])
 
+  const handlePercentage = useCallback(() => {
+    const current = parseFloat(display)
+    const result = current / 100
+    setDisplay(result.toString())
+    setShouldResetDisplay(true)
+  }, [display])
+
   // Keyboard support
   useEffect(() => {
     if (!isOpen) return
@@ -85,6 +92,7 @@ export default function CalculatorModal({ isOpen, onClose }: CalculatorModalProp
       if (e.key === '+' || e.key === '-') handleOperation(e.key)
       if (e.key === '*') handleOperation('×')
       if (e.key === '/') handleOperation('÷')
+      if (e.key === '%') handlePercentage()
       if (e.key === 'Enter' || e.key === '=') handleEquals()
       if (e.key === 'Escape') handleClear()
       if (e.key === 'Backspace') handleDelete()
@@ -92,29 +100,30 @@ export default function CalculatorModal({ isOpen, onClose }: CalculatorModalProp
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, handleNumber, handleDecimal, handleOperation, handleEquals, handleClear, handleDelete])
+  }, [isOpen, handleNumber, handleDecimal, handleOperation, handlePercentage, handleEquals, handleClear, handleDelete])
 
   if (!isOpen) return null
 
   const buttons = [
     { label: 'C', onClick: handleClear, className: 'bg-red-50 text-red-600 hover:bg-red-100' },
     { label: '⌫', onClick: handleDelete, icon: Delete, className: 'bg-gray-50 text-gray-600 hover:bg-gray-100' },
+    { label: '%', onClick: handlePercentage, className: 'bg-[#B8C9B8]/20 text-gray-700 hover:bg-[#B8C9B8]/30' },
     { label: '÷', onClick: () => handleOperation('÷'), className: 'bg-[#B8C9B8]/20 text-gray-700 hover:bg-[#B8C9B8]/30' },
-    { label: '×', onClick: () => handleOperation('×'), className: 'bg-[#B8C9B8]/20 text-gray-700 hover:bg-[#B8C9B8]/30' },
     { label: '7', onClick: () => handleNumber('7'), className: 'bg-white text-gray-800 hover:bg-gray-50' },
     { label: '8', onClick: () => handleNumber('8'), className: 'bg-white text-gray-800 hover:bg-gray-50' },
     { label: '9', onClick: () => handleNumber('9'), className: 'bg-white text-gray-800 hover:bg-gray-50' },
-    { label: '-', onClick: () => handleOperation('-'), className: 'bg-[#B8C9B8]/20 text-gray-700 hover:bg-[#B8C9B8]/30' },
+    { label: '×', onClick: () => handleOperation('×'), className: 'bg-[#B8C9B8]/20 text-gray-700 hover:bg-[#B8C9B8]/30' },
     { label: '4', onClick: () => handleNumber('4'), className: 'bg-white text-gray-800 hover:bg-gray-50' },
     { label: '5', onClick: () => handleNumber('5'), className: 'bg-white text-gray-800 hover:bg-gray-50' },
     { label: '6', onClick: () => handleNumber('6'), className: 'bg-white text-gray-800 hover:bg-gray-50' },
-    { label: '+', onClick: () => handleOperation('+'), className: 'bg-[#B8C9B8]/20 text-gray-700 hover:bg-[#B8C9B8]/30' },
+    { label: '-', onClick: () => handleOperation('-'), className: 'bg-[#B8C9B8]/20 text-gray-700 hover:bg-[#B8C9B8]/30' },
     { label: '1', onClick: () => handleNumber('1'), className: 'bg-white text-gray-800 hover:bg-gray-50' },
     { label: '2', onClick: () => handleNumber('2'), className: 'bg-white text-gray-800 hover:bg-gray-50' },
     { label: '3', onClick: () => handleNumber('3'), className: 'bg-white text-gray-800 hover:bg-gray-50' },
-    { label: '=', onClick: handleEquals, className: 'bg-[#B8C9B8] text-gray-800 hover:bg-[#A8B9A8] row-span-2' },
-    { label: '0', onClick: () => handleNumber('0'), className: 'bg-white text-gray-800 hover:bg-gray-50 col-span-2' },
+    { label: '+', onClick: () => handleOperation('+'), className: 'bg-[#B8C9B8]/20 text-gray-700 hover:bg-[#B8C9B8]/30' },
+    { label: '0', onClick: () => handleNumber('0'), className: 'bg-white text-gray-800 hover:bg-gray-50' },
     { label: '.', onClick: handleDecimal, className: 'bg-white text-gray-800 hover:bg-gray-50' },
+    { label: '=', onClick: handleEquals, className: 'bg-[#B8C9B8] text-gray-800 hover:bg-[#A8B9A8] col-span-2' },
   ]
 
   return (
@@ -162,8 +171,6 @@ export default function CalculatorModal({ isOpen, onClose }: CalculatorModalProp
                   className={`
                     h-14 rounded-xl font-semibold text-lg transition-all active:scale-95 shadow-sm border border-gray-200
                     ${btn.className}
-                    ${btn.label === '0' ? 'col-span-2' : ''}
-                    ${btn.label === '=' ? 'row-span-2 h-[calc(3.5rem*2+0.5rem)]' : ''}
                   `}
                 >
                   {Icon ? <Icon className="w-5 h-5 mx-auto" /> : btn.label}
@@ -176,7 +183,7 @@ export default function CalculatorModal({ isOpen, onClose }: CalculatorModalProp
         {/* Hint */}
         <div className="px-4 pb-3 bg-gray-50">
           <p className="text-xs text-gray-400 text-center">
-            ใช้คีย์บอร์ดได้: 0-9, + - × ÷, Enter =, Esc C, ⌫ Backspace
+            ใช้คีย์บอร์ดได้: 0-9, + - × ÷ %, Enter =, Esc C, ⌫ Backspace
           </p>
         </div>
       </div>
