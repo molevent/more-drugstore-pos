@@ -101,7 +101,7 @@ export default function ManualStockCutReportPage() {
           id,
           order_number,
           platform_id,
-          status,
+          payment_status,
           created_at,
           order_items:order_items (
             product_id,
@@ -110,7 +110,7 @@ export default function ManualStockCutReportPage() {
         `)
         .gte('created_at', `${startDate}T00:00:00.000Z`)
         .lte('created_at', `${endDate}T23:59:59.999Z`)
-        .eq('status', 'completed')
+        .eq('payment_status', 'paid')
 
       if (ordersError) throw ordersError
 
