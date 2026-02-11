@@ -402,7 +402,8 @@ export default function StockCountingPage() {
 
       if (products.length === 1) {
         addProductToCounting(products[0])
-        alert(`เพิ่มสินค้า: ${products[0].name_th}`)
+        // Removed alert - product appears in list automatically
+        // User can see the product was added from the list update
       } else {
         setSearchResults(products)
         setShowSearchResults(true)

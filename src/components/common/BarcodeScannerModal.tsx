@@ -16,11 +16,7 @@ export default function BarcodeScannerModal({ isOpen, onClose, onBarcodeDetected
   const [lastScanned, setLastScanned] = useState<string | null>(null)
   const codeReaderRef = useRef<any>(null)
   const controlsRef = useRef<any>(null)
-  const processedBarcodesRef = useRef<Set<string>>(new Set())
-  const lastProcessedTimeRef = useRef<number>(0)
-
-  // Cooldown period in milliseconds (3 seconds)
-  const COOLDOWN_MS = 3000
+  const isProcessingRef = useRef<boolean>(false)
 
   // Check camera support and permissions
   const checkCameraAvailability = useCallback(async () => {
@@ -80,30 +76,25 @@ export default function BarcodeScannerModal({ isOpen, onClose, onBarcodeDetected
         undefined, // Use default camera
         videoElement,
         (result: any, error?: any) => {
+          // Prevent processing if already handling a barcode
+          if (isProcessingRef.current) return
+          
           if (result && result.getText) {
             const barcode = result.getText()
-            const now = Date.now()
             
-            // Check if this barcode was recently processed (cooldown)
-            if (processedBarcodesRef.current.has(barcode)) {
-              const timeSinceLastProcess = now - lastProcessedTimeRef.current
-              if (timeSinceLastProcess < COOLDOWN_MS) {
-                // Skip this scan - still in cooldown
-                return
-              }
-            }
+            // Mark as processing immediately to prevent duplicates
+            isProcessingRef.current = true
             
-            // Mark this barcode as processed
-            processedBarcodesRef.current.add(barcode)
-            lastProcessedTimeRef.current = now
+            // Stop scanning immediately
+            stopScanning()
             
             setLastScanned(barcode)
             onBarcodeDetected(barcode)
-            // Auto-close after successful scan
+            
+            // Close modal after a short delay
             setTimeout(() => {
-              stopScanning()
               onClose()
-            }, 500)
+            }, 300)
           }
           if (error && error.message !== 'No MultiFormat Readers were able to detect the code.') {
             // Ignore "no code found" errors which are normal
@@ -140,9 +131,8 @@ export default function BarcodeScannerModal({ isOpen, onClose, onBarcodeDetected
   // Start/stop scanning when modal opens/closes
   useEffect(() => {
     if (isOpen) {
-      // Reset cooldown tracking when modal opens
-      processedBarcodesRef.current.clear()
-      lastProcessedTimeRef.current = 0
+      // Reset processing flag when modal opens
+      isProcessingRef.current = false
       // Small delay to ensure video element is mounted
       const timer = setTimeout(() => {
         startScanning()
