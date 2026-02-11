@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { ScanLine, Package, CheckCircle, AlertCircle, Save, Trash2, Plus, Barcode, Calculator, FileSpreadsheet, Pause, Play, Warehouse, Search, X, ChevronDown } from 'lucide-react'
+import { ScanLine, Package, CheckCircle, AlertCircle, Save, Trash2, Plus, Barcode, FileSpreadsheet, Pause, Play, Warehouse, Search, X, ChevronDown } from 'lucide-react'
 
 // Default warehouses (can be moved to database later)
 const WAREHOUSES = [
@@ -370,7 +370,7 @@ export default function StockCountingPage() {
       {/* Mode Tabs */}
       <div className="flex gap-2 mb-6">
         <Button
-          variant={viewMode === 'counting' ? 'primary' : 'outline'}
+          variant={viewMode === 'counting' ? 'primary' : 'secondary'}
           onClick={() => setViewMode('counting')}
           className="flex items-center gap-2"
         >
@@ -378,7 +378,7 @@ export default function StockCountingPage() {
           นับสต็อก
         </Button>
         <Button
-          variant={viewMode === 'sessions' ? 'primary' : 'outline'}
+          variant={viewMode === 'sessions' ? 'primary' : 'secondary'}
           onClick={() => setViewMode('sessions')}
           className="flex items-center gap-2"
         >
@@ -386,7 +386,7 @@ export default function StockCountingPage() {
           ประวัติรอบนับ
         </Button>
         <Button
-          variant={viewMode === 'report' ? 'primary' : 'outline'}
+          variant={viewMode === 'report' ? 'primary' : 'secondary'}
           onClick={() => setViewMode('report')}
           className="flex items-center gap-2"
           disabled={countingItems.length === 0}
@@ -439,7 +439,7 @@ export default function StockCountingPage() {
 
               <div className="flex items-center gap-2">
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   onClick={startNewSession}
                   className="flex items-center gap-2"
                 >
@@ -447,7 +447,7 @@ export default function StockCountingPage() {
                   เริ่มใหม่
                 </Button>
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   onClick={saveSession}
                   disabled={countingItems.length === 0}
                   className="flex items-center gap-2"
@@ -575,7 +575,7 @@ export default function StockCountingPage() {
               <h3 className="font-medium">รายการนับสต็อก ({countingItems.length} รายการ)</h3>
               {countingItems.length > 0 && (
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   onClick={exportToCSV}
                   className="flex items-center gap-2"
@@ -750,7 +750,7 @@ export default function StockCountingPage() {
                     </span>
                     {session.status !== 'completed' && (
                       <Button
-                        variant="outline"
+                        variant="secondary"
                         size="sm"
                         onClick={() => resumeSession(session)}
                         className="flex items-center gap-1"
@@ -774,7 +774,7 @@ export default function StockCountingPage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium">รายงานสรุปการนับสต็อก</h3>
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={exportToCSV}
                 className="flex items-center gap-2"
               >
@@ -883,7 +883,7 @@ export default function StockCountingPage() {
               
               <div className="flex gap-2 pt-2">
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   onClick={() => setShowNewSessionModal(false)}
                   className="flex-1"
                 >
