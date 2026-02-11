@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useCartStore, getProductPriceForChannel, SalesChannel } from '../stores/cartStore'
 import { useProductStore } from '../stores/productStore'
+import CashierClosingModal from '../components/CashierClosingModal'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Package, Receipt, AlertTriangle, History, Bell, Camera, Brain, CreditCard, Printer } from 'lucide-react'
+import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Package, Receipt, AlertTriangle, History, Bell, Camera, Brain, CreditCard, Printer, Wallet } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { Product } from '../types/database'
 import { supabase } from '../services/supabase'
@@ -109,6 +110,7 @@ export default function POSPage() {
   
   // Alert states
   const [showAlertModal, setShowAlertModal] = useState(false)
+  const [showCashierClosing, setShowCashierClosing] = useState(false)
   const [currentAlerts, setCurrentAlerts] = useState<Array<{
     type: string
     title: string
@@ -1884,15 +1886,26 @@ export default function POSPage() {
                   พิมพ์ใบเสร็จ
                 </Button>
               </div>
-              <Button
-                variant="secondary"
-                size="lg"
-                className="w-full"
-                onClick={clearCart}
-                disabled={items.length === 0}
-              >
-                ล้างตะกร้า
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  className="w-full"
+                  onClick={() => setShowCashierClosing(true)}
+                >
+                  <Wallet className="h-5 w-5 mr-2" />
+                  ปิดร้าน
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  className="w-full"
+                  onClick={clearCart}
+                  disabled={items.length === 0}
+                >
+                  ล้างตะกร้า
+                </Button>
+              </div>
             </div>
           </Card>
         </div>
@@ -2462,6 +2475,12 @@ export default function POSPage() {
           </div>
         </div>
       )}
+
+      {/* Cashier Closing Modal */}
+      <CashierClosingModal
+        isOpen={showCashierClosing}
+        onClose={() => setShowCashierClosing(false)}
+      />
     </div>
   )
 }
