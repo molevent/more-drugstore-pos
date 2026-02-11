@@ -75,11 +75,11 @@ export default function ZortOutSyncPage() {
       const { data: existing } = await supabase
         .from('orders')
         .select('id')
-        .eq('zortout_order_id', order.id)
+        .eq('zortout_order_id', String(order.id))
         .single()
       
       const orderData = {
-        zortout_order_id: order.id,
+        zortout_order_id: String(order.id),
         order_number: order.ordernumber,
         customer_name: order.customername,
         customer_phone: order.customerphone,
@@ -123,11 +123,11 @@ export default function ZortOutSyncPage() {
         const { data: existing } = await supabase
           .from('orders')
           .select('id')
-          .eq('zortout_order_id', order.id)
+          .eq('zortout_order_id', String(order.id))
           .single()
         
         const orderData = {
-          zortout_order_id: order.id,
+          zortout_order_id: String(order.id),
           order_number: order.ordernumber,
           customer_name: order.customername,
           customer_phone: order.customerphone,
@@ -180,7 +180,7 @@ export default function ZortOutSyncPage() {
           // Import new orders
           for (const order of newOrders) {
             const orderData = {
-              zortout_order_id: order.id,
+              zortout_order_id: String(order.id),
               order_number: order.ordernumber,
               customer_name: order.customername,
               customer_phone: order.customerphone,
@@ -308,11 +308,11 @@ export default function ZortOutSyncPage() {
           const { data: existing } = await supabase
             .from('orders')
             .select('id')
-            .eq('zortout_order_id', zOrder.id)
+            .eq('zortout_order_id', String(zOrder.id))
             .single()
 
           const orderData = {
-            zortout_order_id: zOrder.id,
+            zortout_order_id: String(zOrder.id),
             order_number: zOrder.ordernumber,
             customer_name: zOrder.customername,
             customer_phone: zOrder.customerphone,
