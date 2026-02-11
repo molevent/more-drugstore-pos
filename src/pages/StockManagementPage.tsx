@@ -5,7 +5,6 @@ import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import SalesChannelCSVImportModal from '../components/common/SalesChannelCSVImportModal'
 import { Package, Plus, History, Search, Edit, ExternalLink, Trash2, Tag, DollarSign, Printer, CheckSquare, Square, X, FileSpreadsheet, Barcode } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
 
 interface Product {
   id: string
