@@ -4,7 +4,7 @@ import { zortOutService } from '../services/zortout'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import SalesChannelCSVImportModal from '../components/common/SalesChannelCSVImportModal'
-import { Package, Plus, History, Search, Edit, ExternalLink, Trash2, Tag, DollarSign, Printer, CheckSquare, Square, X, FileSpreadsheet, Settings, BarChart3, ShoppingCart } from 'lucide-react'
+import { Package, Plus, History, Search, Edit, ExternalLink, Trash2, Tag, DollarSign, Printer, CheckSquare, Square, X, FileSpreadsheet } from 'lucide-react'
 
 interface Product {
   id: string
