@@ -186,6 +186,7 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
           name_th: product.name_th,
           name_en: product.name_en,
           base_price: product.base_price,
+          selling_price_incl_vat: product.base_price,
           cost_price: product.cost_price,
           stock_quantity: product.stock_quantity,
           min_stock_level: 10,
