@@ -261,12 +261,27 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
 
     for (const product of validProducts) {
       try {
-        // Check if product exists
-        const { data: existing } = await supabase
-          .from('products')
-          .select('id')
-          .or(`sku.eq.${product.sku},barcode.eq.${product.barcode}`)
-          .single()
+        // Check if product exists by SKU first
+        let existing: any = null
+        
+        if (product.sku) {
+          const { data: existingSku } = await supabase
+            .from('products')
+            .select('id')
+            .eq('sku', product.sku)
+            .single()
+          existing = existingSku
+        }
+        
+        // If not found by SKU, check barcode
+        if (!existing && product.barcode) {
+          const { data: existingBarcode } = await supabase
+            .from('products')
+            .select('id')
+            .eq('barcode', product.barcode)
+            .single()
+          existing = existingBarcode
+        }
 
         const productData: any = {
           sku: product.sku,
