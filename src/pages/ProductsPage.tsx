@@ -509,17 +509,20 @@ export default function ProductsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-      setIsSaving(true)
-      setSaveMessage(null)
+    setIsSaving(true)
+    setSaveMessage(null)
+    
     try {
       let imageUrls: string[] = [...(formData.image_urls || [])]
 
-      // Upload new images
-      for (let i = 0; i < imageFiles.length; i++) {
-        const file = imageFiles[i]
-        if (file) {
+      // Only upload images that are new File objects (not already URLs)
+      const newImageFiles = imageFiles.filter((file): file is File => file !== null)
+      
+      if (newImageFiles.length > 0) {
+        // Upload new images in parallel
+        const uploadPromises = newImageFiles.map(async (file, idx) => {
           const fileExt = file.name.split('.').pop()
-          const fileName = `${Date.now()}_${i}.${fileExt}`
+          const fileName = `${Date.now()}_${idx}.${fileExt}`
           const { error: uploadError } = await supabase.storage
             .from('products')
             .upload(fileName, file)
@@ -530,8 +533,13 @@ export default function ProductsPage() {
             .from('products')
             .getPublicUrl(fileName)
           
-          imageUrls[i] = publicUrl
-        }
+          return { index: imageFiles.indexOf(file), url: publicUrl }
+        })
+        
+        const uploadedImages = await Promise.all(uploadPromises)
+        uploadedImages.forEach(({ index, url }) => {
+          imageUrls[index] = url
+        })
       }
 
       const productData = {
@@ -1935,25 +1943,38 @@ export default function ProductsPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <LabelWithTooltip label="Selling Price (Excl. VAT)" tooltip="ราคาขายก่อนภาษี" required />
+                      <LabelWithTooltip label="Selling Price (Incl. VAT)" tooltip="ราคาขายหน้าร้าน (รวมภาษีแล้ว)" required />
                       <input
                         type="number"
                         step="0.01"
-                        value={formData.base_price}
-                        onChange={(e) => setFormData({ ...formData, base_price: parseFloat(e.target.value) || 0 })}
+                        value={formData.selling_price_incl_vat}
+                        onChange={(e) => {
+                          const sellingPriceInclVat = parseFloat(e.target.value) || 0
+                          // Auto-calculate Selling Price (Excl. VAT)
+                          const vatRate = 0.07 // 7% VAT
+                          const sellingPriceExclVat = sellingPriceInclVat / (1 + vatRate)
+                          setFormData({ 
+                            ...formData, 
+                            selling_price_incl_vat: sellingPriceInclVat,
+                            selling_price_excl_vat: parseFloat(sellingPriceExclVat.toFixed(2)),
+                            base_price: parseFloat(sellingPriceExclVat.toFixed(2))
+                          })
+                        }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required
                       />
                     </div>
                     <div>
-                      <LabelWithTooltip label="Selling Price (Incl. VAT)" tooltip="ราคาขายหน้าร้าน (รวมภาษีแล้ว)" />
+                      <LabelWithTooltip label="Selling Price (Excl. VAT)" tooltip="ราคาขายก่อนภาษี - คำนวณอัตโนมัติจากราคารวม VAT" />
                       <input
                         type="number"
                         step="0.01"
-                        value={formData.selling_price_incl_vat}
-                        onChange={(e) => setFormData({ ...formData, selling_price_incl_vat: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={formData.selling_price_excl_vat}
+                        onChange={(e) => setFormData({ ...formData, selling_price_excl_vat: parseFloat(e.target.value) || 0 })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                        readOnly
                       />
+                      <p className="text-xs text-gray-500 mt-1">คำนวณอัตโนมัติจากราคารวม VAT (หัก VAT 7%)</p>
                     </div>
                   </div>
 
