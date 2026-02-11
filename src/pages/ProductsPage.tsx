@@ -649,23 +649,24 @@ export default function ProductsPage() {
 
       console.log(`[SAVE] Data prepared in ${(performance.now() - dataStart).toFixed(0)}ms`)
       
-      console.log('[SAVE] Saving to database...')
-      const dbStart = performance.now()
-
       if (editingProduct) {
+        console.log('[SAVE] Starting UPDATE operation...')
+        const updateStart = performance.now()
         const { error } = await supabase
           .from('products')
           .update(productData)
           .eq('id', editingProduct.id)
+        console.log(`[SAVE] UPDATE completed in ${(performance.now() - updateStart).toFixed(0)}ms`)
         if (error) throw error
       } else {
+        console.log('[SAVE] Starting INSERT operation...')
+        const insertStart = performance.now()
         const { error } = await supabase
           .from('products')
           .insert([productData])
+        console.log(`[SAVE] INSERT completed in ${(performance.now() - insertStart).toFixed(0)}ms`)
         if (error) throw error
       }
-      
-      console.log(`[SAVE] Database save completed in ${(performance.now() - dbStart).toFixed(0)}ms`)
 
       alert(editingProduct ? 'บันทึกการแก้ไขสินค้าสำเร็จ!' : 'สร้างสินค้าใหม่สำเร็จ!')
       setSaveMessage({ type: 'success', text: editingProduct ? 'บันทึกการแก้ไขสินค้าสำเร็จ!' : 'สร้างสินค้าใหม่สำเร็จ!' })
