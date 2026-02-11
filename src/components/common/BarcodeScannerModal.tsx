@@ -3,17 +3,6 @@ import Card from './Card'
 import Button from './Button'
 import { Camera, X, ScanLine } from 'lucide-react'
 
-// Type declarations for ZXing
-declare module '@zxing/browser' {
-  export class BrowserMultiFormatReader {
-    decodeFromVideoDevice(
-      deviceId: string | undefined,
-      videoElement: HTMLVideoElement,
-      callback: (result: { getText(): string } | null, error?: { message: string }) => void
-    ): Promise<any>
-  }
-}
-
 interface BarcodeScannerModalProps {
   isOpen: boolean
   onClose: () => void
@@ -25,7 +14,6 @@ export default function BarcodeScannerModal({ isOpen, onClose, onBarcodeDetected
   const [isScanning, setIsScanning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lastScanned, setLastScanned] = useState<string | null>(null)
-  const [cameraPermission, setCameraPermission] = useState<'checking' | 'granted' | 'denied' | 'not-supported'>('checking')
   const codeReaderRef = useRef<any>(null)
   const controlsRef = useRef<any>(null)
 
@@ -36,7 +24,6 @@ export default function BarcodeScannerModal({ isOpen, onClose, onBarcodeDetected
     const isHttps = window.location.protocol === 'https:'
     
     if (!isLocalhost && !isHttps) {
-      setCameraPermission('not-supported')
       setError('กล้องต้องใช้ HTTPS หรือ localhost\n\nสำหรับ iPad/Mac:\n1. ใช้ http://localhost:5173 บนเครื่องนี้\n2. หรือตั้งค่า HTTPS สำหรับ local network')
       setIsScanning(false)
       return false
@@ -44,7 +31,6 @@ export default function BarcodeScannerModal({ isOpen, onClose, onBarcodeDetected
 
     // Check if mediaDevices is supported
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setCameraPermission('not-supported')
       setError('เบราว์เซอร์นี้ไม่รองรับการใช้งานกล้อง\n\nกรุณาใช้ Safari (iOS) หรือ Chrome/Edge (Mac)')
       setIsScanning(false)
       return false
@@ -54,16 +40,13 @@ export default function BarcodeScannerModal({ isOpen, onClose, onBarcodeDetected
       // Check permission
       const permission = await navigator.permissions.query({ name: 'camera' as PermissionName })
       if (permission.state === 'denied') {
-        setCameraPermission('denied')
         setError('ถูกปฏิเสธสิทธิ์ใช้กล้อง\n\nกรุณา:\n1. ไปที่ Settings > Privacy & Security > Camera\n2. อนุญาตให้เบราว์เซอร์นี้ใช้กล้อง')
         setIsScanning(false)
         return false
       }
-      setCameraPermission('granted')
       return true
     } catch {
       // Some browsers don't support permissions API for camera
-      setCameraPermission('granted')
       return true
     }
   }, [])
@@ -91,8 +74,8 @@ export default function BarcodeScannerModal({ isOpen, onClose, onBarcodeDetected
       controlsRef.current = await codeReader.decodeFromVideoDevice(
         undefined, // Use default camera
         videoElement,
-        (result: { getText(): string } | null, error?: { message: string }) => {
-          if (result) {
+        (result: any, error?: any) => {
+          if (result && result.getText) {
             const barcode = result.getText()
             setLastScanned(barcode)
             onBarcodeDetected(barcode)
