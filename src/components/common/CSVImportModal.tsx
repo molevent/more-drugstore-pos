@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react'
-import { Upload, X, FileSpreadsheet, Check, AlertCircle, Loader2 } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Upload, X, FileSpreadsheet, Check, AlertCircle, Loader2, FileText, Type } from 'lucide-react'
 import Button from './Button'
 import Card from './Card'
 import { supabase } from '../../services/supabase'
+import type { Category } from '../../types/database'
 
 interface CSVImportModalProps {
   isOpen: boolean
@@ -26,9 +27,13 @@ interface ParsedProduct {
   unit: string
   description_th: string
   category: string
+  category_id?: string
   isValid: boolean
   errors: string[]
 }
+
+// VAT rate 7% for Thailand
+const VAT_RATE = 0.07
 
 // Available column headers (flexible matching - any subset works)
 const AVAILABLE_COLUMNS = [
@@ -44,7 +49,7 @@ const AVAILABLE_COLUMNS = [
   { th: 'จำนวนคงเหลือ', en: 'stock_quantity, stock, quantity', desc: 'จำนวนสต็อกคงเหลือ' },
   { th: 'หน่วย', en: 'unit, uom', desc: 'หน่วยนับ (เช่น เม็ด, ขวด, กล่อง)' },
   { th: 'คำอธิบาย', en: 'description_th, description, desc', desc: 'คำอธิบายสินค้า' },
-  { th: 'หมวดหมู่', en: 'category, category_name', desc: 'หมวดหมู่สินค้า' },
+  { th: 'หมวดหมู่', en: 'category, category_name', desc: 'หมวดหมู่สินค้า (หมวดใหญ่หรือย่อย)' },
 ]
 
 export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImportModalProps) {
@@ -53,7 +58,47 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
   const [isParsing, setIsParsing] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
   const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null)
+  const [importMode, setImportMode] = useState<'file' | 'text'>('file')
+  const [pasteText, setPasteText] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [categories, setCategories] = useState<Category[]>([])
+
+  // Load categories on mount
+  useEffect(() => {
+    if (isOpen) {
+      fetchCategories()
+    }
+  }, [isOpen])
+
+  const fetchCategories = async () => {
+    const { data } = await supabase.from('categories').select('*').order('sort_order')
+    if (data) setCategories(data)
+  }
+
+  // Find category ID by name (matches parent or subcategory)
+  const findCategoryId = (categoryName: string): string | undefined => {
+    if (!categoryName || !categories.length) return undefined
+    
+    const normalizedName = categoryName.trim().toLowerCase()
+    
+    // First try exact match (for subcategories)
+    let match = categories.find(c => 
+      c.name_th.toLowerCase() === normalizedName || 
+      c.name_en?.toLowerCase() === normalizedName
+    )
+    
+    if (match) return match.id
+    
+    // Try partial match
+    match = categories.find(c => 
+      c.name_th.toLowerCase().includes(normalizedName) || 
+      normalizedName.includes(c.name_th.toLowerCase()) ||
+      c.name_en?.toLowerCase().includes(normalizedName)
+    )
+    
+    return match?.id
+  }
 
   const parseCSV = (csvText: string): CSVRow[] => {
     const lines = csvText.trim().split('\n')
@@ -134,9 +179,16 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
     }
 
     // Parse numbers
-    const base_price = parseFloat(priceStr) || 0
+    const selling_price_incl_vat = parseFloat(priceStr) || 0
+    // Calculate price excl. VAT: price / 1.07
+    const base_price = selling_price_incl_vat > 0 
+      ? parseFloat((selling_price_incl_vat / (1 + VAT_RATE)).toFixed(2))
+      : 0
     const cost_price = parseFloat(costStr) || 0
     const stock_quantity = parseFloat(stockStr) || 0
+
+    // Find category ID
+    const category_id = category ? findCategoryId(category) : undefined
 
     return {
       row: rowNum,
@@ -150,6 +202,7 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
       unit,
       description_th: description,
       category,
+      category_id,
       isValid: errors.length === 0,
       errors
     }
@@ -160,13 +213,23 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
     if (!selectedFile) return
 
     setFile(selectedFile)
+
+    try {
+      const text = await selectedFile.text()
+      await processCSVText(text)
+    } catch (error) {
+      console.error('Error reading file:', error)
+      alert('เกิดข้อผิดพลาดในการอ่านไฟล์')
+    }
+  }
+
+  const processCSVText = async (text: string) => {
     setIsParsing(true)
     setImportResult(null)
 
     try {
-      const text = await selectedFile.text()
       const rows = parseCSV(text)
-      const products = rows.map((row, index) => mapRowToProduct(row, index + 2)) // +2 because row 1 is header
+      const products = rows.map((row, index) => mapRowToProduct(row, index + 2))
       setParsedData(products)
     } catch (error) {
       console.error('Error parsing CSV:', error)
@@ -174,6 +237,14 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
     } finally {
       setIsParsing(false)
     }
+  }
+
+  const handlePasteImport = async () => {
+    if (!pasteText.trim()) {
+      alert('กรุณาวางข้อมูล CSV')
+      return
+    }
+    await processCSVText(pasteText)
   }
 
   const handleImport = async () => {
@@ -197,13 +268,14 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
           .or(`sku.eq.${product.sku},barcode.eq.${product.barcode}`)
           .single()
 
-        const productData = {
+        const productData: any = {
           sku: product.sku,
           barcode: product.barcode,
           name_th: product.name_th,
           name_en: product.name_en,
           base_price: product.base_price,
-          selling_price_incl_vat: product.base_price,
+          selling_price_incl_vat: product.base_price * (1 + VAT_RATE),
+          selling_price_excl_vat: product.base_price,
           cost_price: product.cost_price,
           stock_quantity: product.stock_quantity,
           min_stock_level: 10,
@@ -212,6 +284,11 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
           is_active: true,
           product_type: 'finished_goods',
           stock_tracking_type: 'tracked'
+        }
+
+        // Add category_id if found
+        if (product.category_id) {
+          productData.category_id = product.category_id
         }
 
         if (existing) {
@@ -269,8 +346,8 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
               <FileSpreadsheet className="h-5 w-5 text-green-600" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">นำเข้าสินค้าจาก CSV</h2>
-              <p className="text-sm text-gray-500">Import Products from CSV</p>
+              <h2 className="text-lg font-bold text-gray-900">นำเข้าสินค้า</h2>
+              <p className="text-sm text-gray-500">Import Products</p>
             </div>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -280,6 +357,32 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          {/* Import Mode Toggle */}
+          <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+            <button
+              onClick={() => setImportMode('file')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                importMode === 'file' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <FileText className="h-4 w-4" />
+              ไฟล์ CSV
+            </button>
+            <button
+              onClick={() => setImportMode('text')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                importMode === 'text' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Type className="h-4 w-4" />
+              วางข้อความ
+            </button>
+          </div>
+
           {/* Available Columns Info */}
           <Card className="p-4 bg-blue-50 border-blue-200">
             <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
@@ -299,43 +402,81 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
               ))}
             </div>
             <div className="mt-3 p-2 bg-yellow-50 rounded text-xs text-yellow-800">
-              <strong>หมายเหตุ:</strong> ต้องมีอย่างน้อย <strong>รหัสสินค้า</strong> หรือ <strong>บาร์โค้ด</strong> + <strong>ชื่อสินค้า</strong>
+              <strong>หมายเหตุ:</strong> ต้องมีอย่างน้อย <strong>รหัสสินค้า</strong> หรือ <strong>บาร์โค้ด</strong> + <strong>ชื่อสินค้า</strong> | ราคาขาย = รวม VAT (คำนวณราคาไม่รวม VAT อัตโนมัติ)
             </div>
           </Card>
 
           {/* File Upload */}
-          <Card className="p-4">
-            <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-8 hover:border-blue-400 transition-colors">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <Upload className="h-12 w-12 text-gray-400 mb-3" />
-              <p className="text-sm text-gray-600 mb-2">ลากไฟล์ CSV มาวางที่นี่ หรือ</p>
-              <Button
-                variant="secondary"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isParsing || isImporting}
-              >
-                เลือกไฟล์
-              </Button>
-              <p className="text-xs text-gray-400 mt-3">รองรับไฟล์ .csv เท่านั้น</p>
-            </div>
+          {importMode === 'file' && (
+            <Card className="p-4">
+              <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-8 hover:border-blue-400 transition-colors">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <Upload className="h-12 w-12 text-gray-400 mb-3" />
+                <p className="text-sm text-gray-600 mb-2">ลากไฟล์ CSV มาวางที่นี่ หรือ</p>
+                <Button
+                  variant="secondary"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isParsing || isImporting}
+                >
+                  เลือกไฟล์
+                </Button>
+                <p className="text-xs text-gray-400 mt-3">รองรับไฟล์ .csv เท่านั้น</p>
+              </div>
 
-            {/* Template Download */}
-            <div className="mt-4 pt-4 border-t">
-              <button
-                onClick={downloadTemplate}
-                className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-              >
-                <FileSpreadsheet className="h-4 w-4" />
-                ดาวน์โหลดไฟล์ตัวอย่าง (Template)
-              </button>
-            </div>
-          </Card>
+              {/* Template Download */}
+              <div className="mt-4 pt-4 border-t">
+                <button
+                  onClick={downloadTemplate}
+                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                >
+                  <FileSpreadsheet className="h-4 w-4" />
+                  ดาวน์โหลดไฟล์ตัวอย่าง (Template)
+                </button>
+              </div>
+            </Card>
+          )}
+
+          {/* Text Paste */}
+          {importMode === 'text' && (
+            <Card className="p-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                วางข้อมูล CSV (หัวคอลัมน์แถวแรก + ข้อมูลสินค้า)
+              </label>
+              <textarea
+                ref={textareaRef}
+                value={pasteText}
+                onChange={(e) => setPasteText(e.target.value)}
+                placeholder="รหัสสินค้า,ชื่อสินค้า,ราคาขาย,คำอธิบาย\nSKU001,พาราเซตามอล 500mg,35,ลดไข้\nSKU002,วิตามินซี 1000mg,45,แบบแบ่งขาย"
+                className="w-full h-48 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+              />
+              <div className="mt-3 flex justify-end">
+                <Button
+                  variant="primary"
+                  onClick={handlePasteImport}
+                  disabled={isParsing || !pasteText.trim()}
+                  className="flex items-center gap-2"
+                >
+                  {isParsing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      กำลังประมวลผล...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4" />
+                      ตรวจสอบข้อมูล
+                    </>
+                  )}
+                </Button>
+              </div>
+            </Card>
+          )}
 
           {/* Parsed Data Preview */}
           {parsedData.length > 0 && (
@@ -358,8 +499,9 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
                       <th className="px-3 py-2 text-left">#</th>
                       <th className="px-3 py-2 text-left">รหัส</th>
                       <th className="px-3 py-2 text-left">ชื่อสินค้า</th>
-                      <th className="px-3 py-2 text-right">ราคา</th>
-                      <th className="px-3 py-2 text-right">สต็อก</th>
+                      <th className="px-3 py-2 text-right">ราคา (รวม VAT)</th>
+                      <th className="px-3 py-2 text-right">ราคา (ไม่รวม VAT)</th>
+                      <th className="px-3 py-2 text-left">หมวดหมู่</th>
                       <th className="px-3 py-2 text-center">สถานะ</th>
                     </tr>
                   </thead>
@@ -372,8 +514,14 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
                           <div className="font-medium">{product.name_th}</div>
                           {product.name_en && <div className="text-xs text-gray-500">{product.name_en}</div>}
                         </td>
+                        <td className="px-3 py-2 text-right">
+                          ฿{(product.base_price * (1 + VAT_RATE)).toFixed(2)}
+                        </td>
                         <td className="px-3 py-2 text-right">฿{product.base_price.toFixed(2)}</td>
-                        <td className="px-3 py-2 text-right">{product.stock_quantity} {product.unit}</td>
+                        <td className="px-3 py-2 text-xs">
+                          {product.category}
+                          {product.category_id && <span className="text-green-600 ml-1">✓</span>}
+                        </td>
                         <td className="px-3 py-2 text-center">
                           {product.isValid ? (
                             <Check className="h-4 w-4 text-green-500 mx-auto" />
@@ -430,36 +578,37 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
           )}
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t bg-gray-50 flex justify-between items-center">
-          <div className="text-sm text-gray-500">
-            {file && <span>ไฟล์: {file.name}</span>}
-          </div>
-          <div className="flex gap-3">
-            <Button variant="secondary" onClick={onClose} disabled={isImporting}>
-              ปิด
-            </Button>
-            {parsedData.filter(p => p.isValid).length > 0 && !importResult && (
-              <Button
-                variant="primary"
-                onClick={handleImport}
-                disabled={isImporting || isParsing}
-                className="flex items-center gap-2"
-              >
-                {isImporting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    กำลังนำเข้า...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="h-4 w-4" />
-                    นำเข้า {parsedData.filter(p => p.isValid).length} รายการ
-                  </>
-                )}
+          {/* Footer */}
+          <div className="px-6 py-4 border-t bg-gray-50 flex justify-between items-center">
+            <div className="text-sm text-gray-500">
+              {file && importMode === 'file' && <span>ไฟล์: {file.name}</span>}
+              {importMode === 'text' && pasteText && <span>ข้อความ: {pasteText.split('\n').length - 1} แถว</span>}
+            </div>
+            <div className="flex gap-3">
+              <Button variant="secondary" onClick={onClose} disabled={isImporting}>
+                ปิด
               </Button>
-            )}
-          </div>
+              {parsedData.filter(p => p.isValid).length > 0 && !importResult && (
+                <Button
+                  variant="primary"
+                  onClick={handleImport}
+                  disabled={isImporting || isParsing}
+                  className="flex items-center gap-2"
+                >
+                  {isImporting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      กำลังนำเข้า...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4" />
+                      นำเข้า {parsedData.filter(p => p.isValid).length} รายการ
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
         </div>
       </div>
     </div>
