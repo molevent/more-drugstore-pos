@@ -30,6 +30,23 @@ interface ParsedProduct {
   errors: string[]
 }
 
+// Available column headers (flexible matching - any subset works)
+const AVAILABLE_COLUMNS = [
+  // Required (at least one)
+  { th: 'รหัสสินค้า', en: 'sku, code', desc: 'รหัสสินค้า (SKU)' },
+  { th: 'บาร์โค้ด', en: 'barcode, bar_code', desc: 'บาร์โค้ดสินค้า' },
+  { th: 'ชื่อสินค้า', en: 'name_th, name, product_name', desc: 'ชื่อสินค้าภาษาไทย (จำเป็น)' },
+  
+  // Optional
+  { th: 'ชื่อภาษาอังกฤษ', en: 'name_en, english_name', desc: 'ชื่อสินค้าภาษาอังกฤษ' },
+  { th: 'ราคาขาย', en: 'base_price, price, selling_price', desc: 'ราคาขาย (รวม VAT)' },
+  { th: 'ราคาทุน', en: 'cost_price, cost, purchase_price', desc: 'ราคาทุน' },
+  { th: 'จำนวนคงเหลือ', en: 'stock_quantity, stock, quantity', desc: 'จำนวนสต็อกคงเหลือ' },
+  { th: 'หน่วย', en: 'unit, uom', desc: 'หน่วยนับ (เช่น เม็ด, ขวด, กล่อง)' },
+  { th: 'คำอธิบาย', en: 'description_th, description, desc', desc: 'คำอธิบายสินค้า' },
+  { th: 'หมวดหมู่', en: 'category, category_name', desc: 'หมวดหมู่สินค้า' },
+]
+
 export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImportModalProps) {
   const [file, setFile] = useState<File | null>(null)
   const [parsedData, setParsedData] = useState<ParsedProduct[]>([])
@@ -263,6 +280,29 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          {/* Available Columns Info */}
+          <Card className="p-4 bg-blue-50 border-blue-200">
+            <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+              <FileSpreadsheet className="h-4 w-4" />
+              หัวคอลัมน์ที่รองรับ (เลือกใช้ได้ตามต้องการ)
+            </h3>
+            <p className="text-sm text-blue-700 mb-3">
+              ไฟล์ CSV ไม่จำเป็นต้องมีครบทุกคอลัมน์ แค่มีหัวข้อตรงกับตารางด้านล่างก็จะนำเข้าได้
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+              {AVAILABLE_COLUMNS.map((col, idx) => (
+                <div key={idx} className="flex flex-col bg-white rounded p-2">
+                  <span className="font-medium text-gray-900">{col.th}</span>
+                  <span className="text-xs text-gray-500">หรือ: {col.en}</span>
+                  <span className="text-xs text-blue-600">{col.desc}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 p-2 bg-yellow-50 rounded text-xs text-yellow-800">
+              <strong>หมายเหตุ:</strong> ต้องมีอย่างน้อย <strong>รหัสสินค้า</strong> หรือ <strong>บาร์โค้ด</strong> + <strong>ชื่อสินค้า</strong>
+            </div>
+          </Card>
+
           {/* File Upload */}
           <Card className="p-4">
             <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-8 hover:border-blue-400 transition-colors">
