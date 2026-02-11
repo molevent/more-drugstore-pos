@@ -509,6 +509,8 @@ export default function ProductsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    const startTime = performance.now()
+    console.log('[SAVE] Starting save process...')
     
     // Validate: at least one of name_th, sku, or barcode is required
     if (!formData.name_th.trim() && !formData.sku.trim() && !formData.barcode.trim()) {
@@ -527,6 +529,9 @@ export default function ProductsPage() {
       const newImageFiles = imageFiles.filter((file): file is File => file !== null)
       
       if (newImageFiles.length > 0) {
+        console.log(`[SAVE] Uploading ${newImageFiles.length} images...`)
+        const uploadStart = performance.now()
+        
         // Upload new images in parallel
         const uploadPromises = newImageFiles.map(async (file, idx) => {
           const fileExt = file.name.split('.').pop()
@@ -548,8 +553,12 @@ export default function ProductsPage() {
         uploadedImages.forEach(({ index, url }) => {
           imageUrls[index] = url
         })
+        console.log(`[SAVE] Images uploaded in ${(performance.now() - uploadStart).toFixed(0)}ms`)
       }
 
+      console.log('[SAVE] Preparing product data...')
+      const dataStart = performance.now()
+      
       const productData = {
         barcode: formData.barcode || '',
         sku: formData.sku || '',
@@ -638,6 +647,11 @@ export default function ProductsPage() {
         label_custom_line3: formData.label_custom_line3
       }
 
+      console.log(`[SAVE] Data prepared in ${(performance.now() - dataStart).toFixed(0)}ms`)
+      
+      console.log('[SAVE] Saving to database...')
+      const dbStart = performance.now()
+
       if (editingProduct) {
         const { error } = await supabase
           .from('products')
@@ -650,6 +664,8 @@ export default function ProductsPage() {
           .insert([productData])
         if (error) throw error
       }
+      
+      console.log(`[SAVE] Database save completed in ${(performance.now() - dbStart).toFixed(0)}ms`)
 
       alert(editingProduct ? 'บันทึกการแก้ไขสินค้าสำเร็จ!' : 'สร้างสินค้าใหม่สำเร็จ!')
       setSaveMessage({ type: 'success', text: editingProduct ? 'บันทึกการแก้ไขสินค้าสำเร็จ!' : 'สร้างสินค้าใหม่สำเร็จ!' })
@@ -657,6 +673,8 @@ export default function ProductsPage() {
       resetForm()
       // Skip fetchProducts to make save faster - user can refresh manually if needed
       // fetchProducts()
+      
+      console.log(`[SAVE] Total save time: ${(performance.now() - startTime).toFixed(0)}ms`)
     } catch (error: any) {
       console.error('Error saving product:', error)
       const errorMsg = error?.message || error?.error_description || 'ไม่สามารถบันทึกสินค้าได้ กรุณาลองใหม่อีกครั้ง'
