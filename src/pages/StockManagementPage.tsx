@@ -3,6 +3,7 @@ import { supabase } from '../services/supabase'
 import { zortOutService } from '../services/zortout'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
+import SalesChannelCSVImportModal from '../components/common/SalesChannelCSVImportModal'
 import { Package, Plus, History, Search, Edit, ExternalLink, Trash2, Tag, DollarSign, Printer, CheckSquare, Square, X, FileSpreadsheet, Settings, BarChart3, ShoppingCart, AlertTriangle, ClipboardCheck, ArrowUpCircle } from 'lucide-react'
 
 interface Product {
@@ -62,6 +63,7 @@ export default function StockManagementPage() {
   const [showAdjustModal, setShowAdjustModal] = useState(false)
   const [showBatchModal, setShowBatchModal] = useState(false)
   const [batchAction, setBatchAction] = useState<'brand' | 'cost' | 'price' | 'delete' | 'print' | null>(null)
+  const [showChannelImportModal, setShowChannelImportModal] = useState(false)
   const [batchEditData, setBatchEditData] = useState({
     brand: '',
     cost_price: 0,
@@ -511,6 +513,14 @@ export default function StockManagementPage() {
           </h1>
           <p className="text-gray-600 mt-1">ปรับยอดสต็อก, จัดการ Batch และติดตามการเคลื่อนไหว</p>
         </div>
+        <Button
+          variant="secondary"
+          onClick={() => setShowChannelImportModal(true)}
+          className="flex items-center gap-2"
+        >
+          <FileSpreadsheet className="h-4 w-4" />
+          นำเข้าช่องทางขาย
+        </Button>
       </div>
 
       {/* Search Bar */}
@@ -1149,6 +1159,15 @@ export default function StockManagementPage() {
           </Card>
         </div>
       )}
+      {/* Sales Channel Import Modal */}
+      <SalesChannelCSVImportModal
+        isOpen={showChannelImportModal}
+        onClose={() => setShowChannelImportModal(false)}
+        onSuccess={() => {
+          setShowChannelImportModal(false)
+          fetchProducts()
+        }}
+      />
     </div>
   )
 }
