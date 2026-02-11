@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { AlertTriangle, Calendar, Search, ExternalLink, Package, Filter, History } from 'lucide-react'
+import { AlertTriangle, Calendar, Search, Package, History } from 'lucide-react'
 
 interface BatchWithProduct {
   id: string

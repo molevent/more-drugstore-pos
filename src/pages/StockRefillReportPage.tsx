@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { ArrowUpCircle, ShoppingCart, ExternalLink, Package, CheckCircle, AlertTriangle, Store, RefreshCw } from 'lucide-react'
+import { ArrowUpCircle, ExternalLink, CheckCircle, AlertTriangle, Store, RefreshCw } from 'lucide-react'
 
 interface RefillItem {
   id: string

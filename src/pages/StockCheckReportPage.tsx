@@ -31,7 +31,6 @@ export default function StockCheckReportPage() {
   const [countInput, setCountInput] = useState('')
   const [checkedItems, setCheckedItems] = useState<StockCheckItem[]>([])
   const [sessions, setSessions] = useState<StockCheckSession[]>([])
-  const [currentSession, setCurrentSession] = useState<StockCheckSession | null>(null)
   const [loading, setLoading] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [sessionName, setSessionName] = useState('')
@@ -211,7 +210,6 @@ export default function StockCheckReportPage() {
       setCheckedItems([])
       setSessionName('')
       setShowSaveModal(false)
-      setCurrentSession(null)
       fetchSessions()
       setViewMode('sessions')
     } catch (error) {
