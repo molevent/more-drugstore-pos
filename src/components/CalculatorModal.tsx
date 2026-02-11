@@ -77,10 +77,19 @@ export default function CalculatorModal({ isOpen, onClose }: CalculatorModalProp
 
   const handlePercentage = useCallback(() => {
     const current = parseFloat(display)
-    const result = current / 100
+    let result: number
+    
+    if (previousValue !== null && operation) {
+      // Calculate percentage of previous value: 200 - 20% = 200 - 40 = 160
+      result = previousValue * (current / 100)
+    } else {
+      // Just convert to percentage: 20% = 0.2
+      result = current / 100
+    }
+    
     setDisplay(result.toString())
     setShouldResetDisplay(true)
-  }, [display])
+  }, [display, previousValue, operation])
 
   // Keyboard support
   useEffect(() => {
