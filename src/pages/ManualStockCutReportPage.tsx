@@ -33,11 +33,18 @@ interface ConflictItem {
 
 const CHANNEL_RULES: Record<string, string[]> = {
   'pos': ['grab', 'lineman'],
+  'walkin': ['grab', 'lineman'],
+  'WALKIN': ['grab', 'lineman'],
   'grab': ['lineman'],
+  'GRAB': ['lineman'],
   'lineman': ['grab'],
+  'LINEMAN': ['grab'],
   'lazada': ['grab', 'lineman'],
+  'LAZADA': ['grab', 'lineman'],
   'line_shopping': ['grab', 'lineman'],
-  'shopee': ['grab', 'lineman']
+  'lineshopping': ['grab', 'lineman'],
+  'shopee': ['grab', 'lineman'],
+  'SHOPEE': ['grab', 'lineman']
 }
 
 const CHANNEL_LABELS: Record<string, string> = {
@@ -77,13 +84,23 @@ export default function ManualStockCutReportPage() {
   const checkStockConflicts = async () => {
     setLoading(true)
     try {
-      // Get orders within date range with their items
+      // Get all platforms first
+      const { data: platforms, error: platformsError } = await supabase
+        .from('platforms')
+        .select('id, code, name')
+      
+      if (platformsError) throw platformsError
+
+      // Create platform code map
+      const platformCodeMap = new Map(platforms?.map(p => [p.id, p.code?.toLowerCase() || '']) || [])
+
+      // Get orders within date range with their items and platform info
       const { data: orders, error: ordersError } = await supabase
         .from('orders')
         .select(`
           id,
           order_number,
-          sales_channel,
+          platform_id,
           status,
           created_at,
           order_items:order_items (
@@ -109,7 +126,8 @@ export default function ManualStockCutReportPage() {
 
       // Check each order for conflicts
       orders?.forEach((order: any) => {
-        const soldChannel = order.sales_channel?.toLowerCase() || 'pos'
+        const platformCode = platformCodeMap.get(order.platform_id) || 'walkin'
+        const soldChannel = platformCode === 'walkin' ? 'pos' : platformCode
         const conflictChannels = CHANNEL_RULES[soldChannel] || []
 
         if (!conflictChannels || conflictChannels.length === 0) return
