@@ -6,6 +6,7 @@ import Card from '../components/common/Card'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import { LabelWithTooltip } from '../components/common/Tooltip'
+import CSVImportModal from '../components/common/CSVImportModal'
 import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft, Printer, ExternalLink, ArrowLeft, Bell, LayoutDashboard, Fingerprint, FolderTree, DollarSign, Boxes, Image, Radio, AlertTriangle } from 'lucide-react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import type { Product, Category } from '../types/database'
@@ -227,6 +228,7 @@ export default function ProductsPage() {
   const [showCategoryTable, setShowCategoryTable] = useState(true)
   const [formData, setFormData] = useState<ProductFormData>(initialFormData)
   const [showSearchModal, setShowSearchModal] = useState(false)
+  const [showCSVModal, setShowCSVModal] = useState(false)
   const [searchFilters, setSearchFilters] = useState({
     barcode: '',
     sku: '',
@@ -629,6 +631,14 @@ export default function ProductsPage() {
           </h1>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => setShowCSVModal(true)}
+            className="flex items-center gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            นำเข้า CSV
+          </Button>
           <Link 
             to="/stock-management"
             className="flex items-center gap-2 px-4 py-2 bg-[#F5F0E6] rounded-full border border-[#B8C9B8] hover:bg-[#E8EBF0] hover:shadow-md transition-all"
@@ -3229,6 +3239,16 @@ export default function ProductsPage() {
           </div>
         </div>
       )}
+
+      {/* CSV Import Modal */}
+      <CSVImportModal
+        isOpen={showCSVModal}
+        onClose={() => setShowCSVModal(false)}
+        onSuccess={() => {
+          setShowCSVModal(false)
+          fetchProducts()
+        }}
+      />
 
     </div>
   )
