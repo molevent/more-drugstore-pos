@@ -106,24 +106,57 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
     
     if (lines.length === 0) return []
 
-    // Parse header
-    const headerLine = lines[0]
-    const headers = parseCSVLine(headerLine)
+    // Parse header handling multiline quoted fields
+    let headerLine = ''
+    let inHeaderQuotes = false
+    let headerLines: string[] = []
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      
+      // Check quotes in this line
+      for (let j = 0; j < line.length; j++) {
+        const char = line[j]
+        if (char === '"') {
+          if (inHeaderQuotes && line[j + 1] === '"') {
+            j++
+          } else {
+            inHeaderQuotes = !inHeaderQuotes
+          }
+        }
+      }
+      
+      if (headerLine) {
+        headerLine += '\n' + line
+      } else {
+        headerLine = line
+      }
+      
+      if (!inHeaderQuotes) {
+        headerLines = parseCSVLine(headerLine)
+        break
+      }
+    }
+    
+    if (headerLines.length === 0) return []
+    
+    // Clean header names (remove newlines and quotes)
+    const headers = headerLines.map(h => h.replace(/\n/g, '').replace(/"/g, '').trim())
 
     // Parse data rows handling multiline quoted fields
     let currentLine = ''
     let inQuotes = false
+    let dataStartIndex = headerLine.split('\n').length
     
-    for (let i = 1; i < lines.length; i++) {
+    for (let i = dataStartIndex; i < lines.length; i++) {
       const line = lines[i]
       
       // Check if we're inside quotes
       for (let j = 0; j < line.length; j++) {
         const char = line[j]
         if (char === '"') {
-          // Check for escaped quotes
           if (inQuotes && line[j + 1] === '"') {
-            j++ // Skip next quote
+            j++
           } else {
             inQuotes = !inQuotes
           }
@@ -141,7 +174,8 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
         const values = parseCSVLine(currentLine)
         const row: CSVRow = {}
         headers.forEach((header, index) => {
-          row[header.trim()] = values[index]?.trim() || ''
+          const cleanHeader = header.trim().toLowerCase()
+          row[cleanHeader] = values[index]?.trim() || ''
         })
         rows.push(row)
         currentLine = ''
@@ -153,7 +187,8 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
       const values = parseCSVLine(currentLine)
       const row: CSVRow = {}
       headers.forEach((header, index) => {
-        row[header.trim()] = values[index]?.trim() || ''
+        const cleanHeader = header.trim().toLowerCase()
+        row[cleanHeader] = values[index]?.trim() || ''
       })
       rows.push(row)
     }
@@ -189,21 +224,22 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
   const mapRowToProduct = (row: CSVRow, rowNum: number): ParsedProduct => {
     const errors: string[] = []
     
-    // Find column values (case-insensitive)
+    // Find column values from normalized lowercase headers
     const getValue = (...possibleKeys: string[]): string => {
       for (const key of possibleKeys) {
-        const value = row[key] || row[key.toLowerCase()] || row[key.toUpperCase()]
+        // Try exact match first (now headers are stored as lowercase)
+        const value = row[key.toLowerCase()]
         if (value) return value
       }
       return ''
     }
 
-    // Get Thai column mappings
+    // Get Thai column mappings - also check simplified names (after removing newlines)
     const sku = getValue('รหัสสินค้า', 'sku', 'code')
     const barcode = getValue('บาร์โค้ด', 'barcode', 'bar_code')
     const name_th = getValue('ชื่อสินค้า', 'name_th', 'name', 'product_name')
     const name_en = getValue('ชื่อภาษาอังกฤษ', 'name_en', 'english_name')
-    const priceStr = getValue('ราคาขาย', 'base_price', 'price', 'selling_price')
+    const priceStr = getValue('ราคาขาย', 'ราคา', 'base_price', 'price', 'selling_price')
     const costStr = getValue('ราคาทุน', 'cost_price', 'cost', 'purchase_price')
     const stockStr = getValue('จำนวนคงเหลือ', 'stock_quantity', 'stock', 'quantity')
     const unit = getValue('หน่วย', 'unit', 'uom') || 'ชิ้น'
