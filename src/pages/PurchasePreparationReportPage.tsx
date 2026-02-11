@@ -72,7 +72,29 @@ export default function PurchasePreparationReportPage() {
   const fetchProducts = async () => {
     setLoading(true)
     try {
-      // Fetch products with stock issues
+      // STEP 1: Fetch stock movements for the selected date to find products with sales
+      const startOfDay = `${selectedDate}T00:00:00.000Z`
+      const endOfDay = `${selectedDate}T23:59:59.999Z`
+      
+      const { data: movementsData, error: movementsError } = await supabase
+        .from('stock_movements')
+        .select('*')
+        .gte('movement_date', startOfDay)
+        .lte('movement_date', endOfDay)
+        .order('movement_date', { ascending: false })
+
+      if (movementsError) throw movementsError
+
+      // Get unique product IDs from movements
+      const productIdsWithMovement = [...new Set(movementsData?.map(m => m.product_id) || [])]
+
+      if (productIdsWithMovement.length === 0) {
+        setProducts([])
+        setLoading(false)
+        return
+      }
+
+      // STEP 2: Fetch only those products that had movements
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select(`
@@ -90,28 +112,20 @@ export default function PurchasePreparationReportPage() {
           last_restocked_at,
           is_hidden_from_purchase_report
         `)
+        .in('id', productIdsWithMovement)
         .eq('is_active', true)
-        .or(`stock_quantity.eq.0,stock_quantity.lte.${'reorder_point'}`)
-        .order('name_th')
 
       if (productsError) throw productsError
 
-      // Fetch stock movements for the selected date
-      const startOfDay = `${selectedDate}T00:00:00.000Z`
-      const endOfDay = `${selectedDate}T23:59:59.999Z`
-      
-      const { data: movementsData, error: movementsError } = await supabase
-        .from('stock_movements')
-        .select('*')
-        .gte('movement_date', startOfDay)
-        .lte('movement_date', endOfDay)
-        .order('movement_date', { ascending: false })
+      // STEP 3: Filter only products with stock issues (stock <= 0)
+      const productsWithStockIssues = productsData?.filter(p => {
+        // Show if stock is 0 or negative only
+        return p.stock_quantity <= 0
+      }) || []
 
-      if (movementsError) throw movementsError
-
-      // Calculate days since last restock
+      // STEP 4: Calculate days since last restock and attach movements
       const now = new Date()
-      const productsWithData = productsData?.map(product => {
+      const productsWithData = productsWithStockIssues.map(product => {
         const productMovements = movementsData?.filter(m => m.product_id === product.id) || []
         const totalSold = productMovements
           .filter(m => m.movement_type === 'sale' || m.quantity < 0)
@@ -129,7 +143,7 @@ export default function PurchasePreparationReportPage() {
           totalSold,
           daysSinceLastRestock
         }
-      }) || []
+      })
 
       setProducts(productsWithData)
     } catch (error) {
