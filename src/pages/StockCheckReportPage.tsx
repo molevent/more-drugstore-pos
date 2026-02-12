@@ -67,7 +67,9 @@ export default function StockCheckReportPage() {
     }
   }
 
-  const handleScan = async () => {
+  const handleScan = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+    
     // Timestamp-based debounce: prevent scan within 500ms of last scan
     const now = Date.now()
     if (!scanInput.trim() || isScanningRef.current || (now - lastScanTimeRef.current < 500)) {
@@ -342,7 +344,7 @@ export default function StockCheckReportPage() {
                   <Barcode className="h-4 w-4 inline mr-1" />
                   สแกนบาร์โค้ด / รหัสสินค้า
                 </label>
-                <form onSubmit={(e) => { e.preventDefault(); handleScan(); }}>
+                <form onSubmit={handleScan}>
                   <input
                     ref={scanInputRef}
                     type="text"
