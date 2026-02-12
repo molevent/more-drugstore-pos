@@ -90,7 +90,7 @@ export default function StockManagementPage() {
     productName: '',
     quantity: 0,
     unitCost: 0,
-    movementDate: new Date().toISOString().split('T')[0],
+    movementDate: '2025-12-31',
     notes: ''
   })
   const [openingBalanceSearchTerm, setOpeningBalanceSearchTerm] = useState('')
@@ -842,7 +842,7 @@ export default function StockManagementPage() {
                           productName: selectedProduct.name_th,
                           quantity: 0,
                           unitCost: 0,
-                          movementDate: new Date().toISOString().split('T')[0],
+                          movementDate: '2025-12-31',
                           notes: ''
                         })
                         setOpeningBalanceSearchTerm(selectedProduct.name_th)
@@ -1429,7 +1429,7 @@ export default function StockManagementPage() {
                     productName: '',
                     quantity: 0,
                     unitCost: 0,
-                    movementDate: new Date().toISOString().split('T')[0],
+                    movementDate: '2025-12-31',
                     notes: ''
                   })
                   setOpeningBalanceSearchTerm('')
