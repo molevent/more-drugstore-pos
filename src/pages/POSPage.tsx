@@ -153,6 +153,7 @@ export default function POSPage() {
   // Payment methods states
   const [paymentMethods, setPaymentMethods] = useState<Array<{id: string; name: string; is_active: boolean}>>([])
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('')
+  const [cashReceived, setCashReceived] = useState<string>('')
 
   // Default payment method mapping for each sales channel
   const [channelPaymentMap, setChannelPaymentMap] = useState<Record<string, string>>(() => {
@@ -883,6 +884,7 @@ export default function POSPage() {
         }
         
         clearCart()
+        setCashReceived('')
         setSalesChannel('walk-in')
       } catch (err) {
         console.error('Exception during checkout:', err)
@@ -910,6 +912,7 @@ export default function POSPage() {
       fetchAlertLogs()
       
       clearCart()
+      setCashReceived('')
       setSalesChannel('walk-in')
       setCurrentAlerts([])
     }
@@ -1835,6 +1838,45 @@ export default function POSPage() {
             </div>
 
             <div className="space-y-3 mb-6">
+              {/* Cash Payment Input - Show when cash is selected */}
+              {(() => {
+                const selectedMethod = paymentMethods.find(m => m.id === selectedPaymentMethod)
+                if (selectedMethod?.name === 'เงินสด' || selectedMethod?.name === 'Cash') {
+                  const total = getTotal()
+                  const received = parseFloat(cashReceived) || 0
+                  const change = received - total
+                  return (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
+                      <label className="block text-sm font-medium text-green-800 mb-2">
+                        <Wallet className="h-4 w-4 inline mr-1" />
+                        เงินที่ลูกค้าให้
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-green-700 font-medium">฿</span>
+                        <input
+                          type="number"
+                          value={cashReceived}
+                          onChange={(e) => setCashReceived(e.target.value)}
+                          placeholder="0.00"
+                          className="flex-1 px-3 py-2 border border-green-300 rounded-lg text-lg font-medium text-green-900 focus:outline-none focus:ring-2 focus:ring-green-500"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                      {received > 0 && (
+                        <div className={`mt-2 pt-2 border-t border-green-200 flex justify-between items-center ${change >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                          <span className="text-sm font-medium">เงินทอน:</span>
+                          <span className="text-xl font-bold">
+                            {change >= 0 ? `฿${change.toFixed(2)}` : `ขาด ฿${Math.abs(change).toFixed(2)}`}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                }
+                return null
+              })()}
+
               <div className="flex justify-between text-gray-600">
                 <span>ยอดรวม</span>
                 <span>฿{getSubtotal().toFixed(2)}</span>
