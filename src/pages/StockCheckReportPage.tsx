@@ -39,6 +39,7 @@ export default function StockCheckReportPage() {
 
   const scanInputRef = useRef<HTMLInputElement>(null)
   const countInputRef = useRef<HTMLInputElement>(null)
+  const isScanningRef = useRef(false)
 
   useEffect(() => {
     fetchSessions()
@@ -66,8 +67,9 @@ export default function StockCheckReportPage() {
   }
 
   const handleScan = async () => {
-    if (!scanInput.trim()) return
+    if (!scanInput.trim() || isScanningRef.current) return
 
+    isScanningRef.current = true
     setLoading(true)
     try {
       // Find product by barcode or SKU
@@ -144,6 +146,10 @@ export default function StockCheckReportPage() {
       alert('เกิดข้อผิดพลาดในการค้นหาสินค้า')
     } finally {
       setLoading(false)
+      // Clear scanning flag after a short delay to prevent double triggers
+      setTimeout(() => {
+        isScanningRef.current = false
+      }, 300)
     }
   }
 
