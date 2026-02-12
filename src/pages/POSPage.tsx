@@ -1420,6 +1420,13 @@ export default function POSPage() {
           <Calculator className="h-5 w-5 text-black flex-shrink-0" />
           <span className="font-medium text-gray-900 text-sm whitespace-nowrap">เครื่องคิดเลข</span>
         </button>
+        <button
+          onClick={clearCart}
+          className="flex items-center gap-2 px-3 py-2 bg-red-50 rounded-full border border-red-200 hover:bg-red-100 hover:shadow-md transition-all"
+        >
+          <Trash2 className="h-5 w-5 text-red-600 flex-shrink-0" />
+          <span className="font-medium text-red-700 text-sm whitespace-nowrap">ล้าง</span>
+        </button>
       </div>
 
       {/* Held Bills Section - Only show when there are held bills */}
@@ -1607,121 +1614,113 @@ export default function POSPage() {
                   <p className="text-xs text-gray-600/70 mt-1">สแกนบาร์โค้ดเพื่อเพิ่มสินค้า</p>
                 </div>
               ) : (
-                items.map((item) => (
-                  <div
-                    key={item.product.id}
-                    className="flex items-center gap-3 p-4 bg-white rounded-2xl shadow-sm border border-[#B8C9B8]/30 hover:shadow-md transition-shadow"
-                  >
-                    {/* Product Image */}
-                    {item.product.image_url ? (
-                      <img
-                        src={item.product.image_url}
-                        alt={item.product.name_th}
-                        className="h-14 w-14 object-cover rounded-lg border border-[#B8C9B8]/30 flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="h-14 w-14 bg-[#F5F0E6] rounded-lg border border-[#B8C9B8]/30 flex items-center justify-center flex-shrink-0">
-                        <Package className="h-6 w-6 text-[#B8C9B8]" />
-                      </div>
-                    )}
-                    
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-gray-900 truncate">
-                        {item.custom_price === 0 ? (
-                          <span className="text-orange-500">🎁 ของแถม:</span>
-                        ) : null}
-                        {item.product.name_th}
-                      </h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-sm text-gray-600">ราคา:</span>
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          value={item.custom_price ?? getProductPriceForChannel(item.product, salesChannel as SalesChannel)}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            // Allow empty value for easier editing
-                            if (value === '') {
-                              updateCustomPrice(item.product.id, 0)
-                              return
-                            }
-                            const numValue = parseFloat(value)
-                            if (!isNaN(numValue) && numValue >= 0) {
-                              updateCustomPrice(item.product.id, numValue)
-                            }
-                          }}
-                          className="w-24 text-sm h-6 py-0 border-[#B8C9B8]/50"
+                <>
+                  {items.map((item) => (
+                    <div
+                      key={item.product.id}
+                      className="flex items-center gap-3 p-4 bg-white rounded-2xl shadow-sm border border-[#B8C9B8]/30 hover:shadow-md transition-shadow"
+                    >
+                      {/* Product Image */}
+                      {item.product.image_url ? (
+                        <img
+                          src={item.product.image_url}
+                          alt={item.product.name_th}
+                          className="h-14 w-14 object-cover rounded-lg border border-[#B8C9B8]/30 flex-shrink-0"
                         />
-                        {item.custom_price !== undefined && item.custom_price !== null && (
-                          <span className="text-xs text-[#D4756A]">(แก้ไข)</span>
-                        )}
+                      ) : (
+                        <div className="h-14 w-14 bg-[#F5F0E6] rounded-lg border border-[#B8C9B8]/30 flex items-center justify-center flex-shrink-0">
+                          <Package className="h-6 w-6 text-[#B8C9B8]" />
+                        </div>
+                      )}
+                      
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-gray-900 truncate">
+                          {item.custom_price === 0 ? (
+                            <span className="text-orange-500">🎁 ของแถม:</span>
+                          ) : null}
+                          {item.product.name_th}
+                        </h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-sm text-gray-600">ราคา:</span>
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            value={item.custom_price ?? getProductPriceForChannel(item.product, salesChannel as SalesChannel)}
+                            onChange={(e) => {
+                              const value = e.target.value
+                              // Allow empty value for easier editing
+                              if (value === '') {
+                                updateCustomPrice(item.product.id, 0)
+                                return
+                              }
+                              const numValue = parseFloat(value)
+                              if (!isNaN(numValue) && numValue >= 0) {
+                                updateCustomPrice(item.product.id, numValue)
+                              }
+                            }}
+                            className="w-24 text-sm h-6 py-0 border-[#B8C9B8]/50"
+                          />
+                          {item.custom_price !== undefined && item.custom_price !== null && (
+                            <span className="text-xs text-[#D4756A]">(แก้ไข)</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-600/60 line-through">
+                          ราคาปกติ: ฿{getProductPriceForChannel(item.product, salesChannel as SalesChannel).toFixed(2)}
+                        </p>
                       </div>
-                      <p className="text-xs text-gray-600/60 line-through">
-                        ราคาปกติ: ฿{getProductPriceForChannel(item.product, salesChannel as SalesChannel).toFixed(2)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {/* Quantity Input Group with integrated -/+ buttons */}
-                      <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden h-8">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (item.quantity > 1) {
-                              updateQuantity(item.product.id, item.quantity - 1)
-                            }
-                          }}
-                          className="h-full px-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors border-r border-gray-300"
+                      <div className="flex items-center gap-2">
+                        {/* Quantity Input Group with integrated -/+ buttons */}
+                        <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden h-8">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (item.quantity > 1) {
+                                updateQuantity(item.product.id, item.quantity - 1)
+                              }
+                            }}
+                            className="h-full px-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors border-r border-gray-300"
+                          >
+                            −
+                          </button>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={item.quantity}
+                            onChange={(e) => {
+                              const value = e.target.value
+                              if (value === '') {
+                                updateQuantity(item.product.id, 1)
+                                return
+                              }
+                              const numValue = parseInt(value)
+                              if (!isNaN(numValue) && numValue >= 1) {
+                                updateQuantity(item.product.id, numValue)
+                              }
+                            }}
+                            className="w-12 text-center h-full border-none focus:outline-none focus:ring-0 text-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                            className="h-full px-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors border-l border-gray-300"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <span className="font-medium text-gray-900 w-20 text-right">
+                          ฿{((item.custom_price ?? getProductPriceForChannel(item.product, salesChannel as SalesChannel)) * item.quantity).toFixed(2)}
+                        </span>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => removeItem(item.product.id)}
                         >
-                          −
-                        </button>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          value={item.quantity}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            if (value === '') {
-                              updateQuantity(item.product.id, 1)
-                              return
-                            }
-                            const numValue = parseInt(value)
-                            if (!isNaN(numValue) && numValue >= 1) {
-                              updateQuantity(item.product.id, numValue)
-                            }
-                          }}
-                          className="w-12 text-center h-full border-none focus:outline-none focus:ring-0 text-sm"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                          className="h-full px-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors border-l border-gray-300"
-                        >
-                          +
-                        </button>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <span className="font-medium text-gray-900 w-20 text-right">
-                        ฿{((item.custom_price ?? getProductPriceForChannel(item.product, salesChannel as SalesChannel)) * item.quantity).toFixed(2)}
-                      </span>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => removeItem(item.product.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
-                  </div>
-                ))}
-                {/* Clear Cart Button - Under last item */}
-                <div className="flex justify-center mt-4">
-                  <button
-                    onClick={clearCart}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-200"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    ล้างตะกร้า
-                  </button>
-                </div>
+                  ))}
+                </>
               )}
             </div>
           </Card>
