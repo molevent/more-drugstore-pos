@@ -70,12 +70,19 @@ export default function StockCheckReportPage() {
   const handleScan = async (e?: React.FormEvent) => {
     e?.preventDefault()
     
-    // Timestamp-based debounce: prevent scan within 500ms of last scan
+    // Timestamp-based debounce: prevent scan within 1000ms of last scan
     const now = Date.now()
-    if (!scanInput.trim() || isScanningRef.current || (now - lastScanTimeRef.current < 500)) {
+    if (!scanInput.trim() || isScanningRef.current || (now - lastScanTimeRef.current < 1000)) {
+      console.log('Scan blocked:', { scanInput, isScanning: isScanningRef.current, timeSinceLast: now - lastScanTimeRef.current })
       return
     }
 
+    console.log('Processing scan:', scanInput)
+    const currentBarcode = scanInput.trim()
+    
+    // Clear input immediately to prevent duplicate processing
+    setScanInput('')
+    
     lastScanTimeRef.current = now
     isScanningRef.current = true
     setLoading(true)
@@ -84,14 +91,13 @@ export default function StockCheckReportPage() {
       const { data: products, error } = await supabase
         .from('products')
         .select('id, barcode, sku, name_th, unit_of_measure, stock_quantity, cost_price')
-        .or(`barcode.eq.${scanInput},sku.eq.${scanInput}`)
+        .or(`barcode.eq.${currentBarcode},sku.eq.${currentBarcode}`)
         .limit(1)
 
       if (error) throw error
 
       if (!products || products.length === 0) {
         alert('ไม่พบสินค้าในระบบ')
-        setScanInput('')
         return
       }
 
@@ -146,7 +152,6 @@ export default function StockCheckReportPage() {
         }, 500)
       }
 
-      setScanInput('')
       // Focus count input after scan
       setTimeout(() => countInputRef.current?.focus(), 100)
     } catch (error) {
