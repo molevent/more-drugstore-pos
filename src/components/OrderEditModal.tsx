@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { X, Trash2, Save, Search } from 'lucide-react'
 import { supabase } from '../services/supabase'
 
@@ -28,6 +28,7 @@ interface OrderEditModalProps {
 
 export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditModalProps) {
   const [order, setOrder] = useState<any>(null)
+  const [platformName, setPlatformName] = useState<string>('')
   const [items, setItems] = useState<OrderItem[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -36,8 +37,13 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
   const [showSearch, setShowSearch] = useState(false)
   const [paymentMethods, setPaymentMethods] = useState<Array<{id: string; name: string}>>([])
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('')
+  const hasLoadedRef = useRef(false)
 
   useEffect(() => {
+    // Prevent double loading in StrictMode
+    if (hasLoadedRef.current) return
+    hasLoadedRef.current = true
+    
     loadOrderData()
     fetchPaymentMethods()
   }, [orderId])
@@ -69,17 +75,50 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
       setOrder(orderData)
       setSelectedPaymentMethod(orderData?.payment_method || '')
       
-      // Format items for editing
-      const formattedItems = itemsData?.map((item: any) => ({
-        id: item.id,
-        product_id: item.product_id,
-        product_name: item.product_name || item.product?.name_th || 'สินค้า',
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        discount: item.discount || 0,
-        total_price: item.total_price
-      })) || []
+      // Fetch platform name if platform_id exists
+      if (orderData?.platform_id) {
+        const { data: platformData } = await supabase
+          .from('platforms')
+          .select('name')
+          .eq('id', orderData.platform_id)
+          .single()
+        if (platformData) {
+          // Map platform names for display consistency
+          const nameMap: Record<string, string> = {
+            'Walk-in (ร้าน)': 'หน้าร้าน',
+            'WALKIN': 'หน้าร้าน',
+            'walk-in': 'หน้าร้าน'
+          }
+          setPlatformName(nameMap[platformData.name] || platformData.name)
+        }
+      }
       
+      // Format items for editing - merge duplicates by product_id only
+      // (combines free gifts and paid items of same product)
+      const itemMap = new Map<string, any>()
+      itemsData?.forEach((item: any) => {
+        const key = item.product_id
+        if (itemMap.has(key)) {
+          // Merge with existing item
+          const existing = itemMap.get(key)
+          existing.quantity += item.quantity
+          existing.total_price += item.total_price
+          existing.discount = (existing.discount || 0) + (item.discount || 0)
+        } else {
+          // Create new entry
+          itemMap.set(key, {
+            id: item.id,
+            product_id: item.product_id,
+            product_name: item.product_name || item.product?.name_th || 'สินค้า',
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            discount: item.discount || 0,
+            total_price: item.total_price
+          })
+        }
+      })
+      
+      const formattedItems = Array.from(itemMap.values())
       setItems(formattedItems)
     } catch (err: any) {
       // Ignore AbortError (component unmounted or request cancelled)
@@ -192,6 +231,7 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
     }
 
     try {
+      if (saving) return // Prevent double submission
       setSaving(true)
       
       const { subtotal, discount, total } = calculateTotals()
@@ -211,12 +251,19 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
       if (orderError) throw orderError
       
       // Delete old items
-      const { error: deleteError } = await supabase
+      console.log('Deleting old items for order:', orderId)
+      const { error: deleteError, data: deleteData } = await supabase
         .from('order_items')
         .delete()
         .eq('order_id', orderId)
+        .select()
       
-      if (deleteError) throw deleteError
+      console.log('Delete result:', deleteData)
+      
+      if (deleteError) {
+        console.error('Error deleting old items:', deleteError)
+        throw deleteError
+      }
       
       // Insert new items
       const orderItems = items.map(item => ({
@@ -229,9 +276,14 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
         total_price: item.total_price
       }))
       
-      const { error: insertError } = await supabase
+      console.log('Inserting new items:', orderItems)
+      
+      const { error: insertError, data: insertData } = await supabase
         .from('order_items')
         .insert(orderItems)
+        .select()
+      
+      console.log('Insert result:', insertData)
       
       if (insertError) throw insertError
       
@@ -280,14 +332,17 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
             <p className="text-sm text-gray-500 mt-1">
               ลูกค้า: {order?.customer_name || '-'}
             </p>
+            <p className="text-sm text-gray-500">
+              ช่องทางการขาย: {platformName || '-'}
+            </p>
             <div className="mt-2">
-              <label className="text-sm text-gray-600">ช่องทางการชำระเงิน:</label>
+              <label className="text-sm text-gray-600">วิธีชำระเงิน:</label>
               <select
                 value={selectedPaymentMethod}
                 onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                className="ml-2 px-3 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="ml-2 px-3 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
               >
-                <option value="">-- เลือกช่องทาง --</option>
+                <option value="">-- เลือกวิธีชำระ --</option>
                 {paymentMethods.map((method) => (
                   <option key={method.id} value={method.name}>
                     {method.name}
@@ -388,29 +443,23 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
                       />
                     </td>
                     <td className="px-4 py-3">
-                      {item.unit_price === 0 ? (
-                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-orange-600 bg-orange-50 rounded">
-                          🎁 ของแถม
-                        </span>
-                      ) : (
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          value={item.unit_price}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            if (value === '') {
-                              updateItemPrice(index, 0)
-                              return
-                            }
-                            const numValue = parseFloat(value)
-                            if (!isNaN(numValue) && numValue >= 0) {
-                              updateItemPrice(index, numValue)
-                            }
-                          }}
-                          className="w-full px-2 py-1 text-right border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      )}
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={item.unit_price}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          if (value === '') {
+                            updateItemPrice(index, 0)
+                            return
+                          }
+                          const numValue = parseFloat(value)
+                          if (!isNaN(numValue) && numValue >= 0) {
+                            updateItemPrice(index, numValue)
+                          }
+                        }}
+                        className="w-full px-2 py-1 text-right border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
                     </td>
                     <td className="px-4 py-3">
                       <input

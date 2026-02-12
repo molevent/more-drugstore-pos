@@ -240,9 +240,24 @@ export default function SalesOrdersPage() {
         console.error('Error fetching order items:', itemsError)
       }
 
+      // Merge duplicate items by product_id
+      const itemMap = new Map<string, any>()
+      items?.forEach((item: any) => {
+        const key = item.product_id
+        if (itemMap.has(key)) {
+          const existing = itemMap.get(key)
+          existing.quantity += item.quantity
+          existing.total_price += item.total_price
+          existing.discount = (existing.discount || 0) + (item.discount || 0)
+        } else {
+          itemMap.set(key, { ...item })
+        }
+      })
+      const mergedItems = Array.from(itemMap.values())
+
       setSelectedOrder({
         ...order,
-        order_items: items || []
+        order_items: mergedItems || []
       })
       setShowDetailModal(true)
     } catch (err: any) {
@@ -605,14 +620,21 @@ export default function SalesOrdersPage() {
         </div>
       )}
 
-      {/* Order Edit Modal */}
+      {/* Order Edit Modal - Add key to force remount */}
       {editingOrderId && (
         <OrderEditModal
+          key={editingOrderId}
           orderId={editingOrderId}
           onClose={() => setEditingOrderId(null)}
-          onSave={() => {
+          onSave={async () => {
             setEditingOrderId(null)
-            fetchOrders() // Refresh orders list
+            await fetchOrders() // Refresh orders list
+            // Also refresh order detail if it's showing the edited order
+            if (showDetailModal && selectedOrder?.id === editingOrderId) {
+              // Clear first then refetch to ensure fresh data
+              setSelectedOrder(null)
+              setTimeout(() => handleViewOrder(editingOrderId), 500)
+            }
           }}
         />
       )}

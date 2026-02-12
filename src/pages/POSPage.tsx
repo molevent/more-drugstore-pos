@@ -742,15 +742,18 @@ export default function POSPage() {
             .eq('order_id', editOrderId)
 
           // Insert new order items
-          const orderItems = items.map(item => ({
-            order_id: editOrderId,
-            product_id: item.product.id,
-            product_name: item.product.name_th,
-            quantity: item.quantity,
-            unit_price: item.product.base_price,
-            discount: item.discount || 0,
-            total_price: item.product.base_price * item.quantity - (item.discount || 0),
-          }))
+          const orderItems = items.map(item => {
+            const sellingPrice = item.custom_price ?? getProductPriceForChannel(item.product, salesChannel as SalesChannel)
+            return {
+              order_id: editOrderId,
+              product_id: item.product.id,
+              product_name: item.product.name_th,
+              quantity: item.quantity,
+              unit_price: sellingPrice,
+              discount: item.discount || 0,
+              total_price: sellingPrice * item.quantity - (item.discount || 0),
+            }
+          })
 
           const { error: itemsError } = await supabase
             .from('order_items')
@@ -833,15 +836,18 @@ export default function POSPage() {
           }
 
           // Save order items
-          const orderItems = items.map(item => ({
-            order_id: orderData.id,
-            product_id: item.product.id,
-            product_name: item.product.name_th,
-            quantity: item.quantity,
-            unit_price: item.product.base_price,
-            discount: item.discount || 0,
-            total_price: item.product.base_price * item.quantity - (item.discount || 0),
-          }))
+          const orderItems = items.map(item => {
+            const sellingPrice = item.custom_price ?? getProductPriceForChannel(item.product, salesChannel as SalesChannel)
+            return {
+              order_id: orderData.id,
+              product_id: item.product.id,
+              product_name: item.product.name_th,
+              quantity: item.quantity,
+              unit_price: sellingPrice,
+              discount: item.discount || 0,
+              total_price: sellingPrice * item.quantity - (item.discount || 0),
+            }
+          })
 
           const { error: itemsError } = await supabase
             .from('order_items')
@@ -1352,52 +1358,26 @@ export default function POSPage() {
           </h1>
           <p className="text-gray-600 mt-1">POS System</p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            onClick={() => {
-              fetchAlertLogs()
-              setShowAlertHistory(true)
-            }}
-            className="flex items-center gap-2"
+        <div className="flex items-center gap-2">
+          {/* AI Button - Icon only, far right */}
+          <Link 
+            to="/ai-symptom-checker"
+            className="flex items-center justify-center w-10 h-10 bg-[#DFEAF5] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
+            title="AI ช่วยแนะนำยา"
           >
-            <History className="h-4 w-4" />
-            ประวัติแจ้งเตือน
-            {savedAlertLogs.filter(log => !log.acknowledged).length > 0 && (
-              <span className="ml-1 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
-                {savedAlertLogs.filter(log => !log.acknowledged).length}
-              </span>
-            )}
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              fetchRecentSales()
-              setShowRecentSales(true)
-            }}
-            className="flex items-center gap-2"
-          >
-            <Receipt className="h-4 w-4" />
-            รายการขายล่าสุด
-          </Button>
+            <Brain className="h-5 w-5 text-black" />
+          </Link>
         </div>
       </div>
 
       {/* Action Buttons - Compact single row */}
       <div className="flex flex-wrap gap-2 mb-3 mx-4 sm:mx-0">
         <Link 
-          to="/ai-symptom-checker"
-          className="flex items-center gap-2 px-3 py-2 bg-[#DFEAF5] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
-        >
-          <Brain className="h-5 w-5 text-black flex-shrink-0" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">AI ช่วยแนะนำยา</span>
-        </Link>
-        <Link 
           to="/categories"
           className="flex items-center gap-2 px-3 py-2 bg-[#D1D1E1] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
         >
           <Package className="h-5 w-5 text-black flex-shrink-0" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">หมวดหมู่สินค้า</span>
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">สินค้าตามหมวดหมู่</span>
         </Link>
         <Link 
           to="/medicine-labels"
@@ -1411,7 +1391,7 @@ export default function POSPage() {
           className="flex items-center gap-2 px-3 py-2 bg-[#F5F0E6] rounded-full border border-[#B8C9B8] hover:bg-[#E8EBF0] hover:shadow-md transition-all"
         >
           <Wallet className="h-5 w-5 text-black flex-shrink-0" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ปิดร้าน</span>
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">นับเงิน</span>
         </button>
         <button
           onClick={() => setShowCalculator(true)}
@@ -1421,11 +1401,29 @@ export default function POSPage() {
           <span className="font-medium text-gray-900 text-sm whitespace-nowrap">เครื่องคิดเลข</span>
         </button>
         <button
-          onClick={clearCart}
-          className="flex items-center gap-2 px-3 py-2 bg-red-50 rounded-full border border-red-200 hover:bg-red-100 hover:shadow-md transition-all"
+          onClick={() => {
+            fetchAlertLogs()
+            setShowAlertHistory(true)
+          }}
+          className="flex items-center gap-2 px-3 py-2 bg-[#F9E4B7] rounded-full border border-[#B8C9B8] hover:bg-[#F5D0A0] hover:shadow-md transition-all"
         >
-          <Trash2 className="h-5 w-5 text-red-600 flex-shrink-0" />
-          <span className="font-medium text-red-700 text-sm whitespace-nowrap">ล้าง</span>
+          <History className="h-5 w-5 text-black flex-shrink-0" />
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ประวัติแจ้งเตือน</span>
+          {savedAlertLogs.filter(log => !log.acknowledged).length > 0 && (
+            <span className="ml-1 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
+              {savedAlertLogs.filter(log => !log.acknowledged).length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => {
+            fetchRecentSales()
+            setShowRecentSales(true)
+          }}
+          className="flex items-center gap-2 px-3 py-2 bg-[#D5EAE7] rounded-full border border-[#B8C9B8] hover:bg-[#B8C9B8] hover:shadow-md transition-all"
+        >
+          <Receipt className="h-5 w-5 text-black flex-shrink-0" />
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">รายการขายล่าสุด</span>
         </button>
       </div>
 
