@@ -646,14 +646,6 @@ export default function StockManagementPage() {
           </Button>
           <Button
             variant="secondary"
-            onClick={() => setShowOpeningBalanceModal(true)}
-            className="flex items-center gap-2"
-          >
-            <RotateCcw className="h-4 w-4" />
-            ยอดยกมา
-          </Button>
-          <Button
-            variant="secondary"
             onClick={() => setShowChannelImportModal(true)}
             className="flex items-center gap-2"
           >
@@ -839,6 +831,14 @@ export default function StockManagementPage() {
                   >
                     <Edit className="h-4 w-4 mr-1" />
                     ปรับสต็อก
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setShowOpeningBalanceModal(true)}
+                  >
+                    <RotateCcw className="h-4 w-4 mr-1" />
+                    ยอดยกมา
                   </Button>
                   <Button
                     variant="secondary"
