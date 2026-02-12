@@ -798,9 +798,15 @@ export default function POSPage() {
             .eq('code', platformCode)
             .single()
           
-          if (platformError) {
-            console.error('Error fetching platform:', platformError)
-            alert('ไม่สามารถหาข้อมูลช่องทางการขายได้')
+          if (platformError || !platformData) {
+            console.error('Error fetching platform:', platformError, 'Platform code:', platformCode)
+            alert('ไม่พบข้อมูลช่องทางการขาย ' + platformCode + ' ในระบบ กรุณาตรวจสอบการตั้งค่า Platform')
+            return
+          }
+          
+          const userId = (await supabase.auth.getUser()).data.user?.id
+          if (!userId) {
+            alert('ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่')
             return
           }
           
@@ -808,7 +814,7 @@ export default function POSPage() {
             .from('orders')
             .insert({
               order_number: orderNumber,
-              user_id: (await supabase.auth.getUser()).data.user?.id,
+              user_id: userId,
               customer_name: selectedCustomer?.name || 'ลูกค้าทั่วไป',
               subtotal: getSubtotal(),
               discount: getTotalDiscount(),
