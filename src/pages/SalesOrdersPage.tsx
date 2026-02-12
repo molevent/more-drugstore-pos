@@ -10,7 +10,7 @@ interface SalesOrder {
   id: string
   order_number: string
   customer_name?: string
-  payment_method_name?: string
+  payment_method?: string
   total: number
   subtotal: number
   discount: number
@@ -47,6 +47,13 @@ const SALES_CHANNELS: Record<string, string> = {
   'website': 'Website'
 }
 
+const PAYMENT_METHODS: Record<string, string> = {
+  'cash': 'เงินสด',
+  'transfer': 'โอนเงิน',
+  'credit_card': 'บัตรเครดิต',
+  'promptpay': 'พร้อมเพย์'
+}
+
 export default function SalesOrdersPage() {
   const [orders, setOrders] = useState<SalesOrder[]>([])
   const [loading, setLoading] = useState(true)
@@ -79,7 +86,7 @@ export default function SalesOrdersPage() {
           id,
           order_number,
           customer_name,
-          payment_method_name,
+          payment_method,
           total,
           subtotal,
           discount,
@@ -117,7 +124,7 @@ export default function SalesOrdersPage() {
         id: order.id,
         order_number: order.order_number,
         customer_name: order.customer_name,
-        payment_method_name: order.payment_method_name,
+        payment_method: order.payment_method,
         total: order.total,
         subtotal: order.subtotal,
         discount: order.discount,
@@ -170,6 +177,11 @@ export default function SalesOrdersPage() {
   const getPlatformName = (platformId: string | null | undefined) => {
     if (!platformId) return 'ไม่ระบุ'
     return SALES_CHANNELS[platformId] || platformId
+  }
+
+  const getPaymentMethodName = (paymentMethod: string | null | undefined) => {
+    if (!paymentMethod) return '-'
+    return PAYMENT_METHODS[paymentMethod] || paymentMethod
   }
 
   const handleViewOrder = async (orderId: string) => {
@@ -416,7 +428,7 @@ export default function SalesOrdersPage() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                        {order.payment_method_name || '-'}
+                        {getPaymentMethodName(order.payment_method)}
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
@@ -495,7 +507,7 @@ export default function SalesOrdersPage() {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">วิธีชำระ</p>
-                      <p className="font-medium">{selectedOrder.payment_method_name || '-'}</p>
+                      <p className="font-medium">{getPaymentMethodName(selectedOrder.payment_method)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">สถานะ</p>
