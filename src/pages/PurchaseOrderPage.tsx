@@ -612,58 +612,57 @@ export default function PurchaseOrderPage() {
   // Delete the duplicate formatDate function below
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <ShoppingCart className="h-7 w-7 text-blue-600" />
-              ใบสั่งซื้อ (Purchase Orders)
-            </h1>
-            <p className="text-gray-600 mt-1">จัดการใบสั่งซื้อจากซัพพลายเออร์</p>
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6 px-4 sm:px-0">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <ShoppingCart className="h-7 w-7 text-[#7D735F]" />
+            ใบสั่งซื้อ (Purchase Orders)
+          </h1>
+          <p className="text-gray-600 mt-1">จัดการใบสั่งซื้อจากซัพพลายเออร์</p>
+        </div>
+        <Button variant="primary" onClick={() => setShowModal(true)}>
+          <Plus className="h-5 w-5 mr-2" />
+          สร้าง PO ใหม่
+        </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 px-4 sm:px-0">
+        <Card className="bg-white">
+          <div className="text-sm text-gray-500">ทั้งหมด</div>
+          <div className="text-2xl font-bold text-gray-900">{purchaseOrders.length}</div>
+        </Card>
+        <Card className="bg-white">
+          <div className="text-sm text-orange-600">รอโอนสินค้า</div>
+          <div className="text-2xl font-bold text-orange-700">
+            {purchaseOrders.filter(po => po.status === 'sent' && po.payment_status !== 'paid').length}
           </div>
-          <Button variant="primary" onClick={() => setShowModal(true)}>
-            <Plus className="h-5 w-5 mr-2" />
-            สร้าง PO ใหม่
-          </Button>
-        </div>
+        </Card>
+        <Card className="bg-white">
+          <div className="text-sm text-green-600">โอนสินค้าสำเร็จ</div>
+          <div className="text-2xl font-bold text-green-700">
+            {purchaseOrders.filter(po => po.status === 'received' && po.payment_status !== 'paid').length}
+          </div>
+        </Card>
+        <Card className="bg-white">
+          <div className="text-sm text-red-600">รอชำระเงิน</div>
+          <div className="text-2xl font-bold text-red-700">
+            {purchaseOrders.filter(po => (po.status === 'sent' || po.status === 'received') && po.payment_status === 'unpaid').length}
+          </div>
+        </Card>
+        <Card className="bg-white">
+          <div className="text-sm text-blue-600">ชำระเงินสำเร็จ</div>
+          <div className="text-2xl font-bold text-blue-700">
+            {purchaseOrders.filter(po => po.payment_status === 'paid').length}
+          </div>
+        </Card>
+      </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          <Card className="bg-white">
-            <div className="text-sm text-gray-500">ทั้งหมด</div>
-            <div className="text-2xl font-bold text-gray-900">{purchaseOrders.length}</div>
-          </Card>
-          <Card className="bg-white">
-            <div className="text-sm text-orange-600">รอโอนสินค้า</div>
-            <div className="text-2xl font-bold text-orange-700">
-              {purchaseOrders.filter(po => po.status === 'sent' && po.payment_status !== 'paid').length}
-            </div>
-          </Card>
-          <Card className="bg-white">
-            <div className="text-sm text-green-600">โอนสินค้าสำเร็จ</div>
-            <div className="text-2xl font-bold text-green-700">
-              {purchaseOrders.filter(po => po.status === 'received' && po.payment_status !== 'paid').length}
-            </div>
-          </Card>
-          <Card className="bg-white">
-            <div className="text-sm text-red-600">รอชำระเงิน</div>
-            <div className="text-2xl font-bold text-red-700">
-              {purchaseOrders.filter(po => (po.status === 'sent' || po.status === 'received') && po.payment_status === 'unpaid').length}
-            </div>
-          </Card>
-          <Card className="bg-white">
-            <div className="text-sm text-blue-600">ชำระเงินสำเร็จ</div>
-            <div className="text-2xl font-bold text-blue-700">
-              {purchaseOrders.filter(po => po.payment_status === 'paid').length}
-            </div>
-          </Card>
-        </div>
-
-        {/* Filters */}
-        <Card className="mb-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+      {/* Filters */}
+      <Card className="mb-6 mx-4 sm:mx-0">
+        <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-3 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
                 <Search className="h-5 w-5 text-gray-400 flex-shrink-0" />
@@ -693,11 +692,11 @@ export default function PurchaseOrderPage() {
               <option value="cancelled">ยกเลิก</option>
             </select>
           </div>
-        </Card>
+      </Card>
 
-        {/* Purchase Orders Table */}
-        <Card>
-          {loading ? (
+      {/* Purchase Orders Table */}
+      <Card className="mx-4 sm:mx-0">
+        {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
               <p className="mt-2 text-gray-600">กำลังโหลด...</p>
@@ -1230,7 +1229,6 @@ export default function PurchaseOrderPage() {
           </div>
         )}
 
-      </div>
     </div>
   )
 }

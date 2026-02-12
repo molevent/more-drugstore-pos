@@ -616,7 +616,7 @@ export default function StockManagementPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Package className="h-7 w-7 text-blue-600" />
+            <Package className="h-7 w-7 text-[#7D735F]" />
             จัดการสต็อก
           </h1>
           <p className="text-gray-600 mt-1">ปรับยอดสต็อก, จัดการ Batch และติดตามการเคลื่อนไหว</p>

@@ -1347,7 +1347,7 @@ export default function POSPage() {
       <div className="flex items-center justify-between mb-6 px-4 sm:px-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <ShoppingCart className="h-7 w-7 text-black" />
+            <ShoppingCart className="h-7 w-7 text-[#7D735F]" />
             ขายสินค้า
           </h1>
           <p className="text-gray-600 mt-1">POS System</p>
@@ -2273,7 +2273,7 @@ export default function POSPage() {
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b">
               <div className="flex items-center gap-2">
-                <Receipt className="h-6 w-6 text-blue-500" />
+                <Package className="h-7 w-7 text-[#7D735F]" />
                 <h2 className="text-lg font-bold text-gray-900">รายการขายล่าสุด</h2>
               </div>
               <button 

@@ -17,7 +17,8 @@ import {
   AlertTriangle,
   ClipboardList,
   ArrowRightLeft,
-  Wallet
+  Wallet,
+  Home
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Card from '../components/common/Card'
@@ -154,6 +155,14 @@ export default function SettingsPage() {
 
   // Business Settings Items
   const businessSettingsItems = [
+    {
+      icon: Home,
+      iconBg: 'bg-[#7D735F]/10',
+      iconColor: 'text-[#7D735F]',
+      title: 'แดชบอร์ด',
+      subtitle: 'ภาพรวมยอดขายและสถิติ',
+      link: '/dashboard'
+    },
     {
       icon: Bike,
       iconBg: 'bg-[#B8C9B8]/10',

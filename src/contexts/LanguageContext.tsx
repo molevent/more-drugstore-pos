@@ -24,6 +24,10 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.reports': 'รายงาน',
     'nav.settings': 'ตั้งค่า',
     'nav.logout': 'ออกจากระบบ',
+    'nav.salesOrders': 'รายการขาย',
+    'nav.stockManagement': 'จัดการสต็อก',
+    'nav.contacts': 'ผู้ติดต่อ',
+    'nav.documents': 'เอกสาร',
     
     // Login
     'login.title': 'More Drug Store',
@@ -197,6 +201,10 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.reports': 'Reports',
     'nav.settings': 'Settings',
     'nav.logout': 'Logout',
+    'nav.salesOrders': 'Sales Orders',
+    'nav.stockManagement': 'Stock Management',
+    'nav.contacts': 'Contacts',
+    'nav.documents': 'Documents',
     
     // Login
     'login.title': 'More Drug Store',

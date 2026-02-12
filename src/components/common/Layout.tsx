@@ -1,7 +1,6 @@
 import { ReactNode, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { 
-  Home,
   ListOrdered,
   ShoppingCart, 
   Boxes, 
@@ -11,8 +10,7 @@ import {
   X,
   Users,
   Wallet,
-  Package,
-  History
+  Package
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -54,29 +52,27 @@ export default function Layout({ children }: LayoutProps) {
     {
       title: 'หลัก',
       items: [
-        { name: t('nav.dashboard'), href: '/dashboard', icon: Home },
         { name: t('nav.pos'), href: '/pos', icon: ShoppingCart },
-        { name: 'รายการขาย', href: '/sales-orders', icon: ListOrdered },
+        { name: t('nav.salesOrders'), href: '/sales-orders', icon: ListOrdered },
       ]
     },
     {
       title: 'สินค้า',
       items: [
         { name: t('nav.products'), href: '/products', icon: Boxes },
-        { name: 'จัดการสต็อก', href: '/stock-management', icon: Package },
-        { name: 'ใบสั่งซื้อ', href: '/purchase-orders', icon: History },
+        { name: t('nav.stockManagement'), href: '/stock-management', icon: Package },
       ]
     },
     {
       title: 'ผู้ติดต่อ',
       items: [
-        { name: 'ผู้ติดต่อ', href: '/contacts', icon: Users },
+        { name: t('nav.contacts'), href: '/contacts', icon: Users },
       ]
     },
     {
       title: 'บัญชี',
       items: [
-        { name: 'ค่าใช้จ่าย', href: '/expenses', icon: Wallet },
+        { name: t('nav.documents'), href: '/expenses', icon: Wallet },
       ]
     },
     {
