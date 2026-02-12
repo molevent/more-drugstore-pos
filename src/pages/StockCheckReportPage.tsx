@@ -90,10 +90,30 @@ export default function StockCheckReportPage() {
       // Check if already scanned in current session
       const existingItem = checkedItems.find(item => item.product_id === product.id)
       if (existingItem) {
+        // Continuous mode: add 1 to existing count
+        const newCount = existingItem.counted_quantity + 1
+        setCheckedItems(items => items.map(item => {
+          if (item.id === existingItem.id) {
+            const difference = newCount - item.system_quantity
+            return {
+              ...item,
+              counted_quantity: newCount,
+              difference,
+              value_difference: difference * item.cost_price
+            }
+          }
+          return item
+        }))
         setLastScannedProduct(existingItem)
-        setCountInput(existingItem.counted_quantity.toString())
-        alert(`สินค้านี้ถูกนับแล้ว (${existingItem.counted_quantity} ${existingItem.unit_of_measure})`)
+        // Play beep sound or visual feedback
+        setCountInput(newCount.toString())
+        // Auto clear and focus back to scan input after short delay
+        setTimeout(() => {
+          setCountInput('')
+          scanInputRef.current?.focus()
+        }, 500)
       } else {
+        // New item: default count is 1
         const newItem: StockCheckItem = {
           id: crypto.randomUUID(),
           product_id: product.id,
@@ -101,14 +121,19 @@ export default function StockCheckReportPage() {
           name_th: product.name_th,
           unit_of_measure: product.unit_of_measure || 'ชิ้น',
           system_quantity: product.stock_quantity,
-          counted_quantity: 0,
-          difference: 0 - product.stock_quantity,
-          value_difference: (0 - product.stock_quantity) * (product.cost_price || 0),
+          counted_quantity: 1,
+          difference: 1 - product.stock_quantity,
+          value_difference: (1 - product.stock_quantity) * (product.cost_price || 0),
           cost_price: product.cost_price || 0
         }
         setCheckedItems([newItem, ...checkedItems])
         setLastScannedProduct(newItem)
-        setCountInput('')
+        setCountInput('1')
+        // Auto clear and focus back to scan input after short delay
+        setTimeout(() => {
+          setCountInput('')
+          scanInputRef.current?.focus()
+        }, 500)
       }
 
       setScanInput('')
