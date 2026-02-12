@@ -28,7 +28,6 @@ interface StockCheckSession {
 
 export default function StockCheckReportPage() {
   const [scanInput, setScanInput] = useState('')
-  const [countInput, setCountInput] = useState('')
   const [checkedItems, setCheckedItems] = useState<StockCheckItem[]>([])
   const [sessions, setSessions] = useState<StockCheckSession[]>([])
   const [loading, setLoading] = useState(false)
@@ -38,7 +37,6 @@ export default function StockCheckReportPage() {
   const [lastScannedProduct, setLastScannedProduct] = useState<StockCheckItem | null>(null)
 
   const scanInputRef = useRef<HTMLInputElement>(null)
-  const countInputRef = useRef<HTMLInputElement>(null)
   const isScanningRef = useRef(false)
   const lastScanTimeRef = useRef(0)
 
@@ -170,13 +168,10 @@ export default function StockCheckReportPage() {
           return item
         }))
         setLastScannedProduct(existingItem)
-        // Play beep sound or visual feedback
-        setCountInput(newCount.toString())
-        // Auto clear and focus back to scan input after short delay
+        // Auto focus back to scan input for continuous scanning
         setTimeout(() => {
-          setCountInput('')
           scanInputRef.current?.focus()
-        }, 500)
+        }, 100)
       } else {
         // New item: default count is 1
         const newItem: StockCheckItem = {
@@ -193,44 +188,11 @@ export default function StockCheckReportPage() {
         }
         setCheckedItems([newItem, ...checkedItems])
         setLastScannedProduct(newItem)
-        setCountInput('1')
-        // Auto clear and focus back to scan input after short delay
+        // Auto focus back to scan input for continuous scanning
         setTimeout(() => {
-          setCountInput('')
           scanInputRef.current?.focus()
-        }, 500)
+        }, 100)
       }
-
-      // Focus count input after scan
-      setTimeout(() => countInputRef.current?.focus(), 100)
-  }
-
-  const handleCountSubmit = () => {
-    if (!lastScannedProduct || countInput === '') return
-
-    const count = parseInt(countInput)
-    if (isNaN(count) || count < 0) {
-      alert('กรุณาระบุจำนวนที่ถูกต้อง')
-      return
-    }
-
-    setCheckedItems(items => items.map(item => {
-      if (item.id === lastScannedProduct.id) {
-        const difference = count - item.system_quantity
-        return {
-          ...item,
-          counted_quantity: count,
-          difference,
-          value_difference: difference * item.cost_price
-        }
-      }
-      return item
-    }))
-
-    setCountInput('')
-    setLastScannedProduct(null)
-    // Focus back to scan input
-    setTimeout(() => scanInputRef.current?.focus(), 100)
   }
 
   const handleDeleteItem = (itemId: string) => {
@@ -382,15 +344,14 @@ export default function StockCheckReportPage() {
         <>
           {/* Scan Section */}
           <Card className="mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <Barcode className="h-4 w-4 inline mr-1" />
-                  สแกนบาร์โค้ด / รหัสสินค้า
+                  สแกนบาร์โค้ด / รหัสสินค้า (ยิง 1 ครั้ง = 1 ชิ้น)
                 </label>
                 <form onSubmit={(e) => {
                   e.preventDefault()
-                  // Get value directly from input ref to avoid closure issues
                   const barcode = scanInputRef.current?.value || ''
                   processBarcodeScan(barcode)
                 }}>
@@ -399,7 +360,7 @@ export default function StockCheckReportPage() {
                     type="text"
                     value={scanInput}
                     onChange={(e) => setScanInput(e.target.value)}
-                    placeholder="สแกนหรือพิมพ์บาร์โค้ดแล้วกด Enter..."
+                    placeholder="สแกนบาร์โค้ดสินค้า..."
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg"
                     disabled={loading}
                     autoComplete="off"
@@ -417,32 +378,6 @@ export default function StockCheckReportPage() {
                   </Button>
                 </form>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Calculator className="h-4 w-4 inline mr-1" />
-                  จำนวนที่นับได้
-                </label>
-                <input
-                  ref={countInputRef}
-                  type="number"
-                  value={countInput}
-                  onChange={(e) => setCountInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleCountSubmit()}
-                  placeholder="ระบุจำนวน..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg"
-                  disabled={!lastScannedProduct}
-                  min="0"
-                />
-                <Button
-                  variant="primary"
-                  onClick={handleCountSubmit}
-                  disabled={!lastScannedProduct || countInput === ''}
-                  className="mt-2 w-full"
-                >
-                  บันทึกจำนวน
-                </Button>
-              </div>
             </div>
 
             {lastScannedProduct && (
@@ -451,6 +386,8 @@ export default function StockCheckReportPage() {
                 <p className="font-medium text-gray-900">{lastScannedProduct.name_th}</p>
                 <p className="text-sm text-gray-600">
                   สต็อกระบบ: {lastScannedProduct.system_quantity} {lastScannedProduct.unit_of_measure}
+                  <span className="mx-2">|</span>
+                  นับจริง: <span className="font-bold text-blue-600">{lastScannedProduct.counted_quantity}</span>
                 </p>
               </div>
             )}
