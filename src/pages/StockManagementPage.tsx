@@ -357,6 +357,16 @@ export default function StockManagementPage() {
     try {
       const { data: userData } = await supabase.auth.getUser()
       
+      // Get current stock quantity first
+      const { data: currentProduct } = await supabase
+        .from('products')
+        .select('stock_quantity')
+        .eq('id', openingBalanceData.productId)
+        .single()
+
+      const currentStock = currentProduct?.stock_quantity || 0
+      const newStock = currentStock + openingBalanceData.quantity
+
       // Create opening balance stock movement
       const { error: movementError } = await supabase
         .from('stock_movements')
@@ -364,8 +374,8 @@ export default function StockManagementPage() {
           product_id: openingBalanceData.productId,
           movement_type: 'opening_balance',
           quantity: openingBalanceData.quantity,
-          quantity_before: 0,
-          quantity_after: openingBalanceData.quantity,
+          quantity_before: currentStock,
+          quantity_after: newStock,
           unit_cost: openingBalanceData.unitCost,
           total_cost: openingBalanceData.unitCost * openingBalanceData.quantity,
           reason: 'ยอดยกมา',
@@ -377,10 +387,10 @@ export default function StockManagementPage() {
 
       if (movementError) throw movementError
 
-      // Update product stock quantity
+      // Update product stock quantity (ADD to existing, not replace)
       const { error: updateError } = await supabase
         .from('products')
-        .update({ stock_quantity: openingBalanceData.quantity })
+        .update({ stock_quantity: newStock })
         .eq('id', openingBalanceData.productId)
 
       if (updateError) throw updateError
