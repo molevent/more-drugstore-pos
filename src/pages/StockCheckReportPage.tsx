@@ -80,9 +80,9 @@ export default function StockCheckReportPage() {
   }
 
   const processBarcodeScan = async (barcode: string) => {
-    // Timestamp-based debounce: prevent scan within 1000ms of last scan
+    // Timestamp-based debounce: prevent scan within 2000ms of last scan
     const now = Date.now()
-    if (!barcode || isScanningRef.current || (now - lastScanTimeRef.current < 1000)) {
+    if (!barcode || isScanningRef.current || (now - lastScanTimeRef.current < 2000)) {
       console.log('Scan blocked:', { barcode, isScanning: isScanningRef.current, timeSinceLast: now - lastScanTimeRef.current })
       return
     }
@@ -92,6 +92,9 @@ export default function StockCheckReportPage() {
     
     // Clear input immediately to prevent duplicate processing
     setScanInput('')
+    if (scanInputRef.current) {
+      scanInputRef.current.value = ''
+    }
     
     lastScanTimeRef.current = now
     isScanningRef.current = true
