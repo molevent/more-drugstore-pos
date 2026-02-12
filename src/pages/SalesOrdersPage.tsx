@@ -70,8 +70,35 @@ export default function SalesOrdersPage() {
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [loadingDetail, setLoadingDetail] = useState(false)
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null)
+  const [platformsMap, setPlatformsMap] = useState<Record<string, string>>({})
+
+  // Fetch platforms for mapping UUID to name
+  const fetchPlatforms = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('platforms')
+        .select('id, name, code')
+      
+      if (error) {
+        console.error('Error fetching platforms:', error)
+        return
+      }
+      
+      if (data) {
+        const map: Record<string, string> = {}
+        data.forEach((p: any) => {
+          map[p.id] = p.name || p.code || 'ไม่ระบุ'
+        })
+        setPlatformsMap(map)
+        console.log('Platforms map:', map)
+      }
+    } catch (err) {
+      console.error('Exception fetching platforms:', err)
+    }
+  }
 
   useEffect(() => {
+    fetchPlatforms()
     fetchOrders()
   }, [])
 
@@ -176,6 +203,11 @@ export default function SalesOrdersPage() {
 
   const getPlatformName = (platformId: string | null | undefined) => {
     if (!platformId) return 'ไม่ระบุ'
+    // First check if it's a UUID in platformsMap
+    if (platformsMap[platformId]) {
+      return platformsMap[platformId]
+    }
+    // Fall back to SALES_CHANNELS code mapping
     return SALES_CHANNELS[platformId] || platformId
   }
 
