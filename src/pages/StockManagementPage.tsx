@@ -835,7 +835,20 @@ export default function StockManagementPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => setShowOpeningBalanceModal(true)}
+                    onClick={() => {
+                      if (selectedProduct) {
+                        setOpeningBalanceData({
+                          productId: selectedProduct.id,
+                          productName: selectedProduct.name_th,
+                          quantity: 0,
+                          unitCost: 0,
+                          movementDate: new Date().toISOString().split('T')[0],
+                          notes: ''
+                        })
+                        setOpeningBalanceSearchTerm(selectedProduct.name_th)
+                      }
+                      setShowOpeningBalanceModal(true)
+                    }}
                   >
                     <RotateCcw className="h-4 w-4 mr-1" />
                     ยอดยกมา
