@@ -80,10 +80,15 @@ export default function StockCheckReportPage() {
   }
 
   const processBarcodeScan = async (barcode: string) => {
-    // Timestamp-based debounce: prevent scan within 2000ms of last scan
+    // Set scanning flag IMMEDIATELY to prevent race condition
+    isScanningRef.current = true
+    
+    // Timestamp-based debounce: prevent scan within 3000ms of last scan
     const now = Date.now()
-    if (!barcode || isScanningRef.current || (now - lastScanTimeRef.current < 2000)) {
-      console.log('Scan blocked:', { barcode, isScanning: isScanningRef.current, timeSinceLast: now - lastScanTimeRef.current })
+    if (!barcode || (now - lastScanTimeRef.current < 3000)) {
+      console.log('Scan blocked:', { barcode, timeSinceLast: now - lastScanTimeRef.current })
+      // Keep flag true briefly then release
+      setTimeout(() => { isScanningRef.current = false }, 100)
       return
     }
 
@@ -97,7 +102,6 @@ export default function StockCheckReportPage() {
     }
     
     lastScanTimeRef.current = now
-    isScanningRef.current = true
     setLoading(true)
     try {
       // Find product by barcode or SKU
@@ -131,11 +135,6 @@ export default function StockCheckReportPage() {
         
         // Truly not found
         alert('ไม่มีสินค้านี้ในระบบ')
-        // Reset immediately for new scan
-        setTimeout(() => {
-          isScanningRef.current = false
-          scanInputRef.current?.focus()
-        }, 100)
         return
       }
 
@@ -146,10 +145,10 @@ export default function StockCheckReportPage() {
       alert('เกิดข้อผิดพลาดในการค้นหาสินค้า')
     } finally {
       setLoading(false)
-      // Clear scanning flag after a short delay to prevent double triggers
+      // Keep scanning flag true for 2 seconds to prevent rapid re-scans
       setTimeout(() => {
         isScanningRef.current = false
-      }, 300)
+      }, 2000)
     }
   }
 
