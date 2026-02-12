@@ -67,6 +67,20 @@ export default function StockCheckReportPage() {
     }
   }
 
+  const convertThaiToEn = (text: string): string => {
+    const thaiToEnMap: Record<string, string> = {
+      'ๅ': '1', '+': '!', '๑': '@', '/': '2', '๒': '#', '_': '3', '๓': '$', 'ภ': '4', '๔': '%',
+      'ถ': '5', '๕': '^', 'ุ': '6', 'ู': '&', 'ึ': '7', 'ค': '8', '*': '(', 'ต': '9', ')': '0',
+      'จ': '0', 'ข': '-', 'ๆ': '=', 'ช': '[', '๊': ']', 'ฯ': '\\', 'ะ': '{', 'ั': '}', 'า': '|',
+      'ำ': ';', 'พ': "'", 'ธ': ':', 'ี': ',', '่': '<', 'ง': '.', 'ก': '>', 'ฃ': '?',
+      'แ': 'a', 'อ': 'b', 'ิ': 'c', 'ื': 'd', 'ท': 'e', 'ม': 'f', 'ใ': 'g', 'ฝ': 'h', 'เ': 'i',
+      'ฌ': 'j', '็': 'k', '้': 'm', 'ส': 'o', 'ว': 'p', 'ห': 'r', 'ด': 'u',
+      'ฟ': 'A', 'ฤ': 'B', 'ฦ': 'C', '์': 'D', 'ศ': 'E', 'ษ': 'F', 'ฅ': 'H', 'ซ': 'I',
+      'ฑ': 'K', 'ฎ': 'L', 'ฐ': 'P', 'ฏ': 'R', 'ฬ': 'Z'
+    }
+    return text.split('').map(char => thaiToEnMap[char] || char).join('')
+  }
+
   const processBarcodeScan = async (barcode: string) => {
     // Timestamp-based debounce: prevent scan within 1000ms of last scan
     const now = Date.now()
@@ -95,13 +109,50 @@ export default function StockCheckReportPage() {
       if (error) throw error
 
       if (!products || products.length === 0) {
-        alert('ไม่พบสินค้าในระบบ')
+        // Try converting Thai to English and search again
+        const convertedBarcode = convertThaiToEn(currentBarcode)
+        if (convertedBarcode !== currentBarcode) {
+          const { data: convertedProducts, error: convertedError } = await supabase
+            .from('products')
+            .select('id, barcode, sku, name_th, unit_of_measure, stock_quantity, cost_price')
+            .or(`barcode.eq.${convertedBarcode},sku.eq.${convertedBarcode}`)
+            .limit(1)
+          
+          if (convertedError) throw convertedError
+          
+          if (convertedProducts && convertedProducts.length > 0) {
+            // Found with converted barcode, process normally
+            const product = convertedProducts[0]
+            processFoundProduct(product)
+            return
+          }
+        }
+        
+        // Truly not found
+        alert('ไม่มีสินค้านี้ในระบบ')
+        // Reset immediately for new scan
+        setTimeout(() => {
+          isScanningRef.current = false
+          scanInputRef.current?.focus()
+        }, 100)
         return
       }
 
       const product = products[0]
+      processFoundProduct(product)
+    } catch (error) {
+      console.error('Error scanning product:', error)
+      alert('เกิดข้อผิดพลาดในการค้นหาสินค้า')
+    } finally {
+      setLoading(false)
+      // Clear scanning flag after a short delay to prevent double triggers
+      setTimeout(() => {
+        isScanningRef.current = false
+      }, 300)
+    }
+  }
 
-      // Check if already scanned in current session
+  const processFoundProduct = (product: any) => {
       const existingItem = checkedItems.find(item => item.product_id === product.id)
       if (existingItem) {
         // Continuous mode: add 1 to existing count
@@ -152,16 +203,6 @@ export default function StockCheckReportPage() {
 
       // Focus count input after scan
       setTimeout(() => countInputRef.current?.focus(), 100)
-    } catch (error) {
-      console.error('Error scanning product:', error)
-      alert('เกิดข้อผิดพลาดในการค้นหาสินค้า')
-    } finally {
-      setLoading(false)
-      // Clear scanning flag after a short delay to prevent double triggers
-      setTimeout(() => {
-        isScanningRef.current = false
-      }, 300)
-    }
   }
 
   const handleCountSubmit = () => {
