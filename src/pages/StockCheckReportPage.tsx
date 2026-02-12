@@ -67,16 +67,16 @@ export default function StockCheckReportPage() {
     }
   }
 
-  const handleScan = async () => {
+  const processBarcodeScan = async (barcode: string) => {
     // Timestamp-based debounce: prevent scan within 1000ms of last scan
     const now = Date.now()
-    if (!scanInput.trim() || isScanningRef.current || (now - lastScanTimeRef.current < 1000)) {
-      console.log('Scan blocked:', { scanInput, isScanning: isScanningRef.current, timeSinceLast: now - lastScanTimeRef.current })
+    if (!barcode || isScanningRef.current || (now - lastScanTimeRef.current < 1000)) {
+      console.log('Scan blocked:', { barcode, isScanning: isScanningRef.current, timeSinceLast: now - lastScanTimeRef.current })
       return
     }
 
-    console.log('Processing scan:', scanInput)
-    const currentBarcode = scanInput.trim()
+    console.log('Processing scan:', barcode)
+    const currentBarcode = barcode
     
     // Clear input immediately to prevent duplicate processing
     setScanInput('')
@@ -347,29 +347,25 @@ export default function StockCheckReportPage() {
                   <Barcode className="h-4 w-4 inline mr-1" />
                   สแกนบาร์โค้ด / รหัสสินค้า
                 </label>
-                <input
-                  ref={scanInputRef}
-                  type="text"
-                  value={scanInput}
-                  onChange={(e) => setScanInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.repeat) {
-                      e.preventDefault()
-                      handleScan()
-                    }
-                  }}
-                  placeholder="สแกนหรือพิมพ์บาร์โค้ดแล้วกด Enter..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg"
-                  disabled={loading}
-                />
-                <Button
-                  variant="primary"
-                  onClick={handleScan}
-                  disabled={loading || !scanInput.trim()}
-                  className="mt-2 w-full"
-                >
-                  {loading ? 'กำลังค้นหา...' : 'ค้นหาสินค้า'}
-                </Button>
+                <form onSubmit={(e) => { e.preventDefault(); processBarcodeScan(scanInput); }}>
+                  <input
+                    ref={scanInputRef}
+                    type="text"
+                    value={scanInput}
+                    onChange={(e) => setScanInput(e.target.value)}
+                    placeholder="สแกนหรือพิมพ์บาร์โค้ดแล้วกด Enter..."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg"
+                    disabled={loading}
+                  />
+                  <Button
+                    variant="primary"
+                    type="submit"
+                    disabled={loading || !scanInput.trim()}
+                    className="mt-2 w-full"
+                  >
+                    {loading ? 'กำลังค้นหา...' : 'ค้นหาสินค้า'}
+                  </Button>
+                </form>
               </div>
 
               <div>
