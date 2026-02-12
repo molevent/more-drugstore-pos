@@ -4,7 +4,7 @@ import { zortOutService } from '../services/zortout'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import SalesChannelCSVImportModal from '../components/common/SalesChannelCSVImportModal'
-import { Package, Plus, History, Search, Edit, ExternalLink, Trash2, Tag, DollarSign, Printer, CheckSquare, Square, X, FileSpreadsheet, Barcode, AlertTriangle, ClipboardList, ShoppingCart } from 'lucide-react'
+import { Package, Plus, History, Search, Edit, ExternalLink, Trash2, Tag, DollarSign, Printer, CheckSquare, Square, X, FileSpreadsheet, Barcode, AlertTriangle, ClipboardList, ShoppingCart, RotateCcw } from 'lucide-react'
 
 interface Product {
   id: string
@@ -84,6 +84,17 @@ export default function StockManagementPage() {
     supplier: '',
     cost_per_unit: 0
   })
+  const [showOpeningBalanceModal, setShowOpeningBalanceModal] = useState(false)
+  const [openingBalanceData, setOpeningBalanceData] = useState({
+    productId: '',
+    productName: '',
+    quantity: 0,
+    unitCost: 0,
+    movementDate: new Date().toISOString().split('T')[0],
+    notes: ''
+  })
+  const [openingBalanceSearchTerm, setOpeningBalanceSearchTerm] = useState('')
+  const [openingBalanceSearchResults, setOpeningBalanceSearchResults] = useState<Product[]>([])
 
   useEffect(() => {
     fetchProducts()
@@ -311,6 +322,93 @@ export default function StockManagementPage() {
     product.name_en?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.barcode?.includes(searchTerm)
   )
+
+  // Opening Balance Functions
+  const handleOpeningBalanceSearch = (term: string) => {
+    setOpeningBalanceSearchTerm(term)
+    if (term.length > 0) {
+      const results = products.filter(product =>
+        product.name_th?.toLowerCase().includes(term.toLowerCase()) ||
+        product.name_en?.toLowerCase().includes(term.toLowerCase()) ||
+        product.barcode?.includes(term)
+      )
+      setOpeningBalanceSearchResults(results)
+    } else {
+      setOpeningBalanceSearchResults([])
+    }
+  }
+
+  const handleSelectOpeningBalanceProduct = (product: Product) => {
+    setOpeningBalanceData(prev => ({
+      ...prev,
+      productId: product.id,
+      productName: product.name_th
+    }))
+    setOpeningBalanceSearchTerm(product.name_th)
+    setOpeningBalanceSearchResults([])
+  }
+
+  const handleSaveOpeningBalance = async () => {
+    if (!openingBalanceData.productId || openingBalanceData.quantity <= 0) {
+      alert('กรุณาเลือกสินค้าและระบุจำนวนที่ถูกต้อง')
+      return
+    }
+
+    try {
+      const { data: userData } = await supabase.auth.getUser()
+      
+      // Create opening balance stock movement
+      const { error: movementError } = await supabase
+        .from('stock_movements')
+        .insert({
+          product_id: openingBalanceData.productId,
+          movement_type: 'opening_balance',
+          quantity: openingBalanceData.quantity,
+          quantity_before: 0,
+          quantity_after: openingBalanceData.quantity,
+          unit_cost: openingBalanceData.unitCost,
+          total_cost: openingBalanceData.unitCost * openingBalanceData.quantity,
+          reason: 'ยอดยกมา',
+          notes: openingBalanceData.notes,
+          movement_date: `${openingBalanceData.movementDate}T00:00:00.000Z`,
+          reference_type: 'opening_balance',
+          created_by: userData?.user?.id
+        })
+
+      if (movementError) throw movementError
+
+      // Update product stock quantity
+      const { error: updateError } = await supabase
+        .from('products')
+        .update({ stock_quantity: openingBalanceData.quantity })
+        .eq('id', openingBalanceData.productId)
+
+      if (updateError) throw updateError
+
+      // Refresh data
+      await fetchProducts()
+      if (selectedProduct?.id === openingBalanceData.productId) {
+        await fetchMovements(openingBalanceData.productId)
+      }
+
+      // Reset form
+      setShowOpeningBalanceModal(false)
+      setOpeningBalanceData({
+        productId: '',
+        productName: '',
+        quantity: 0,
+        unitCost: 0,
+        movementDate: new Date().toISOString().split('T')[0],
+        notes: ''
+      })
+      setOpeningBalanceSearchTerm('')
+
+      alert('บันทึกยอดยกมาเรียบร้อยแล้ว')
+    } catch (error) {
+      console.error('Error saving opening balance:', error)
+      alert('เกิดข้อผิดพลาดในการบันทึกยอดยกมา')
+    }
+  }
 
   const getStockStatus = (product: Product) => {
     if (product.stock_quantity <= product.min_stock_level) {
@@ -545,6 +643,14 @@ export default function StockManagementPage() {
           >
             <ShoppingCart className="h-4 w-4" />
             รายงานเตรียมสั่งซื้อ
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => setShowOpeningBalanceModal(true)}
+            className="flex items-center gap-2"
+          >
+            <RotateCcw className="h-4 w-4" />
+            ยอดยกมา
           </Button>
           <Button
             variant="secondary"
@@ -1193,6 +1299,137 @@ export default function StockManagementPage() {
           </Card>
         </div>
       )}
+      {/* Opening Balance Modal */}
+      {showOpeningBalanceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-lg mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <RotateCcw className="h-5 w-5 text-blue-600" />
+                ยอดยกมา (Opening Balance)
+              </h3>
+              <button
+                onClick={() => setShowOpeningBalanceModal(false)}
+                className="p-1 hover:bg-gray-100 rounded-full"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Product Search */}
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-1">สินค้า *</label>
+                <input
+                  type="text"
+                  value={openingBalanceSearchTerm}
+                  onChange={(e) => handleOpeningBalanceSearch(e.target.value)}
+                  placeholder="ค้นหาด้วยชื่อสินค้า หรือบาร์โค้ด..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                {openingBalanceSearchResults.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {openingBalanceSearchResults.map(product => (
+                      <button
+                        key={product.id}
+                        onClick={() => handleSelectOpeningBalanceProduct(product)}
+                        className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center justify-between"
+                      >
+                        <div>
+                          <span className="font-medium">{product.name_th}</span>
+                          <span className="text-sm text-gray-500 ml-2">({product.barcode})</span>
+                        </div>
+                        <span className="text-sm text-gray-500">
+                          คงเหลือ: {product.stock_quantity} {product.unit_of_measure}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Quantity */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">จำนวนยอดยกมา *</label>
+                <input
+                  type="number"
+                  value={openingBalanceData.quantity || ''}
+                  onChange={(e) => setOpeningBalanceData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  min="0"
+                  required
+                />
+              </div>
+
+              {/* Date */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">วันที่ยกมา *</label>
+                <input
+                  type="date"
+                  value={openingBalanceData.movementDate}
+                  onChange={(e) => setOpeningBalanceData(prev => ({ ...prev, movementDate: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+
+              {/* Unit Cost */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ราคาต่อหน่วย (฿)</label>
+                <input
+                  type="number"
+                  value={openingBalanceData.unitCost || ''}
+                  onChange={(e) => setOpeningBalanceData(prev => ({ ...prev, unitCost: parseFloat(e.target.value) || 0 }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">หมายเหตุ</label>
+                <textarea
+                  value={openingBalanceData.notes}
+                  onChange={(e) => setOpeningBalanceData(prev => ({ ...prev, notes: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  rows={2}
+                  placeholder="เช่น ยอดยกมาจากระบบเก่า..."
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <Button
+                variant="primary"
+                onClick={handleSaveOpeningBalance}
+                disabled={!openingBalanceData.productId || openingBalanceData.quantity <= 0}
+              >
+                บันทึกยอดยกมา
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowOpeningBalanceModal(false)
+                  setOpeningBalanceData({
+                    productId: '',
+                    productName: '',
+                    quantity: 0,
+                    unitCost: 0,
+                    movementDate: new Date().toISOString().split('T')[0],
+                    notes: ''
+                  })
+                  setOpeningBalanceSearchTerm('')
+                  setOpeningBalanceSearchResults([])
+                }}
+              >
+                ยกเลิก
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
       {/* Sales Channel Import Modal */}
       <SalesChannelCSVImportModal
         isOpen={showChannelImportModal}
