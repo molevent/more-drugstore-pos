@@ -388,7 +388,12 @@ export default function StockCheckReportPage() {
                   <Barcode className="h-4 w-4 inline mr-1" />
                   สแกนบาร์โค้ด / รหัสสินค้า
                 </label>
-                <form onSubmit={(e) => { e.preventDefault(); processBarcodeScan(scanInput); }}>
+                <form onSubmit={(e) => {
+                  e.preventDefault()
+                  // Get value directly from input ref to avoid closure issues
+                  const barcode = scanInputRef.current?.value || ''
+                  processBarcodeScan(barcode)
+                }}>
                   <input
                     ref={scanInputRef}
                     type="text"
@@ -397,6 +402,10 @@ export default function StockCheckReportPage() {
                     placeholder="สแกนหรือพิมพ์บาร์โค้ดแล้วกด Enter..."
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg"
                     disabled={loading}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
                   />
                   <Button
                     variant="primary"
