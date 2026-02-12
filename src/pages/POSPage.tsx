@@ -1406,6 +1406,20 @@ export default function POSPage() {
           <Printer className="h-5 w-5 text-black flex-shrink-0" />
           <span className="font-medium text-gray-900 text-sm whitespace-nowrap">พิมพ์ฉลากยา</span>
         </Link>
+        <button
+          onClick={() => setShowCashierClosing(true)}
+          className="flex items-center gap-2 px-3 py-2 bg-[#F5F0E6] rounded-full border border-[#B8C9B8] hover:bg-[#E8EBF0] hover:shadow-md transition-all"
+        >
+          <Wallet className="h-5 w-5 text-black flex-shrink-0" />
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ปิดร้าน</span>
+        </button>
+        <button
+          onClick={() => setShowCalculator(true)}
+          className="flex items-center gap-2 px-3 py-2 bg-[#E8EBF0] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
+        >
+          <Calculator className="h-5 w-5 text-black flex-shrink-0" />
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">เครื่องคิดเลข</span>
+        </button>
       </div>
 
       {/* Held Bills Section - Only show when there are held bills */}
@@ -1697,7 +1711,17 @@ export default function POSPage() {
                       </Button>
                     </div>
                   </div>
-                ))
+                ))}
+                {/* Clear Cart Button - Under last item */}
+                <div className="flex justify-center mt-4">
+                  <button
+                    onClick={clearCart}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-200"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    ล้างตะกร้า
+                  </button>
+                </div>
               )}
             </div>
           </Card>
@@ -1934,35 +1958,6 @@ export default function POSPage() {
                 >
                   <Receipt className="h-5 w-5 mr-2" />
                   พิมพ์ใบเสร็จ
-                </Button>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  className="w-full"
-                  onClick={() => setShowCashierClosing(true)}
-                >
-                  <Wallet className="h-5 w-5 mr-2" />
-                  ปิดร้าน
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  className="w-full"
-                  onClick={() => setShowCalculator(true)}
-                >
-                  <Calculator className="h-5 w-5 mr-2" />
-                  เครื่องคิดเลข
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  className="w-full"
-                  onClick={clearCart}
-                  disabled={items.length === 0}
-                >
-                  ล้างตะกร้า
                 </Button>
               </div>
             </div>
