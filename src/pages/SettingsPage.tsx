@@ -19,7 +19,8 @@ import {
   ArrowRightLeft,
   Wallet,
   Home,
-  Receipt
+  Receipt,
+  Calendar
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Card from '../components/common/Card'
@@ -293,6 +294,14 @@ export default function SettingsPage() {
       title: 'รายงานใบเสร็จ/ใบกำกับภาษี',
       subtitle: 'ตรวจสอบรายการขอใบเสร็จและใบกำกับภาษี',
       link: '/receipt-tax-invoice-report'
+    },
+    {
+      icon: Calendar,
+      iconBg: 'bg-[#A67B5B]/10',
+      iconColor: 'text-[#A67B5B]',
+      title: 'สินค้าใกล้หมดอายุ',
+      subtitle: 'ตรวจสอบสินค้าใกล้วันหมดอายุ',
+      link: '/near-expiry-report'
     },
   ]
   

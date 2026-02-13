@@ -478,25 +478,18 @@ export default function ProductsPage() {
           .order('movement_date', { ascending: false })
           .limit(50),
         
-        // 2. Sales from orders (with their items)
+        // 2. Sales - fetch order_items with order details using separate query pattern
         supabase
-          .from('orders')
+          .from('order_items')
           .select(`
             id,
-            order_number,
-            customer_name,
+            product_id,
+            quantity,
+            unit_price,
             created_at,
-            is_cancelled,
-            items:order_items!inner(
-              id,
-              product_id,
-              quantity,
-              unit_price,
-              created_at
-            )
+            order_id
           `)
-          .eq('order_items.product_id', productId)
-          .eq('is_cancelled', false)
+          .eq('product_id', productId)
           .order('created_at', { ascending: false })
           .limit(100),
         
@@ -557,33 +550,52 @@ export default function ProductsPage() {
         })
       }
 
-      // Add sales from orders
-      if (!orderItemsResult.error && orderItemsResult.data) {
-        console.log('Orders found with product:', orderItemsResult.data.length)
-        orderItemsResult.data.forEach((order: any) => {
-          if (order.items && Array.isArray(order.items)) {
-            order.items.forEach((item: any) => {
-              allMovements.push({
-                id: `sale_${item.id}`,
-                date: item.created_at || order.created_at,
-                type: 'ขายออก',
-                quantity: -Math.abs(item.quantity),
-                quantity_before: null,
-                quantity_after: null,
-                from: 'สต็อก',
-                to: 'ลูกค้า',
-                partner: order.customer_name || 'ลูกค้า',
-                notes: `Order: ${order.order_number}`,
-                unit_cost: item.unit_price,
-                reference_type: 'order',
-                reference_id: order.id,
-                sortDate: new Date(item.created_at || order.created_at).getTime()
-              })
+      // Add sales from order_items - fetch orders separately
+      if (!orderItemsResult.error && orderItemsResult.data && orderItemsResult.data.length > 0) {
+        console.log('Order items found:', orderItemsResult.data.length)
+        
+        // Get unique order IDs
+        const orderIds = [...new Set(orderItemsResult.data.map((item: any) => item.order_id))]
+        console.log('Unique order IDs:', orderIds.length)
+        
+        // Fetch orders separately
+        const { data: orders, error: ordersError } = await supabase
+          .from('orders')
+          .select('id, order_number, customer_name, created_at, is_cancelled')
+          .in('id', orderIds)
+          .eq('is_cancelled', false)
+        
+        if (ordersError) {
+          console.error('Error fetching orders:', ordersError)
+        }
+        
+        // Create order lookup map
+        const orderMap = new Map(orders?.map((o: any) => [o.id, o]) || [])
+        
+        // Process each order item
+        orderItemsResult.data.forEach((item: any) => {
+          const order = orderMap.get(item.order_id)
+          if (order) {
+            allMovements.push({
+              id: `sale_${item.id}`,
+              date: item.created_at || order.created_at,
+              type: 'ขายออก',
+              quantity: -Math.abs(item.quantity),
+              quantity_before: null,
+              quantity_after: null,
+              from: 'สต็อก',
+              to: 'ลูกค้า',
+              partner: order.customer_name || 'ลูกค้า',
+              notes: `Order: ${order.order_number}`,
+              unit_cost: item.unit_price,
+              reference_type: 'order',
+              reference_id: order.id,
+              sortDate: new Date(item.created_at || order.created_at).getTime()
             })
           }
         })
       } else if (orderItemsResult.error) {
-        console.error('Error fetching orders:', orderItemsResult.error)
+        console.error('Error fetching order items:', orderItemsResult.error)
       }
 
       // Add purchase order items

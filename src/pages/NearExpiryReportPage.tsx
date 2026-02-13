@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { AlertTriangle, Calendar, Search, Package, History } from 'lucide-react'
+import Input from '../components/common/Input'
+import { AlertTriangle, Calendar, Search, Package, History, Edit2, Save, X } from 'lucide-react'
 
 interface BatchWithProduct {
   id: string
@@ -37,6 +38,12 @@ export default function NearExpiryReportPage() {
   const [selectedBatch, setSelectedBatch] = useState<BatchWithProduct | null>(null)
   const [movements, setMovements] = useState<StockMovement[]>([])
   const [showMovementModal, setShowMovementModal] = useState(false)
+  const [editingBatch, setEditingBatch] = useState<BatchWithProduct | null>(null)
+  const [newExpiryDate, setNewExpiryDate] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [selectedBatches, setSelectedBatches] = useState<Set<string>>(new Set())
+  const [showBatchEditModal, setShowBatchEditModal] = useState(false)
+  const [batchExpiryDate, setBatchExpiryDate] = useState('')
 
   useEffect(() => {
     fetchNearExpiryBatches()
@@ -145,6 +152,94 @@ export default function NearExpiryReportPage() {
     setShowMovementModal(true)
   }
 
+  const handleEditExpiry = (batch: BatchWithProduct) => {
+    setEditingBatch(batch)
+    setNewExpiryDate(batch.expiry_date)
+  }
+
+  const handleSaveExpiry = async () => {
+    if (!editingBatch || !newExpiryDate) return
+    
+    setSaving(true)
+    try {
+      const { error } = await supabase
+        .from('stock_batches')
+        .update({ expiry_date: newExpiryDate })
+        .eq('id', editingBatch.id)
+      
+      if (error) throw error
+      
+      // Refresh data
+      await fetchNearExpiryBatches()
+      setEditingBatch(null)
+      setNewExpiryDate('')
+    } catch (error) {
+      console.error('Error updating expiry date:', error)
+      alert('ไม่สามารถบันทึกวันหมดอายุได้')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingBatch(null)
+    setNewExpiryDate('')
+  }
+
+  const toggleSelectBatch = (batchId: string) => {
+    const newSelected = new Set(selectedBatches)
+    if (newSelected.has(batchId)) {
+      newSelected.delete(batchId)
+    } else {
+      newSelected.add(batchId)
+    }
+    setSelectedBatches(newSelected)
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedBatches.size === filteredBatches.length) {
+      setSelectedBatches(new Set())
+    } else {
+      setSelectedBatches(new Set(filteredBatches.map(b => b.id)))
+    }
+  }
+
+  const handleBatchEdit = () => {
+    if (selectedBatches.size === 0) return
+    setBatchExpiryDate('')
+    setShowBatchEditModal(true)
+  }
+
+  const handleSaveBatchExpiry = async () => {
+    if (selectedBatches.size === 0 || !batchExpiryDate) return
+    
+    setSaving(true)
+    try {
+      const batchIds = Array.from(selectedBatches)
+      const { error } = await supabase
+        .from('stock_batches')
+        .update({ expiry_date: batchExpiryDate })
+        .in('id', batchIds)
+      
+      if (error) throw error
+      
+      await fetchNearExpiryBatches()
+      setSelectedBatches(new Set())
+      setShowBatchEditModal(false)
+      setBatchExpiryDate('')
+    } catch (error) {
+      console.error('Error updating batch expiry dates:', error)
+      alert('ไม่สามารถบันทึกวันหมดอายุได้')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCancelBatchEdit = () => {
+    setShowBatchEditModal(false)
+    setBatchExpiryDate('')
+  }
+
   const getMovementTypeLabel = (type: string) => {
     const types: Record<string, string> = {
       purchase: 'รับเข้า',
@@ -184,6 +279,126 @@ export default function NearExpiryReportPage() {
           </select>
         </div>
       </div>
+
+      {/* Edit Expiry Date Modal */}
+      {editingBatch && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <div className="flex items-center justify-between p-4 border-b">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">แก้ไขวันหมดอายุ</h3>
+                <p className="text-sm text-gray-600">
+                  {editingBatch.product_name}
+                </p>
+              </div>
+              <button
+                onClick={handleCancelEdit}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              <div>
+                <p className="text-sm text-gray-600 mb-2">Batch: {editingBatch.batch_number}</p>
+                <p className="text-sm text-gray-600 mb-4">
+                  วันหมดอายุเดิม: {new Date(editingBatch.expiry_date).toLocaleDateString('th-TH')}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  วันหมดอายุใหม่
+                </label>
+                <Input
+                  type="date"
+                  value={newExpiryDate}
+                  onChange={(e) => setNewExpiryDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 p-4 border-t">
+              <Button
+                variant="secondary"
+                onClick={handleCancelEdit}
+                className="flex-1"
+                disabled={saving}
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                onClick={handleSaveExpiry}
+                className="flex-1 bg-[#7D735F] hover:bg-[#6A6350] text-white"
+                disabled={saving || !newExpiryDate}
+              >
+                {saving ? 'กำลังบันทึก...' : (
+                  <>
+                    <Save className="h-4 w-4 mr-1" />
+                    บันทึก
+                  </>
+                )}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Batch Edit Modal */}
+      {showBatchEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <div className="flex items-center justify-between p-4 border-b">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">แก้ไขวันหมดอายุแบบ Batch</h3>
+                <p className="text-sm text-gray-600">
+                  แก้ไขวันหมดอายุสำหรับ {selectedBatches.size} รายการ
+                </p>
+              </div>
+              <button
+                onClick={handleCancelBatchEdit}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  วันหมดอายุใหม่ (ใช้กับทุกรายการที่เลือก)
+                </label>
+                <Input
+                  type="date"
+                  value={batchExpiryDate}
+                  onChange={(e) => setBatchExpiryDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 p-4 border-t">
+              <Button
+                variant="secondary"
+                onClick={handleCancelBatchEdit}
+                className="flex-1"
+                disabled={saving}
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                onClick={handleSaveBatchExpiry}
+                className="flex-1 bg-[#7D735F] hover:bg-[#6A6350] text-white"
+                disabled={saving || !batchExpiryDate}
+              >
+                {saving ? 'กำลังบันทึก...' : (
+                  <>
+                    <Save className="h-4 w-4 mr-1" />
+                    บันทึก ({selectedBatches.size} รายการ)
+                  </>
+                )}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
@@ -245,7 +460,26 @@ export default function NearExpiryReportPage() {
         </Card>
       </div>
 
-      {/* Search Bar */}
+      {/* Batch Edit Button */}
+      {selectedBatches.size > 0 && (
+        <Card className="mb-4 bg-blue-50 border-blue-200">
+          <div className="flex items-center justify-between p-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-blue-700">
+                เลือก {selectedBatches.size} รายการ
+              </span>
+            </div>
+            <Button
+              onClick={handleBatchEdit}
+              className="bg-[#7D735F] hover:bg-[#6A6350] text-white"
+              size="sm"
+            >
+              <Edit2 className="h-4 w-4 mr-1" />
+              แก้ไขวันหมดอายุแบบ batch
+            </Button>
+          </div>
+        </Card>
+      )}
       <Card className="mb-6">
         <div className="flex items-center gap-3">
           <div className="flex-1 flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-3 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
@@ -277,6 +511,14 @@ export default function NearExpiryReportPage() {
             <table className="min-w-full">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 w-12">
+                    <input
+                      type="checkbox"
+                      checked={selectedBatches.size === filteredBatches.length && filteredBatches.length > 0}
+                      onChange={toggleSelectAll}
+                      className="h-4 w-4 rounded border-gray-300 text-[#7D735F] focus:ring-[#7D735F]"
+                    />
+                  </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">สินค้า</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Batch/Lot</th>
                   <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">วันหมดอายุ</th>
@@ -293,6 +535,14 @@ export default function NearExpiryReportPage() {
                   const status = getExpiryStatus(daysUntil)
                   return (
                     <tr key={batch.id} className={status.urgent ? 'bg-red-50' : ''}>
+                      <td className="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedBatches.has(batch.id)}
+                          onChange={() => toggleSelectBatch(batch.id)}
+                          className="h-4 w-4 rounded border-gray-300 text-[#7D735F] focus:ring-[#7D735F]"
+                        />
+                      </td>
                       <td className="px-4 py-3">
                         <div>
                           <p className="font-medium text-gray-900">{batch.product_name}</p>
@@ -331,15 +581,26 @@ export default function NearExpiryReportPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => handleViewMovements(batch)}
-                          className="flex items-center gap-1"
-                        >
-                          <History className="h-4 w-4" />
-                          ประวัติ
-                        </Button>
+                        <div className="flex items-center justify-center gap-2">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleViewMovements(batch)}
+                            className="flex items-center gap-1"
+                          >
+                            <History className="h-4 w-4" />
+                            ประวัติ
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleEditExpiry(batch)}
+                            className="flex items-center gap-1"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                            แก้ไข
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   )
