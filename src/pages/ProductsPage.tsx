@@ -478,23 +478,25 @@ export default function ProductsPage() {
           .order('movement_date', { ascending: false })
           .limit(50),
         
-        // 2. Sales from order_items - simplified query
+        // 2. Sales from orders (with their items)
         supabase
-          .from('order_items')
+          .from('orders')
           .select(`
             id,
-            quantity,
-            unit_price,
+            order_number,
+            customer_name,
             created_at,
-            order:orders(
+            is_cancelled,
+            items:order_items!inner(
               id,
-              order_number,
-              customer_name,
-              created_at,
-              is_cancelled
+              product_id,
+              quantity,
+              unit_price,
+              created_at
             )
           `)
-          .eq('product_id', productId)
+          .eq('order_items.product_id', productId)
+          .eq('is_cancelled', false)
           .order('created_at', { ascending: false })
           .limit(100),
         
@@ -555,31 +557,33 @@ export default function ProductsPage() {
         })
       }
 
-      // Add sales from order_items (filter out cancelled in JS)
+      // Add sales from orders
       if (!orderItemsResult.error && orderItemsResult.data) {
-        console.log('Order items found:', orderItemsResult.data.length)
-        orderItemsResult.data.forEach((item: any) => {
-          if (item.order && !item.order.is_cancelled) {
-            allMovements.push({
-              id: `sale_${item.id}`,
-              date: item.created_at || item.order.created_at,
-              type: 'ขายออก',
-              quantity: -Math.abs(item.quantity),
-              quantity_before: null,
-              quantity_after: null,
-              from: 'สต็อก',
-              to: 'ลูกค้า',
-              partner: item.order.customer_name || 'ลูกค้า',
-              notes: `Order: ${item.order.order_number}`,
-              unit_cost: item.unit_price,
-              reference_type: 'order',
-              reference_id: item.order.id,
-              sortDate: new Date(item.created_at || item.order.created_at).getTime()
+        console.log('Orders found with product:', orderItemsResult.data.length)
+        orderItemsResult.data.forEach((order: any) => {
+          if (order.items && Array.isArray(order.items)) {
+            order.items.forEach((item: any) => {
+              allMovements.push({
+                id: `sale_${item.id}`,
+                date: item.created_at || order.created_at,
+                type: 'ขายออก',
+                quantity: -Math.abs(item.quantity),
+                quantity_before: null,
+                quantity_after: null,
+                from: 'สต็อก',
+                to: 'ลูกค้า',
+                partner: order.customer_name || 'ลูกค้า',
+                notes: `Order: ${order.order_number}`,
+                unit_cost: item.unit_price,
+                reference_type: 'order',
+                reference_id: order.id,
+                sortDate: new Date(item.created_at || order.created_at).getTime()
+              })
             })
           }
         })
       } else if (orderItemsResult.error) {
-        console.error('Error fetching order items:', orderItemsResult.error)
+        console.error('Error fetching orders:', orderItemsResult.error)
       }
 
       // Add purchase order items
