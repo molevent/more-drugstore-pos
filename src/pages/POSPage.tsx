@@ -136,6 +136,7 @@ export default function POSPage() {
     id: string
     order_number: string
     customer_name?: string
+    customer_tax_id?: string
     total: number
     platform_id: string
     created_at: string
@@ -1058,6 +1059,7 @@ export default function POSPage() {
           id,
           order_number,
           customer_name,
+          customer_tax_id,
           total,
           platform_id,
           created_at,
@@ -1089,6 +1091,7 @@ export default function POSPage() {
           id: order.id,
           order_number: order.order_number,
           customer_name: order.customer_name,
+          customer_tax_id: order.customer_tax_id,
           total: order.total,
           platform_id: order.platform_id,
           created_at: order.created_at,
@@ -1159,6 +1162,107 @@ export default function POSPage() {
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+
+  // Print receipt from sales list
+  const handlePrintSaleReceipt = async (saleId: string) => {
+    try {
+      // Fetch order details with items
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', saleId)
+        .single()
+      
+      if (orderError || !order) {
+        alert('ไม่พบข้อมูลออเดอร์')
+        return
+      }
+
+      // Fetch order items with product details
+      const { data: items, error: itemsError } = await supabase
+        .from('order_items')
+        .select(`
+          *,
+          product:products(name_th, base_price)
+        `)
+        .eq('order_id', saleId)
+
+      if (itemsError) {
+        console.error('Error fetching order items:', itemsError)
+        alert('ไม่สามารถโหลดรายการสินค้าได้')
+        return
+      }
+
+      // Calculate totals
+      const subtotal = items?.reduce((sum, item) => sum + (item.total_price || 0), 0) || 0
+      const discount = order.discount || 0
+      const total = order.total || subtotal - discount
+
+      // Generate receipt content
+      const receiptContent = `
+        <div style="font-family: monospace; width: 80mm; padding: 10px;">
+          <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
+            <h2 style="margin: 0; font-size: 18px;">MORE DRUGSTORE</h2>
+            <p style="margin: 5px 0; font-size: 12px;">ใบเสร็จรับเงิน / Receipt</p>
+            <p style="margin: 5px 0; font-size: 11px;">เลขที่: ${order.order_number}</p>
+            <p style="margin: 5px 0; font-size: 11px;">${new Date(order.created_at).toLocaleString('th-TH')}</p>
+          </div>
+          
+          <div style="margin-bottom: 10px;">
+            <p style="margin: 3px 0; font-size: 11px;">ลูกค้า: ${order.customer_name || 'ลูกค้าทั่วไป'}</p>
+            ${order.customer_tax_id ? `<p style="margin: 3px 0; font-size: 11px;">เลขประจำตัวผู้เสียภาษี: ${order.customer_tax_id}</p>` : ''}
+            <p style="margin: 3px 0; font-size: 11px;">ช่องทาง: ${getPlatformName(order.platform_id)}</p>
+          </div>
+          
+          <div style="border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
+            ${items?.map((item: any) => {
+              const isFree = item.unit_price === 0
+              return `
+              <div style="display: flex; justify-content: space-between; margin: 5px 0; font-size: 12px;">
+                <span>${isFree ? '🎁 ของแถม: ' : ''}${item.product?.name_th || item.product_name || 'สินค้า'} x${item.quantity}</span>
+                <span>${isFree ? 'ฟรี' : '฿' + (item.total_price || 0).toFixed(2)}</span>
+              </div>
+            `}).join('')}
+          </div>
+          
+          <div style="text-align: right; margin-bottom: 10px;">
+            <p style="margin: 3px 0; font-size: 12px;">ยอดรวม: ฿${subtotal.toFixed(2)}</p>
+            ${discount > 0 ? `<p style="margin: 3px 0; font-size: 12px;">ส่วนลด: ฿${discount.toFixed(2)}</p>` : ''}
+            <p style="margin: 5px 0; font-size: 16px; font-weight: bold;">ยอดชำระ: ฿${total.toFixed(2)}</p>
+          </div>
+          
+          <div style="text-align: center; border-top: 1px dashed #000; padding-top: 10px; font-size: 11px;">
+            <p style="margin: 5px 0;">ขอบคุณที่ใช้บริการ</p>
+            <p style="margin: 5px 0;">Thank you for your purchase</p>
+          </div>
+        </div>
+      `
+      
+      // Open print window
+      const printWindow = window.open('', '_blank')
+      if (printWindow) {
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>ใบเสร็จรับเงิน - ${order.order_number}</title>
+              <style>
+                @media print {
+                  body { margin: 0; }
+                  * { -webkit-print-color-adjust: exact !important; }
+                }
+              </style>
+            </head>
+            <body>${receiptContent}</body>
+          </html>
+        `)
+        printWindow.document.close()
+        printWindow.print()
+      }
+    } catch (err) {
+      console.error('Error printing receipt:', err)
+      alert('เกิดข้อผิดพลาดในการพิมพ์ใบเสร็จ')
+    }
   }
 
   // Get platform name
@@ -2292,11 +2396,11 @@ export default function POSPage() {
                   {recentSales.map((sale) => (
                     <div
                       key={sale.id}
-                      className="p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer border border-gray-200 hover:border-blue-300"
-                      onClick={() => handleLoadSale(sale.id)}
+                      className="p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-300"
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex-1">
+                        <div className="flex-1 cursor-pointer hover:bg-blue-50 rounded p-1 -m-1 transition-colors"
+                             onClick={() => handleLoadSale(sale.id)}>
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-gray-900">{sale.order_number}</span>
                             <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
@@ -2310,9 +2414,18 @@ export default function POSPage() {
                             {formatSaleDate(sale.created_at)} • {sale.item_count} รายการ
                           </p>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right flex flex-col items-end gap-2">
                           <p className="font-bold text-blue-600">฿{sale.total.toFixed(2)}</p>
-                          <p className="text-xs text-gray-500">คลิกเพื่อโหลด</p>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handlePrintSaleReceipt(sale.id)
+                            }}
+                            className="px-3 py-1.5 bg-[#7D735F] text-white text-xs rounded-lg hover:bg-[#6B6352] transition-colors flex items-center gap-1"
+                          >
+                            <Receipt className="h-3 w-3" />
+                            พิมพ์ใบเสร็จ
+                          </button>
                         </div>
                       </div>
                     </div>
