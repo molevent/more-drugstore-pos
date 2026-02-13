@@ -922,7 +922,7 @@ export default function ProductsPage() {
                         <tr>
                           <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">{t('products.image')}</th>
                           <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">{t('products.barcode')}</th>
-                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('products.name')}</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48 truncate">{t('products.name')}</th>
                           <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">{t('products.category')}</th>
                           <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">{t('products.price')}</th>
                           <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">{t('products.stock')}</th>
@@ -941,9 +941,9 @@ export default function ProductsPage() {
                               )}
                             </td>
                             <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">{product.barcode}</td>
-                            <td className="px-3 py-3 whitespace-nowrap">
-                              <div className="text-sm font-medium text-gray-900">{product.name_th}</div>
-                              {product.name_en && <div className="text-xs text-gray-500">{product.name_en}</div>}
+                            <td className="px-3 py-3 whitespace-nowrap max-w-48">
+                              <div className="text-sm font-medium text-gray-900 truncate">{product.name_th}</div>
+                              {product.name_en && <div className="text-xs text-gray-500 truncate">{product.name_en}</div>}
                             </td>
                             <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-500">{(product as any).category?.name_th || t('products.noCategory')}</td>
                             <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">฿{product.base_price.toFixed(2)}</td>
@@ -1023,17 +1023,17 @@ export default function ProductsPage() {
                             <table className="min-w-full divide-y divide-gray-200">
                               <thead className="bg-gray-50">
                                 <tr>
-                                  <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.image')}</th>
-                                  <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.barcode')}</th>
-                                  <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.name')}</th>
-                                  <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.price')}</th>
-                                  <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.stock')}</th>
+                                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-16">{t('products.image')}</th>
+                                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-32">{t('products.barcode')}</th>
+                                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-48 truncate">{t('products.name')}</th>
+                                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-24">{t('products.price')}</th>
+                                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-20">{t('products.stock')}</th>
                                 </tr>
                               </thead>
                               <tbody className="bg-white divide-y divide-gray-200">
                                 {productsWithType.map(({ product }) => (
                                   <tr key={product.id} onClick={() => handleEdit(product)} className="hover:bg-gray-50 cursor-pointer transition-colors">
-                                    <td className="px-6 py-3 whitespace-nowrap">
+                                    <td className="px-2 py-3 whitespace-nowrap">
                                       {product.image_url ? (
                                         <img src={product.image_url} alt={product.name_th} className="h-10 w-10 object-cover rounded-lg border" />
                                       ) : (
@@ -1042,13 +1042,13 @@ export default function ProductsPage() {
                                         </div>
                                       )}
                                     </td>
-                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{product.barcode}</td>
-                                    <td className="px-6 py-3 whitespace-nowrap">
-                                      <div className="text-sm font-medium text-gray-900">{product.name_th}</div>
-                                      {product.name_en && <div className="text-sm text-gray-500">{product.name_en}</div>}
+                                    <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">{product.barcode}</td>
+                                    <td className="px-3 py-3 whitespace-nowrap max-w-48">
+                                      <div className="text-sm font-medium text-gray-900 truncate">{product.name_th}</div>
+                                      {product.name_en && <div className="text-xs text-gray-500 truncate">{product.name_en}</div>}
                                     </td>
-                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900">฿{product.base_price.toFixed(2)}</td>
-                                    <td className="px-6 py-3 whitespace-nowrap">
+                                    <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">฿{product.base_price.toFixed(2)}</td>
+                                    <td className="px-2 py-3 whitespace-nowrap">
                                       <span className={`text-sm ${product.stock_quantity <= product.min_stock_level ? 'text-red-600 font-medium' : 'text-gray-900'}`}>
                                         {product.stock_quantity}
                                       </span>
@@ -1124,9 +1124,9 @@ export default function ProductsPage() {
                                     )}
                                   </td>
                                   <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">{product.barcode}</td>
-                                  <td className="px-3 py-3 whitespace-nowrap">
-                                    <div className="text-sm font-medium text-gray-900">{product.name_th}</div>
-                                    {product.name_en && <div className="text-xs text-gray-500">{product.name_en}</div>}
+                                  <td className="px-3 py-3 whitespace-nowrap max-w-48">
+                                    <div className="text-sm font-medium text-gray-900 truncate">{product.name_th}</div>
+                                    {product.name_en && <div className="text-xs text-gray-500 truncate">{product.name_en}</div>}
                                   </td>
                                   <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-500">{(product as any).category?.name_th || '-'}</td>
                                   <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">฿{product.base_price.toFixed(2)}</td>
@@ -1177,9 +1177,9 @@ export default function ProductsPage() {
                                     )}
                                   </td>
                                   <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">{product.barcode}</td>
-                                  <td className="px-3 py-3 whitespace-nowrap">
-                                    <div className="text-sm font-medium text-gray-900">{product.name_th}</div>
-                                    {product.name_en && <div className="text-xs text-gray-500">{product.name_en}</div>}
+                                  <td className="px-3 py-3 whitespace-nowrap max-w-48">
+                                    <div className="text-sm font-medium text-gray-900 truncate">{product.name_th}</div>
+                                    {product.name_en && <div className="text-xs text-gray-500 truncate">{product.name_en}</div>}
                                   </td>
                                   <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-500">{(product as any).category?.name_th || '-'}</td>
                                   <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">฿{product.base_price.toFixed(2)}</td>
