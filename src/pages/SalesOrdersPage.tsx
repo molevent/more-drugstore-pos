@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ListOrdered, Search, Calendar, Eye, Edit, Trash2 } from 'lucide-react'
+import { ListOrdered, Search, Calendar, Eye, Edit, Trash2, Receipt } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
@@ -311,6 +311,107 @@ export default function SalesOrdersPage() {
     }
   }
 
+  // Print receipt for an order
+  const handlePrintReceipt = async (orderId: string) => {
+    try {
+      // Fetch order details
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .single()
+      
+      if (orderError || !order) {
+        alert('ไม่พบข้อมูลออเดอร์')
+        return
+      }
+
+      // Fetch order items with product details
+      const { data: items, error: itemsError } = await supabase
+        .from('order_items')
+        .select(`
+          *,
+          product:products(name_th)
+        `)
+        .eq('order_id', orderId)
+
+      if (itemsError) {
+        console.error('Error fetching order items:', itemsError)
+        alert('ไม่สามารถโหลดรายการสินค้าได้')
+        return
+      }
+
+      // Calculate totals
+      const subtotal = items?.reduce((sum: number, item: any) => sum + (item.total_price || 0), 0) || 0
+      const discount = order.discount || 0
+      const total = order.total || subtotal - discount
+
+      // Generate receipt content
+      const receiptContent = `
+        <div style="font-family: monospace; width: 80mm; padding: 10px;">
+          <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
+            <h2 style="margin: 0; font-size: 18px;">MORE DRUGSTORE</h2>
+            <p style="margin: 5px 0; font-size: 12px;">ใบเสร็จรับเงิน / Receipt</p>
+            <p style="margin: 5px 0; font-size: 11px;">เลขที่: ${order.order_number}</p>
+            <p style="margin: 5px 0; font-size: 11px;">${new Date(order.created_at).toLocaleString('th-TH')}</p>
+          </div>
+          
+          <div style="margin-bottom: 10px;">
+            <p style="margin: 3px 0; font-size: 11px;">ลูกค้า: ${order.customer_name || 'ลูกค้าทั่วไป'}</p>
+            ${order.customer_tax_id ? `<p style="margin: 3px 0; font-size: 11px;">เลขประจำตัวผู้เสียภาษี: ${order.customer_tax_id}</p>` : ''}
+            <p style="margin: 3px 0; font-size: 11px;">ช่องทาง: ${getPlatformName(order.platform_id)}</p>
+          </div>
+          
+          <div style="border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
+            ${items?.map((item: any) => {
+              const isFree = item.unit_price === 0
+              return `
+              <div style="display: flex; justify-content: space-between; margin: 5px 0; font-size: 12px;">
+                <span>${isFree ? '🎁 ของแถม: ' : ''}${item.product?.name_th || item.product_name || 'สินค้า'} x${item.quantity}</span>
+                <span>${isFree ? 'ฟรี' : '฿' + (item.total_price || 0).toFixed(2)}</span>
+              </div>
+            `}).join('')}
+          </div>
+          
+          <div style="text-align: right; margin-bottom: 10px;">
+            <p style="margin: 3px 0; font-size: 12px;">ยอดรวม: ฿${subtotal.toFixed(2)}</p>
+            ${discount > 0 ? `<p style="margin: 3px 0; font-size: 12px;">ส่วนลด: ฿${discount.toFixed(2)}</p>` : ''}
+            <p style="margin: 5px 0; font-size: 16px; font-weight: bold;">ยอดชำระ: ฿${total.toFixed(2)}</p>
+          </div>
+          
+          <div style="text-align: center; border-top: 1px dashed #000; padding-top: 10px; font-size: 11px;">
+            <p style="margin: 5px 0;">ขอบคุณที่ใช้บริการ</p>
+            <p style="margin: 5px 0;">Thank you for your purchase</p>
+          </div>
+        </div>
+      `
+      
+      // Open print window
+      const printWindow = window.open('', '_blank')
+      if (printWindow) {
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>ใบเสร็จรับเงิน - ${order.order_number}</title>
+              <style>
+                @media print {
+                  body { margin: 0; }
+                  * { -webkit-print-color-adjust: exact !important; }
+                }
+              </style>
+            </head>
+            <body>${receiptContent}</body>
+          </html>
+        `)
+        printWindow.document.close()
+        printWindow.print()
+      }
+    } catch (err: any) {
+      console.error('Error printing receipt:', err)
+      alert('เกิดข้อผิดพลาดในการพิมพ์ใบเสร็จ')
+    }
+  }
+
   const filteredOrders = orders.filter(order => {
     const matchesOrderNumber = order.order_number.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCustomerName = order.customer_name && order.customer_name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -496,6 +597,14 @@ export default function SalesOrdersPage() {
                         >
                           <Edit className="h-4 w-4 mr-1" />
                           แก้ไข
+                        </Button>
+                        <Button 
+                          variant="secondary" 
+                          size="sm" 
+                          onClick={() => handlePrintReceipt(order.id)}
+                          title="พิมพ์ใบเสร็จ"
+                        >
+                          <Receipt className="h-4 w-4" />
                         </Button>
                         <Button 
                           variant="danger" 
