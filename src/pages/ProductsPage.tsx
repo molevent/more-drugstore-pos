@@ -460,45 +460,176 @@ export default function ProductsPage() {
   const fetchMovementHistory = async (productId: string) => {
     setMovementLoading(true)
     try {
-      // Fetch stock movements for this product (including PO movements)
-      const { data: movements, error } = await supabase
-        .from('stock_movements')
-        .select(`
-          *,
-          batch:stock_batches(batch_number)
-        `)
-        .eq('product_id', productId)
-        .order('movement_date', { ascending: false })
-        .limit(50)
-      
-      if (error) {
-        console.error('Error fetching movement history:', error)
-        setMovementHistory([])
-        return
+      // Fetch all movement sources in parallel
+      const [
+        stockMovementsResult,
+        orderItemsResult,
+        purchaseItemsResult,
+        productResult
+      ] = await Promise.all([
+        // 1. Stock movements
+        supabase
+          .from('stock_movements')
+          .select(`
+            *,
+            batch:stock_batches(batch_number)
+          `)
+          .eq('product_id', productId)
+          .order('movement_date', { ascending: false })
+          .limit(50),
+        
+        // 2. Sales from order_items - simplified query
+        supabase
+          .from('order_items')
+          .select(`
+            id,
+            quantity,
+            unit_price,
+            created_at,
+            order:orders(
+              id,
+              order_number,
+              customer_name,
+              created_at,
+              is_cancelled
+            )
+          `)
+          .eq('product_id', productId)
+          .order('created_at', { ascending: false })
+          .limit(100),
+        
+        // 3. Purchase order items
+        supabase
+          .from('purchase_order_items')
+          .select(`
+            id,
+            quantity,
+            unit_price,
+            received_quantity,
+            created_at,
+            purchase_order:purchase_orders!inner(
+              id,
+              po_number,
+              supplier_name,
+              status,
+              created_at
+            )
+          `)
+          .eq('product_id', productId)
+          .order('created_at', { ascending: false })
+          .limit(50),
+        
+        // 4. Product info for opening stock
+        supabase
+          .from('products')
+          .select('opening_stock_date, stock_quantity, created_at')
+          .eq('id', productId)
+          .single()
+      ])
+
+      const allMovements: any[] = []
+
+      // Add stock movements
+      if (!stockMovementsResult.error && stockMovementsResult.data) {
+        stockMovementsResult.data.forEach((m: any) => {
+          allMovements.push({
+            id: m.id,
+            date: m.movement_date,
+            type: m.movement_type === 'purchase' ? 'ซื้อเข้า' 
+              : m.movement_type === 'sale' ? 'ขายออก'
+              : m.movement_type === 'adjustment' ? 'ปรับสต็อก'
+              : m.movement_type === 'return' ? 'รับคืน'
+              : 'โอนย้าย',
+            quantity: m.quantity,
+            quantity_before: m.quantity_before,
+            quantity_after: m.quantity_after,
+            from: m.reference_type === 'purchase_order' ? `PO: ${m.notes || '-'}` : m.reason || '-',
+            to: m.batch?.batch_number ? `Batch: ${m.batch.batch_number}` : '-',
+            partner: m.reason || '-',
+            notes: m.notes || '',
+            unit_cost: m.unit_cost,
+            reference_type: m.reference_type,
+            reference_id: m.reference_id,
+            sortDate: new Date(m.movement_date).getTime()
+          })
+        })
       }
-      
-      // Transform data for display
-      const transformed = movements?.map((m: any) => ({
-        id: m.id,
-        date: m.movement_date,
-        type: m.movement_type === 'purchase' ? 'ซื้อเข้า' 
-          : m.movement_type === 'sale' ? 'ขายออก'
-          : m.movement_type === 'adjustment' ? 'ปรับสต็อก'
-          : m.movement_type === 'return' ? 'รับคืน'
-          : 'โอนย้าย',
-        quantity: m.quantity,
-        quantity_before: m.quantity_before,
-        quantity_after: m.quantity_after,
-        from: m.reference_type === 'purchase_order' ? `PO: ${m.notes || '-'}` : m.reason || '-',
-        to: m.batch?.batch_number ? `Batch: ${m.batch.batch_number}` : '-',
-        partner: m.reason || '-',
-        notes: m.notes || '',
-        unit_cost: m.unit_cost,
-        reference_type: m.reference_type,
-        reference_id: m.reference_id
-      })) || []
-      
-      setMovementHistory(transformed)
+
+      // Add sales from order_items (filter out cancelled in JS)
+      if (!orderItemsResult.error && orderItemsResult.data) {
+        console.log('Order items found:', orderItemsResult.data.length)
+        orderItemsResult.data.forEach((item: any) => {
+          if (item.order && !item.order.is_cancelled) {
+            allMovements.push({
+              id: `sale_${item.id}`,
+              date: item.created_at || item.order.created_at,
+              type: 'ขายออก',
+              quantity: -Math.abs(item.quantity),
+              quantity_before: null,
+              quantity_after: null,
+              from: 'สต็อก',
+              to: 'ลูกค้า',
+              partner: item.order.customer_name || 'ลูกค้า',
+              notes: `Order: ${item.order.order_number}`,
+              unit_cost: item.unit_price,
+              reference_type: 'order',
+              reference_id: item.order.id,
+              sortDate: new Date(item.created_at || item.order.created_at).getTime()
+            })
+          }
+        })
+      } else if (orderItemsResult.error) {
+        console.error('Error fetching order items:', orderItemsResult.error)
+      }
+
+      // Add purchase order items
+      if (!purchaseItemsResult.error && purchaseItemsResult.data) {
+        purchaseItemsResult.data.forEach((item: any) => {
+          if (item.purchase_order) {
+            allMovements.push({
+              id: `po_${item.id}`,
+              date: item.purchase_order.created_at,
+              type: 'ซื้อเข้า',
+              quantity: item.received_quantity || item.quantity,
+              quantity_before: null,
+              quantity_after: null,
+              from: item.purchase_order.supplier_name || 'ซัพพลายเออร์',
+              to: 'สต็อก',
+              partner: item.purchase_order.supplier_name || '-',
+              notes: `PO: ${item.purchase_order.po_number} (${item.purchase_order.status})`,
+              unit_cost: item.unit_price,
+              reference_type: 'purchase_order',
+              reference_id: item.purchase_order.id,
+              sortDate: new Date(item.purchase_order.created_at).getTime()
+            })
+          }
+        })
+      }
+
+      // Add opening stock if available
+      if (!productResult.error && productResult.data?.opening_stock_date) {
+        allMovements.push({
+          id: `opening_${productId}`,
+          date: productResult.data.opening_stock_date,
+          type: 'ยอดยกมา',
+          quantity: productResult.data.stock_quantity,
+          quantity_before: 0,
+          quantity_after: productResult.data.stock_quantity,
+          from: '-',
+          to: 'สต็อกเริ่มต้น',
+          partner: '-',
+          notes: 'ยอดสต็อกเริ่มต้น',
+          unit_cost: null,
+          reference_type: 'opening_stock',
+          reference_id: null,
+          sortDate: new Date(productResult.data.opening_stock_date).getTime()
+        })
+      }
+
+      // Sort by date descending
+      allMovements.sort((a, b) => b.sortDate - a.sortDate)
+
+      setMovementHistory(allMovements.slice(0, 50))
     } catch (err) {
       console.error('Exception fetching movement history:', err)
       setMovementHistory([])
@@ -921,9 +1052,8 @@ export default function ProductsPage() {
                       <thead className="bg-gray-50">
                         <tr>
                           <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">{t('products.image')}</th>
-                          <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">{t('products.barcode')}</th>
-                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48 truncate">{t('products.name')}</th>
-                          <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">{t('products.category')}</th>
+                          <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">{t('products.barcode')}</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-96">{t('products.name')}</th>
                           <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">{t('products.price')}</th>
                           <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">{t('products.stock')}</th>
                         </tr>
@@ -940,12 +1070,11 @@ export default function ProductsPage() {
                                 </div>
                               )}
                             </td>
-                            <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">{product.barcode}</td>
-                            <td className="px-3 py-3 whitespace-nowrap max-w-48">
+                            <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 max-w-28 truncate">{product.barcode}</td>
+                            <td className="px-3 py-3 whitespace-nowrap max-w-96">
                               <div className="text-sm font-medium text-gray-900 truncate">{product.name_th}</div>
                               {product.name_en && <div className="text-xs text-gray-500 truncate">{product.name_en}</div>}
                             </td>
-                            <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-500">{(product as any).category?.name_th || t('products.noCategory')}</td>
                             <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">฿{product.base_price.toFixed(2)}</td>
                             <td className="px-2 py-3 whitespace-nowrap">
                               <span className={`text-sm ${product.stock_quantity <= product.min_stock_level ? 'text-red-600 font-medium' : 'text-gray-900'}`}>
@@ -1024,8 +1153,8 @@ export default function ProductsPage() {
                               <thead className="bg-gray-50">
                                 <tr>
                                   <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-16">{t('products.image')}</th>
-                                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-32">{t('products.barcode')}</th>
-                                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-48 truncate">{t('products.name')}</th>
+                                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-28">{t('products.barcode')}</th>
+                                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-96">{t('products.name')}</th>
                                   <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-24">{t('products.price')}</th>
                                   <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-20">{t('products.stock')}</th>
                                 </tr>
@@ -1043,7 +1172,7 @@ export default function ProductsPage() {
                                       )}
                                     </td>
                                     <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">{product.barcode}</td>
-                                    <td className="px-3 py-3 whitespace-nowrap max-w-48">
+                                    <td className="px-3 py-3 whitespace-nowrap max-w-96">
                                       <div className="text-sm font-medium text-gray-900 truncate">{product.name_th}</div>
                                       {product.name_en && <div className="text-xs text-gray-500 truncate">{product.name_en}</div>}
                                     </td>
@@ -1104,9 +1233,8 @@ export default function ProductsPage() {
                             <thead className="bg-gray-50">
                               <tr>
                                 <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-16">{t('products.image')}</th>
-                                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-32">{t('products.barcode')}</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.name')}</th>
-                                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-28">{t('products.category')}</th>
+                                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-28">{t('products.barcode')}</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-96">{t('products.name')}</th>
                                 <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-24">{t('products.price')}</th>
                                 <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-20">{t('products.stock')}</th>
                               </tr>
@@ -1123,12 +1251,11 @@ export default function ProductsPage() {
                                       </div>
                                     )}
                                   </td>
-                                  <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">{product.barcode}</td>
-                                  <td className="px-3 py-3 whitespace-nowrap max-w-48">
+                                  <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 max-w-28 truncate">{product.barcode}</td>
+                                  <td className="px-3 py-3 whitespace-nowrap max-w-96">
                                     <div className="text-sm font-medium text-gray-900 truncate">{product.name_th}</div>
                                     {product.name_en && <div className="text-xs text-gray-500 truncate">{product.name_en}</div>}
                                   </td>
-                                  <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-500">{(product as any).category?.name_th || '-'}</td>
                                   <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">฿{product.base_price.toFixed(2)}</td>
                                   <td className="px-2 py-3 whitespace-nowrap">
                                     <span className={`text-sm ${product.stock_quantity <= product.min_stock_level ? 'text-red-600 font-medium' : 'text-gray-900'}`}>
@@ -1157,9 +1284,8 @@ export default function ProductsPage() {
                             <thead className="bg-gray-50">
                               <tr>
                                 <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-16">{t('products.image')}</th>
-                                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-32">{t('products.barcode')}</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('products.name')}</th>
-                                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-28">{t('products.category')}</th>
+                                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-28">{t('products.barcode')}</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-96">{t('products.name')}</th>
                                 <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-24">{t('products.price')}</th>
                                 <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase w-20">{t('products.stock')}</th>
                               </tr>
@@ -1176,12 +1302,11 @@ export default function ProductsPage() {
                                       </div>
                                     )}
                                   </td>
-                                  <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">{product.barcode}</td>
-                                  <td className="px-3 py-3 whitespace-nowrap max-w-48">
+                                  <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 max-w-28 truncate">{product.barcode}</td>
+                                  <td className="px-3 py-3 whitespace-nowrap max-w-96">
                                     <div className="text-sm font-medium text-gray-900 truncate">{product.name_th}</div>
                                     {product.name_en && <div className="text-xs text-gray-500 truncate">{product.name_en}</div>}
                                   </td>
-                                  <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-500">{(product as any).category?.name_th || '-'}</td>
                                   <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">฿{product.base_price.toFixed(2)}</td>
                                   <td className="px-2 py-3 whitespace-nowrap">
                                     <span className={`text-sm ${product.stock_quantity <= product.min_stock_level ? 'text-red-600 font-medium' : 'text-gray-900'}`}>
