@@ -1873,27 +1873,27 @@ export default function POSPage() {
                   const received = parseFloat(cashReceived) || 0
                   const change = received - total
                   return (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
-                      <label className="block text-sm font-medium text-green-800 mb-2">
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         <Wallet className="h-4 w-4 inline mr-1" />
-                        เงินที่ลูกค้าให้
+                        ลูกค้าชำระ
                       </label>
                       <div className="flex items-center gap-2">
-                        <span className="text-green-700 font-medium">฿</span>
+                        <span className="text-gray-600 font-medium text-sm">฿</span>
                         <input
                           type="number"
                           value={cashReceived}
                           onChange={(e) => setCashReceived(e.target.value)}
                           placeholder="0.00"
-                          className="flex-1 px-3 py-2 border border-green-300 rounded-lg text-lg font-medium text-green-900 focus:outline-none focus:ring-2 focus:ring-green-500"
+                          className="flex-1 px-2 py-1 border border-gray-300 rounded text-base font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400"
                           min="0"
                           step="0.01"
                         />
                       </div>
                       {received > 0 && (
-                        <div className={`mt-2 pt-2 border-t border-green-200 flex justify-between items-center ${change >= 0 ? 'text-green-700' : 'text-red-600'}`}>
-                          <span className="text-sm font-medium">เงินทอน:</span>
-                          <span className="text-xl font-bold">
+                        <div className={`mt-1 pt-1 border-t border-gray-200 flex justify-between items-center text-sm ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          <span className="font-medium">เงินทอน:</span>
+                          <span className="font-bold">
                             {change >= 0 ? `฿${change.toFixed(2)}` : `ขาด ฿${Math.abs(change).toFixed(2)}`}
                           </span>
                         </div>

@@ -18,7 +18,8 @@ import {
   ClipboardList,
   ArrowRightLeft,
   Wallet,
-  Home
+  Home,
+  Receipt
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Card from '../components/common/Card'
@@ -284,6 +285,14 @@ export default function SettingsPage() {
       title: 'รายงานออเดอร์ไม่ปกติ',
       subtitle: 'ตรวจสอบการแก้ไขราคาและของแถม',
       link: '/abnormal-orders-report'
+    },
+    {
+      icon: Receipt,
+      iconBg: 'bg-[#7D735F]/10',
+      iconColor: 'text-[#7D735F]',
+      title: 'รายงานใบเสร็จ/ใบกำกับภาษี',
+      subtitle: 'ตรวจสอบรายการขอใบเสร็จและใบกำกับภาษี',
+      link: '/receipt-tax-invoice-report'
     },
   ]
   

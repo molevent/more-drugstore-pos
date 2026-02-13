@@ -33,6 +33,7 @@ import ReorderReportPage from './pages/ReorderReportPage'
 import StockRefillReportPage from './pages/StockRefillReportPage'
 import StockCountingPage from './pages/StockCountingPage'
 import CashierClosingReportPage from './pages/CashierClosingReportPage'
+import ReceiptTaxInvoiceReportPage from './pages/ReceiptTaxInvoiceReportPage'
 import SettingsPage from './pages/SettingsPage'
 import ShopSettingsPage from './pages/ShopSettingsPage'
 import SalesChannelsSettingsPage from './pages/SalesChannelsSettingsPage'
@@ -86,6 +87,7 @@ function App() {
                     <Route path="/stock-refill-report" element={<StockRefillReportPage />} />
                     <Route path="/stock-counting" element={<StockCountingPage />} />
                     <Route path="/cashier-closing-report" element={<CashierClosingReportPage />} />
+                    <Route path="/receipt-tax-invoice-report" element={<ReceiptTaxInvoiceReportPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/settings/shop" element={<ShopSettingsPage />} />
                     <Route path="/settings/sales-channels" element={<SalesChannelsSettingsPage />} />
