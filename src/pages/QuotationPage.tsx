@@ -651,23 +651,6 @@ export default function QuotationPage() {
 
       {/* Print-Only Section - FlowAccount Style */}
       <div className="print-only">
-        <style>{`
-          @media print {
-            .print-only { display: block !important; }
-            .no-print { display: none !important; }
-            body { font-family: 'Sarabun', 'Prompt', sans-serif; }
-            .flow-header { border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
-            .flow-title { font-size: 24px; font-weight: bold; text-align: center; margin: 20px 0; }
-            .flow-company-info { font-size: 12px; line-height: 1.6; }
-            .flow-customer-info { background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; }
-            .flow-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-            .flow-table th { background: #f5f5f5; border: 1px solid #ddd; padding: 10px; font-size: 12px; text-align: left; }
-            .flow-table td { border: 1px solid #ddd; padding: 10px; font-size: 12px; }
-            .flow-total { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-top: 20px; }
-            .flow-stamp { border: 2px solid #ddd; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; margin-top: 30px; }
-          }
-        `}</style>
-        
         {/* Header with Logo */}
         <div className="flow-header">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
