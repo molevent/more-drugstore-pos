@@ -11,7 +11,8 @@ import {
   Users,
   Wallet,
   Package,
-  FileText
+  FileText,
+  BookOpen
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -62,6 +63,7 @@ export default function Layout({ children }: LayoutProps) {
       items: [
         { name: t('nav.products'), href: '/products', icon: Boxes },
         { name: t('nav.stockManagement'), href: '/stock-management', icon: Package },
+        { name: 'แคตตาล็อกสินค้า', href: '/product-catalogs', icon: BookOpen },
       ]
     },
     {
