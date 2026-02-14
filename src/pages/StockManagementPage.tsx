@@ -625,7 +625,7 @@ export default function StockManagementPage() {
           <Button
             variant="primary"
             onClick={() => window.location.href = '/stock-counting'}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 !rounded-full bg-[#7D735F] text-white hover:bg-[#6a6350] border border-[#7D735F]"
           >
             <Barcode className="h-4 w-4" />
             ระบบนับสต็อก
@@ -633,7 +633,7 @@ export default function StockManagementPage() {
           <Button
             variant="secondary"
             onClick={() => window.location.href = '/manual-stock-cut-report'}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 !rounded-full bg-[#E8F0E8] text-gray-700 hover:bg-[#D8E8D8] border border-gray-300"
           >
             <AlertTriangle className="h-4 w-4" />
             รายงานตัดสต็อกแมนนวล
@@ -641,7 +641,7 @@ export default function StockManagementPage() {
           <Button
             variant="secondary"
             onClick={() => window.location.href = '/stock-replenishment-report'}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 !rounded-full bg-[#E8F0E8] text-gray-700 hover:bg-[#D8E8D8] border border-gray-300"
           >
             <ClipboardList className="h-4 w-4" />
             รายงานแจ้งเติมสต็อก
@@ -649,7 +649,7 @@ export default function StockManagementPage() {
           <Button
             variant="secondary"
             onClick={() => window.location.href = '/purchase-preparation-report'}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 !rounded-full bg-[#E8F0E8] text-gray-700 hover:bg-[#D8E8D8] border border-gray-300"
           >
             <ShoppingCart className="h-4 w-4" />
             รายงานเตรียมสั่งซื้อ
@@ -657,7 +657,7 @@ export default function StockManagementPage() {
           <Button
             variant="secondary"
             onClick={() => setShowChannelImportModal(true)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 !rounded-full bg-[#E8F0E8] text-gray-700 hover:bg-[#D8E8D8] border border-gray-300"
           >
             <FileSpreadsheet className="h-4 w-4" />
             นำเข้าช่องทางขาย

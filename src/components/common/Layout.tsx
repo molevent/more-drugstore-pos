@@ -10,7 +10,8 @@ import {
   X,
   Users,
   Wallet,
-  Package
+  Package,
+  FileText
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -67,6 +68,12 @@ export default function Layout({ children }: LayoutProps) {
       title: 'ผู้ติดต่อ',
       items: [
         { name: t('nav.contacts'), href: '/contacts', icon: Users },
+      ]
+    },
+    {
+      title: 'เอกสาร',
+      items: [
+        { name: 'ใบเสนอราคา', href: '/quotations', icon: FileText },
       ]
     },
     {

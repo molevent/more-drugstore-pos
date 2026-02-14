@@ -20,7 +20,8 @@ import {
   Wallet,
   Home,
   Receipt,
-  Calendar
+  Calendar,
+  FileText
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Card from '../components/common/Card'
@@ -219,6 +220,18 @@ export default function SettingsPage() {
     },
   ]
 
+  // Document Items
+  const documentItems = [
+    {
+      icon: FileText,
+      iconBg: 'bg-[#4A90A4]/10',
+      iconColor: 'text-[#4A90A4]',
+      title: 'ใบเสนอราคา',
+      subtitle: 'สร้างและจัดการใบเสนอราคา',
+      link: '/quotation'
+    },
+  ]
+
   // External Connection Settings Items
   const externalConnectionItems = [
     {
@@ -314,6 +327,24 @@ export default function SettingsPage() {
             {t('settings.title')}
           </h1>
           <p className="text-gray-600 mt-1">ตั้งค่าระบบและการเชื่อมต่อ</p>
+        </div>
+      </div>
+
+      {/* Documents Section */}
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">เอกสาร</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {documentItems.map((item, index) => (
+            <SettingsCard
+              key={index}
+              icon={item.icon}
+              iconBg={item.iconBg}
+              iconColor={item.iconColor}
+              title={item.title}
+              subtitle={item.subtitle}
+              link={item.link}
+            />
+          ))}
         </div>
       </div>
 
