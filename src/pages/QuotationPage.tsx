@@ -128,8 +128,8 @@ export default function QuotationPage() {
     discount_amount: 0,
     discount_percent: 0,
     tax_amount: 0,
-    tax_rate: 7,
-    tax_type: 'exclusive',
+    tax_rate: 0,
+    tax_type: 'inclusive',
     total_amount: 0,
     notes: '',
     terms: 'ราคานี้มีผลภายใน 30 วัน นับจากวันออกใบเสนอราคา',
@@ -519,7 +519,7 @@ export default function QuotationPage() {
       product_id: product.id,
       product_name: product.name_th,
       product_image: product.image_url,
-      unit_price: product.base_price,
+      unit_price: product.base_price * 1.07, // VAT inclusive price
       unit: product.unit || 'ชิ้น'
     }
     
@@ -848,16 +848,7 @@ export default function QuotationPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 text-blue-600 text-sm">
-                  <input type="checkbox" checked={quotation.tax_rate > 0} onChange={(e) => setQuotation(prev => ({ ...prev, tax_rate: e.target.checked ? 7 : 0 }))} className="rounded" />
-                  ภาษีมูลค่าเพิ่ม {quotation.tax_rate}%
-                </label>
-                <select value={quotation.tax_type} onChange={(e) => setQuotation(prev => ({ ...prev, tax_type: e.target.value as 'inclusive' | 'exclusive' }))} className="text-sm border border-gray-300 rounded px-2 py-1">
-                  <option value="exclusive">ไม่รวม VAT</option>
-                  <option value="inclusive">รวม VAT</option>
-                </select>
-              </div>
+              {/* VAT checkbox removed - prices are VAT inclusive by default */}
             </div>
           </div>
         </div>
@@ -984,16 +975,7 @@ export default function QuotationPage() {
               <span>{formatNumber(quotation.subtotal - (quotation.subtotal * quotation.discount_percent / 100) - quotation.discount_amount)}</span>
             </div>
 
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <label className="flex items-center gap-2 text-blue-600 text-sm">
-                  <input type="checkbox" checked={quotation.tax_rate > 0} onChange={(e) => setQuotation(prev => ({ ...prev, tax_rate: e.target.checked ? 7 : 0 }))} className="rounded" />
-                  ภาษีมูลค่าเพิ่ม {quotation.tax_rate}%
-                </label>
-                <span className="text-xs text-gray-400">({quotation.tax_type === 'inclusive' ? 'รวม' : 'ไม่รวม'})</span>
-              </div>
-              <span className="text-sm font-medium">{formatNumber(quotation.tax_amount)}</span>
-            </div>
+            {/* VAT section removed - prices are VAT inclusive */}
 
             <div className="border-t pt-3">
               <div className="flex justify-between items-center">
