@@ -216,9 +216,9 @@ export default function QuotationsListPage() {
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-1">
                           <Link 
-                            to={`/quotation/${quotation.id}`}
+                            to={`/quotation/${quotation.id}?print=1`}
                             className="p-1 text-gray-400 hover:text-[#4A90A4] rounded"
-                            title="ดูรายละเอียด"
+                            title="ดูรายละเอียด (พิมพ์)"
                           >
                             <Eye className="h-4 w-4" />
                           </Link>

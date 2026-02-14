@@ -174,6 +174,12 @@ export default function QuotationPage() {
     } else {
       generateQuotationNumber()
     }
+    // Auto-trigger print if print=1 parameter is present
+    if (searchParams.get('print') === '1') {
+      setTimeout(() => {
+        window.print()
+      }, 1000)
+    }
   }, [quotationId])
 
   useEffect(() => {
