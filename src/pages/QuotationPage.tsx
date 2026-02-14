@@ -547,13 +547,12 @@ export default function QuotationPage() {
     <div className="max-w-5xl mx-auto">
       {/* Print Styles */}
       <style>{`
-        @media print {
-          .no-print { display: none !important; }
-          .print-only { display: block !important; }
-          body { background: white; }
-          .shadow, .shadow-sm { box-shadow: none !important; }
-        }
         .print-only { display: none; }
+        @media print {
+          .print-only { display: block !important; }
+          .no-print { display: none !important; }
+          body { font-family: 'Sarabun', 'Prompt', sans-serif; }
+        }
       `}</style>
 
       {/* Header */}
@@ -651,7 +650,7 @@ export default function QuotationPage() {
       <input ref={stampInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'stamp')} />
 
       {/* Print-Only Section - FlowAccount Style */}
-      <div className="print-only" style={{ display: 'none' }}>
+      <div className="print-only">
         <style>{`
           @media print {
             .print-only { display: block !important; }
