@@ -166,6 +166,34 @@ export default function QuotationPage() {
   const stampInputRef = useRef<HTMLInputElement>(null)
   const moreMenuRef = useRef<HTMLDivElement>(null)
 
+  // Business settings state
+  const [businessSettings, setBusinessSettings] = useState({
+    name: 'More Drug Store',
+    phone: '02-123-4567',
+    email: 'contact@moredrugstore.com',
+    address: '123 ถนนสุขุมวิท กรุงเทพฯ',
+    tax_id: '1234567890123'
+  })
+
+  // Load business settings from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('shop_settings')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        setBusinessSettings({
+          name: parsed.name || 'More Drug Store',
+          phone: parsed.phone || '02-123-4567',
+          email: parsed.email || 'contact@moredrugstore.com',
+          address: parsed.address || '123 ถนนสุขุมวิท กรุงเทพฯ',
+          tax_id: parsed.tax_id || '1234567890123'
+        })
+      } catch (e) {
+        console.error('Error loading business settings:', e)
+      }
+    }
+  }, [])
+
   useEffect(() => {
     fetchContacts()
     fetchProducts()
@@ -656,22 +684,22 @@ export default function QuotationPage() {
       <input ref={stampInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'stamp')} />
 
       {/* Print-Only Section - FlowAccount Style */}
-      <div className="print-only">
-        {/* Header with Logo */}
-        <div className="flow-header">
+      <div className="print-only" style={{ fontSize: '12px' }}>
+        {/* Seller Info - From Business Settings */}
+        <div className="flow-seller-info" style={{ marginBottom: '15px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ flex: 1 }}>
-              {quotation.logo_url && <img src={quotation.logo_url} alt="Logo" style={{ height: '60px', objectFit: 'contain', marginBottom: '10px' }} />}
-              <div className="flow-company-info">
-                <strong>More Drug Store</strong><br />
-                123 ถนนสุขุมวิท กรุงเทพฯ<br />
-                โทร: 02-123-4567 | อีเมล: contact@moredrugstore.com<br />
-                เลขประจำตัวผู้เสียภาษี: 1234567890123
+              {quotation.logo_url && <img src={quotation.logo_url} alt="Logo" style={{ height: '50px', objectFit: 'contain', marginBottom: '8px' }} />}
+              <div>
+                <strong>{businessSettings.name}</strong><br />
+                {businessSettings.address}<br />
+                โทร: {businessSettings.phone} | อีเมล: {businessSettings.email}<br />
+                เลขประจำตัวผู้เสียภาษี: {businessSettings.tax_id}
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#333', marginBottom: '10px' }}>ใบเสนอราคา</h1>
-              <div style={{ fontSize: '14px' }}>
+              <h1 style={{ fontSize: '22px', fontWeight: 'bold', color: '#333', marginBottom: '8px' }}>ใบเสนอราคา</h1>
+              <div style={{ fontSize: '12px' }}>
                 <strong>เลขที่:</strong> {quotation.quotation_number}<br />
                 <strong>วันที่:</strong> {new Date(quotation.issue_date).toLocaleDateString('th-TH')}<br />
                 <strong>ครบกำหนด:</strong> {new Date(quotation.expiry_date).toLocaleDateString('th-TH')}
@@ -681,9 +709,9 @@ export default function QuotationPage() {
         </div>
 
         {/* Customer Info */}
-        <div className="flow-customer-info">
-          <strong style={{ fontSize: '14px' }}>ลูกค้า</strong>
-          <div style={{ marginTop: '8px', lineHeight: '1.6' }}>
+        <div className="flow-customer-info" style={{ marginBottom: '15px' }}>
+          <strong style={{ fontSize: '12px' }}>ลูกค้า</strong>
+          <div style={{ marginTop: '6px', lineHeight: '1.5', fontSize: '12px' }}>
             <strong>{quotation.contact_name}</strong><br />
             {quotation.contact_company && <>{quotation.contact_company}<br /></>}
             {quotation.contact_address && <>{quotation.contact_address}<br /></>}
@@ -693,7 +721,7 @@ export default function QuotationPage() {
         </div>
 
         {/* Items Table */}
-        <table className="flow-table">
+        <table className="flow-table" style={{ fontSize: '12px' }}>
           <thead>
             <tr>
               <th style={{ width: '5%' }}>#</th>
@@ -711,7 +739,7 @@ export default function QuotationPage() {
                 <td>
                   <strong>{item.product_name}</strong>
                   {item.details && <br />}
-                  {item.details && <span style={{ fontSize: '11px', color: '#666' }}>{item.details}</span>}
+                  {item.details && <span style={{ fontSize: '10px', color: '#666' }}>{item.details}</span>}
                 </td>
                 <td style={{ textAlign: 'center' }}>{item.quantity}</td>
                 <td style={{ textAlign: 'center' }}>{item.unit}</td>
@@ -723,9 +751,9 @@ export default function QuotationPage() {
         </table>
 
         {/* Summary */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '15px', fontSize: '12px' }}>
           <div style={{ flex: 1 }}>
-            <div className="flow-total" style={{ maxWidth: '300px' }}>
+            <div className="flow-total" style={{ maxWidth: '280px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span>รวมเป็นเงิน</span>
                 <span>{formatNumber(quotation.subtotal)} บาท</span>
@@ -752,7 +780,7 @@ export default function QuotationPage() {
                   <span>{formatNumber(quotation.tax_amount)} บาท</span>
                 </div>
               )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', fontWeight: 'bold', borderTop: '2px solid #333', paddingTop: '10px', marginTop: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 'bold', borderTop: '2px solid #333', paddingTop: '8px', marginTop: '8px' }}>
                 <span>ยอดรวมทั้งสิ้น</span>
                 <span>{formatNumber(quotation.total_amount + quotation.withholding_tax_amount)} บาท</span>
               </div>
@@ -772,34 +800,31 @@ export default function QuotationPage() {
             
             {/* Terms and Notes */}
             {quotation.terms && (
-              <div style={{ marginTop: '20px', fontSize: '12px' }}>
+              <div style={{ marginTop: '15px', fontSize: '11px' }}>
                 <strong>เงื่อนไขการชำระเงิน:</strong><br />
                 <div style={{ whiteSpace: 'pre-wrap' }}>{quotation.terms}</div>
               </div>
             )}
             {quotation.notes && (
-              <div style={{ marginTop: '15px', fontSize: '12px' }}>
+              <div style={{ marginTop: '12px', fontSize: '11px' }}>
                 <strong>หมายเหตุ:</strong><br />
                 {quotation.notes}
               </div>
             )}
           </div>
 
-          {/* Signature Section */}
-          <div style={{ width: '250px', textAlign: 'center' }}>
+          {/* Signature Section - Moved to bottom/footer */}
+          <div style={{ width: '200px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
             {quotation.stamp_url && (
-              <img src={quotation.stamp_url} alt="Stamp" style={{ width: '100px', height: '100px', objectFit: 'contain', marginBottom: '10px' }} />
+              <img src={quotation.stamp_url} alt="Stamp" style={{ width: '80px', height: '80px', objectFit: 'contain', marginBottom: '8px', marginLeft: 'auto', marginRight: 'auto' }} />
             )}
-            <div style={{ borderTop: '1px solid #333', marginTop: '60px', paddingTop: '10px' }}>
-              <div style={{ fontSize: '14px' }}>ผู้เสนอราคา</div>
+            <div style={{ borderTop: '1px solid #333', paddingTop: '8px', marginTop: '40px' }}>
+              <div style={{ fontSize: '12px' }}>ผู้เสนอราคา</div>
             </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '1px solid #ddd', fontSize: '11px', color: '#666', textAlign: 'center' }}>
-          เอกสารนี้สร้างจากระบบ More Drug Store | ใบเสนอราคานี้มีอายุถึงวันที่ {new Date(quotation.expiry_date).toLocaleDateString('th-TH')}
-        </div>
+        {/* Footer - Removed system text */}
       </div>
 
       {/* Form Fields - Hidden when printing */}
