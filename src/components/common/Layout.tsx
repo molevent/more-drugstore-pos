@@ -95,7 +95,7 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-white no-print">
+    <div className="min-h-screen bg-white">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div 
@@ -178,7 +178,7 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </div>
 
-      <div className="lg:pl-64 flex flex-col flex-1 no-print">
+      <div className="lg:pl-64 flex flex-col flex-1">
         <header className="lg:hidden bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
           <div className="flex items-center justify-between h-16 px-4">
             <button
