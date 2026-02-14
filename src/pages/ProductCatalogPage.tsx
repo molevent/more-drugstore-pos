@@ -271,14 +271,14 @@ export default function ProductCatalogPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 print:p-0 print:bg-white">
-      <style>{\`
+      <style>{`
         @media print {
           .no-print { display: none !important; }
           .print-only { display: block !important; }
           body { font-family: 'Sarabun', sans-serif; }
         }
         .print-only { display: none; }
-      \`}</style>
+      `}</style>
 
       {/* Header */}
       <div className="no-print bg-white border-b border-gray-200 sticky top-0 z-10">
@@ -438,11 +438,11 @@ export default function ProductCatalogPage() {
                         <button
                           key={tag}
                           onClick={() => toggleTag(tag)}
-                          className={\`px-3 py-1 rounded-full text-sm transition-colors \${
+                          className={`px-3 py-1 rounded-full text-sm transition-colors ${
                             selectedTags.includes(tag)
                               ? 'bg-[#7D735F] text-white'
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          \`}
+                          `}
                         >
                           {tag}
                         </button>
@@ -464,7 +464,7 @@ export default function ProductCatalogPage() {
                         return (
                           <div 
                             key={product.id} 
-                            className={\`p-3 flex items-center gap-3 hover:bg-gray-50 \${isSelected ? 'bg-blue-50' : ''}\`}
+                            className={`p-3 flex items-center gap-3 hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''}`}
                           >
                             {product.image_url ? (
                               <img 
@@ -481,7 +481,7 @@ export default function ProductCatalogPage() {
                               <p className="font-medium text-sm">{getProductName(product)}</p>
                               <p className="text-sm text-gray-500">
                                 ฿{price.toLocaleString()}
-                                {settings.showStockQuantity && \` • คงเหลือ: \${product.stock_quantity || 0}\`}
+                                {settings.showStockQuantity && ` • คงเหลือ: ${product.stock_quantity || 0}`}
                               </p>
                             </div>
                             <Button
