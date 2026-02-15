@@ -178,8 +178,8 @@ export default function EmployeeSettingsPage() {
         <div className="flex items-start gap-3">
           <UserCog className="h-8 w-8 text-[#A67B5B] mt-1" />
           <div>
-            <h1 className="text-2xl font-bold text-[#5C4A32]">จัดการพนักงาน</h1>
-            <p className="text-[#8B7355]">ตั้งค่าเงินเดือนและค่าจ้างพนักงาน</p>
+            <h1 className="text-2xl font-bold text-black">จัดการพนักงาน</h1>
+            <p className="text-black">ตั้งค่าเงินเดือนและค่าจ้างพนักงาน</p>
           </div>
         </div>
         <button
@@ -199,15 +199,15 @@ export default function EmployeeSettingsPage() {
         <Card className="bg-[#F5F0E8] border-[#D4C9B8]">
           <div className="p-4 text-center">
             <Users className="h-6 w-6 text-[#A67B5B] mx-auto mb-2" />
-            <p className="text-xs text-[#8B7355]">พนักงานทั้งหมด</p>
-            <p className="text-2xl font-bold text-[#5C4A32]">{employees.length} คน</p>
+            <p className="text-xs text-black">พนักงานทั้งหมด</p>
+            <p className="text-2xl font-bold text-black">{employees.length} คน</p>
           </div>
         </Card>
         <Card className="bg-[#FAF6F0] border-[#D4C9B8]">
           <div className="p-4 text-center">
             <Briefcase className="h-6 w-6 text-[#A67B5B] mx-auto mb-2" />
-            <p className="text-xs text-[#8B7355]">รายชั่วโมง</p>
-            <p className="text-2xl font-bold text-[#5C4A32]">
+            <p className="text-xs text-black">รายชั่วโมง</p>
+            <p className="text-2xl font-bold text-black">
               {employees.filter(e => e.employment_type === 'รายชั่วโมง').length} คน
             </p>
           </div>
@@ -226,14 +226,14 @@ export default function EmployeeSettingsPage() {
       {/* Employee List */}
       <Card className="border-[#E8E0D5]">
         <div className="p-4 border-b border-[#E8E0D5] bg-[#FAF8F5]">
-          <h2 className="text-base font-bold text-[#5C4A32]">รายชื่อพนักงาน</h2>
+          <h2 className="text-base font-bold text-black">รายชื่อพนักงาน</h2>
         </div>
         <div className="divide-y divide-[#E8E0D5]">
           {employees.length === 0 ? (
             <div className="p-8 text-center">
               <Users className="h-12 w-12 text-[#D4C9B8] mx-auto mb-3" />
-              <p className="text-[#8B7355]">ไม่มีพนักงาน</p>
-              <p className="text-sm text-[#A67B52] mt-1">คลิก "เพิ่มพนักงาน" เพื่อเริ่มต้น</p>
+              <p className="text-black">ไม่มีพนักงาน</p>
+              <p className="text-sm text-black mt-1">คลิก "เพิ่มพนักงาน" เพื่อเริ่มต้น</p>
             </div>
           ) : (
             employees.map((employee) => (
@@ -243,8 +243,8 @@ export default function EmployeeSettingsPage() {
                     <UserCog className="h-5 w-5 text-[#A67B5B]" />
                   </div>
                   <div>
-                    <p className="font-medium text-[#5C4A32]">{employee.name}</p>
-                    <div className="flex gap-2 text-sm text-[#8B7355]">
+                    <p className="font-medium text-black">{employee.name}</p>
+                    <div className="flex gap-2 text-sm text-black">
                       <span>{employee.position}</span>
                       <span>•</span>
                       <span className={`px-1.5 py-0.5 rounded text-xs ${
@@ -262,7 +262,7 @@ export default function EmployeeSettingsPage() {
                       }
                     </p>
                     {employee.phone && (
-                      <p className="text-xs text-[#8B7355]">โทร: {employee.phone}</p>
+                      <p className="text-xs text-black">โทร: {employee.phone}</p>
                     )}
                   </div>
                 </div>
@@ -291,7 +291,7 @@ export default function EmployeeSettingsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b border-[#E8E0D5]">
-              <h3 className="text-lg font-bold text-[#5C4A32]">
+              <h3 className="text-lg font-bold text-black">
                 {editingEmployee ? 'แก้ไขพนักงาน' : 'เพิ่มพนักงาน'}
               </h3>
               <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">
@@ -301,7 +301,7 @@ export default function EmployeeSettingsPage() {
             
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[#5C4A32] mb-1">ชื่อพนักงาน</label>
+                <label className="block text-sm font-medium text-black mb-1">ชื่อพนักงาน</label>
                 <Input
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -311,7 +311,7 @@ export default function EmployeeSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#5C4A32] mb-1">ตำแหน่ง</label>
+                <label className="block text-sm font-medium text-black mb-1">ตำแหน่ง</label>
                 <select
                   value={formData.position}
                   onChange={(e) => {
@@ -333,7 +333,7 @@ export default function EmployeeSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#5C4A32] mb-1">ประเภทการจ้าง</label>
+                <label className="block text-sm font-medium text-black mb-1">ประเภทการจ้าง</label>
                 <select
                   value={formData.employment_type}
                   onChange={(e) => setFormData({ 
@@ -351,7 +351,7 @@ export default function EmployeeSettingsPage() {
 
               {formData.employment_type === 'รายชั่วโมง' ? (
                 <div>
-                  <label className="block text-sm font-medium text-[#5C4A32] mb-1">ค่าจ้าง/ชม. (บาท)</label>
+                  <label className="block text-sm font-medium text-black mb-1">ค่าจ้าง/ชม. (บาท)</label>
                   <Input
                     type="number"
                     value={formData.hourly_wage}
@@ -363,7 +363,7 @@ export default function EmployeeSettingsPage() {
                 </div>
               ) : (
                 <div>
-                  <label className="block text-sm font-medium text-[#5C4A32] mb-1">เงินเดือน/เดือน (บาท)</label>
+                  <label className="block text-sm font-medium text-black mb-1">เงินเดือน/เดือน (บาท)</label>
                   <Input
                     type="number"
                     value={formData.monthly_salary}
@@ -376,7 +376,7 @@ export default function EmployeeSettingsPage() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-[#5C4A32] mb-1">เบอร์โทร</label>
+                <label className="block text-sm font-medium text-black mb-1">เบอร์โทร</label>
                 <Input
                   type="tel"
                   value={formData.phone}
@@ -386,7 +386,7 @@ export default function EmployeeSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#5C4A32] mb-1">อีเมล</label>
+                <label className="block text-sm font-medium text-black mb-1">อีเมล</label>
                 <Input
                   type="email"
                   value={formData.email}
@@ -396,7 +396,7 @@ export default function EmployeeSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#5C4A32] mb-1">วันเริ่มงาน</label>
+                <label className="block text-sm font-medium text-black mb-1">วันเริ่มงาน</label>
                 <Input
                   type="date"
                   value={formData.start_date}
