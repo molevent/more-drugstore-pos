@@ -10,6 +10,7 @@ import {
   X,
   Users,
   Wallet,
+  Calendar,
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -81,6 +82,7 @@ export default function Layout({ children }: LayoutProps) {
       title: 'เอกสาร',
       items: [
         { name: t('nav.documents'), href: '/expenses', icon: Wallet },
+        { name: 'ตารางเข้างาน', href: '/work-schedule', icon: Calendar },
       ]
     },
     {

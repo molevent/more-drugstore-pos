@@ -377,3 +377,28 @@ export interface SalesStats {
   by_payment_method: Record<PaymentMethod, number>
   by_platform: Record<string, number>
 }
+
+// ============================================================================
+// WORK SCHEDULE TYPES
+// ============================================================================
+
+export interface WorkShift {
+  id: string
+  employee_name: string
+  work_date: string
+  start_time: string
+  end_time: string
+  hourly_wage: number
+  total_hours: number
+  total_wage: number
+  notes?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface WorkScheduleSummary {
+  employee_name: string
+  total_days: number
+  total_hours: number
+  total_wage: number
+}
