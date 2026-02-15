@@ -17,7 +17,7 @@ import {
   BookOpen,
   UserPlus
 } from 'lucide-react'
-import type { WorkShift, WorkScheduleSummary } from '../types/database'
+import type { WorkShift, WorkScheduleSummary, Employee } from '../types/database'
 
 interface ShiftFormData {
   employee_name: string
@@ -79,6 +79,7 @@ const OT_RATE = 250 // For 18:00-20:30
 export default function WorkSchedulePage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [shifts, setShifts] = useState<WorkShift[]>([])
+  const [employees, setEmployees] = useState<Employee[]>([])
   const [showModal, setShowModal] = useState(false)
   const [editingShift, setEditingShift] = useState<WorkShift | null>(null)
   const [formData, setFormData] = useState<ShiftFormData>(DEFAULT_SHIFT)
@@ -88,7 +89,22 @@ export default function WorkSchedulePage() {
   // Fetch shifts for current month
   useEffect(() => {
     fetchShifts()
+    fetchEmployees()
   }, [currentDate])
+
+  const fetchEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('is_active', true)
+      
+      if (error) throw error
+      setEmployees(data || [])
+    } catch (error) {
+      console.error('Error fetching employees:', error)
+    }
+  }
 
   const fetchShifts = async () => {
     try {
@@ -147,15 +163,19 @@ export default function WorkSchedulePage() {
 
   // Summary statistics
   const summary = useMemo((): WorkScheduleSummary[] => {
-    const employeeMap = new Map<string, { days: Set<string>; hours: number; wage: number; isManager: boolean }>()
+    const employeeMap = new Map<string, { days: Set<string>; hours: number; wage: number; hasMonthlySalary: boolean; monthlySalary: number }>()
     
     shifts.forEach(shift => {
-      const isManager = shift.position === 'ผู้จัดการ'
-      const existing = employeeMap.get(shift.employee_name) || { days: new Set(), hours: 0, wage: 0, isManager: false }
+      const employee = employees.find(e => e.name === shift.employee_name)
+      const hasMonthlySalary = employee?.employment_type === 'รายเดือน'
+      const monthlySalary = employee?.monthly_salary || 0
+      
+      const existing = employeeMap.get(shift.employee_name) || { days: new Set(), hours: 0, wage: 0, hasMonthlySalary: false, monthlySalary: 0 }
       existing.days.add(shift.work_date)
       existing.hours += shift.total_hours
       existing.wage += shift.total_wage
-      existing.isManager = isManager || existing.isManager
+      existing.hasMonthlySalary = hasMonthlySalary || existing.hasMonthlySalary
+      existing.monthlySalary = monthlySalary || existing.monthlySalary
       employeeMap.set(shift.employee_name, existing)
     })
     
@@ -163,11 +183,11 @@ export default function WorkSchedulePage() {
       employee_name: name,
       total_days: data.days.size,
       total_hours: data.hours,
-      // For managers: monthly salary + additional wages (OT, Sunday special)
+      // For employees with monthly salary: monthly salary + shift wages
       // For hourly workers: just sum of wages from shifts
-      total_wage: data.isManager ? MANAGER_DEFAULTS.monthly_salary + data.wage : data.wage
+      total_wage: data.hasMonthlySalary ? data.monthlySalary + data.wage : data.wage
     }))
-  }, [shifts])
+  }, [shifts, employees])
 
   // Handlers
   const handlePreviousMonth = () => {
