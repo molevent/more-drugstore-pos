@@ -52,6 +52,11 @@ const PHARMACIST_DEFAULTS = {
   hourly_wage: 150
 }
 
+// Default values for Part-time (พนักงานพาร์ทไทม์): 40/hr
+const PARTTIME_DEFAULTS = {
+  hourly_wage: 40
+}
+
 export default function WorkSchedulePage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [shifts, setShifts] = useState<WorkShift[]>([])
@@ -534,6 +539,12 @@ export default function WorkSchedulePage() {
                         start_time: PHARMACIST_DEFAULTS.start_time,
                         end_time: PHARMACIST_DEFAULTS.end_time,
                         hourly_wage: PHARMACIST_DEFAULTS.hourly_wage
+                      })
+                    } else if (newPosition === 'พนักงานพาร์ทไทม์') {
+                      setFormData({
+                        ...formData,
+                        position: newPosition,
+                        hourly_wage: PARTTIME_DEFAULTS.hourly_wage
                       })
                     } else {
                       setFormData({ ...formData, position: newPosition })
