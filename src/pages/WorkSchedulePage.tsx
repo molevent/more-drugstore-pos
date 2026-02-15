@@ -81,8 +81,14 @@ export default function WorkSchedulePage() {
   const [shifts, setShifts] = useState<WorkShift[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [showModal, setShowModal] = useState(false)
+  const [showLeaveModal, setShowLeaveModal] = useState(false)
   const [editingShift, setEditingShift] = useState<WorkShift | null>(null)
   const [formData, setFormData] = useState<ShiftFormData>(DEFAULT_SHIFT)
+  const [leaveFormData, setLeaveFormData] = useState({
+    employee_name: '',
+    work_date: new Date().toISOString().split('T')[0],
+    notes: 'ลา'
+  })
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar')
 
@@ -164,17 +170,24 @@ export default function WorkSchedulePage() {
 
   // Summary statistics
   const summary = useMemo((): WorkScheduleSummary[] => {
-    const employeeMap = new Map<string, { days: Set<string>; hours: number; wage: number; hasMonthlySalary: boolean; monthlySalary: number }>()
+    const employeeMap = new Map<string, { days: Set<string>; leaveDays: Set<string>; hours: number; wage: number; hasMonthlySalary: boolean; monthlySalary: number }>()
     
     shifts.forEach(shift => {
       const employee = employees.find(e => e.name === shift.employee_name)
       const hasMonthlySalary = employee?.employment_type === 'รายเดือน'
       const monthlySalary = employee?.monthly_salary || 0
       
-      const existing = employeeMap.get(shift.employee_name) || { days: new Set(), hours: 0, wage: 0, hasMonthlySalary: false, monthlySalary: 0 }
-      existing.days.add(shift.work_date)
-      existing.hours += shift.total_hours
-      existing.wage += shift.total_wage
+      const existing = employeeMap.get(shift.employee_name) || { days: new Set(), leaveDays: new Set(), hours: 0, wage: 0, hasMonthlySalary: false, monthlySalary: 0 }
+      
+      // Track leave days separately
+      if (shift.notes === 'ลา') {
+        existing.leaveDays.add(shift.work_date)
+      } else {
+        existing.days.add(shift.work_date)
+        existing.hours += shift.total_hours
+        existing.wage += shift.total_wage
+      }
+      
       existing.hasMonthlySalary = hasMonthlySalary || existing.hasMonthlySalary
       existing.monthlySalary = monthlySalary || existing.monthlySalary
       employeeMap.set(shift.employee_name, existing)
@@ -183,6 +196,7 @@ export default function WorkSchedulePage() {
     return Array.from(employeeMap.entries()).map(([name, data]) => ({
       employee_name: name,
       total_days: data.days.size,
+      total_leave_days: data.leaveDays.size,
       total_hours: data.hours,
       // For employees with monthly salary: monthly salary + shift wages
       // For hourly workers: just sum of wages from shifts
@@ -308,6 +322,42 @@ export default function WorkSchedulePage() {
     setSelectedDate(null)
   }
 
+  const closeLeaveModal = () => {
+    setShowLeaveModal(false)
+    setLeaveFormData({
+      employee_name: '',
+      work_date: new Date().toISOString().split('T')[0],
+      notes: 'ลา'
+    })
+  }
+
+  const handleLeaveSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    try {
+      const { error } = await supabase.from('work_shifts').insert({
+        employee_name: leaveFormData.employee_name,
+        position: 'ผู้จัดการ',
+        work_date: leaveFormData.work_date,
+        start_time: '00:00',
+        end_time: '00:00',
+        hourly_wage: 0,
+        total_hours: 0,
+        total_wage: 0,
+        notes: 'ลา'
+      })
+      
+      if (error) throw error
+      
+      alert(`บันทึกการลาสำหรับ ${leaveFormData.employee_name} วันที่ ${new Date(leaveFormData.work_date).toLocaleDateString('th-TH')} เรียบร้อย`)
+      closeLeaveModal()
+      await fetchShifts()
+    } catch (error) {
+      console.error('Error saving leave:', error)
+      alert('ไม่สามารถบันทึกการลาได้')
+    }
+  }
+
   const renderCalendar = () => {
     const daysInMonth = getDaysInMonth(currentDate)
     const firstDay = getFirstDayOfMonth(currentDate)
@@ -351,13 +401,17 @@ export default function WorkSchedulePage() {
             {dayShifts.slice(0, 2).map((shift, idx) => (
               <div
                 key={idx}
-                className="text-xs truncate text-[#5C4A32] bg-[#F5F0E8] px-1 py-0.5 rounded cursor-pointer hover:bg-[#E8E0D5]"
+                className={`text-xs truncate px-1 py-0.5 rounded cursor-pointer ${
+                  shift.notes === 'ลา' 
+                    ? 'text-[#E65100] bg-[#FFF3E0] border border-[#FFCC80]' 
+                    : 'text-[#5C4A32] bg-[#F5F0E8] hover:bg-[#E8E0D5]'
+                }`}
                 onClick={(e) => {
                   e.stopPropagation()
                   handleEdit(shift)
                 }}
               >
-                {shift.employee_name}
+                {shift.notes === 'ลา' ? '🏖️ ' : ''}{shift.employee_name}
               </div>
             ))}
             {dayShifts.length > 2 && (
@@ -424,6 +478,15 @@ export default function WorkSchedulePage() {
           >
             <Plus className="h-4 w-4" />
             เพิ่มกะงาน
+          </button>
+          <button
+            onClick={() => {
+              setShowLeaveModal(true)
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#FF9800] bg-white text-[#FF9800] text-sm whitespace-nowrap hover:bg-[#FF9800]/10 transition-all shadow-sm"
+          >
+            <span className="text-lg">🏖️</span>
+            ลา
           </button>
         </div>
       </div>
@@ -550,25 +613,38 @@ export default function WorkSchedulePage() {
               }
               
               return filteredShifts.map((shift) => (
-                <div key={shift.id} className="p-4 flex items-center justify-between hover:bg-[#FAF8F5]">
+                <div key={shift.id} className={`p-4 flex items-center justify-between hover:bg-[#FAF8F5] ${shift.notes === 'ลา' ? 'bg-[#FFF3E0]' : ''}`}>
                   <div className="flex items-center gap-4">
-                    <div className="p-2 bg-[#F5F0E8] rounded-lg">
-                      <UserPlus className="h-5 w-5 text-[#A67B5B]" />
+                    <div className={`p-2 rounded-lg ${shift.notes === 'ลา' ? 'bg-[#FFCC80]' : 'bg-[#F5F0E8]'}`}>
+                      {shift.notes === 'ลา' ? (
+                        <span className="text-xl">🏖️</span>
+                      ) : (
+                        <UserPlus className="h-5 w-5 text-[#A67B5B]" />
+                      )}
                     </div>
                     <div>
                       <p className="font-medium text-[#5C4A32]">{shift.employee_name}</p>
                       <p className="text-sm text-[#8B7355]">
-                        {new Date(shift.work_date).toLocaleDateString('th-TH')} • {shift.start_time} - {shift.end_time}
+                        {new Date(shift.work_date).toLocaleDateString('th-TH')} 
+                        {shift.notes !== 'ลา' && `• ${shift.start_time} - ${shift.end_time}`}
                       </p>
                       {shift.notes && (
-                        <p className="text-xs text-[#A67B52] mt-1">{shift.notes}</p>
+                        <p className={`text-xs mt-1 ${shift.notes === 'ลา' ? 'text-[#E65100] font-medium' : 'text-[#A67B52]'}`}>
+                          {shift.notes === 'ลา' ? '🏖️ ลา' : shift.notes}
+                        </p>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <p className="font-medium text-[#5C4A32]">{shift.total_hours.toFixed(1)} ชม.</p>
-                      <p className="text-sm font-bold text-[#2E7D32]">฿{shift.total_wage.toLocaleString()}</p>
+                      {shift.notes === 'ลา' ? (
+                        <p className="text-sm font-medium text-[#E65100]">ลา 1 วัน</p>
+                      ) : (
+                        <>
+                          <p className="font-medium text-[#5C4A32]">{shift.total_hours.toFixed(1)} ชม.</p>
+                          <p className="text-sm font-bold text-[#2E7D32]">฿{shift.total_wage.toLocaleString()}</p>
+                        </>
+                      )}
                     </div>
                     <div className="flex gap-1">
                       <button
@@ -830,11 +906,104 @@ export default function WorkSchedulePage() {
                 >
                   ยกเลิก
                 </Button>
+                {editingShift && (
+                  <Button 
+                    type="button"
+                    onClick={() => {
+                      if (confirm('ต้องการลบกะงานนี้ใช่หรือไม่?')) {
+                        handleDelete(editingShift.id)
+                        closeModal()
+                      }
+                    }}
+                    className="flex-1 bg-white border-2 border-red-500 !text-red-600 hover:bg-red-50"
+                  >
+                    ลบ
+                  </Button>
+                )}
                 <Button 
                   type="submit" 
                   className="flex-1 bg-white border-2 border-[#A67B5B] !text-black hover:bg-[#F5F0E6]"
                 >
                   {editingShift ? 'บันทึก' : 'เพิ่ม'}
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+
+      {/* Leave Modal */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-[#E8E0D5]">
+              <h3 className="text-lg font-bold text-[#5C4A32]">
+                🏖️ บันทึกการลา
+              </h3>
+              <button
+                onClick={closeLeaveModal}
+                className="p-2 hover:bg-[#F5F0E8] rounded-full transition-colors"
+              >
+                <X className="h-5 w-5 text-[#8B7355]" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleLeaveSubmit} className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#5C4A32] mb-1">ชื่อพนักงาน</label>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A67B5B] bg-white"
+                  value={leaveFormData.employee_name}
+                  onChange={(e) => setLeaveFormData({ ...leaveFormData, employee_name: e.target.value })}
+                  required
+                >
+                  <option value="">เลือกพนักงาน</option>
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.name}>
+                      {emp.name} ({emp.position})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-[#5C4A32] mb-1">วันที่ลา</label>
+                <Input
+                  type="date"
+                  value={leaveFormData.work_date}
+                  onChange={(e) => setLeaveFormData({ ...leaveFormData, work_date: e.target.value })}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-[#5C4A32] mb-1">หมายเหตุ</label>
+                <Input
+                  value={leaveFormData.notes}
+                  onChange={(e) => setLeaveFormData({ ...leaveFormData, notes: e.target.value })}
+                  placeholder="เช่น ลาป่วย, ลากิจ, ลาพักร้อน"
+                />
+              </div>
+              
+              <div className="bg-[#FFF3E0] rounded-lg p-3 border border-[#FFCC80]">
+                <p className="text-sm text-[#E65100]">
+                  💡 การลาจะถูกบันทึกโดยไม่คิดค่าแรง (0 บาท) และไม่ถูกหักเงิน
+                </p>
+              </div>
+              
+              <div className="flex gap-3 pt-2">
+                <Button 
+                  type="button" 
+                  onClick={closeLeaveModal} 
+                  className="flex-1 bg-white border-2 border-gray-300 !text-black hover:bg-gray-50"
+                >
+                  ยกเลิก
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="flex-1 bg-[#FF9800] border-2 border-[#FF9800] !text-white hover:bg-[#F57C00]"
+                >
+                  บันทึกการลา
                 </Button>
               </div>
             </form>
