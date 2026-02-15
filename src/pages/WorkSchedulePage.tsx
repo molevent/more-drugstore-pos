@@ -29,13 +29,6 @@ interface ShiftFormData {
   notes: string
 }
 
-const POSITIONS = [
-  { value: 'เภสัชกร', label: 'เภสัชกร' },
-  { value: 'ผู้จัดการ', label: 'ผู้จัดการ' },
-  { value: 'พนักงานประจำ', label: 'พนักงานประจำ' },
-  { value: 'พนักงานพาร์ทไทม์', label: 'พนักงานพาร์ทไทม์' }
-] as const
-
 const DEFAULT_SHIFT: ShiftFormData = {
   employee_name: '',
   position: '',
@@ -53,10 +46,16 @@ const MANAGER_DEFAULTS = {
   monthly_salary: 16000
 }
 
-// Default values for Pharmacist (เภสัชกร): Mon-Fri, 17:00-20:30, 150/hr
+// Default values for Pharmacist (เภสัชกร): Mon-Fri 17:00-20:30, Sat-Sun 11:00-20:30, 150/hr
 const PHARMACIST_DEFAULTS = {
-  start_time: '17:00',
-  end_time: '20:30',
+  weekday: {
+    start_time: '17:00',
+    end_time: '20:30'
+  },
+  weekend: {
+    start_time: '11:00',
+    end_time: '20:30'
+  },
   hourly_wage: 150
 }
 
@@ -111,8 +110,9 @@ export default function WorkSchedulePage() {
       const year = currentDate.getFullYear()
       const month = currentDate.getMonth()
       
-      const startOfMonth = new Date(year, month, 1).toISOString().split('T')[0]
-      const endOfMonth = new Date(year, month + 1, 0).toISOString().split('T')[0]
+      // Use local date format (YYYY-MM-DD) instead of ISO string to avoid timezone issues
+      const startOfMonth = `${year}-${String(month + 1).padStart(2, '0')}-01`
+      const endOfMonth = `${year}-${String(month + 1).padStart(2, '0')}-${String(new Date(year, month + 1, 0).getDate()).padStart(2, '0')}`
 
       const { data, error } = await supabase
         .from('work_shifts')
@@ -302,7 +302,7 @@ export default function WorkSchedulePage() {
       setShowModal(false)
       setEditingShift(null)
       setFormData(DEFAULT_SHIFT)
-      fetchShifts()
+      await fetchShifts()
     } catch (error) {
       console.error('Error saving shift:', error)
       alert('ไม่สามารถบันทึกกะงานได้')
@@ -314,6 +314,67 @@ export default function WorkSchedulePage() {
     setEditingShift(null)
     setFormData(DEFAULT_SHIFT)
     setSelectedDate(null)
+  }
+
+  // Auto-generate OT schedule for พี่ไก่ (Manager) - Mon-Sat, 18:00-20:30, 250 Baht/shift
+  const generatePeeKaiOTSchedule = async () => {
+    if (!confirm('ต้องการสร้างกะงาน OT สำหรับ พี่ไก่ ทุกวันจันทร์-เสาร์ ในปี 2026 ใช่หรือไม่?\n\nรายละเอียด:\n- พนักงาน: พี่ไก่ (ผู้จัดการ)\n- วันทำงาน: จันทร์-เสาร์ ทุกสัปดาห์\n- เวลา: 18:00-20:30\n- ค่าจ้าง: 250 บาท/กะ')) {
+      return
+    }
+
+    const otShifts = []
+    const year = 2026
+    
+    // Generate for all 12 months
+    for (let month = 0; month < 12; month++) {
+      const daysInMonth = new Date(year, month + 1, 0).getDate()
+      
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day)
+        const dayOfWeek = date.getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+        
+        // Monday (1) to Saturday (6)
+        if (dayOfWeek >= 1 && dayOfWeek <= 6) {
+          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+          
+          otShifts.push({
+            employee_name: 'พี่ไก่',
+            position: 'ผู้จัดการ',
+            work_date: dateStr,
+            start_time: '18:00',
+            end_time: '20:30',
+            hourly_wage: 0, // Not hourly, fixed rate
+            total_hours: 2.5,
+            total_wage: 250, // Fixed 250 Baht per OT shift
+            notes: 'OT'
+          })
+        }
+      }
+    }
+
+    try {
+      // Insert in batches to avoid overwhelming the database
+      const batchSize = 50
+      let inserted = 0
+      
+      for (let i = 0; i < otShifts.length; i += batchSize) {
+        const batch = otShifts.slice(i, i + batchSize)
+        const { error } = await supabase.from('work_shifts').insert(batch)
+        
+        if (error) {
+          console.error('Error inserting batch:', error)
+          throw error
+        }
+        
+        inserted += batch.length
+      }
+      
+      alert(`สร้างกะงาน OT สำเร็จ ${inserted} รายการ`)
+      await fetchShifts()
+    } catch (error) {
+      console.error('Error generating OT schedule:', error)
+      alert('ไม่สามารถสร้างกะงาน OT ได้')
+    }
   }
 
   // Render calendar
@@ -338,9 +399,11 @@ export default function WorkSchedulePage() {
       
       days.push(
         <div
-          key={day}
+          key={`calendar-day-${dateStr}`}
+          data-date={dateStr}
+          data-day={day}
           onClick={() => handleDateClick(dateStr)}
-          className={`h-24 border border-gray-200 p-2 cursor-pointer transition-all hover:bg-[#F5F0E6] ${
+          className={`relative h-24 border border-gray-200 p-2 cursor-pointer transition-all hover:bg-[#F5F0E6] z-10 ${
             isToday ? 'bg-[#E8F5E9]' : 'bg-white'
           } ${isSelected ? 'ring-2 ring-[#A67B5B]' : ''}`}
         >
@@ -358,7 +421,7 @@ export default function WorkSchedulePage() {
             {dayShifts.slice(0, 2).map((shift, idx) => (
               <div
                 key={idx}
-                className="text-xs truncate text-[#5C4A32] bg-[#F5F0E8] px-1 py-0.5 rounded"
+                className="text-xs truncate text-[#5C4A32] bg-[#F5F0E8] px-1 py-0.5 rounded cursor-pointer hover:bg-[#E8E0D5]"
                 onClick={(e) => {
                   e.stopPropagation()
                   handleEdit(shift)
@@ -386,7 +449,7 @@ export default function WorkSchedulePage() {
   const dayNames = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส']
 
   return (
-    <div>
+    <div className="mb-20">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex items-start gap-3">
@@ -432,6 +495,14 @@ export default function WorkSchedulePage() {
             <Plus className="h-4 w-4" />
             เพิ่มกะงาน
           </button>
+          <button
+            onClick={generatePeeKaiOTSchedule}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#2E7D32] bg-white text-[#2E7D32] text-sm whitespace-nowrap hover:bg-[#2E7D32]/10 transition-all shadow-sm"
+            title="สร้างกะงาน OT พี่ไก่ อัตโนมัติ"
+          >
+            <UserPlus className="h-4 w-4" />
+            OT พี่ไก่ 2026
+          </button>
         </div>
       </div>
 
@@ -468,7 +539,7 @@ export default function WorkSchedulePage() {
 
       {/* Calendar View */}
       {viewMode === 'calendar' && (
-        <Card className="border-[#E8E0D5]">
+        <Card className="border-[#E8E0D5] overflow-auto p-0 mb-20">
           {/* Calendar Header */}
           <div className="p-4 border-b border-[#E8E0D5] bg-[#FAF8F5]">
             <div className="flex items-center justify-between">
@@ -491,7 +562,7 @@ export default function WorkSchedulePage() {
           </div>
 
           {/* Calendar Grid */}
-          <div className="p-4">
+          <div className="p-4 pb-20">
             {/* Day Names */}
             <div className="grid grid-cols-7 gap-1 mb-2">
               {dayNames.map((day) => (
@@ -502,9 +573,11 @@ export default function WorkSchedulePage() {
             </div>
             
             {/* Calendar Days */}
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-1 auto-rows-fr mb-6">
               {renderCalendar()}
             </div>
+            {/* Spacer to ensure last row is clickable */}
+            <div className="h-32" />
           </div>
         </Card>
       )}
@@ -620,10 +693,15 @@ export default function WorkSchedulePage() {
                       
                       // Set defaults based on position
                       if (position === 'เภสัชกร') {
+                        // Check if selected date is weekend (Saturday=6, Sunday=0)
+                        const selectedDate = newFormData.work_date
+                        const dayOfWeek = new Date(selectedDate).getDay()
+                        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
+                        
                         newFormData = {
                           ...newFormData,
-                          start_time: PHARMACIST_DEFAULTS.start_time,
-                          end_time: PHARMACIST_DEFAULTS.end_time,
+                          start_time: isWeekend ? PHARMACIST_DEFAULTS.weekend.start_time : PHARMACIST_DEFAULTS.weekday.start_time,
+                          end_time: isWeekend ? PHARMACIST_DEFAULTS.weekend.end_time : PHARMACIST_DEFAULTS.weekday.end_time,
                           hourly_wage: PHARMACIST_DEFAULTS.hourly_wage
                         }
                       } else if (position === 'ผู้จัดการ') {
@@ -712,10 +790,34 @@ export default function WorkSchedulePage() {
               
               {/* Preview calculation */}
               <div className="bg-[#FAF8F5] rounded-lg p-3 border border-[#E8E0D5]">
-                <p className="text-sm text-[#8B7355]">ชั่วโมง: {calculateShiftHours(formData.start_time, formData.end_time).toFixed(1)} ชม.</p>
-                <p className="text-lg font-bold text-[#2E7D32]">
-                  รวม: ฿{(calculateShiftHours(formData.start_time, formData.end_time) * formData.hourly_wage).toLocaleString()}
-                </p>
+                {(() => {
+                  const hours = calculateShiftHours(formData.start_time, formData.end_time)
+                  
+                  // Check for OT shift (18:00-20:30 for Manager)
+                  const isOT = formData.position === 'ผู้จัดการ' && 
+                               formData.start_time === '18:00' && 
+                               formData.end_time === '20:30'
+                  
+                  if (isOT) {
+                    return (
+                      <>
+                        <p className="text-sm text-[#8B7355]">ชั่วโมง: {hours.toFixed(1)} ชม. (OT)</p>
+                        <p className="text-lg font-bold text-[#2E7D32]">
+                          รวม: ฿250 (ค่ากะ OT)
+                        </p>
+                      </>
+                    )
+                  }
+                  
+                  return (
+                    <>
+                      <p className="text-sm text-[#8B7355]">ชั่วโมง: {hours.toFixed(1)} ชม.</p>
+                      <p className="text-lg font-bold text-[#2E7D32]">
+                        รวม: ฿{(hours * formData.hourly_wage).toLocaleString()}
+                      </p>
+                    </>
+                  )
+                })()}
               </div>
               
               <div>

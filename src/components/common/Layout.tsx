@@ -207,7 +207,7 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 relative">
+        <main className="flex-1 p-4 sm:p-6 relative overflow-visible">
           {children}
         </main>
       </div>
