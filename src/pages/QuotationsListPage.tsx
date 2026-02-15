@@ -212,7 +212,6 @@ export default function QuotationsListPage() {
               <tbody className="divide-y divide-gray-200">
                 {filteredQuotations.map((quotation) => {
                   const status = statusConfig[quotation.status]
-                  const StatusIcon = status.icon
                   return (
                     <tr key={quotation.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3">
