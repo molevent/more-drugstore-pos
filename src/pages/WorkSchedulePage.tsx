@@ -307,82 +307,6 @@ export default function WorkSchedulePage() {
     setSelectedDate(null)
   }
 
-  // Auto-generate schedule for พี่ไก่ (Manager) - Mon-Sat, 09:00-20:30, 250 Baht/shift
-  const generatePeeKaiSchedule = async () => {
-    if (!confirm('ต้องการสร้างกะงานสำหรับ พี่ไก่ ทุกวันจันทร์-เสาร์ ในปี 2026 ใช่หรือไม่?\n\nรายละเอียด:\n- พนักงาน: พี่ไก่ (ผู้จัดการ)\n- วันทำงาน: จันทร์-เสาร์ ทุกสัปดาห์\n- เวลา: 09:00-20:30\n- ค่าจ้าง: 250 บาท/กะ')) {
-      return
-    }
-
-    try {
-      // First, delete all existing shifts for พี่ไก่ in 2026
-      const { error: deleteError } = await supabase
-        .from('work_shifts')
-        .delete()
-        .eq('employee_name', 'พี่ไก่')
-        .gte('work_date', '2026-01-01')
-        .lte('work_date', '2026-12-31')
-      
-      if (deleteError) {
-        console.error('Error deleting existing shifts:', deleteError)
-        throw deleteError
-      }
-      
-      // Now create new shifts 09:00-20:30
-      const shifts = []
-      const year = 2026
-      
-      // Generate for all 12 months
-      for (let month = 0; month < 12; month++) {
-        const daysInMonth = new Date(year, month + 1, 0).getDate()
-        
-        for (let day = 1; day <= daysInMonth; day++) {
-          const date = new Date(year, month, day)
-          const dayOfWeek = date.getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-          
-          // Monday (1) to Saturday (6)
-          if (dayOfWeek >= 1 && dayOfWeek <= 6) {
-            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-            
-            shifts.push({
-              employee_name: 'พี่ไก่',
-              position: 'ผู้จัดการ',
-              work_date: dateStr,
-              start_time: '09:00',
-              end_time: '20:30',
-              hourly_wage: 0, // Not hourly, fixed rate
-              total_hours: 11.5, // 09:00-20:30 = 11.5 hours
-              total_wage: 250, // Fixed 250 Baht per shift
-              notes: ''
-            })
-          }
-        }
-      }
-
-      // Insert in batches to avoid overwhelming the database
-      const batchSize = 50
-      let inserted = 0
-      
-      for (let i = 0; i < shifts.length; i += batchSize) {
-        const batch = shifts.slice(i, i + batchSize)
-        const { error } = await supabase.from('work_shifts').insert(batch)
-        
-        if (error) {
-          console.error('Error inserting batch:', error)
-          throw error
-        }
-        
-        inserted += batch.length
-      }
-      
-      alert(`ลบกะงานเก่าและสร้างกะงานใหม่สำเร็จ ${inserted} รายการ\n\nกะงาน: 09:00-20:30 (จันทร์-เสาร์)\nค่าจ้าง: 250 บาท/กะ`)
-      await fetchShifts()
-    } catch (error) {
-      console.error('Error generating schedule:', error)
-      alert('ไม่สามารถสร้างกะงานได้')
-    }
-  }
-
-  // Render calendar
   const renderCalendar = () => {
     const daysInMonth = getDaysInMonth(currentDate)
     const firstDay = getFirstDayOfMonth(currentDate)
@@ -499,14 +423,6 @@ export default function WorkSchedulePage() {
           >
             <Plus className="h-4 w-4" />
             เพิ่มกะงาน
-          </button>
-          <button
-            onClick={generatePeeKaiSchedule}
-            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#2E7D32] bg-white text-[#2E7D32] text-sm whitespace-nowrap hover:bg-[#2E7D32]/10 transition-all shadow-sm"
-            title="สร้างกะงาน พี่ไก่ อัตโนมัติ"
-          >
-            <UserPlus className="h-4 w-4" />
-            พี่ไก่ 2026
           </button>
         </div>
       </div>
