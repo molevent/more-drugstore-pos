@@ -884,7 +884,6 @@ export default function WorkSchedulePage() {
                   })
               })()}
             </div>
-          </Card>
         </>
       )}
       {showModal && (
