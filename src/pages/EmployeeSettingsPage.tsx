@@ -9,9 +9,7 @@ import {
   Trash2, 
   Edit2, 
   X,
-  Users,
-  Wallet,
-  Briefcase
+  Users
 } from 'lucide-react'
 
 interface Employee {
@@ -192,35 +190,6 @@ export default function EmployeeSettingsPage() {
           <Plus className="h-4 w-4" />
           เพิ่มพนักงาน
         </button>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-        <Card className="bg-[#F5F0E8] border-[#D4C9B8]">
-          <div className="p-4 text-center">
-            <Users className="h-6 w-6 text-[#A67B5B] mx-auto mb-2" />
-            <p className="text-xs text-black">พนักงานทั้งหมด</p>
-            <p className="text-2xl font-bold text-black">{employees.length} คน</p>
-          </div>
-        </Card>
-        <Card className="bg-[#FAF6F0] border-[#D4C9B8]">
-          <div className="p-4 text-center">
-            <Briefcase className="h-6 w-6 text-[#A67B5B] mx-auto mb-2" />
-            <p className="text-xs text-black">รายชั่วโมง</p>
-            <p className="text-2xl font-bold text-black">
-              {employees.filter(e => e.employment_type === 'รายชั่วโมง').length} คน
-            </p>
-          </div>
-        </Card>
-        <Card className="bg-[#E8F5E9] border-[#C8E6C9]">
-          <div className="p-4 text-center">
-            <Wallet className="h-6 w-6 text-[#4CAF50] mx-auto mb-2" />
-            <p className="text-xs text-[#4CAF50]">รายเดือน</p>
-            <p className="text-2xl font-bold text-[#2E7D32]">
-              {employees.filter(e => e.employment_type === 'รายเดือน').length} คน
-            </p>
-          </div>
-        </Card>
       </div>
 
       {/* Employee List */}
