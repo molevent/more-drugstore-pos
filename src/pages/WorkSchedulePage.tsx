@@ -482,8 +482,8 @@ export default function WorkSchedulePage() {
         </Card>
       )}
 
-      {/* Employee Summary */}
-      {summary.length > 0 && (
+      {/* Employee Summary - Only show in list view */}
+      {viewMode === 'list' && summary.length > 0 && (
         <Card className="mt-6 border-[#E8E0D5]">
           <div className="p-4 border-b border-[#E8E0D5] bg-[#FAF8F5]">
             <h2 className="text-base font-bold text-[#5C4A32]">สรุปตามพนักงาน</h2>
