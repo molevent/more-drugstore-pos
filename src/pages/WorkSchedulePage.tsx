@@ -30,8 +30,8 @@ interface ShiftFormData {
 }
 
 const POSITIONS = [
-  { value: 'ผู้จัดการ', label: 'ผู้จัดการ' },
   { value: 'เภสัชกร', label: 'เภสัชกร' },
+  { value: 'ผู้จัดการ', label: 'ผู้จัดการ' },
   { value: 'พนักงานพาร์ทไทม์', label: 'พนักงานพาร์ทไทม์' }
 ] as const
 
