@@ -470,9 +470,37 @@ export default function WorkSchedulePage() {
               >
                 <ChevronLeft className="h-5 w-5 text-[#5C4A32]" />
               </button>
-              <h2 className="text-lg font-bold text-[#5C4A32]">
-                {monthNames[currentDate.getMonth()]} {currentDate.getFullYear() + 543}
-              </h2>
+              
+              {/* Month and Year Selectors */}
+              <div className="flex items-center gap-2">
+                <select
+                  value={currentDate.getMonth()}
+                  onChange={(e) => {
+                    const newDate = new Date(currentDate)
+                    newDate.setMonth(parseInt(e.target.value))
+                    setCurrentDate(newDate)
+                  }}
+                  className="px-3 py-1.5 rounded-lg border border-[#D4C9B8] bg-white text-[#5C4A32] font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#A67B5B]"
+                >
+                  {monthNames.map((month, index) => (
+                    <option key={month} value={index}>{month}</option>
+                  ))}
+                </select>
+                <select
+                  value={currentDate.getFullYear()}
+                  onChange={(e) => {
+                    const newDate = new Date(currentDate)
+                    newDate.setFullYear(parseInt(e.target.value))
+                    setCurrentDate(newDate)
+                  }}
+                  className="px-3 py-1.5 rounded-lg border border-[#D4C9B8] bg-white text-[#5C4A32] font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#A67B5B]"
+                >
+                  {[2024, 2025, 2026, 2027, 2028].map((year) => (
+                    <option key={year} value={year}>{year + 543}</option>
+                  ))}
+                </select>
+              </div>
+              
               <button
                 onClick={handleNextMonth}
                 className="p-2 hover:bg-[#F5F0E6] rounded-lg transition-colors"
