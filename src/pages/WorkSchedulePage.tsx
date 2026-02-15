@@ -53,9 +53,9 @@ const MANAGER_DEFAULTS = {
   monthly_salary: 16000
 }
 
-// Default values for Pharmacist (เภสัชกร): Sat-Sun, 11:00-20:30, 150/hr
+// Default values for Pharmacist (เภสัชกร): Mon-Fri, 17:00-20:30, 150/hr
 const PHARMACIST_DEFAULTS = {
-  start_time: '11:00',
+  start_time: '17:00',
   end_time: '20:30',
   hourly_wage: 150
 }
