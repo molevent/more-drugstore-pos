@@ -21,7 +21,7 @@ import type { WorkShift, WorkScheduleSummary } from '../types/database'
 
 interface ShiftFormData {
   employee_name: string
-  position: 'ผู้จัดการ' | 'เภสัชกร' | 'พนักงานพาร์ทไทม์' | ''
+  position: 'ผู้จัดการ' | 'เภสัชกร' | 'พนักงานประจำ' | 'พนักงานพาร์ทไทม์' | ''
   work_date: string
   start_time: string
   end_time: string
@@ -32,6 +32,7 @@ interface ShiftFormData {
 const POSITIONS = [
   { value: 'เภสัชกร', label: 'เภสัชกร' },
   { value: 'ผู้จัดการ', label: 'ผู้จัดการ' },
+  { value: 'พนักงานประจำ', label: 'พนักงานประจำ' },
   { value: 'พนักงานพาร์ทไทม์', label: 'พนักงานพาร์ทไทม์' }
 ] as const
 
@@ -57,6 +58,13 @@ const PHARMACIST_DEFAULTS = {
   start_time: '11:00',
   end_time: '20:30',
   hourly_wage: 150
+}
+
+// Default values for Full-time (พนักงานประจำ): 9:00-18:00, 80/hr
+const FULLTIME_DEFAULTS = {
+  start_time: '09:00',
+  end_time: '18:00',
+  hourly_wage: 80
 }
 
 // Default values for Part-time (พนักงานพาร์ทไทม์): 40/hr
@@ -594,6 +602,14 @@ export default function WorkSchedulePage() {
                         start_time: MANAGER_DEFAULTS.start_time,
                         end_time: MANAGER_DEFAULTS.end_time,
                         hourly_wage: MANAGER_DEFAULTS.monthly_salary / 30 / 9 // Approx hourly rate
+                      })
+                    } else if (newPosition === 'พนักงานประจำ') {
+                      setFormData({
+                        ...formData,
+                        position: newPosition,
+                        start_time: FULLTIME_DEFAULTS.start_time,
+                        end_time: FULLTIME_DEFAULTS.end_time,
+                        hourly_wage: FULLTIME_DEFAULTS.hourly_wage
                       })
                     } else if (newPosition === 'พนักงานพาร์ทไทม์') {
                       setFormData({
