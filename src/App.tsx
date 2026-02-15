@@ -34,6 +34,7 @@ import StockRefillReportPage from './pages/StockRefillReportPage'
 import StockCountingPage from './pages/StockCountingPage'
 import CashierClosingReportPage from './pages/CashierClosingReportPage'
 import ReceiptTaxInvoiceReportPage from './pages/ReceiptTaxInvoiceReportPage'
+import PaymentSummaryPage from './pages/PaymentSummaryPage'
 import QuotationPage from './pages/QuotationPage'
 import QuotationsListPage from './pages/QuotationsListPage'
 import SettingsPage from './pages/SettingsPage'
@@ -42,6 +43,7 @@ import SalesChannelsSettingsPage from './pages/SalesChannelsSettingsPage'
 import ZortOutSyncPage from './pages/ZortOutSyncPage'
 import ProductCatalogPage from './pages/ProductCatalogPage'
 import ProductCatalogsListPage from './pages/ProductCatalogsListPage'
+import HelpManagementPage from './pages/HelpManagementPage'
 import AuthGuard from './components/auth/AuthGuard'
 import Layout from './components/common/Layout'
 import { LanguageProvider } from './contexts/LanguageContext'
@@ -91,6 +93,7 @@ function App() {
                     <Route path="/stock-refill-report" element={<StockRefillReportPage />} />
                     <Route path="/stock-counting" element={<StockCountingPage />} />
                     <Route path="/cashier-closing-report" element={<CashierClosingReportPage />} />
+                    <Route path="/payment-summary" element={<PaymentSummaryPage />} />
                     <Route path="/receipt-tax-invoice-report" element={<ReceiptTaxInvoiceReportPage />} />
                     <Route path="/quotation" element={<QuotationPage />} />
                     <Route path="/quotation/:id" element={<QuotationPage />} />
@@ -101,6 +104,7 @@ function App() {
                     <Route path="/product-catalog" element={<ProductCatalogPage />} />
                     <Route path="/product-catalogs" element={<ProductCatalogsListPage />} />
                     <Route path="/zortout-sync" element={<ZortOutSyncPage />} />
+                    <Route path="/help-management" element={<HelpManagementPage />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   </Routes>
                 </Layout>

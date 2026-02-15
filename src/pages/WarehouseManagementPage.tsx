@@ -332,10 +332,13 @@ export default function WarehouseManagementPage() {
             <ArrowRightLeft className="h-5 w-5 mr-2" />
             โอนสินค้า
           </Button>
-          <Button variant="primary" onClick={() => { setEditingWarehouse(null); setFormData({ name: '', code: '', address: '' }); setShowModal(true); }}>
-            <Plus className="h-5 w-5 mr-2" />
+          <button
+            onClick={() => { setEditingWarehouse(null); setFormData({ name: '', code: '', address: '' }); setShowModal(true); }}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#A67B5B] bg-white text-[#A67B5B] text-sm whitespace-nowrap hover:bg-[#A67B5B]/10 transition-all shadow-sm"
+          >
+            <Plus className="h-4 w-4" />
             เพิ่มคลัง
-          </Button>
+          </button>
         </div>
       </div>
 

@@ -258,14 +258,13 @@ export default function SalesChannelsSettingsPage() {
 
           {/* Add New Channel Button */}
           <div className="mb-6">
-            <Button
-              variant="secondary"
+            <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#A67B5B] bg-white text-[#A67B5B] text-sm whitespace-nowrap hover:bg-[#A67B5B]/10 transition-all shadow-sm"
             >
               <Plus className="h-4 w-4" />
               เพิ่ม
-            </Button>
+            </button>
           </div>
 
           {/* Channel List - Box Style */}

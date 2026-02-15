@@ -7,7 +7,7 @@ import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import { LabelWithTooltip } from '../components/common/Tooltip'
 import CSVImportModal from '../components/common/CSVImportModal'
-import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft, Printer, ExternalLink, ArrowLeft, Bell, LayoutDashboard, Fingerprint, FolderTree, DollarSign, Boxes, Image, Radio, AlertTriangle } from 'lucide-react'
+import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft, Printer, ExternalLink, ArrowLeft, Bell, LayoutDashboard, Fingerprint, FolderTree, DollarSign, Boxes, Image, Radio, AlertTriangle, BookOpen } from 'lucide-react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import type { Product, Category } from '../types/database'
 
@@ -870,38 +870,64 @@ export default function ProductsPage() {
               กลับ
             </Button>
           )}
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Package className="h-7 w-7 text-[#7D735F]" />
-            {selectedCategory && selectedCategory !== 'uncategorized'
-              ? categories.find(c => c.id === selectedCategory)?.name_th || t('products.title')
-              : selectedCategory === 'uncategorized'
-                ? 'สินค้ายังไม่ตั้งหมวดหมู่'
-                : t('products.title')
-            }
-          </h1>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <Package className="h-7 w-7 text-[#7D735F]" />
+              {selectedCategory && selectedCategory !== 'uncategorized'
+                ? categories.find(c => c.id === selectedCategory)?.name_th || t('products.title')
+                : selectedCategory === 'uncategorized'
+                  ? 'สินค้ายังไม่ตั้งหมวดหมู่'
+                  : t('products.title')
+              }
+            </h1>
+            <p className="text-gray-600 mt-1">จัดการสินค้าและสต็อกสินค้า</p>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="secondary"
+        <div className="flex gap-3">
+          {/* CSV Import Pill Button */}
+          <button
             onClick={() => setShowCSVModal(true)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-3 px-5 py-3 bg-[#F5F0E6] hover:bg-[#E8E0D0] rounded-full border border-[#D4C4B0] transition-all shadow-sm"
           >
-            <Upload className="h-4 w-4" />
-            นำเข้า CSV
-          </Button>
+            <Upload className="h-6 w-6 text-[#7D735F]" />
+            <span className="font-medium text-gray-800 text-sm">นำเข้า CSV</span>
+          </button>
+
+          {/* Stock Management Pill Button */}
           <Link 
             to="/stock-management"
-            className="flex items-center gap-2 px-4 py-2 bg-[#F5F0E6] rounded-full border border-[#B8C9B8] hover:bg-[#E8EBF0] hover:shadow-md transition-all"
+            className="flex items-center gap-3 px-5 py-3 bg-[#E8E0D0] hover:bg-[#D4C4B0] rounded-full border border-[#C8B89A] transition-all shadow-sm"
           >
-            <div className="h-8 w-8 rounded-full bg-[#A67B5B] flex items-center justify-center shadow-sm">
-              <Boxes className="h-4 w-4 text-white" />
-            </div>
-            <span className="font-semibold text-gray-900 text-sm">จัดการสต็อก</span>
+            <Boxes className="h-6 w-6 text-[#A67B5B]" />
+            <span className="font-medium text-gray-800 text-sm">จัดการสต็อก</span>
           </Link>
-          <Button variant="primary" onClick={() => setShowModal(true)} className="w-full sm:w-auto">
-            <Plus className="h-5 w-5 mr-2" />
-            {t('products.addProduct')}
-          </Button>
+
+          {/* Product Catalogs Pill Button */}
+          <Link 
+            to="/product-catalogs"
+            className="flex items-center gap-3 px-5 py-3 bg-[#D4E4D4] hover:bg-[#B8D4B8] rounded-full border border-[#A8C4A8] transition-all shadow-sm"
+          >
+            <BookOpen className="h-6 w-6 text-[#5A7A5A]" />
+            <span className="font-medium text-gray-800 text-sm">แคตตาล็อกสินค้า</span>
+          </Link>
+
+          {/* Add Product Pill Button */}
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#A67B5B] bg-white text-[#A67B5B] text-sm whitespace-nowrap hover:bg-[#A67B5B]/10 transition-all shadow-sm"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="font-medium">{t('products.addProduct')}</span>
+          </button>
+
+          {/* Help Button - Book icon only */}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
+            className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+            title="คู่มือการใช้งาน"
+          >
+            <BookOpen className="h-5 w-5" />
+          </button>
         </div>
       </div>
 

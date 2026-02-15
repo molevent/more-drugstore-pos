@@ -3,7 +3,7 @@ import { supabase } from '../services/supabase'
 import { useNavigate } from 'react-router-dom'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Printer, Search, Package, Heart, ArrowLeft } from 'lucide-react'
+import { Printer, Search, Package, Heart, ArrowLeft, QrCode } from 'lucide-react'
 
 // Helper to get URL query params
 function useQueryParams() {
@@ -32,6 +32,7 @@ interface Product {
   base_price?: number
   cost_price?: number
   medicine_details?: MedicineDetails
+  created_at?: string
   // Label fields from ProductsPage
   label_dosage_instructions_th?: string
   label_special_instructions_th?: string
@@ -78,6 +79,10 @@ interface CustomizeData {
   custom_instructions: string
   quantity: string
   hospital_clinic: string
+  batch_no: string
+  lot_number: string
+  pharmacist_name: string
+  expiry_date: string
 }
 
 export default function MedicineLabelPage() {
@@ -101,7 +106,11 @@ export default function MedicineLabelPage() {
     date: new Date().toISOString().split('T')[0],
     custom_instructions: '',
     quantity: '',
-    hospital_clinic: ''
+    hospital_clinic: '',
+    batch_no: '',
+    lot_number: '',
+    pharmacist_name: '',
+    expiry_date: ''
   })
   const [showPreview, setShowPreview] = useState(false)
   // Auto-show preview when product is selected
@@ -249,7 +258,7 @@ export default function MedicineLabelPage() {
           *,
           medicine_details (*)
         `)
-        .order('name_th')
+        .order('created_at', { ascending: false })
 
       if (error) throw error
       setProducts(data || [])
@@ -345,14 +354,37 @@ export default function MedicineLabelPage() {
     try {
       const { data: userData } = await supabase.auth.getUser()
 
-      // บันทึกประวัติการพิมพ์
+      // Generate QR code data containing label information
+      const qrData = JSON.stringify({
+        product_id: selectedProduct.id,
+        product_name: selectedProduct.name_th,
+        barcode: selectedProduct.barcode,
+        batch_no: customizeData.batch_no,
+        expiry_date: customizeData.expiry_date,
+        pharmacist: customizeData.pharmacist_name,
+        printed_at: new Date().toISOString()
+      })
+
+      // บันทึกประวัติการพิมพ์ with all new fields
       await supabase
         .from('printed_labels')
         .insert({
           product_id: selectedProduct.id,
           dosage_instructions: labelData.dosage_instructions_th || labelData.dosage_instructions_en,
-          printed_data: labelData,
-          printed_by: userData?.user?.id
+          printed_data: {
+            ...labelData,
+            ...customizeData,
+            qr_code_data: qrData
+          },
+          printed_by: userData?.user?.id,
+          batch_no: customizeData.batch_no,
+          lot_number: customizeData.lot_number,
+          expiry_date: customizeData.expiry_date,
+          pharmacist_name: customizeData.pharmacist_name,
+          qr_code_data: qrData,
+          patient_name: customizeData.patient_name,
+          doctor_name: customizeData.doctor_name,
+          quantity: customizeData.quantity
         })
 
       // เปิดหน้าต่างพิมพ์
@@ -446,12 +478,14 @@ export default function MedicineLabelPage() {
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-gray-900">{product.name_th}</h3>
+                        <span className="text-sm font-medium text-gray-900">{product.barcode}</span>
                         {favorites.has(product.id) && (
                           <Heart className="h-4 w-4 text-red-500 fill-red-500" />
                         )}
                       </div>
-                      <p className="text-sm text-gray-600">{product.name_en}</p>
+                      <p className="text-xs text-gray-500">
+                        {product.created_at ? new Date(product.created_at).toLocaleDateString('th-TH') : '-'}
+                      </p>
                       {product.medicine_details && (
                         <div className="mt-1">
                           <span className="text-xs text-gray-500">
@@ -472,7 +506,6 @@ export default function MedicineLabelPage() {
                       >
                         <Heart className={`h-4 w-4 ${favorites.has(product.id) ? 'fill-current' : ''}`} />
                       </button>
-                      <span className="text-xs text-gray-500">{product.barcode}</span>
                     </div>
                   </div>
                 </div>
@@ -778,6 +811,42 @@ export default function MedicineLabelPage() {
                     </div>
                   </div>
 
+                  {/* Batch Tracking Fields */}
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-sm font-medium text-amber-800 mb-3">ข้อมูล Batch & เภสัชกร</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Batch No / Lot No</label>
+                        <input
+                          type="text"
+                          value={customizeData.batch_no}
+                          onChange={(e) => setCustomizeData({...customizeData, batch_no: e.target.value})}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                          placeholder="หมายเลขแบทช์"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">วันหมดอายุ</label>
+                        <input
+                          type="date"
+                          value={customizeData.expiry_date}
+                          onChange={(e) => setCustomizeData({...customizeData, expiry_date: e.target.value})}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">ชื่อเภสัชกร / ผู้จ่ายยา</label>
+                      <input
+                        type="text"
+                        value={customizeData.pharmacist_name}
+                        onChange={(e) => setCustomizeData({...customizeData, pharmacist_name: e.target.value})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        placeholder="ชื่อเภสัชกรที่จ่ายยา"
+                      />
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">จำนวน / ระยะเวลา</label>
                     <input
@@ -790,14 +859,16 @@ export default function MedicineLabelPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">คำแนะนำเพิ่มเติม</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">คำแนะนำเพิ่มเติม (สูงสุด 100 ตัวอักษร)</label>
                     <textarea
                       value={customizeData.custom_instructions}
-                      onChange={(e) => setCustomizeData({...customizeData, custom_instructions: e.target.value})}
+                      onChange={(e) => setCustomizeData({...customizeData, custom_instructions: e.target.value.slice(0, 100)})}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                       rows={3}
-                      placeholder="คำแนะนำเฉพาะสำหรับผู้ป่วยรายนี้"
+                      placeholder="คำแนะนำเฉพาะสำหรับผู้ป่วยรายนี้ (ไม่เกิน 100 ตัวอักษร)"
+                      maxLength={100}
                     />
+                    <p className="text-xs text-gray-500 mt-1">{customizeData.custom_instructions.length}/100 ตัวอักษร</p>
                   </div>
 
                   <div className="flex gap-2">
@@ -809,7 +880,11 @@ export default function MedicineLabelPage() {
                         date: new Date().toISOString().split('T')[0],
                         custom_instructions: '',
                         quantity: '',
-                        hospital_clinic: ''
+                        hospital_clinic: '',
+                        batch_no: '',
+                        lot_number: '',
+                        pharmacist_name: '',
+                        expiry_date: ''
                       })}
                       className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-700"
                     >
@@ -1219,9 +1294,29 @@ export default function MedicineLabelPage() {
                 </div>
               )}
 
+              {/* Batch & Pharmacist Info */}
+              {(customizeData.batch_no || customizeData.expiry_date || customizeData.pharmacist_name) && (
+                <div className="border border-blue-200 bg-blue-50 p-2 rounded mb-3">
+                  <p className="text-sm font-bold text-blue-700">ข้อมูล Batch & เภสัชกร:</p>
+                  <div className="flex flex-wrap gap-x-4 text-xs text-blue-600">
+                    {customizeData.batch_no && <span>Batch: {customizeData.batch_no}</span>}
+                    {customizeData.expiry_date && <span>EXP: {new Date(customizeData.expiry_date).toLocaleDateString('th-TH')}</span>}
+                    {customizeData.pharmacist_name && <span>เภสัชกร: {customizeData.pharmacist_name}</span>}
+                  </div>
+                </div>
+              )}
+
               <div className="mt-4 pt-3 border-t text-xs text-gray-500 text-center">
                 <p>กรุณาปฏิบัติตามคำแนะนำของแพทย์หรือเภสัชกร</p>
                 <p>เก็บยาให้พ้นมือเด็ก</p>
+              </div>
+
+              {/* QR Code */}
+              <div className="mt-4 flex flex-col items-center">
+                <div className="p-2 bg-white border rounded-lg">
+                  <QrCode className="h-20 w-20 text-gray-800" />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">สแกนเพื่อตรวจสอบข้อมูล</p>
               </div>
             </div>
 

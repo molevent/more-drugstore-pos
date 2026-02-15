@@ -10,14 +10,12 @@ import {
   X,
   Users,
   Wallet,
-  Package,
-  FileText,
-  BookOpen
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
 import { useLanguage } from '../../contexts/LanguageContext'
 import LanguageSwitcher from './LanguageSwitcher'
+import HelpModal from './HelpModal'
 
 interface LayoutProps {
   children: ReactNode
@@ -27,6 +25,15 @@ export default function Layout({ children }: LayoutProps) {
   const location = useLocation()
   const { user, signOut } = useAuthStore()
   const { t } = useLanguage()
+  const [showHelpModal, setShowHelpModal] = useState(false)
+  
+  // Expose showHelpModal to children via a context or window object for simplicity
+  // We'll use a custom event for cross-component communication
+  useEffect(() => {
+    const handleOpenHelp = () => setShowHelpModal(true)
+    window.addEventListener('open-help-modal', handleOpenHelp)
+    return () => window.removeEventListener('open-help-modal', handleOpenHelp)
+  }, [])
   
   // Auto-collapse sidebar on mobile/tablet, open on desktop
   const [sidebarOpen, setSidebarOpen] = useState(() => {
@@ -62,8 +69,6 @@ export default function Layout({ children }: LayoutProps) {
       title: 'สินค้า',
       items: [
         { name: t('nav.products'), href: '/products', icon: Boxes },
-        { name: t('nav.stockManagement'), href: '/stock-management', icon: Package },
-        { name: 'แคตตาล็อกสินค้า', href: '/product-catalogs', icon: BookOpen },
       ]
     },
     {
@@ -74,12 +79,6 @@ export default function Layout({ children }: LayoutProps) {
     },
     {
       title: 'เอกสาร',
-      items: [
-        { name: 'ใบเสนอราคา', href: '/quotations', icon: FileText },
-      ]
-    },
-    {
-      title: 'บัญชี',
       items: [
         { name: t('nav.documents'), href: '/expenses', icon: Wallet },
       ]
@@ -115,12 +114,12 @@ export default function Layout({ children }: LayoutProps) {
       )}
       
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white transform transition-transform duration-300 ease-in-out ${
+      <div className={`fixed inset-y-0 left-0 z-50 w-56 bg-white transform transition-transform duration-300 ease-in-out ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } lg:translate-x-0 no-print`}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+          <div className="flex items-center justify-between h-16 px-4">
             <img 
               src="/logo.png" 
               alt="Logo" 
@@ -188,8 +187,8 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </div>
 
-      <div className="lg:pl-64 flex flex-col flex-1">
-        <header className="lg:hidden bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30 no-print">
+      <div className="lg:pl-56 flex flex-col flex-1">
+        <header className="lg:hidden bg-white shadow-sm sticky top-0 z-30 no-print">
           <div className="flex items-center justify-between h-16 px-4">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -204,10 +203,17 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6">
+        <main className="flex-1 p-4 sm:p-6 relative">
           {children}
         </main>
       </div>
+
+      {/* Help Modal */}
+      <HelpModal
+        pageRoute={location.pathname}
+        isOpen={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
+      />
     </div>
   )
 }

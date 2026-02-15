@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Percent, Plus, Search, Trash2, Edit2 } from 'lucide-react'
+import { Percent, Plus, Search, Trash2, Edit2, BookOpen } from 'lucide-react'
 
 interface WithholdingTax {
   id: string
@@ -225,6 +225,15 @@ export default function WithholdingTaxPage() {
             หัก ณ ที่จ่าย
           </h1>
           <p className="text-gray-600 mt-1">บันทึกและจัดการภาษีหัก ณ ที่จ่าย (50 ทวิ)</p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
+            className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+            title="คู่มือการใช้งาน"
+          >
+            <BookOpen className="h-5 w-5" />
+          </button>
         </div>
       </div>
 

@@ -10,7 +10,9 @@ import {
   User,
   ArrowDown,
   ArrowUp,
-  Minus
+  Minus,
+  BookOpen,
+  CreditCard
 } from 'lucide-react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
@@ -135,15 +137,15 @@ export default function CashierClosingReportPage() {
   }
 
   const getDifferenceIcon = (diff: number) => {
-    if (diff === 0) return <Minus className="w-4 h-4 text-green-600" />
-    if (diff > 0) return <ArrowUp className="w-4 h-4 text-blue-600" />
-    return <ArrowDown className="w-4 h-4 text-red-600" />
+    if (diff === 0) return <Minus className="w-4 h-4 text-[#7D735F]" />
+    if (diff > 0) return <ArrowUp className="w-4 h-4 text-[#A67B5B]" />
+    return <ArrowDown className="w-4 h-4 text-[#8B5A3C]" />
   }
 
   const getDifferenceClass = (diff: number) => {
-    if (diff === 0) return 'text-green-700 bg-green-50'
-    if (diff > 0) return 'text-blue-700 bg-blue-50'
-    return 'text-red-700 bg-red-50'
+    if (diff === 0) return 'text-[#5D4E37] bg-[#E8DED3]'
+    if (diff > 0) return 'text-[#A67B5B] bg-[#F5E6D3]'
+    return 'text-[#8B5A3C] bg-[#F0DED0]'
   }
 
   return (
@@ -152,12 +154,25 @@ export default function CashierClosingReportPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Wallet className="h-7 w-7 text-[#B8C9B8]" />
+            <Wallet className="h-7 w-7 text-[#A67B5B]" />
             รายงานปิดร้าน / นับเงิน
           </h1>
           <p className="text-gray-600 mt-1">ตรวจสอบประวัติการปิดร้านและยอดเงินในเก๊ะ</p>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
+            className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+            title="คู่มือการใช้งาน"
+          >
+            <BookOpen className="h-5 w-5" />
+          </button>
+          <Link to="/payment-summary">
+            <Button variant="secondary" className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              สรุปยอดชำระเงิน
+            </Button>
+          </Link>
           <Button
             variant="secondary"
             onClick={fetchClosings}
@@ -167,7 +182,7 @@ export default function CashierClosingReportPage() {
             รีเฟรช
           </Button>
           <Link to="/pos">
-            <Button className="bg-[#B8C9B8] hover:bg-[#A8B9A8] text-gray-800">
+            <Button className="bg-[#A67B5B] hover:bg-[#8B5A3C] text-white">
               <Wallet className="h-4 w-4 mr-2" />
               ปิดร้านวันนี้
             </Button>
@@ -177,32 +192,32 @@ export default function CashierClosingReportPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-[#B8C9B8]/10 border-[#B8C9B8]/30">
+        <Card className="bg-[#F5F0E6] border-[#D4C4B0]">
           <div className="text-center">
-            <p className="text-sm text-gray-600 mb-1">จำนวนครั้งที่ปิดร้าน</p>
-            <p className="text-2xl font-bold text-gray-800">{closings.length}</p>
+            <p className="text-sm text-[#7D735F] mb-1">จำนวนครั้งที่ปิดร้าน</p>
+            <p className="text-2xl font-bold text-[#5D4E37]">{closings.length}</p>
           </div>
         </Card>
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-[#E8DED3] border-[#C4B5A0]">
           <div className="text-center">
-            <p className="text-sm text-gray-600 mb-1">ยอดขายเงินสดเฉลี่ย/วัน</p>
-            <p className="text-2xl font-bold text-blue-700">
+            <p className="text-sm text-[#7D735F] mb-1">ยอดขายเงินสดเฉลี่ย/วัน</p>
+            <p className="text-2xl font-bold text-[#A67B5B]">
               ฿{closings.length > 0 ? Math.round(closings.reduce((sum, c) => sum + c.daily_cash_sales, 0) / closings.length).toLocaleString() : '0'}
             </p>
           </div>
         </Card>
-        <Card className="bg-green-50 border-green-200">
+        <Card className="bg-[#F0E8E0] border-[#D4C4B0]">
           <div className="text-center">
-            <p className="text-sm text-gray-600 mb-1">ยอดตรง (ครั้ง)</p>
-            <p className="text-2xl font-bold text-green-700">
+            <p className="text-sm text-[#7D735F] mb-1">ยอดตรง (ครั้ง)</p>
+            <p className="text-2xl font-bold text-[#5D4E37]">
               {closings.filter(c => c.difference === 0).length}
             </p>
           </div>
         </Card>
-        <Card className="bg-amber-50 border-amber-200">
+        <Card className="bg-[#F5E6D3] border-[#D4B896]">
           <div className="text-center">
-            <p className="text-sm text-gray-600 mb-1">ยอดไม่ตรง (ครั้ง)</p>
-            <p className="text-2xl font-bold text-amber-700">
+            <p className="text-sm text-[#8B7355] mb-1">ยอดไม่ตรง (ครั้ง)</p>
+            <p className="text-2xl font-bold text-[#A67B5B]">
               {closings.filter(c => c.difference !== 0).length}
             </p>
           </div>
@@ -211,41 +226,41 @@ export default function CashierClosingReportPage() {
 
       {/* Closing List */}
       <Card className="overflow-hidden">
-        <div className="p-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-[#B8C9B8]" />
+        <div className="p-4 border-b border-[#E8DED3]">
+          <h2 className="font-semibold text-[#5D4E37] flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-[#A67B5B]" />
             ประวัติการปิดร้าน
           </h2>
         </div>
 
         {loading ? (
           <div className="p-8 text-center">
-            <RefreshCw className="w-8 h-8 text-[#B8C9B8] animate-spin mx-auto mb-2" />
-            <p className="text-gray-500">กำลังโหลดข้อมูล...</p>
+            <RefreshCw className="w-8 h-8 text-[#A67B5B] animate-spin mx-auto mb-2" />
+            <p className="text-[#7D735F]">กำลังโหลดข้อมูล...</p>
           </div>
         ) : closings.length === 0 ? (
           <div className="p-8 text-center">
-            <Wallet className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">ยังไม่มีประวัติการปิดร้าน</p>
-            <Link to="/pos" className="text-[#B8C9B8] hover:underline text-sm mt-2 inline-block">
+            <Wallet className="w-12 h-12 text-[#D4C4B0] mx-auto mb-3" />
+            <p className="text-[#7D735F]">ยังไม่มีประวัติการปิดร้าน</p>
+            <Link to="/pos" className="text-[#A67B5B] hover:underline text-sm mt-2 inline-block">
               ไปที่หน้า POS เพื่อปิดร้าน
             </Link>
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-[#E8DED3]">
             {closings.map((closing) => (
-              <div key={closing.id} className="hover:bg-gray-50">
+              <div key={closing.id} className="hover:bg-[#F5F0E6]">
                 <div 
                   className="p-4 cursor-pointer"
                   onClick={() => setExpandedId(expandedId === closing.id ? null : closing.id)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-[#B8C9B8]/10 rounded-xl flex items-center justify-center">
-                        <Calendar className="w-6 h-6 text-[#B8C9B8]" />
+                      <div className="w-12 h-12 bg-[#F5F0E6] rounded-xl flex items-center justify-center">
+                        <Calendar className="w-6 h-6 text-[#A67B5B]" />
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-800">
+                        <p className="font-semibold text-[#5D4E37]">
                           {new Date(closing.closing_date).toLocaleDateString('th-TH', { 
                             weekday: 'long', 
                             year: 'numeric', 
@@ -253,7 +268,7 @@ export default function CashierClosingReportPage() {
                             day: 'numeric' 
                           })}
                         </p>
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <div className="flex items-center gap-2 text-sm text-[#7D735F]">
                           <User className="w-3 h-3" />
                           <span>{closing.user?.full_name || 'ไม่ระบุ'}</span>
                         </div>
@@ -261,34 +276,34 @@ export default function CashierClosingReportPage() {
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="font-bold text-gray-800">฿{closing.actual_amount.toLocaleString()}</p>
-                        <p className="text-xs text-gray-500">นับได้ / ควรมี ฿{closing.expected_amount.toLocaleString()}</p>
+                        <p className="font-bold text-[#5D4E37]">฿{closing.actual_amount.toLocaleString()}</p>
+                        <p className="text-xs text-[#7D735F]">นับได้ / ควรมี ฿{closing.expected_amount.toLocaleString()}</p>
                       </div>
                       <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${getDifferenceClass(closing.difference)}`}>
                         {getDifferenceIcon(closing.difference)}
                         <span>{closing.difference > 0 ? '+' : ''}฿{closing.difference.toLocaleString()}</span>
                       </div>
-                      {expandedId === closing.id ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronLeft className="w-5 h-5 text-gray-400" />}
+                      {expandedId === closing.id ? <ChevronUp className="w-5 h-5 text-[#C4B5A0]" /> : <ChevronLeft className="w-5 h-5 text-[#C4B5A0]" />}
                     </div>
                   </div>
                 </div>
 
                 {/* Expanded Details */}
                 {expandedId === closing.id && (
-                  <div className="px-4 pb-4 bg-gray-50">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
+                  <div className="px-4 pb-4 bg-[#F5F0E6]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-[#D4C4B0]">
                       {/* Denominations */}
                       <div>
-                        <h4 className="text-sm font-semibold text-gray-700 mb-3">รายละเอียดเงิน</h4>
+                        <h4 className="text-sm font-semibold text-[#5D4E37] mb-3">รายละเอียดเงิน</h4>
                         <div className="space-y-2">
                           {closing.denominations.filter(d => d.count > 0).map((d) => (
-                            <div key={d.value} className="flex justify-between items-center py-2 px-3 bg-white rounded-lg">
-                              <span className="text-sm text-gray-600">
+                            <div key={d.value} className="flex justify-between items-center py-2 px-3 bg-[#FDF9F3] rounded-lg border border-[#E8DED3]">
+                              <span className="text-sm text-[#7D735F]">
                                 {d.value >= 20 ? 'แบงค์' : 'เหรียญ'} {d.value}
                               </span>
                               <div className="flex items-center gap-4">
-                                <span className="text-sm font-medium">× {d.count}</span>
-                                <span className="text-sm font-bold text-gray-800 w-20 text-right">
+                                <span className="text-sm font-medium text-[#5D4E37]">× {d.count}</span>
+                                <span className="text-sm font-bold text-[#5D4E37] w-20 text-right">
                                   ฿{(d.value * d.count).toLocaleString()}
                                 </span>
                               </div>
@@ -299,34 +314,34 @@ export default function CashierClosingReportPage() {
 
                       {/* Summary */}
                       <div>
-                        <h4 className="text-sm font-semibold text-gray-700 mb-3">สรุปยอด</h4>
-                        <div className="space-y-2 bg-white rounded-xl p-4">
+                        <h4 className="text-sm font-semibold text-[#5D4E37] mb-3">สรุปยอด</h4>
+                        <div className="space-y-2 bg-[#FDF9F3] rounded-xl p-4 border border-[#E8DED3]">
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">ยอดขายเงินสด</span>
-                            <span className="font-medium">฿{closing.daily_cash_sales.toLocaleString()}</span>
+                            <span className="text-[#7D735F]">ยอดขายเงินสด</span>
+                            <span className="font-medium text-[#5D4E37]">฿{closing.daily_cash_sales.toLocaleString()}</span>
                           </div>
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">เงินคงเหลือในเก๊ะ</span>
-                            <span className="font-medium">฿{closing.reserve_amount.toLocaleString()}</span>
+                            <span className="text-[#7D735F]">เงินคงเหลือในเก๊ะ</span>
+                            <span className="font-medium text-[#5D4E37]">฿{closing.reserve_amount.toLocaleString()}</span>
                           </div>
-                          <div className="flex justify-between text-sm font-semibold border-t pt-2">
-                            <span>เงินที่ควรมี</span>
-                            <span>฿{closing.expected_amount.toLocaleString()}</span>
+                          <div className="flex justify-between text-sm font-semibold border-t border-[#D4C4B0] pt-2">
+                            <span className="text-[#5D4E37]">เงินที่ควรมี</span>
+                            <span className="text-[#5D4E37]">฿{closing.expected_amount.toLocaleString()}</span>
                           </div>
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">ยอดที่นับได้</span>
-                            <span className="font-bold">฿{closing.actual_amount.toLocaleString()}</span>
+                            <span className="text-[#7D735F]">ยอดที่นับได้</span>
+                            <span className="font-bold text-[#5D4E37]">฿{closing.actual_amount.toLocaleString()}</span>
                           </div>
                           {closing.amount_to_remove > 0 && (
-                            <div className="flex justify-between text-sm text-blue-600 font-semibold bg-blue-50 p-2 rounded-lg">
+                            <div className="flex justify-between text-sm text-[#A67B5B] font-semibold bg-[#F5E6D3] p-2 rounded-lg">
                               <span>เงินที่ต้องนำออก</span>
                               <span>฿{closing.amount_to_remove.toLocaleString()}</span>
                             </div>
                           )}
                           {closing.notes && (
-                            <div className="mt-3 pt-3 border-t">
-                              <span className="text-xs text-gray-500">หมายเหตุ:</span>
-                              <p className="text-sm text-gray-700 mt-1">{closing.notes}</p>
+                            <div className="mt-3 pt-3 border-t border-[#D4C4B0]">
+                              <span className="text-xs text-[#7D735F]">หมายเหตุ:</span>
+                              <p className="text-sm text-[#5D4E37] mt-1">{closing.notes}</p>
                             </div>
                           )}
                         </div>

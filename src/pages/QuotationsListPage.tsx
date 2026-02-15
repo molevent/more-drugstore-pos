@@ -14,10 +14,10 @@ import {
   Clock,
   Send,
   AlertCircle,
-  FileDown
+  FileDown,
+  BookOpen
 } from 'lucide-react'
 import Card from '../components/common/Card'
-import Button from '../components/common/Button'
 import Input from '../components/common/Input'
 
 interface Quotation {
@@ -90,6 +90,20 @@ export default function QuotationsListPage() {
     }
   }
 
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('quotations')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', id)
+      if (error) throw error
+      fetchQuotations()
+    } catch (error) {
+      console.error('Error updating status:', error)
+      alert('ไม่สามารถเปลี่ยนสถานะได้')
+    }
+  }
+
   const filteredQuotations = quotations.filter(q => 
     q.quotation_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
     q.contact_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -112,19 +126,29 @@ export default function QuotationsListPage() {
     <div>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <FileText className="h-8 w-8 text-[#4A90A4]" />
+        <div className="flex items-start gap-3">
+          <FileText className="h-8 w-8 text-[#7D735F] mt-1" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">รายการใบเสนอราคา</h1>
             <p className="text-gray-600">จัดการใบเสนอราคาทั้งหมด</p>
           </div>
         </div>
-        <Link to="/quotation">
-          <Button className="flex items-center gap-2 bg-[#4A90A4] hover:bg-[#3d7a8a] text-white">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
+            className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+            title="คู่มือการใช้งาน"
+          >
+            <BookOpen className="h-5 w-5" />
+          </button>
+          <Link 
+            to="/quotation"
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#A67B5B] bg-white text-[#A67B5B] text-sm whitespace-nowrap hover:bg-[#A67B5B]/10 transition-all shadow-sm"
+          >
             <Plus className="h-4 w-4" />
             สร้างใบเสนอราคาใหม่
-          </Button>
-        </Link>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -192,7 +216,13 @@ export default function QuotationsListPage() {
                   return (
                     <tr key={quotation.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3">
-                        <span className="font-medium text-[#4A90A4]">{quotation.quotation_number}</span>
+                        <Link 
+                          to={`/quotation?id=${quotation.id}`}
+                          className="font-medium text-[#4A90A4] hover:underline"
+                          title="แก้ไขใบเสนอราคา"
+                        >
+                          {quotation.quotation_number}
+                        </Link>
                       </td>
                       <td className="px-4 py-3">
                         <div>
@@ -212,10 +242,17 @@ export default function QuotationsListPage() {
                         {formatNumber((quotation.subtotal || 0) + (quotation.tax_amount || 0))}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${status.color}`}>
-                          <StatusIcon className="h-3 w-3" />
-                          {status.label}
-                        </span>
+                        <select
+                          value={quotation.status}
+                          onChange={(e) => handleStatusChange(quotation.id, e.target.value)}
+                          className={`text-xs font-medium rounded-full px-2 py-1 border-none cursor-pointer focus:ring-2 focus:ring-[#4A90A4] ${status.color}`}
+                        >
+                          <option value="draft">ร่าง</option>
+                          <option value="sent">ส่งแล้ว</option>
+                          <option value="approved">อนุมัติ</option>
+                          <option value="rejected">ปฏิเสธ</option>
+                          <option value="expired">หมดอายุ</option>
+                        </select>
                       </td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-1">

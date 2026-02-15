@@ -14,6 +14,7 @@ interface Contact {
   email?: string
   address?: string
   company_name?: string
+  type?: 'buyer' | 'seller' | 'both'
 }
 
 interface CatalogItem {
@@ -24,6 +25,7 @@ interface CatalogItem {
 interface CatalogSettings {
   showStockQuantity: boolean
   priceType: 'retail' | 'wholesale'
+  showExpiryDate: boolean
 }
 
 export default function ProductCatalogPage() {
@@ -44,11 +46,13 @@ export default function ProductCatalogPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   
   const [searchTerm, setSearchTerm] = useState('')
+  const [contactSearchTerm, setContactSearchTerm] = useState('')
   const [showContactModal, setShowContactModal] = useState(false)
   const [catalogName, setCatalogName] = useState('')
   const [settings, setSettings] = useState<CatalogSettings>({
     showStockQuantity: false,
-    priceType: 'retail'
+    priceType: 'retail',
+    showExpiryDate: true
   })
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -108,10 +112,15 @@ export default function ProductCatalogPage() {
       .from('categories')
       .select('*')
       .eq('is_active', true)
-      .order('name')
+      .order('name_th')
     
     if (!error && data) {
       setCategories(data)
+      // Set default category to "สุขภาพและความงาม" if exists
+      const defaultCategory = data.find((cat: Category) => cat.name_th === 'สุขภาพและความงาม')
+      if (defaultCategory) {
+        setSelectedCategory(defaultCategory.id)
+      }
     }
   }
 
@@ -127,7 +136,8 @@ export default function ProductCatalogPage() {
       setCatalogName(data.name || '')
       setSettings({
         showStockQuantity: data.show_stock_quantity || false,
-        priceType: data.price_type || 'retail'
+        priceType: data.price_type || 'retail',
+        showExpiryDate: true
       })
       if (data.customer_id) {
         const customer = contacts.find(c => c.id === data.customer_id)
@@ -269,6 +279,21 @@ export default function ProductCatalogPage() {
     return product.name_th || product.name_en || 'ไม่มีชื่อ'
   }
 
+  const filteredContacts = contacts.filter((contact: Contact) => {
+    // Filter only customers (buyer or both types)
+    const isCustomer = !contact.type || contact.type === 'buyer' || contact.type === 'both'
+    if (!isCustomer) return false
+    
+    // Filter by search term
+    if (!contactSearchTerm) return true
+    const term = contactSearchTerm.toLowerCase()
+    return (
+      contact.name.toLowerCase().includes(term) ||
+      (contact.company_name && contact.company_name.toLowerCase().includes(term)) ||
+      (contact.phone && contact.phone.includes(term))
+    )
+  })
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20 print:p-0 print:bg-white">
       <style>{`
@@ -276,6 +301,95 @@ export default function ProductCatalogPage() {
           .no-print { display: none !important; }
           .print-only { display: block !important; }
           body { font-family: 'Sarabun', sans-serif; }
+          @page { size: A4 portrait; margin: 10mm; }
+          .print-container { 
+            max-width: 100% !important; 
+            padding: 0 !important; 
+            margin: 0 !important;
+          }
+          .print-header { 
+            margin-bottom: 8px !important; 
+            padding-bottom: 8px !important; 
+            border-bottom-width: 2px !important;
+          }
+          .print-header h1 { font-size: 20px !important; margin-bottom: 4px !important; }
+          .print-header-info { font-size: 12px !important; margin-top: 4px !important; }
+          .print-customer { 
+            padding: 6px 8px !important; 
+            margin-top: 6px !important;
+            font-size: 11px !important;
+          }
+          .print-grid { 
+            display: grid !important; 
+            grid-template-columns: repeat(2, 1fr) !important; 
+            gap: 6px !important; 
+          }
+          .print-card { 
+            padding: 6px !important; 
+            border: 1px solid #ccc !important;
+            border-radius: 4px !important;
+            font-size: 11px !important;
+            page-break-inside: avoid;
+            min-height: 38mm;
+            max-height: 38mm;
+            overflow: hidden;
+          }
+          .print-card img { 
+            width: 100px !important; 
+            height: 100px !important; 
+            margin-bottom: 3px !important;
+            object-fit: cover;
+            border-radius: 3px !important;
+            flex-shrink: 0;
+          }
+          .print-card .print-icon { 
+            width: 100px !important; 
+            height: 100px !important; 
+            margin-bottom: 3px !important;
+            border-radius: 3px !important;
+            flex-shrink: 0;
+          }
+          .print-card .print-icon svg {
+            width: 50px !important;
+            height: 50px !important;
+          }
+          .print-card h3 { 
+            font-size: 12px !important; 
+            font-weight: 600 !important;
+            line-height: 1.2 !important;
+            margin-bottom: 2px !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            white-space: normal !important;
+          }
+          .print-card .print-price { 
+            font-size: 13px !important; 
+            font-weight: bold !important;
+            color: #2563eb !important;
+          }
+          .print-card .print-desc {
+            font-size: 9px !important;
+            line-height: 1.1 !important;
+            margin-top: 1px !important;
+            color: #666;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+          }
+          .print-card .print-qty {
+            font-size: 9px !important;
+            color: #666 !important;
+            margin-top: 1px !important;
+          }
+          .print-card .print-expiry {
+            font-size: 9px !important;
+            color: #dc2626 !important;
+            margin-top: 1px !important;
+          }
+          .print-footer {
+            margin-top: 6px !important;
+            padding-top: 4px !important;
+            font-size: 10px !important;
+          }
         }
         .print-only { display: none; }
       `}</style>
@@ -375,6 +489,16 @@ export default function ProductCatalogPage() {
                     />
                     <label htmlFor="showStock" className="ml-2 text-sm text-gray-700">แสดงจำนวนในคลัง</label>
                   </div>
+                  <div className="flex items-center pt-6">
+                    <input
+                      type="checkbox"
+                      id="showExpiry"
+                      checked={settings.showExpiryDate}
+                      onChange={(e) => setSettings({ ...settings, showExpiryDate: e.target.checked })}
+                      className="w-4 h-4 text-[#7D735F] border-gray-300 rounded focus:ring-[#7D735F]"
+                    />
+                    <label htmlFor="showExpiry" className="ml-2 text-sm text-gray-700">แสดงวันหมดอายุ</label>
+                  </div>
                 </div>
               </div>
             </Card>
@@ -461,7 +585,6 @@ export default function ProductCatalogPage() {
                     <div className="divide-y">
                       {filteredProducts.map(product => {
                         const isSelected = selectedProducts.some(item => item.product.id === product.id)
-                        const price = getPrice(product)
                         return (
                           <div 
                             key={product.id} 
@@ -481,8 +604,16 @@ export default function ProductCatalogPage() {
                             <div className="flex-1">
                               <p className="font-medium text-sm">{getProductName(product)}</p>
                               <p className="text-sm text-gray-500">
-                                ฿{price.toLocaleString()}
+                                {product.selling_price_incl_vat !== undefined && (
+                                  <span>ปลีก: ฿{product.selling_price_incl_vat.toLocaleString()}</span>
+                                )}
+                                {product.wholesale_price !== undefined && product.wholesale_price > 0 && (
+                                  <span className="ml-2 text-blue-600">ส่ง: ฿{product.wholesale_price.toLocaleString()}</span>
+                                )}
                                 {settings.showStockQuantity && (' • คงเหลือ: ' + (product.stock_quantity || 0))}
+                                {settings.showExpiryDate && product.expiry_date && (
+                                  <span className="ml-2 text-red-500">• หมดอายุ: {new Date(product.expiry_date).toLocaleDateString('th-TH')}</span>
+                                )}
                               </p>
                             </div>
                             <Button
@@ -532,7 +663,13 @@ export default function ProductCatalogPage() {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{getProductName(item.product)}</p>
                           <p className="text-xs text-gray-500">
-                            ฿{getPrice(item.product).toLocaleString()}
+                            {settings.priceType === 'wholesale' && item.product.wholesale_price 
+                              ? `฿${item.product.wholesale_price.toLocaleString()} (ส่ง)`
+                              : `฿${(item.product.selling_price_incl_vat || 0).toLocaleString()} (ปลีก)`
+                            }
+                            {settings.showExpiryDate && item.product.expiry_date && (
+                              <span className="ml-1 text-red-500">• หมดอายุ: {new Date(item.product.expiry_date).toLocaleDateString('th-TH')}</span>
+                            )}
                           </p>
                         </div>
                         <div className="flex items-center gap-1">
@@ -561,26 +698,26 @@ export default function ProductCatalogPage() {
 
         {/* Print Preview */}
         <div ref={printRef} className="print-only mt-8">
-          <div className="max-w-4xl mx-auto bg-white p-8">
-            <div className="text-center mb-8 border-b-2 border-gray-800 pb-6">
+          <div className="max-w-4xl mx-auto bg-white p-8 print-container">
+            <div className="text-center mb-8 border-b-2 border-gray-800 pb-6 print-header">
               <h1 className="text-3xl font-bold mb-2">{catalogName || 'แคตตาล็อกสินค้า'}</h1>
               {selectedCustomer && (
-                <div className="text-left mt-4 bg-gray-100 p-4 rounded">
+                <div className="text-left mt-4 bg-gray-100 p-4 rounded print-customer">
                   <p className="font-semibold">สำหรับ: {selectedCustomer.name}</p>
                   {selectedCustomer.phone && <p>โทร: {selectedCustomer.phone}</p>}
                   {selectedCustomer.email && <p>อีเมล: {selectedCustomer.email}</p>}
                   {selectedCustomer.address && <p>ที่อยู่: {selectedCustomer.address}</p>}
                 </div>
               )}
-              <div className="flex justify-between items-center mt-4 text-sm text-gray-600">
+              <div className="flex justify-between items-center mt-4 text-sm text-gray-600 print-header-info">
                 <span>ประเภทราคา: {settings.priceType === 'wholesale' ? 'ราคาขายส่ง' : 'ราคาขายปลีก'}</span>
                 <span>วันที่: {new Date().toLocaleDateString('th-TH')}</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 print-grid">
               {selectedProducts.map(item => (
-                <div key={item.product.id} className="border rounded-lg p-4 flex gap-4">
+                <div key={item.product.id} className="border rounded-lg p-4 flex gap-4 print-card">
                   {item.product.image_url ? (
                     <img 
                       src={item.product.image_url} 
@@ -588,26 +725,31 @@ export default function ProductCatalogPage() {
                       className="w-24 h-24 object-cover rounded-md"
                     />
                   ) : (
-                    <div className="w-24 h-24 bg-gray-200 rounded-md flex items-center justify-center">
+                    <div className="w-24 h-24 bg-gray-200 rounded-md flex items-center justify-center print-icon">
                       <Package className="w-12 h-12 text-gray-400" />
                     </div>
                   )}
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{getProductName(item.product)}</h3>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-lg truncate">{getProductName(item.product)}</h3>
                     {item.product.description_th && (
-                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">{item.product.description_th}</p>
+                      <p className="text-sm text-gray-600 mt-1 line-clamp-1 print-desc">{item.product.description_th}</p>
                     )}
-                    <div className="mt-2 flex items-center justify-between">
-                      <span className="text-xl font-bold text-blue-600">
+                    <div className="mt-1">
+                      <span className="text-xl font-bold text-blue-600 print-price">
                         ฿{getPrice(item.product).toLocaleString()}
                       </span>
-                      {settings.showStockQuantity && (
-                        <span className="text-sm text-gray-500">
-                          คงเหลือ: {item.product.stock_quantity || 0} {item.product.unit || 'ชิ้น'}
-                        </span>
-                      )}
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">จำนวน: {item.quantity}</p>
+                    {settings.showStockQuantity && (
+                      <span className="text-sm text-gray-500 print-qty">
+                        คงเหลือ: {item.product.stock_quantity || 0} {item.product.unit || 'ชิ้น'}
+                      </span>
+                    )}
+                    {settings.showExpiryDate && item.product.expiry_date && (
+                      <p className="text-sm text-red-500 print-expiry">
+                        หมดอายุ: {new Date(item.product.expiry_date).toLocaleDateString('th-TH')}
+                      </p>
+                    )}
+                    <p className="text-sm text-gray-500 print-qty">จำนวน: {item.quantity}</p>
                   </div>
                 </div>
               ))}
@@ -619,7 +761,7 @@ export default function ProductCatalogPage() {
               </div>
             )}
 
-            <div className="mt-12 pt-6 border-t text-center text-sm text-gray-500">
+            <div className="mt-12 pt-6 border-t text-center text-sm text-gray-500 print-footer">
               <p>ร้านขายยาและเวชภัณฑ์</p>
               <p>สอบถามเพิ่มเติมโทร: 02-xxx-xxxx</p>
             </div>
@@ -646,22 +788,28 @@ export default function ProductCatalogPage() {
             <div className="p-4 flex-1 overflow-y-auto">
               <Input
                 placeholder="ค้นหาลูกค้า..."
+                value={contactSearchTerm}
+                onChange={(e) => setContactSearchTerm(e.target.value)}
                 className="mb-4"
               />
-              {contacts.length === 0 ? (
+              {filteredContacts.length === 0 ? (
                 <p className="text-center text-gray-500 py-4">ไม่มีรายชื่อลูกค้า</p>
               ) : (
                 <div className="space-y-2">
-                  {contacts.map(contact => (
+                  {filteredContacts.map(contact => (
                     <div
                       key={contact.id}
                       className="p-3 border rounded-md hover:bg-gray-50 cursor-pointer"
                       onClick={() => {
                         setSelectedCustomer(contact)
+                        setContactSearchTerm('')
                         setShowContactModal(false)
                       }}
                     >
                       <p className="font-medium">{contact.name}</p>
+                      {contact.company_name && (
+                        <p className="text-sm text-gray-500">{contact.company_name}</p>
+                      )}
                       <p className="text-sm text-gray-500">{contact.phone}</p>
                     </div>
                   ))}

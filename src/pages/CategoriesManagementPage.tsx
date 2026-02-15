@@ -200,10 +200,13 @@ export default function CategoriesManagementPage() {
             {t('categories.title')}
           </h1>
         </div>
-        <Button variant="primary" onClick={() => setShowModal(true)} className="w-full sm:w-auto">
-          <Plus className="h-5 w-5 mr-2" />
+        <button
+          onClick={() => setShowModal(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#A67B5B] bg-white text-[#A67B5B] text-sm whitespace-nowrap hover:bg-[#A67B5B]/10 transition-all shadow-sm w-full sm:w-auto"
+        >
+          <Plus className="h-4 w-4" />
           เพิ่มหมวดหมู่
-        </Button>
+        </button>
       </div>
 
       {/* Categories Grid */}

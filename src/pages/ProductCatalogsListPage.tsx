@@ -4,7 +4,7 @@ import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
 import { supabase } from '../services/supabase'
-import { Plus, Search, Printer, Eye, Trash2, Building2, ShoppingCart } from 'lucide-react'
+import { Plus, Search, Printer, Eye, Trash2, Building2, ShoppingCart, BookOpen } from 'lucide-react'
 
 interface ProductCatalog {
   id: string
@@ -70,19 +70,34 @@ export default function ProductCatalogsListPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-white pb-20 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">แคตตาล็อกสินค้า</h1>
-            <Button
-              onClick={() => navigate('/product-catalog')}
-              className="gap-2 bg-[#7D735F] hover:bg-[#6a6350]"
-            >
-              <Plus className="w-4 h-4" />
-              สร้างแคตตาล็อก
-            </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <BookOpen className="h-7 w-7 text-[#7D735F]" />
+                แคตตาล็อกสินค้า
+              </h1>
+              <p className="text-gray-600 mt-1">จัดการแคตตาล็อกสินค้าสำหรับนำเสนอลูกค้า</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
+                className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+                title="คู่มือการใช้งาน"
+              >
+                <BookOpen className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => navigate('/product-catalog')}
+                className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#A67B5B] bg-white text-[#A67B5B] text-sm whitespace-nowrap hover:bg-[#A67B5B]/10 transition-all shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                สร้างแคตตาล็อก
+              </button>
+            </div>
           </div>
         </div>
       </div>

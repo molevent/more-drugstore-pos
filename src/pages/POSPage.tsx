@@ -7,7 +7,7 @@ import CalculatorModal from '../components/CalculatorModal'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Scan, Trash2, ShoppingCart, Save, X, Store, Bike, User, Search, Package, Receipt, AlertTriangle, History, Bell, Camera, Brain, CreditCard, Printer, Wallet, Calculator } from 'lucide-react'
+import { Scan, Trash2, ShoppingCart, Save, X, User, Search, Package, Receipt, AlertTriangle, History, Bell, Camera, Brain, CreditCard, Printer, Wallet, Calculator, BookOpen } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { Product } from '../types/database'
 import { supabase } from '../services/supabase'
@@ -31,24 +31,16 @@ interface Contact {
 interface SalesChannelConfig {
   id: string
   name: string
-  icon: string
   isCustom?: boolean
   sortOrder?: number
   isVisibleOnPOS?: boolean
 }
 
-const ICON_MAP: Record<string, React.ElementType> = {
-  store: Store,
-  bike: Bike,
-  shoppingcart: ShoppingCart,
-  creditcard: CreditCard,
-}
-
 const DEFAULT_salesChannels: SalesChannelConfig[] = [
-  { id: 'walk-in', name: 'หน้าร้าน', icon: 'store', sortOrder: 0 },
-  { id: 'grab', name: 'GRAB', icon: 'bike', sortOrder: 1 },
-  { id: 'shopee', name: 'SHOPEE', icon: 'shoppingcart', sortOrder: 2 },
-  { id: 'lineman', name: 'LINEMAN', icon: 'bike', sortOrder: 3 },
+  { id: 'walk-in', name: 'หน้าร้าน', sortOrder: 0 },
+  { id: 'grab', name: 'GRAB', sortOrder: 1 },
+  { id: 'shopee', name: 'SHOPEE', sortOrder: 2 },
+  { id: 'lineman', name: 'LINEMAN', sortOrder: 3 },
 ]
 
 export default function POSPage() {
@@ -82,11 +74,6 @@ export default function POSPage() {
 
   // Filter visible channels for display
   const visibleChannels = salesChannels.filter(c => c.isVisibleOnPOS !== false)
-  
-  // Helper function to get icon component
-  const getIconComponent = (iconId: string) => {
-    return ICON_MAP[iconId] || Store
-  }
   
   // Customer search states
   const [customerSearch, setCustomerSearch] = useState('')
@@ -130,6 +117,30 @@ export default function POSPage() {
     acknowledged_at?: string
   }>>([])
   const [showAlertHistory, setShowAlertHistory] = useState(false)
+  const [dismissedAlertIds, setDismissedAlertIds] = useState<Set<string>>(new Set())
+
+  // Dismiss alert function
+  const dismissAlert = async (alertId: string) => {
+    try {
+      // Update in database
+      const { error } = await supabase
+        .from('sale_alert_logs')
+        .update({ acknowledged: true })
+        .eq('id', alertId)
+      
+      if (error) {
+        console.error('Error acknowledging alert:', error)
+      }
+      
+      // Add to dismissed set
+      setDismissedAlertIds(prev => new Set([...prev, alertId]))
+    } catch (err) {
+      console.error('Exception dismissing alert:', err)
+    }
+  }
+
+  // Filter out dismissed alerts
+  const visibleAlertLogs = savedAlertLogs.filter(log => !dismissedAlertIds.has(log.id))
   
   // Recent sales states
   const [recentSales, setRecentSales] = useState<Array<{
@@ -155,6 +166,7 @@ export default function POSPage() {
   const [paymentMethods, setPaymentMethods] = useState<Array<{id: string; name: string; is_active: boolean}>>([])
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('')
   const [cashReceived, setCashReceived] = useState<string>('')
+  const [showOtherPaymentMethods, setShowOtherPaymentMethods] = useState(false)
 
   // Default payment method mapping for each sales channel
   const [channelPaymentMap, setChannelPaymentMap] = useState<Record<string, string>>(() => {
@@ -1454,7 +1466,7 @@ export default function POSPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="flex items-center justify-between mb-6 px-4 sm:px-0">
+      <div className="flex items-center justify-between mb-6 px-4 sm:px-0 pr-0 sm:pr-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <ShoppingCart className="h-7 w-7 text-[#7D735F]" />
@@ -1462,7 +1474,7 @@ export default function POSPage() {
           </h1>
           <p className="text-gray-600 mt-1">POS System</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 absolute top-4 right-4 sm:top-6 sm:right-6">
           {/* AI Button - Icon only, far right */}
           <Link 
             to="/ai-symptom-checker"
@@ -1471,6 +1483,15 @@ export default function POSPage() {
           >
             <Brain className="h-5 w-5 text-black" />
           </Link>
+
+          {/* Help Button */}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
+            className="flex items-center justify-center w-10 h-10 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+            title="คู่มือการใช้งาน"
+          >
+            <BookOpen className="h-5 w-5" />
+          </button>
         </div>
       </div>
 
@@ -1497,6 +1518,13 @@ export default function POSPage() {
           <Wallet className="h-5 w-5 text-black flex-shrink-0" />
           <span className="font-medium text-gray-900 text-sm whitespace-nowrap">นับเงิน</span>
         </button>
+        <Link 
+          to="/payment-summary"
+          className="flex items-center gap-2 px-3 py-2 bg-[#E8DFD0] rounded-full border border-[#B8C9B8] hover:bg-[#D5C4B0] hover:shadow-md transition-all"
+        >
+          <CreditCard className="h-5 w-5 text-black flex-shrink-0" />
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">สรุปยอดชำระเงิน</span>
+        </Link>
         <button
           onClick={() => setShowCalculator(true)}
           className="flex items-center gap-2 px-3 py-2 bg-[#E8EBF0] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
@@ -1566,13 +1594,13 @@ export default function POSPage() {
             </button>
           </div>
           
-          {savedAlertLogs.length === 0 ? (
+          {visibleAlertLogs.length === 0 ? (
             <div className="text-center py-4 text-gray-600">
               <p>ไม่มีประวัติการแจ้งเตือน</p>
             </div>
           ) : (
             <div className="space-y-2 max-h-60 overflow-y-auto">
-              {savedAlertLogs.map((log) => (
+              {visibleAlertLogs.map((log) => (
                 <div
                   key={log.id}
                   className={`p-3 rounded-lg border-l-4 ${getAlertTypeColor(log.alert_type)} ${
@@ -1590,11 +1618,20 @@ export default function POSPage() {
                         {formatAlertDate(log.created_at)}
                       </p>
                     </div>
-                    {!log.acknowledged && (
-                      <span className="px-2 py-1 bg-[#D4756A] text-white text-xs rounded-full">
-                        ใหม่
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {!log.acknowledged && (
+                        <span className="px-2 py-1 bg-[#D4756A] text-white text-xs rounded-full">
+                          ใหม่
+                        </span>
+                      )}
+                      <button
+                        onClick={() => dismissAlert(log.id)}
+                        className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                        title="ปิดการแจ้งเตือน"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -1611,25 +1648,20 @@ export default function POSPage() {
               <label className="block text-sm font-medium text-gray-600 mb-2">
                 ช่องทางการขาย
               </label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="flex flex-wrap gap-2">
                 {visibleChannels.map((channel: SalesChannelConfig) => {
-                  const Icon = getIconComponent(channel.icon)
                   const isSelected = salesChannel === channel.id
                   return (
                     <button
                       key={channel.id}
                       onClick={() => setSalesChannel(channel.id)}
-                      className={`flex items-center justify-center gap-2 px-3 py-3 rounded-lg border-2 transition-all ${
+                      className={`px-4 py-2 rounded-lg border-2 transition-all text-sm whitespace-nowrap ${
                         isSelected
-                          ? 'border-[#7D735F] bg-[#7D735F]/10 text-gray-600 ring-2 ring-[#7D735F]/30'
-                          : 'border-[#B8C9B8]/50 bg-white text-gray-600 hover:border-[#7D735F]/50'
+                          ? 'border-[#A67B5B] bg-[#A67B5B] text-white font-medium shadow-md'
+                          : 'border-[#D4C4B0]/50 bg-white text-gray-600 hover:border-[#A67B5B]/50 hover:bg-[#A67B5B]/10'
                       }`}
                     >
-                      <Icon className={`h-5 w-5 ${isSelected ? 'text-gray-600' : ''}`} />
-                      <span className={`text-sm font-medium ${isSelected ? 'font-bold' : ''}`}>{channel.name}</span>
-                      {isSelected && (
-                        <span className="ml-1 text-xs bg-[#7D735F] text-white px-1.5 py-0.5 rounded-full">✓</span>
-                      )}
+                      {channel.name}
                     </button>
                   )
                 })}
@@ -1830,11 +1862,8 @@ export default function POSPage() {
 
         <div>
           <Card title="สรุปรายการ">
-            {/* Customer Selection */}
+            {/* Customer Selection - Hidden label */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-600 mb-2">
-                ลูกค้า
-              </label>
               <div className="relative" ref={customerDropdownRef}>
                 {selectedCustomer ? (
                   <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
@@ -1891,20 +1920,18 @@ export default function POSPage() {
                 {customerSearch.trim().length > 0 && !showCustomerDropdown && (
                   <div className="absolute z-50 w-full mt-1 bg-white border border-[#B8C9B8]/30 rounded-lg shadow-lg p-3">
                     <p className="text-sm text-gray-600 mb-2">ไม่พบลูกค้า "{customerSearch}"</p>
-                    <Button
+                    <button
                       type="button"
-                      variant="secondary"
-                      size="sm"
-                      className="w-full"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-full border-2 border-[#A67B5B] bg-white text-[#A67B5B] text-sm whitespace-nowrap hover:bg-[#A67B5B]/10 transition-all shadow-sm"
                       onClick={() => {
                         setNewContactName(customerSearch)
                         setShowAddContactModal(true)
                         setShowCustomerDropdown(false)
                       }}
                     >
-                      <User className="h-4 w-4 mr-2" />
+                      <User className="h-4 w-4" />
                       เพิ่มผู้ติดต่อใหม่
-                    </Button>
+                    </button>
                   </div>
                 )}
               </div>
@@ -1927,18 +1954,26 @@ export default function POSPage() {
               {(() => {
                 // Get visible payment methods for current sales channel
                 const visiblePaymentIds = channelVisiblePayments[salesChannel] || []
-                const visibleMethods = visiblePaymentIds.length > 0
+                let visibleMethods = visiblePaymentIds.length > 0
                   ? paymentMethods.filter(m => visiblePaymentIds.includes(m.id) && m.is_active)
                   : paymentMethods.filter(m => m.is_active) // Show all if none configured
                 
+                // For walk-in channel: only show "เงินสด" and "ถุงเงิน" by default
+                if (salesChannel === 'walk-in') {
+                  visibleMethods = visibleMethods.filter(m => 
+                    m.name === 'เงินสด' || m.name === 'Cash' || 
+                    m.name.includes('ถุงเงิน') || m.name.includes('กระเป๋าเงิน')
+                  )
+                }
+                
                 if (visibleMethods.length > 0) {
                   return (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1">
                       {visibleMethods.map((method) => (
                         <button
                           key={method.id}
                           onClick={() => setSelectedPaymentMethod(method.id)}
-                          className={`px-4 py-2 rounded-full border-2 transition-all text-sm whitespace-nowrap ${
+                          className={`px-4 py-2 rounded-lg border-2 transition-all text-sm whitespace-nowrap ${
                             selectedPaymentMethod === method.id
                               ? 'border-[#A67B5B] bg-[#A67B5B] text-white font-medium shadow-md'
                               : 'border-[#B8C9B8]/50 bg-white text-gray-600 hover:border-[#A67B5B]/50 hover:bg-[#A67B5B]/10'
@@ -1947,6 +1982,15 @@ export default function POSPage() {
                           {method.name}
                         </button>
                       ))}
+                      {/* Show อื่นๆ button only for walk-in channel */}
+                      {salesChannel === 'walk-in' && (
+                        <button
+                          onClick={() => setShowOtherPaymentMethods(true)}
+                          className="px-2 py-1 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 text-gray-500 hover:border-gray-400 hover:bg-gray-100 transition-all text-xs whitespace-nowrap"
+                        >
+                          อื่นๆ
+                        </button>
+                      )}
                     </div>
                   )
                 } else {
@@ -2047,18 +2091,20 @@ export default function POSPage() {
                   size="lg"
                   onClick={handleHoldBill}
                   disabled={items.length === 0}
+                  className="w-full py-3 flex items-center justify-center gap-2"
                 >
-                  <Save className="h-5 w-5 mr-2" />
-                  พักบิล
+                  <Save className="h-5 w-5" />
+                  <span>พัก</span>
                 </Button>
                 <Button
                   variant="secondary"
                   size="lg"
                   onClick={handlePrintReceipt}
                   disabled={items.length === 0}
+                  className="w-full py-3 flex items-center justify-center gap-2"
                 >
-                  <Receipt className="h-5 w-5 mr-2" />
-                  พิมพ์ใบเสร็จ
+                  <Receipt className="h-5 w-5" />
+                  <span>พิมพ์</span>
                 </Button>
               </div>
             </div>
@@ -2634,6 +2680,66 @@ export default function POSPage() {
                 onClick={handleAddNewContact}
               >
                 บันทึก
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Other Payment Methods Modal */}
+      {showOtherPaymentMethods && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-bold text-gray-900">วิธีชำระเงินอื่นๆ</h2>
+              <button
+                onClick={() => setShowOtherPaymentMethods(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-4">
+              <p className="text-sm text-gray-600 mb-4">
+                วิธีชำระเงินจากช่องทางอื่น
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {(() => {
+                  // For walk-in: show methods from OTHER channels (not in walk-in visible list)
+                  // Get visible payment IDs for walk-in channel
+                  const walkInVisibleIds = channelVisiblePayments['walk-in'] || []
+                  const otherMethods = paymentMethods.filter(m => 
+                    m.is_active && !walkInVisibleIds.includes(m.id)
+                  )
+                  
+                  if (otherMethods.length === 0) {
+                    return (
+                      <p className="text-sm text-gray-500">ไม่มีวิธีชำระเงินเพิ่มเติม</p>
+                    )
+                  }
+                  
+                  return otherMethods.map((method) => (
+                    <button
+                      key={method.id}
+                      onClick={() => {
+                        setSelectedPaymentMethod(method.id)
+                        setShowOtherPaymentMethods(false)
+                      }}
+                      className="px-4 py-2 rounded-lg border-2 border-gray-200 bg-white text-gray-700 hover:border-[#A67B5B] hover:bg-[#A67B5B]/10 transition-all text-sm whitespace-nowrap"
+                    >
+                      {method.name}
+                    </button>
+                  ))
+                })()}
+              </div>
+            </div>
+            <div className="p-4 border-t bg-gray-50">
+              <Button
+                variant="secondary"
+                className="w-full"
+                onClick={() => setShowOtherPaymentMethods(false)}
+              >
+                ปิด
               </Button>
             </div>
           </div>

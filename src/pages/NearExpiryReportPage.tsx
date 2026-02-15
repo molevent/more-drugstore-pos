@@ -3,7 +3,7 @@ import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { AlertTriangle, Calendar, Search, Package, History, Edit2, Save, X } from 'lucide-react'
+import { AlertTriangle, Calendar, Search, Package, History, Edit2, Save, X, BookOpen } from 'lucide-react'
 
 interface BatchWithProduct {
   id: string
@@ -265,6 +265,13 @@ export default function NearExpiryReportPage() {
           <p className="text-gray-600 mt-1">แสดงสินค้าที่ใกล้หมดอายุตามจำนวนวันที่กำหนด</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
+            className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+            title="คู่มือการใช้งาน"
+          >
+            <BookOpen className="h-5 w-5" />
+          </button>
           <span className="text-sm text-gray-600">หมดอายุในอีก:</span>
           <select
             value={daysFilter}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ListOrdered, Search, Calendar, Eye, Edit, Trash2, Receipt } from 'lucide-react'
+import { ListOrdered, Search, Calendar, Eye, Edit, Trash2, Receipt, BookOpen } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
@@ -435,6 +435,13 @@ export default function SalesOrdersPage() {
           </h1>
           <p className="text-gray-600 mt-1">รายการขายและยอดขายรวม</p>
         </div>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
+          className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+          title="คู่มือการใช้งาน"
+        >
+          <BookOpen className="h-5 w-5" />
+        </button>
       </div>
 
       {/* Summary Cards */}

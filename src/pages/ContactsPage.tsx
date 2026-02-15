@@ -10,7 +10,8 @@ import {
   X,
   Building2,
   User,
-  ArrowLeftRight
+  ArrowLeftRight,
+  BookOpen
 } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -213,10 +214,22 @@ export default function ContactsPage() {
           </h1>
           <p className="text-gray-600 mt-1">จัดการผู้ซื้อ ผู้ขาย และคู่ค้า</p>
         </div>
-        <Button variant="primary" onClick={() => { setEditingContact(null); resetForm(); setShowModal(true) }}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          เพิ่มผู้ติดต่อ
-        </Button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
+            className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+            title="คู่มือการใช้งาน"
+          >
+            <BookOpen className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => { setEditingContact(null); resetForm(); setShowModal(true) }}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#A67B5B] bg-white text-[#A67B5B] text-sm whitespace-nowrap hover:bg-[#A67B5B]/10 transition-all shadow-sm"
+          >
+            <UserPlus className="h-4 w-4" />
+            เพิ่มผู้ติดต่อ
+          </button>
+        </div>
       </div>
 
       {/* Filters */}

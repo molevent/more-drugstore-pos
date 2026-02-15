@@ -25,12 +25,12 @@ export default function ShopSettingsPage() {
   const stampInputRef = useRef<HTMLInputElement>(null)
   const signatureInputRef = useRef<HTMLInputElement>(null)
   const [shopInfo, setShopInfo] = useState<ShopInfo>({
-    name: '',
-    address: '',
-    phone: '',
-    tax_id: '',
-    email: '',
-    line: '',
+    name: 'หจก. สะอางพานิชย์',
+    address: 'เลขที่ 8/8 ถ.สุขสันต์ ต.สุเทพ อ.เมืองเชียงใหม่ จ.เชียงใหม่ 50200',
+    phone: '0646194546',
+    tax_id: '0503560008650',
+    email: 'moredrugstore.cm@gmail.com',
+    line: '@moredrugstore',
     logo_url: '',
     stamp_url: '',
     signature_url: ''
@@ -79,6 +79,39 @@ export default function ShopSettingsPage() {
         setShopInfo(shopData)
         // Update localStorage with latest data
         localStorage.setItem('shop_settings', JSON.stringify(shopData))
+      } else if (error?.code === 'PGRST116') {
+        // No record found - save defaults to database
+        const defaultData = {
+          id: 1,
+          name: 'หจก. สะอางพานิชย์',
+          address: 'เลขที่ 8/8 ถ.สุขสันต์ ต.สุเทพ อ.เมืองเชียงใหม่ จ.เชียงใหม่ 50200',
+          phone: '0646194546',
+          tax_id: '0503560008650',
+          email: 'moredrugstore.cm@gmail.com',
+          line: '@moredrugstore',
+          logo_url: '',
+          stamp_url: '',
+          signature_url: '',
+          updated_at: new Date().toISOString()
+        }
+        
+        try {
+          await supabase.from('shop_settings').insert(defaultData)
+          console.log('Default shop settings saved to database')
+          localStorage.setItem('shop_settings', JSON.stringify({
+            name: defaultData.name,
+            address: defaultData.address,
+            phone: defaultData.phone,
+            tax_id: defaultData.tax_id,
+            email: defaultData.email,
+            line: defaultData.line,
+            logo_url: defaultData.logo_url,
+            stamp_url: defaultData.stamp_url,
+            signature_url: defaultData.signature_url
+          }))
+        } catch (insertError) {
+          console.error('Error saving defaults:', insertError)
+        }
       }
     } catch (error) {
       console.error('Error:', error)
@@ -267,7 +300,7 @@ export default function ShopSettingsPage() {
                 ) : (
                   <button
                     onClick={() => logoInputRef.current?.click()}
-                    className="h-24 w-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-[#4A90A4] hover:text-[#4A90A4]"
+                    className="h-24 w-24 border-2 border-dashed border-[#7D735F] rounded-lg flex flex-col items-center justify-center text-[#7D735F] hover:border-[#5C5345] hover:text-[#5C5345]"
                   >
                     <Upload className="h-6 w-6 mb-1" />
                     <span className="text-xs">อัพโหลด</span>
@@ -298,7 +331,7 @@ export default function ShopSettingsPage() {
                 ) : (
                   <button
                     onClick={() => stampInputRef.current?.click()}
-                    className="h-24 w-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-[#4A90A4] hover:text-[#4A90A4]"
+                    className="h-24 w-24 border-2 border-dashed border-[#7D735F] rounded-lg flex flex-col items-center justify-center text-[#7D735F] hover:border-[#5C5345] hover:text-[#5C5345]"
                   >
                     <Upload className="h-6 w-6 mb-1" />
                     <span className="text-xs">อัพโหลด</span>
@@ -329,7 +362,7 @@ export default function ShopSettingsPage() {
                 ) : (
                   <button
                     onClick={() => signatureInputRef.current?.click()}
-                    className="h-24 w-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-[#4A90A4] hover:text-[#4A90A4]"
+                    className="h-24 w-24 border-2 border-dashed border-[#7D735F] rounded-lg flex flex-col items-center justify-center text-[#7D735F] hover:border-[#5C5345] hover:text-[#5C5345]"
                   >
                     <Upload className="h-6 w-6 mb-1" />
                     <span className="text-xs">อัพโหลด</span>

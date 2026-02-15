@@ -25,7 +25,12 @@ import {
   Percent,
   ChevronDown,
   Eye,
-  Copy
+  Copy,
+  Calculator,
+  TrendingUp,
+  TrendingDown,
+  Boxes,
+  ShoppingCart
 } from 'lucide-react'
 
 interface QuotationItem {
@@ -175,6 +180,28 @@ export default function QuotationPage() {
   const [showAttachmentPreview, setShowAttachmentPreview] = useState(false)
   const [previewAttachment, setPreviewAttachment] = useState<{name: string, url: string} | null>(null)
   const [productImageSize, setProductImageSize] = useState<'small' | 'medium' | 'large'>('small')
+  const [activeTab, setActiveTab] = useState<'quotation' | 'profit'>('quotation')
+  
+  // Expenses and additional costs for profit calculation
+  const [expenses, setExpenses] = useState({
+    shipping: 0,
+    fees: 0,
+    other: 0
+  })
+  
+  // Stock data for inventory checking
+  const [stockData, setStockData] = useState<Record<string, number>>({})
+  
+  // Purchase orders tracking
+  const [purchaseOrders, setPurchaseOrders] = useState<{
+    productId: string
+    productName: string
+    quantity: number
+    unitPrice: number
+    shippingCost: number
+    channel: string
+    status: 'not_ordered' | 'ordered' | 'received'
+  }[]>([])
   
   const [newContact, setNewContact] = useState({
     name: '',
@@ -192,11 +219,11 @@ export default function QuotationPage() {
 
   // Business settings state
   const [businessSettings, setBusinessSettings] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    address: '',
-    tax_id: ''
+    name: 'หจก. สะอางพานิชย์',
+    phone: '0646194546',
+    email: 'saang.co@gmail.com',
+    address: 'เลขที่ 8/8 ถ.สุขสันต์ ต.สุเทพ อ.เมืองเชียงใหม่ จ.เชียงใหม่ 50200',
+    tax_id: '0503560008650'
   })
 
   // Load business settings from localStorage
@@ -221,6 +248,7 @@ export default function QuotationPage() {
   useEffect(() => {
     fetchContacts()
     fetchProducts()
+    fetchStockData()
     if (quotationId) {
       fetchQuotation(quotationId)
     } else {
@@ -292,6 +320,24 @@ export default function QuotationPage() {
       setProducts(data || [])
     } catch (error) {
       console.error('Error fetching products:', error)
+    }
+  }
+
+  const fetchStockData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('inventory')
+        .select('product_id, quantity')
+      
+      if (error) throw error
+      
+      const stockMap: Record<string, number> = {}
+      data?.forEach((item: any) => {
+        stockMap[item.product_id] = item.quantity || 0
+      })
+      setStockData(stockMap)
+    } catch (error) {
+      console.error('Error fetching stock data:', error)
     }
   }
 
@@ -913,6 +959,32 @@ export default function QuotationPage() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="no-print flex gap-1 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
+        <button
+          onClick={() => setActiveTab('quotation')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+            activeTab === 'quotation'
+              ? 'bg-white text-[#4A90A4] shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <FileText className="h-4 w-4" />
+          ใบเสนอราคา
+        </button>
+        <button
+          onClick={() => setActiveTab('profit')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+            activeTab === 'profit'
+              ? 'bg-white text-[#4A90A4] shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <Calculator className="h-4 w-4" />
+          ต้นทุน/กำไร
+        </button>
+      </div>
+
       {/* Toolbar */}
       <div className="no-print flex justify-end gap-2 mb-4">
         <button onClick={handleShare} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="แชร์ลิงก์">
@@ -1156,8 +1228,8 @@ export default function QuotationPage() {
             <strong>{quotation.contact_name}</strong><br />
             {quotation.contact_company && <>{quotation.contact_company}<br /></>}
             {quotation.contact_address && <>{quotation.contact_address}<br /></>}
-            {quotation.contact_tax_id && <>เลขประจำตัวผู้เสียภาษี: {quotation.contact_tax_id}<br /></>}
             {quotation.contact_phone && <>โทร: {quotation.contact_phone}<br /></>}
+            {quotation.contact_tax_id && <>เลขประจำตัวผู้เสียภาษี: {quotation.contact_tax_id}<br /></>}
             {quotation.notes && <><div style={{ marginTop: '8px', whiteSpace: 'pre-wrap' }}>{quotation.notes}</div></>}
           </div>
         </div>
@@ -1321,6 +1393,7 @@ export default function QuotationPage() {
       </div>
 
       {/* Form Fields - Hidden when printing */}
+      {activeTab === 'quotation' && (
       <div className="no-print">
         <Card className="mb-4">
           <div className="p-4 space-y-3">
@@ -1647,6 +1720,387 @@ export default function QuotationPage() {
         </Card>
       </div>
       </div>
+      )}
+
+      {/* Profit/Loss Tab */}
+      {activeTab === 'profit' && (
+        <div className="no-print space-y-4">
+          {/* Summary Cards - Moved to top */}
+          {(() => {
+            const totals = quotation.items.reduce((acc, item) => {
+              const product = products.find(p => p.id === item.product_id)
+              const po = purchaseOrders.find(o => o.productId === item.product_id)
+              const costPrice = po ? ((po.quantity * po.unitPrice + po.shippingCost) / po.quantity) : (product?.base_price || 0)
+              const sellingPrice = item.unit_price
+              const profitPerUnit = sellingPrice - costPrice
+              const totalProfit = profitPerUnit * item.quantity
+              
+              return {
+                totalCost: acc.totalCost + (costPrice * item.quantity),
+                totalRevenue: acc.totalRevenue + (sellingPrice * item.quantity),
+                totalProfit: acc.totalProfit + totalProfit
+              }
+            }, { totalCost: 0, totalRevenue: 0, totalProfit: 0 })
+            
+            const totalExpenses = expenses.shipping + expenses.fees + expenses.other
+            const netProfit = totals.totalProfit - totalExpenses
+            const overallProfitPercent = totals.totalCost > 0 ? ((netProfit / totals.totalCost) * 100) : 0
+            
+            return (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <Card className="bg-white border-[#d4c9b8] rounded-xl shadow-sm">
+                  <div className="p-2 text-center">
+                    <p className="text-[10px] text-[#8b7355] mb-0.5">ต้นทุนรวม</p>
+                    <p className="text-base font-bold text-[#5c4a32]">{formatNumber(totals.totalCost)}</p>
+                  </div>
+                </Card>
+                <Card className="bg-white border-[#d4c9b8] rounded-xl shadow-sm">
+                  <div className="p-2 text-center">
+                    <p className="text-[10px] text-[#8b7355] mb-0.5">รายได้รวม</p>
+                    <p className="text-base font-bold text-[#5c4a32]">{formatNumber(totals.totalRevenue)}</p>
+                  </div>
+                </Card>
+                <Card className="bg-white border-[#d4c9b8] rounded-xl shadow-sm">
+                  <div className="p-2 text-center">
+                    <p className="text-[10px] text-[#8b7355] mb-0.5">ค่าใช้จ่ายเพิ่มเติม</p>
+                    <p className="text-base font-bold text-[#a67c52]">{formatNumber(totalExpenses)}</p>
+                  </div>
+                </Card>
+                <Card className={`${netProfit >= 0 ? 'bg-[#e8f5e9] border-[#c8e6c9]' : 'bg-[#ffebee] border-[#ffcdd2]'} rounded-xl shadow-sm`}>
+                  <div className="p-2 text-center">
+                    <p className={`text-[10px] mb-0.5 ${netProfit >= 0 ? 'text-[#4caf50]' : 'text-[#f44336]'}`}>
+                      {netProfit >= 0 ? 'กำไรสุทธิ' : 'ขาดทุนสุทธิ'}
+                    </p>
+                    <p className={`text-base font-bold ${netProfit >= 0 ? 'text-[#2e7d32]' : 'text-[#c62828]'}`}>
+                      {formatNumber(Math.abs(netProfit))}
+                    </p>
+                    <p className="text-[9px] text-[#8b7355]">{overallProfitPercent.toFixed(1)}% จากต้นทุน</p>
+                  </div>
+                </Card>
+              </div>
+            )
+          })()}
+
+          {/* Profit Calculation Table */}
+          <Card className="border-[#e8e0d5]">
+            <div className="p-4 border-b border-[#e8e0d5] bg-[#faf8f5]">
+              <h2 className="text-base font-bold text-[#5c4a32] flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-[#a67c52]" />
+                คำนวณต้นทุนและกำไร
+              </h2>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">#</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">รายการ</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">จำนวน</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">ราคาทุน/หน่วย</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">ราคาขาย/หน่วย</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">กำไร/ขาดทุนต่อหน่วย</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">กำไร/ขาดทุนรวม</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">% กำไร</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {quotation.items.map((item, index) => {
+                    const product = products.find(p => p.id === item.product_id)
+                    // Check if there's a purchase order for this item
+                    const po = purchaseOrders.find(o => o.productId === item.product_id)
+                    // Use purchase order price if available, otherwise use product base_price
+                    const costPrice = po ? ((po.quantity * po.unitPrice + po.shippingCost) / po.quantity) : (product?.base_price || 0)
+                    const sellingPrice = item.unit_price
+                    const profitPerUnit = sellingPrice - costPrice
+                    const totalProfit = profitPerUnit * item.quantity
+                    const profitPercent = costPrice > 0 ? ((profitPerUnit / costPrice) * 100) : 0
+                    
+                    return (
+                      <tr key={item.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm text-gray-500">{index + 1}</td>
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-gray-900">{item.product_name}</p>
+                          {po && <p className="text-xs text-blue-600">สั่งซื้อเพิ่มจาก {po.channel}</p>}
+                          {item.details && <p className="text-xs text-gray-500">{item.details}</p>}
+                        </td>
+                        <td className="px-4 py-3 text-center text-sm">{item.quantity} {item.unit}</td>
+                        <td className="px-4 py-3 text-right text-sm">{formatNumber(costPrice)}</td>
+                        <td className="px-4 py-3 text-right text-sm font-medium">{formatNumber(sellingPrice)}</td>
+                        <td className={`px-4 py-3 text-right text-sm font-medium ${profitPerUnit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          <div className="flex items-center justify-end gap-1">
+                            {profitPerUnit >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                            {formatNumber(profitPerUnit)}
+                          </div>
+                        </td>
+                        <td className={`px-4 py-3 text-right text-sm font-bold ${totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {formatNumber(totalProfit)}
+                        </td>
+                        <td className={`px-4 py-3 text-right text-sm ${profitPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {profitPercent.toFixed(1)}%
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          {/* Stock Check Section */}
+          <Card className="border-[#e8e0d5]">
+            <div className="p-4 border-b border-[#e8e0d5] bg-[#faf8f5]">
+              <h2 className="text-base font-bold text-[#5c4a32] flex items-center gap-2">
+                <Boxes className="h-4 w-4 text-[#a67c52]" />
+                ตรวจสอบสต็อกสินค้า
+              </h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">#</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">รายการ</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">จำนวนที่ต้องการ</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">สต็อกคงเหลือ</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">ขาดอีก</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {quotation.items.map((item, index) => {
+                    const stockQty = item.product_id ? (stockData[item.product_id] || 0) : 0
+                    const missing = Math.max(0, item.quantity - stockQty)
+                    const hasEnough = stockQty >= item.quantity
+                    
+                    return (
+                      <tr key={item.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm text-gray-500">{index + 1}</td>
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-gray-900">{item.product_name}</p>
+                          {item.details && <p className="text-xs text-gray-500">{item.details}</p>}
+                        </td>
+                        <td className="px-4 py-3 text-center text-sm">{item.quantity} {item.unit}</td>
+                        <td className="px-4 py-3 text-center text-sm">{stockQty} {item.unit}</td>
+                        <td className="px-4 py-3 text-center text-sm font-medium text-red-600">{missing > 0 ? `${missing} ${item.unit}` : '-'}</td>
+                        <td className="px-4 py-3 text-center">
+                          {hasEnough ? (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              <Check className="h-3 w-3 mr-1" />
+                              พร้อม
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                              <X className="h-3 w-3 mr-1" />
+                              ไม่พอ
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          {/* Expenses Section */}
+          <Card className="border-[#e8e0d5]">
+            <div className="p-4 border-b border-[#e8e0d5] bg-[#faf8f5]">
+              <h2 className="text-base font-bold text-[#5c4a32] flex items-center gap-2">
+                <Calculator className="h-4 w-4 text-[#a67c52]" />
+                ค่าใช้จ่ายเพิ่มเติม
+              </h2>
+            </div>
+            <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ค่าขนส่ง</label>
+                <Input 
+                  type="number" 
+                  value={expenses.shipping} 
+                  onChange={(e) => setExpenses(prev => ({ ...prev, shipping: parseFloat(e.target.value) || 0 }))}
+                  className="text-right"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ค่าธรรมเนียม</label>
+                <Input 
+                  type="number" 
+                  value={expenses.fees} 
+                  onChange={(e) => setExpenses(prev => ({ ...prev, fees: parseFloat(e.target.value) || 0 }))}
+                  className="text-right"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ค่าใช้จ่ายอื่นๆ</label>
+                <Input 
+                  type="number" 
+                  value={expenses.other} 
+                  onChange={(e) => setExpenses(prev => ({ ...prev, other: parseFloat(e.target.value) || 0 }))}
+                  className="text-right"
+                />
+              </div>
+            </div>
+            <div className="px-4 pb-4">
+              <div className="bg-[#faf8f5] rounded-lg p-3 flex justify-between items-center border border-[#e8e0d5]">
+                <span className="text-sm font-medium text-[#5c4a32]">รวมค่าใช้จ่ายเพิ่มเติม</span>
+                <span className="text-lg font-bold text-[#a67c52]">{formatNumber(expenses.shipping + expenses.fees + expenses.other)}</span>
+              </div>
+            </div>
+          </Card>
+
+          {/* Purchase Orders Section */}
+          <Card className="border-[#e8e0d5]">
+            <div className="p-4 border-b border-[#e8e0d5] bg-[#faf8f5]">
+              <h2 className="text-base font-bold text-[#5c4a32] flex items-center gap-2">
+                <ShoppingCart className="h-4 w-4 text-[#a67c52]" />
+                การสั่งซื้อเพิ่ม
+              </h2>
+            </div>
+            
+            {/* Add Purchase Order Form */}
+            <div className="p-4 bg-[#faf8f5] border-b border-[#e8e0d5]">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                <select 
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm md:col-span-5"
+                  onChange={(e) => {
+                    const selectedProduct = products.find(p => p.id === e.target.value)
+                    if (selectedProduct) {
+                      const existingOrder = purchaseOrders.find(o => o.productId === selectedProduct.id)
+                      if (!existingOrder) {
+                        const stockQty = stockData[selectedProduct.id] || 0
+                        const quotationItem = quotation.items.find(i => i.product_id === selectedProduct.id)
+                        const neededQty = quotationItem ? (quotationItem.quantity - stockQty) : 0
+                        setPurchaseOrders(prev => [...prev, {
+                          productId: selectedProduct.id,
+                          productName: selectedProduct.name_th,
+                          quantity: Math.max(0, neededQty),
+                          unitPrice: selectedProduct.base_price,
+                          shippingCost: 0,
+                          channel: 'ตัวแทนจำหน่าย',
+                          status: 'not_ordered'
+                        }])
+                      }
+                    }
+                  }}
+                >
+                  <option value="">เลือกสินค้า...</option>
+                  {quotation.items.filter(item => {
+                    const stockQty = item.product_id ? (stockData[item.product_id] || 0) : 0
+                    const missing = item.quantity - stockQty
+                    return missing > 0 && !purchaseOrders.find(o => o.productId === item.product_id)
+                  }).map(item => (
+                    <option key={item.product_id} value={item.product_id}>{item.product_name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Purchase Orders List */}
+            {purchaseOrders.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">สินค้า</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">จำนวนที่สั่ง</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">ราคาทุน/หน่วย</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">ค่าขนส่ง</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">ช่องทาง</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">สถานะ</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">รวมต้นทุน</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {purchaseOrders.map((order, index) => (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm font-medium">{order.productName}</td>
+                        <td className="px-4 py-3 text-center">
+                          <Input 
+                            type="number" 
+                            value={order.quantity} 
+                            onChange={(e) => {
+                              const newQty = parseInt(e.target.value) || 0
+                              setPurchaseOrders(prev => prev.map((o, i) => i === index ? { ...o, quantity: newQty } : o))
+                            }}
+                            className="w-20 text-center text-sm"
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Input 
+                            type="number" 
+                            value={order.unitPrice} 
+                            onChange={(e) => {
+                              const newPrice = parseFloat(e.target.value) || 0
+                              setPurchaseOrders(prev => prev.map((o, i) => i === index ? { ...o, unitPrice: newPrice } : o))
+                            }}
+                            className="w-24 text-right text-sm"
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Input 
+                            type="number" 
+                            value={order.shippingCost} 
+                            onChange={(e) => {
+                              const newCost = parseFloat(e.target.value) || 0
+                              setPurchaseOrders(prev => prev.map((o, i) => i === index ? { ...o, shippingCost: newCost } : o))
+                            }}
+                            className="w-24 text-right text-sm"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <Input 
+                            type="text" 
+                            value={order.channel} 
+                            onChange={(e) => setPurchaseOrders(prev => prev.map((o, i) => i === index ? { ...o, channel: e.target.value } : o))}
+                            className="text-sm"
+                            placeholder="ช่องทางสั่งซื้อ"
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <select 
+                            value={order.status}
+                            onChange={(e) => setPurchaseOrders(prev => prev.map((o, i) => i === index ? { ...o, status: e.target.value as 'not_ordered' | 'ordered' | 'received' } : o))}
+                            className={`px-2 py-1 rounded text-xs font-medium border ${
+                              order.status === 'not_ordered' ? 'bg-gray-100 text-gray-700 border-gray-300' :
+                              order.status === 'ordered' ? 'bg-blue-100 text-blue-700 border-blue-300' :
+                              'bg-green-100 text-green-700 border-green-300'
+                            }`}
+                          >
+                            <option value="not_ordered">ยังไม่ได้สั่ง</option>
+                            <option value="ordered">สั่งแล้ว</option>
+                            <option value="received">ได้รับแล้ว</option>
+                          </select>
+                        </td>
+                        <td className="px-4 py-3 text-right text-sm font-medium">
+                          {formatNumber((order.quantity * order.unitPrice) + order.shippingCost)}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <button 
+                            onClick={() => setPurchaseOrders(prev => prev.filter((_, i) => i !== index))}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            
+            {purchaseOrders.length === 0 && (
+              <div className="p-6 text-center text-[#8b7355]">
+                <ShoppingCart className="h-10 w-10 mx-auto mb-2 text-[#d4c9b8]" />
+                <p className="text-sm">ยังไม่มีรายการสั่งซื้อเพิ่ม</p>
+                <p className="text-xs text-[#a67c52]">เลือกสินค้าที่ขาดจาก dropdown เพื่อเพิ่มรายการ</p>
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
 
       {showContactModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

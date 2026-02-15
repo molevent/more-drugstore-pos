@@ -4,7 +4,7 @@ import { zortOutService } from '../services/zortout'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import SalesChannelCSVImportModal from '../components/common/SalesChannelCSVImportModal'
-import { Package, Plus, History, Search, Edit, ExternalLink, Trash2, Tag, DollarSign, Printer, CheckSquare, Square, X, FileSpreadsheet, Barcode, AlertTriangle, ClipboardList, ShoppingCart, RotateCcw } from 'lucide-react'
+import { Package, Plus, History, Search, Edit, ExternalLink, Trash2, Tag, DollarSign, Printer, CheckSquare, Square, X, FileSpreadsheet, Barcode, AlertTriangle, ClipboardList, ShoppingCart, RotateCcw, BookOpen } from 'lucide-react'
 
 interface Product {
   id: string
@@ -621,48 +621,62 @@ export default function StockManagementPage() {
           </h1>
           <p className="text-gray-600 mt-1">ปรับยอดสต็อก, จัดการ Batch และติดตามการเคลื่อนไหว</p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="primary"
-            onClick={() => window.location.href = '/stock-counting'}
-            className="flex items-center gap-2 !rounded-full bg-[#7D735F] text-white hover:bg-[#6a6350] border border-[#7D735F]"
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
+            className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+            title="คู่มือการใช้งาน"
           >
-            <Barcode className="h-4 w-4" />
-            ระบบนับสต็อก
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => window.location.href = '/manual-stock-cut-report'}
-            className="flex items-center gap-2 !rounded-full bg-[#E8F0E8] text-gray-700 hover:bg-[#D8E8D8] border border-gray-300"
-          >
-            <AlertTriangle className="h-4 w-4" />
-            รายงานตัดสต็อกแมนนวล
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => window.location.href = '/stock-replenishment-report'}
-            className="flex items-center gap-2 !rounded-full bg-[#E8F0E8] text-gray-700 hover:bg-[#D8E8D8] border border-gray-300"
-          >
-            <ClipboardList className="h-4 w-4" />
-            รายงานแจ้งเติมสต็อก
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => window.location.href = '/purchase-preparation-report'}
-            className="flex items-center gap-2 !rounded-full bg-[#E8F0E8] text-gray-700 hover:bg-[#D8E8D8] border border-gray-300"
-          >
-            <ShoppingCart className="h-4 w-4" />
-            รายงานเตรียมสั่งซื้อ
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => setShowChannelImportModal(true)}
-            className="flex items-center gap-2 !rounded-full bg-[#E8F0E8] text-gray-700 hover:bg-[#D8E8D8] border border-gray-300"
-          >
-            <FileSpreadsheet className="h-4 w-4" />
-            นำเข้าช่องทางขาย
-          </Button>
+            <BookOpen className="h-5 w-5" />
+          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => window.location.href = '/stock-counting'}
+              className="flex items-center gap-3 px-5 py-3 bg-[#7D735F] hover:bg-[#6a6350] text-white rounded-lg border border-[#7D735F] transition-all shadow-sm"
+            >
+              <Barcode className="h-6 w-6" />
+              <span className="font-medium">ระบบนับสต็อก</span>
+            </button>
+            <button
+              onClick={() => setShowChannelImportModal(true)}
+              className="flex items-center gap-3 px-5 py-3 bg-[#E8F0E8] hover:bg-[#D8E8D8] text-gray-700 rounded-lg border border-gray-300 transition-all shadow-sm"
+            >
+              <FileSpreadsheet className="h-6 w-6 text-[#9C27B0]" />
+              <span className="font-medium">นำเข้าช่องทางขาย</span>
+            </button>
+          </div>
         </div>
+      </div>
+
+      {/* Reports Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+        <Card className="hover:shadow-md transition-all cursor-pointer p-3 hover:ring-2 hover:ring-[#B8D4E3] hover:shadow-[0_0_15px_rgba(184,212,227,0.5)]" onClick={() => window.location.href = '/manual-stock-cut-report'}>
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-[#A67B5B] flex-shrink-0" />
+            <div className="min-w-0">
+              <h3 className="font-medium text-gray-900 text-sm truncate">รายงานตัดสต็อกแมนนวล</h3>
+              <p className="text-xs text-gray-500 truncate">ตัดสต็อกที่ทำด้วยตนเอง</p>
+            </div>
+          </div>
+        </Card>
+        <Card className="hover:shadow-md transition-all cursor-pointer p-3 hover:ring-2 hover:ring-[#B8D4E3] hover:shadow-[0_0_15px_rgba(184,212,227,0.5)]" onClick={() => window.location.href = '/stock-replenishment-report'}>
+          <div className="flex items-center gap-3">
+            <ClipboardList className="h-5 w-5 text-[#7D735F] flex-shrink-0" />
+            <div className="min-w-0">
+              <h3 className="font-medium text-gray-900 text-sm truncate">รายงานแจ้งเติมสต็อก</h3>
+              <p className="text-xs text-gray-500 truncate">สินค้าที่ต้องสั่งเติม</p>
+            </div>
+          </div>
+        </Card>
+        <Card className="hover:shadow-md transition-all cursor-pointer p-3 hover:ring-2 hover:ring-[#B8D4E3] hover:shadow-[0_0_15px_rgba(184,212,227,0.5)]" onClick={() => window.location.href = '/purchase-preparation-report'}>
+          <div className="flex items-center gap-3">
+            <ShoppingCart className="h-5 w-5 text-[#A67B5B] flex-shrink-0" />
+            <div className="min-w-0">
+              <h3 className="font-medium text-gray-900 text-sm truncate">รายงานเตรียมสั่งซื้อ</h3>
+              <p className="text-xs text-gray-500 truncate">สินค้าที่ต้องสั่งซื้อ</p>
+            </div>
+          </div>
+        </Card>
       </div>
 
       {/* Search Bar */}

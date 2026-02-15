@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle, Percent, FileText, ShoppingCart } from 'lucide-react'
+import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle, Percent, FileText, ShoppingCart, BookOpen } from 'lucide-react'
 
 interface Expense {
   id: string
@@ -442,12 +442,26 @@ export default function ExpensesPage() {
           <p className="text-gray-600 mt-1">บันทึกและติดตามค่าใช้จ่ายต่างๆ ของร้าน</p>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
+            className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+            title="คู่มือการใช้งาน"
+          >
+            <BookOpen className="h-5 w-5" />
+          </button>
           <Link 
             to="/purchase-orders"
             className="flex items-center gap-3 px-5 py-3 bg-[#F5F0E6] rounded-full border border-[#B8C9B8] hover:bg-[#E8EBF0] hover:shadow-md transition-all"
           >
             <ShoppingCart className="h-6 w-6 text-gray-900" />
             <span className="font-semibold text-gray-900">ใบสั่งซื้อ</span>
+          </Link>
+          <Link 
+            to="/quotations"
+            className="flex items-center gap-3 px-5 py-3 bg-[#E8DFD0] rounded-full border border-[#B8C9B8] hover:bg-[#D5C4B0] hover:shadow-md transition-all"
+          >
+            <FileText className="h-6 w-6 text-gray-900" />
+            <span className="font-semibold text-gray-900">ใบเสนอราคา</span>
           </Link>
           <Link 
             to="/payment-vouchers"
@@ -543,16 +557,16 @@ export default function ExpensesPage() {
               />
             </div>
           </div>
-          <Button
-            variant="primary"
+          <button
             onClick={() => {
               resetForm()
               setShowModal(true)
             }}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#A67B5B] bg-white text-[#A67B5B] text-sm whitespace-nowrap hover:bg-[#A67B5B]/10 transition-all shadow-sm"
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4" />
             เพิ่มค่าใช้จ่าย
-          </Button>
+          </button>
         </div>
       )}
 

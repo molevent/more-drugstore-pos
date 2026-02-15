@@ -21,7 +21,8 @@ import {
   Home,
   Receipt,
   Calendar,
-  FileText
+  FileText,
+  BookOpen
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Card from '../components/common/Card'
@@ -41,10 +42,13 @@ interface SettingsCardProps {
 }
 
 function SettingsCard({ icon: Icon, iconBg, iconColor, title, subtitle, details, status, link }: SettingsCardProps) {
+  const isReport = title.includes('รายงาน')
   return (
     <Link 
       to={link}
-      className="block bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-blue-200 transition-all cursor-pointer"
+      className={`block bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all cursor-pointer ${
+        isReport ? 'hover:ring-2 hover:ring-[#B8D4E3] hover:shadow-[0_0_15px_rgba(184,212,227,0.5)]' : 'hover:border-blue-200'
+      }`}
     >
       <div className="p-5">
         {/* Header */}
@@ -316,6 +320,14 @@ export default function SettingsPage() {
       subtitle: 'ตรวจสอบสินค้าใกล้วันหมดอายุ',
       link: '/near-expiry-report'
     },
+    {
+      icon: BookOpen,
+      iconBg: 'bg-[#7D735F]/10',
+      iconColor: 'text-[#7D735F]',
+      title: 'จัดการคู่มือการใช้งาน',
+      subtitle: 'สร้างและแก้ไขคู่มือสำหรับแต่ละหน้า',
+      link: '/help-management'
+    },
   ]
   
   return (
@@ -328,6 +340,13 @@ export default function SettingsPage() {
           </h1>
           <p className="text-gray-600 mt-1">ตั้งค่าระบบและการเชื่อมต่อ</p>
         </div>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
+          className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+          title="คู่มือการใช้งาน"
+        >
+          <BookOpen className="h-5 w-5" />
+        </button>
       </div>
 
       {/* Documents Section */}
