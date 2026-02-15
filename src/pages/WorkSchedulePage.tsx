@@ -657,12 +657,19 @@ export default function WorkSchedulePage() {
 
               <div>
                 <label className="block text-sm font-medium text-[#5C4A32] mb-1">ชื่อพนักงาน</label>
-                <Input
+                <select
                   value={formData.employee_name}
                   onChange={(e) => setFormData({ ...formData, employee_name: e.target.value })}
-                  placeholder="ชื่อพนักงาน"
+                  className="w-full h-10 px-3 rounded-lg border border-gray-300 bg-white text-[#5C4A32] focus:outline-none focus:ring-2 focus:ring-[#A67B5B] focus:border-transparent"
                   required
-                />
+                >
+                  <option value="">เลือกพนักงาน</option>
+                  {employees.map((employee) => (
+                    <option key={employee.id} value={employee.name}>
+                      {employee.name} ({employee.position})
+                    </option>
+                  ))}
+                </select>
               </div>
               
               <div>
