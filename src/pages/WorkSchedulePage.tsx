@@ -502,6 +502,15 @@ export default function WorkSchedulePage() {
           </div>
           <button
             onClick={() => {
+              setShowLeaveModal(true)
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#FF9800] bg-white text-[#FF9800] text-sm whitespace-nowrap hover:bg-[#FF9800]/10 transition-all shadow-sm"
+          >
+            <span className="text-lg">🏖️</span>
+            ลา
+          </button>
+          <button
+            onClick={() => {
               setFormData(DEFAULT_SHIFT)
               setShowModal(true)
             }}
@@ -509,15 +518,6 @@ export default function WorkSchedulePage() {
           >
             <Plus className="h-4 w-4" />
             เพิ่มกะงาน
-          </button>
-          <button
-            onClick={() => {
-              setShowLeaveModal(true)
-            }}
-            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#FF9800] bg-white text-[#FF9800] text-sm whitespace-nowrap hover:bg-[#FF9800]/10 transition-all shadow-sm"
-          >
-            <span className="text-lg">🏖️</span>
-            ลา
           </button>
         </div>
       </div>
