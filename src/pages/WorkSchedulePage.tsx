@@ -252,15 +252,17 @@ export default function WorkSchedulePage() {
     const isSunday = dayOfWeek === 0
     
     if (formData.position === 'ผู้จัดการ') {
-      // Check for Sunday special rate: 9:00-20:30 = 800 Baht
+      // Sunday special rate: 9:00-20:30 = 800 Baht
       if (isSunday && formData.start_time === '09:00' && formData.end_time === '20:30') {
         totalWage = SUNDAY_MANAGER_RATE
-      } else if (formData.start_time === '18:00' && formData.end_time === '20:30') {
-        // OT shift: 250 Baht flat rate
+      } 
+      // OT shift: 18:00-20:30 = 250 Baht
+      else if (formData.start_time === '18:00' && formData.end_time === '20:30') {
         totalWage = OT_RATE
-      } else {
-        // Regular manager shift: 250 Baht flat rate per shift
-        totalWage = OT_RATE
+      }
+      // Regular shift: 0 Baht (or could calculate from monthly salary if needed)
+      else {
+        totalWage = 0
       }
     } else {
       totalWage = totalHours * formData.hourly_wage
@@ -781,7 +783,7 @@ export default function WorkSchedulePage() {
                 {(() => {
                   const hours = calculateShiftHours(formData.start_time, formData.end_time)
                   
-                  // Manager shifts: flat 250 Baht per shift
+                  // Manager shifts: special rates
                   if (formData.position === 'ผู้จัดการ') {
                     const date = new Date(formData.work_date)
                     const isSunday = date.getDay() === 0
@@ -798,12 +800,24 @@ export default function WorkSchedulePage() {
                       )
                     }
                     
-                    // All other manager shifts: 250 Baht flat
+                    // OT shift: 18:00-20:30 = 250 Baht
+                    if (formData.start_time === '18:00' && formData.end_time === '20:30') {
+                      return (
+                        <>
+                          <p className="text-sm text-[#8B7355]">ชั่วโมง: {hours.toFixed(1)} ชม. (OT)</p>
+                          <p className="text-lg font-bold text-[#2E7D32]">
+                            รวม: ฿250 (ค่ากะ OT)
+                          </p>
+                        </>
+                      )
+                    }
+                    
+                    // Regular manager shift: 0 Baht (no OT)
                     return (
                       <>
                         <p className="text-sm text-[#8B7355]">ชั่วโมง: {hours.toFixed(1)} ชม.</p>
                         <p className="text-lg font-bold text-[#2E7D32]">
-                          รวม: ฿250 (ค่ากะ)
+                          รวม: ฿0 (ไม่มี OT)
                         </p>
                       </>
                     )
