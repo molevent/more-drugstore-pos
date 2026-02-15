@@ -90,7 +90,7 @@ export default function WorkSchedulePage() {
     notes: 'ลา'
   })
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar')
+  const [viewMode, setViewMode] = useState<'calendar' | 'list' | 'leave'>('calendar')
 
   // Fetch shifts for current month
   useEffect(() => {
@@ -203,6 +203,28 @@ export default function WorkSchedulePage() {
       total_wage: data.hasMonthlySalary ? data.monthlySalary + data.wage : data.wage
     }))
   }, [shifts, employees])
+
+  // Leave summary by employee
+  const leaveSummary = useMemo(() => {
+    const leaveMap = new Map<string, { dates: string[]; months: Set<string> }>()
+    
+    shifts
+      .filter(shift => shift.notes === 'ลา')
+      .forEach(shift => {
+        const existing = leaveMap.get(shift.employee_name) || { dates: [], months: new Set() }
+        existing.dates.push(shift.work_date)
+        const month = shift.work_date.substring(0, 7) // YYYY-MM
+        existing.months.add(month)
+        leaveMap.set(shift.employee_name, existing)
+      })
+    
+    return Array.from(leaveMap.entries()).map(([name, data]) => ({
+      employee_name: name,
+      total_leave_days: data.dates.length,
+      months_count: data.months.size,
+      dates: data.dates
+    }))
+  }, [shifts])
 
   // Handlers
   const handlePreviousMonth = () => {
@@ -468,6 +490,15 @@ export default function WorkSchedulePage() {
             >
               รายการ
             </button>
+            <button
+              onClick={() => setViewMode('leave')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1 ${
+                viewMode === 'leave' ? 'bg-[#FF9800] text-white shadow-sm' : 'text-gray-600'
+              }`}
+            >
+              <span>🏖️</span>
+              การลา
+            </button>
           </div>
           <button
             onClick={() => {
@@ -692,7 +723,125 @@ export default function WorkSchedulePage() {
         </Card>
       )}
 
-      {/* Modal */}
+      {/* Leave Report View */}
+      {viewMode === 'leave' && (
+        <>
+          {/* Leave Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+            <Card className="bg-[#FFF3E0] border-[#FFCC80]">
+              <div className="p-4 text-center">
+                <span className="text-3xl">🏖️</span>
+                <p className="text-xs text-[#E65100] mt-2">รายการลาทั้งหมด</p>
+                <p className="text-2xl font-bold text-[#E65100]">
+                  {shifts.filter(s => s.notes === 'ลา').length} รายการ
+                </p>
+              </div>
+            </Card>
+            <Card className="bg-[#FFF8E1] border-[#FFE082]">
+              <div className="p-4 text-center">
+                <span className="text-3xl">👥</span>
+                <p className="text-xs text-[#F57F17] mt-2">พนักงานที่ลา</p>
+                <p className="text-2xl font-bold text-[#F57F17]">
+                  {leaveSummary.length} คน
+                </p>
+              </div>
+            </Card>
+            <Card className="bg-[#FBE9E7] border-[#FFAB91]">
+              <div className="p-4 text-center">
+                <span className="text-3xl">📅</span>
+                <p className="text-xs text-[#BF360C] mt-2">เดือนที่มีการลา</p>
+                <p className="text-2xl font-bold text-[#BF360C]">
+                  {new Set(shifts.filter(s => s.notes === 'ลา').map(s => s.work_date.substring(0, 7))).size} เดือน
+                </p>
+              </div>
+            </Card>
+          </div>
+
+          {/* Leave Summary by Employee */}
+          <Card className="border-[#E8E0D5] mb-6">
+            <div className="p-4 border-b border-[#E8E0D5] bg-[#FFF3E0]">
+              <h2 className="text-base font-bold text-[#E65100]">🏖️ สรุปการลาแยกตามพนักงาน</h2>
+            </div>
+            <div className="divide-y divide-[#E8E0D5]">
+              {leaveSummary.length === 0 ? (
+                <div className="p-8 text-center">
+                  <span className="text-4xl">🏖️</span>
+                  <p className="text-[#8B7355] mt-2">ไม่มีรายการลา</p>
+                </div>
+              ) : (
+                leaveSummary.map((emp) => (
+                  <div key={emp.employee_name} className="p-4 flex items-center justify-between hover:bg-[#FFF8E1]">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-[#FFCC80] rounded-lg">
+                        <span className="text-xl">🏖️</span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-[#5C4A32]">{emp.employee_name}</span>
+                        <p className="text-xs text-[#8B7355]">
+                          ลา {emp.months_count} เดือน
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-2xl font-bold text-[#E65100]">{emp.total_leave_days}</span>
+                      <span className="text-sm text-[#8B7355] ml-1">วัน</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </Card>
+
+          {/* Monthly Leave Statistics */}
+          <Card className="border-[#E8E0D5]">
+            <div className="p-4 border-b border-[#E8E0D5] bg-[#FFF3E0]">
+              <h2 className="text-base font-bold text-[#E65100]">📊 สถิติการลารายเดือน/รายปี</h2>
+            </div>
+            <div className="p-4">
+              {(() => {
+                // Group leaves by month
+                const monthlyLeaves = new Map<string, number>()
+                shifts
+                  .filter(s => s.notes === 'ลา')
+                  .forEach(s => {
+                    const month = s.work_date.substring(0, 7) // YYYY-MM
+                    monthlyLeaves.set(month, (monthlyLeaves.get(month) || 0) + 1)
+                  })
+                
+                if (monthlyLeaves.size === 0) {
+                  return (
+                    <p className="text-center text-[#8B7355]">ไม่มีข้อมูลการลา</p>
+                  )
+                }
+                
+                return Array.from(monthlyLeaves.entries())
+                  .sort(([a], [b]) => b.localeCompare(a)) // Sort by month descending
+                  .map(([month, count]) => {
+                    const [year, monthNum] = month.split('-')
+                    const monthName = new Date(parseInt(year), parseInt(monthNum) - 1).toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })
+                    
+                    return (
+                      <div key={month} className="flex items-center justify-between py-2 border-b border-[#E8E0D5] last:border-0">
+                        <span className="text-[#5C4A32]">{monthName}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-32 bg-[#E8E0D5] rounded-full h-2">
+                            <div 
+                              className="bg-[#FF9800] h-2 rounded-full"
+                              style={{ width: `${Math.min((count / 30) * 100, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-medium text-[#E65100] min-w-[60px] text-right">
+                            {count} วัน
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })
+              })()}
+            </div>
+          </Card>
+        </>
+      )}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
