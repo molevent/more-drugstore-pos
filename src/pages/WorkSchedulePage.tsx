@@ -425,7 +425,7 @@ export default function WorkSchedulePage() {
                 key={idx}
                 className={`text-xs truncate px-1 py-0.5 rounded cursor-pointer ${
                   shift.notes === 'ลา' 
-                    ? 'text-[#E65100] bg-[#FFF3E0] border border-[#FFCC80]' 
+                    ? 'text-[#5C4A32] bg-[#F5F0E8] border border-[#E8E0D5]' 
                     : 'text-[#5C4A32] bg-[#F5F0E8] hover:bg-[#E8E0D5]'
                 }`}
                 onClick={(e) => {
@@ -493,7 +493,7 @@ export default function WorkSchedulePage() {
             <button
               onClick={() => setViewMode('leave')}
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1 ${
-                viewMode === 'leave' ? 'bg-[#FF9800] text-white shadow-sm' : 'text-gray-600'
+                viewMode === 'leave' ? 'bg-[#A67B5B] text-white shadow-sm' : 'text-gray-600'
               }`}
             >
               <span>🏖️</span>
@@ -504,7 +504,7 @@ export default function WorkSchedulePage() {
             onClick={() => {
               setShowLeaveModal(true)
             }}
-            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#FF9800] bg-white text-[#FF9800] text-sm whitespace-nowrap hover:bg-[#FF9800]/10 transition-all shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#A67B5B] bg-white text-[#A67B5B] text-sm whitespace-nowrap hover:bg-[#A67B5B]/10 transition-all shadow-sm"
           >
             <span className="text-lg">🏖️</span>
             ลา
@@ -644,9 +644,9 @@ export default function WorkSchedulePage() {
               }
               
               return filteredShifts.map((shift) => (
-                <div key={shift.id} className={`p-4 flex items-center justify-between hover:bg-[#FAF8F5] ${shift.notes === 'ลา' ? 'bg-[#FFF3E0]' : ''}`}>
+                <div key={shift.id} className={`p-4 flex items-center justify-between hover:bg-[#FAF8F5] ${shift.notes === 'ลา' ? 'bg-[#F5F0E8]' : ''}`}>
                   <div className="flex items-center gap-4">
-                    <div className={`p-2 rounded-lg ${shift.notes === 'ลา' ? 'bg-[#FFCC80]' : 'bg-[#F5F0E8]'}`}>
+                    <div className={`p-2 rounded-lg ${shift.notes === 'ลา' ? 'bg-[#E8E0D5]' : 'bg-[#F5F0E8]'}`}>
                       {shift.notes === 'ลา' ? (
                         <span className="text-xl">🏖️</span>
                       ) : (
@@ -660,7 +660,7 @@ export default function WorkSchedulePage() {
                         {shift.notes !== 'ลา' && `• ${shift.start_time} - ${shift.end_time}`}
                       </p>
                       {shift.notes && (
-                        <p className={`text-xs mt-1 ${shift.notes === 'ลา' ? 'text-[#E65100] font-medium' : 'text-[#A67B52]'}`}>
+                        <p className={`text-xs mt-1 ${shift.notes === 'ลา' ? 'text-[#5C4A32] font-medium' : 'text-[#A67B52]'}`}>
                           {shift.notes === 'ลา' ? '🏖️ ลา' : shift.notes}
                         </p>
                       )}
@@ -669,7 +669,7 @@ export default function WorkSchedulePage() {
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       {shift.notes === 'ลา' ? (
-                        <p className="text-sm font-medium text-[#E65100]">ลา 1 วัน</p>
+                        <p className="text-sm font-medium text-[#5C4A32]">ลา 1 วัน</p>
                       ) : (
                         <>
                           <p className="font-medium text-[#5C4A32]">{shift.total_hours.toFixed(1)} ชม.</p>
@@ -871,11 +871,11 @@ export default function WorkSchedulePage() {
                         <div className="flex items-center gap-2">
                           <div className="w-32 bg-[#E8E0D5] rounded-full h-2">
                             <div 
-                              className="bg-[#FF9800] h-2 rounded-full"
+                              className="bg-[#A67B5B] h-2 rounded-full"
                               style={{ width: `${Math.min((count / 30) * 100, 100)}%` }}
                             />
                           </div>
-                          <span className="text-sm font-medium text-[#E65100] min-w-[60px] text-right">
+                          <span className="text-sm font-medium text-[#5C4A32] min-w-[60px] text-right">
                             {count} วัน
                           </span>
                         </div>
@@ -1178,8 +1178,8 @@ export default function WorkSchedulePage() {
                 />
               </div>
               
-              <div className="bg-[#FFF3E0] rounded-lg p-3 border border-[#FFCC80]">
-                <p className="text-sm text-[#E65100]">
+              <div className="bg-[#F5F0E8] rounded-lg p-3 border border-[#E8E0D5]">
+                <p className="text-sm text-[#5C4A32]">
                   💡 การลาจะถูกบันทึกโดยไม่คิดค่าแรง (0 บาท) และไม่ถูกหักเงิน
                 </p>
               </div>
@@ -1194,7 +1194,7 @@ export default function WorkSchedulePage() {
                 </Button>
                 <Button 
                   type="submit" 
-                  className="flex-1 bg-[#FF9800] border-2 border-[#FF9800] !text-white hover:bg-[#F57C00]"
+                  className="flex-1 bg-[#A67B5B] border-2 border-[#A67B5B] !text-white hover:bg-[#F57C00]"
                 >
                   บันทึกการลา
                 </Button>
