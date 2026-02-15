@@ -147,13 +147,15 @@ export default function WorkSchedulePage() {
 
   // Summary statistics
   const summary = useMemo((): WorkScheduleSummary[] => {
-    const employeeMap = new Map<string, { days: Set<string>; hours: number; wage: number }>()
+    const employeeMap = new Map<string, { days: Set<string>; hours: number; wage: number; isManager: boolean }>()
     
     shifts.forEach(shift => {
-      const existing = employeeMap.get(shift.employee_name) || { days: new Set(), hours: 0, wage: 0 }
+      const isManager = shift.position === 'ผู้จัดการ'
+      const existing = employeeMap.get(shift.employee_name) || { days: new Set(), hours: 0, wage: 0, isManager: false }
       existing.days.add(shift.work_date)
       existing.hours += shift.total_hours
       existing.wage += shift.total_wage
+      existing.isManager = isManager || existing.isManager
       employeeMap.set(shift.employee_name, existing)
     })
     
@@ -161,7 +163,9 @@ export default function WorkSchedulePage() {
       employee_name: name,
       total_days: data.days.size,
       total_hours: data.hours,
-      total_wage: data.wage
+      // For managers: monthly salary + additional wages (OT, Sunday special)
+      // For hourly workers: just sum of wages from shifts
+      total_wage: data.isManager ? MANAGER_DEFAULTS.monthly_salary + data.wage : data.wage
     }))
   }, [shifts])
 
