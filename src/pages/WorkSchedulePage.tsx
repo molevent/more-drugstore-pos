@@ -605,61 +605,53 @@ export default function WorkSchedulePage() {
             
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[#5C4A32] mb-1">ตำแหน่ง</label>
-                <select
-                  value={formData.position}
-                  onChange={(e) => {
-                    const newPosition = e.target.value as ShiftFormData['position']
-                    // If selecting เภสัชกร, set default values
-                    if (newPosition === 'เภสัชกร') {
-                      setFormData({
-                        ...formData,
-                        position: newPosition,
-                        start_time: PHARMACIST_DEFAULTS.start_time,
-                        end_time: PHARMACIST_DEFAULTS.end_time,
-                        hourly_wage: PHARMACIST_DEFAULTS.hourly_wage
-                      })
-                    } else if (newPosition === 'ผู้จัดการ') {
-                      setFormData({
-                        ...formData,
-                        position: newPosition,
-                        start_time: MANAGER_DEFAULTS.start_time,
-                        end_time: MANAGER_DEFAULTS.end_time,
-                        hourly_wage: MANAGER_DEFAULTS.monthly_salary / 30 / 9 // Approx hourly rate
-                      })
-                    } else if (newPosition === 'พนักงานประจำ') {
-                      setFormData({
-                        ...formData,
-                        position: newPosition,
-                        start_time: FULLTIME_DEFAULTS.start_time,
-                        end_time: FULLTIME_DEFAULTS.end_time,
-                        hourly_wage: FULLTIME_DEFAULTS.hourly_wage
-                      })
-                    } else if (newPosition === 'พนักงานพาร์ทไทม์') {
-                      setFormData({
-                        ...formData,
-                        position: newPosition,
-                        hourly_wage: PARTTIME_DEFAULTS.hourly_wage
-                      })
-                    } else {
-                      setFormData({ ...formData, position: newPosition })
-                    }
-                  }}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-[#A67B5B] focus:ring-[#A67B5B]"
-                  required
-                >
-                  <option value="">เลือกตำแหน่ง</option>
-                  {POSITIONS.map((pos) => (
-                    <option key={pos.value} value={pos.value}>{pos.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
                 <label className="block text-sm font-medium text-[#5C4A32] mb-1">ชื่อพนักงาน</label>
                 <select
                   value={formData.employee_name}
-                  onChange={(e) => setFormData({ ...formData, employee_name: e.target.value })}
+                  onChange={(e) => {
+                    const selectedEmployee = employees.find(emp => emp.name === e.target.value)
+                    if (selectedEmployee) {
+                      const position = selectedEmployee.position as ShiftFormData['position']
+                      let newFormData = { 
+                        ...formData, 
+                        employee_name: e.target.value,
+                        position: position
+                      }
+                      
+                      // Set defaults based on position
+                      if (position === 'เภสัชกร') {
+                        newFormData = {
+                          ...newFormData,
+                          start_time: PHARMACIST_DEFAULTS.start_time,
+                          end_time: PHARMACIST_DEFAULTS.end_time,
+                          hourly_wage: PHARMACIST_DEFAULTS.hourly_wage
+                        }
+                      } else if (position === 'ผู้จัดการ') {
+                        newFormData = {
+                          ...newFormData,
+                          start_time: MANAGER_DEFAULTS.start_time,
+                          end_time: MANAGER_DEFAULTS.end_time,
+                          hourly_wage: MANAGER_DEFAULTS.monthly_salary / 30 / 9
+                        }
+                      } else if (position === 'พนักงานประจำ') {
+                        newFormData = {
+                          ...newFormData,
+                          start_time: FULLTIME_DEFAULTS.start_time,
+                          end_time: FULLTIME_DEFAULTS.end_time,
+                          hourly_wage: FULLTIME_DEFAULTS.hourly_wage
+                        }
+                      } else if (position === 'พนักงานพาร์ทไทม์') {
+                        newFormData = {
+                          ...newFormData,
+                          hourly_wage: PARTTIME_DEFAULTS.hourly_wage
+                        }
+                      }
+                      
+                      setFormData(newFormData)
+                    } else {
+                      setFormData({ ...formData, employee_name: e.target.value, position: '' })
+                    }
+                  }}
                   className="w-full h-10 px-3 rounded-lg border border-gray-300 bg-white text-[#5C4A32] focus:outline-none focus:ring-2 focus:ring-[#A67B5B] focus:border-transparent"
                   required
                 >
