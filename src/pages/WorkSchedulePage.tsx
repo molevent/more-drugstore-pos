@@ -761,17 +761,20 @@ export default function WorkSchedulePage() {
                 </div>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-[#5C4A32] mb-1">ค่าจ้าง/ชม. (บาท)</label>
-                <Input
-                  type="number"
-                  value={formData.hourly_wage}
-                  onChange={(e) => setFormData({ ...formData, hourly_wage: parseFloat(e.target.value) || 0 })}
-                  min="0"
-                  step="0.5"
-                  required
-                />
-              </div>
+              {/* Hourly wage - only for non-manager positions */}
+              {formData.position !== 'ผู้จัดการ' && (
+                <div>
+                  <label className="block text-sm font-medium text-[#5C4A32] mb-1">ค่าจ้าง/ชม. (บาท)</label>
+                  <Input
+                    type="number"
+                    value={formData.hourly_wage}
+                    onChange={(e) => setFormData({ ...formData, hourly_wage: parseFloat(e.target.value) || 0 })}
+                    min="0"
+                    step="0.5"
+                    required
+                  />
+                </div>
+              )}
               
               {/* Preview calculation */}
               <div className="bg-[#FAF8F5] rounded-lg p-3 border border-[#E8E0D5]">
