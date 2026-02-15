@@ -260,8 +260,8 @@ export default function ProductCatalogPage() {
 
   const getPrice = (product: Product) => {
     const price = settings.priceType === 'wholesale' 
-      ? (product.wholesale_price || product.retail_price || 0)
-      : (product.retail_price || 0)
+      ? (product.wholesale_price || product.selling_price_incl_vat || 0)
+      : (product.selling_price_incl_vat || 0)
     return price
   }
 
@@ -403,7 +403,7 @@ export default function ProductCatalogPage() {
                     onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-left flex items-center justify-between hover:bg-gray-50"
                   >
-                    <span>{selectedCategory ? categories.find(c => c.id === selectedCategory)?.name : 'ทั้งหมด'}</span>
+                    <span>{selectedCategory ? categories.find(c => c.id === selectedCategory)?.name_th : 'ทั้งหมด'}</span>
                     <ChevronDown className="w-4 h-4 text-gray-500" />
                   </button>
                   {showCategoryDropdown && (
@@ -420,7 +420,7 @@ export default function ProductCatalogPage() {
                           onClick={() => { setSelectedCategory(cat.id); setShowCategoryDropdown(false); }}
                           className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
                         >
-                          {cat.name}
+                          {cat.name_th}
                         </div>
                       ))}
                     </div>
@@ -438,11 +438,7 @@ export default function ProductCatalogPage() {
                         <button
                           key={tag}
                           onClick={() => toggleTag(tag)}
-                          className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                            selectedTags.includes(tag)
-                              ? 'bg-[#7D735F] text-white'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          `}
+                          className={'px-3 py-1 rounded-full text-sm transition-colors ' + (selectedTags.includes(tag) ? 'bg-[#7D735F] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')}
                         >
                           {tag}
                         </button>
@@ -452,7 +448,12 @@ export default function ProductCatalogPage() {
                 )}
 
                 <div className="border rounded-md max-h-96 overflow-y-auto">
-                  {filteredProducts.length === 0 ? (
+                  {loading && (
+                    <div className="p-4 text-center text-gray-500">
+                      กำลังโหลด...
+                    </div>
+                  )}
+                  {!loading && filteredProducts.length === 0 ? (
                     <div className="p-4 text-center text-gray-500">
                       ไม่พบสินค้า
                     </div>
@@ -464,7 +465,7 @@ export default function ProductCatalogPage() {
                         return (
                           <div 
                             key={product.id} 
-                            className={`p-3 flex items-center gap-3 hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''}`}
+                            className={'p-3 flex items-center gap-3 hover:bg-gray-50 ' + (isSelected ? 'bg-blue-50' : '')}
                           >
                             {product.image_url ? (
                               <img 
@@ -481,7 +482,7 @@ export default function ProductCatalogPage() {
                               <p className="font-medium text-sm">{getProductName(product)}</p>
                               <p className="text-sm text-gray-500">
                                 ฿{price.toLocaleString()}
-                                {settings.showStockQuantity && ` • คงเหลือ: ${product.stock_quantity || 0}`}
+                                {settings.showStockQuantity && (' • คงเหลือ: ' + (product.stock_quantity || 0))}
                               </p>
                             </div>
                             <Button
@@ -619,7 +620,7 @@ export default function ProductCatalogPage() {
             )}
 
             <div className="mt-12 pt-6 border-t text-center text-sm text-gray-500">
-              <p>More Drugstore - ร้านขายยาและเวชภัณฑ์</p>
+              <p>ร้านขายยาและเวชภัณฑ์</p>
               <p>สอบถามเพิ่มเติมโทร: 02-xxx-xxxx</p>
             </div>
           </div>

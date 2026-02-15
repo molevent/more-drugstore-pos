@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Save, Store } from 'lucide-react'
+import { ArrowLeft, Save, Store, Upload, X } from 'lucide-react'
 import Card from '../components/common/Card'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
@@ -13,18 +13,27 @@ interface ShopInfo {
   tax_id: string
   email: string
   line: string
+  logo_url: string
+  stamp_url: string
+  signature_url: string
 }
 
 export default function ShopSettingsPage() {
   const navigate = useNavigate()
   const [saving, setSaving] = useState(false)
+  const logoInputRef = useRef<HTMLInputElement>(null)
+  const stampInputRef = useRef<HTMLInputElement>(null)
+  const signatureInputRef = useRef<HTMLInputElement>(null)
   const [shopInfo, setShopInfo] = useState<ShopInfo>({
-    name: 'More Drug Store',
-    address: '123 ถนนสุขุมวิท กรุงเทพฯ',
-    phone: '02-123-4567',
+    name: '',
+    address: '',
+    phone: '',
     tax_id: '',
-    email: 'contact@moredrugstore.com',
-    line: ''
+    email: '',
+    line: '',
+    logo_url: '',
+    stamp_url: '',
+    signature_url: ''
   })
 
   useEffect(() => {
@@ -57,12 +66,15 @@ export default function ShopSettingsPage() {
       
       if (data) {
         const shopData = {
-          name: data.name || 'More Drug Store',
+          name: data.name || '',
           address: data.address || '',
           phone: data.phone || '',
           tax_id: data.tax_id || '',
           email: data.email || '',
-          line: data.line || ''
+          line: data.line || '',
+          logo_url: data.logo_url || '',
+          stamp_url: data.stamp_url || '',
+          signature_url: data.signature_url || ''
         }
         setShopInfo(shopData)
         // Update localStorage with latest data
@@ -71,6 +83,59 @@ export default function ShopSettingsPage() {
     } catch (error) {
       console.error('Error:', error)
     }
+  }
+
+  const handleFileUpload = async (file: File, type: 'logo' | 'stamp' | 'signature') => {
+    console.log('Starting upload for:', type, 'file:', file.name, 'size:', file.size)
+    try {
+      // Try to create bucket if not exists
+      try {
+        await supabase.storage.createBucket('assets', { public: true })
+        console.log('Created assets bucket')
+      } catch (e: any) {
+        // Bucket might already exist, ignore error
+        if (!e.message?.includes('already exists')) {
+          console.log('Bucket creation skipped:', e.message)
+        }
+      }
+      
+      const fileExt = file.name.split('.').pop()
+      const fileName = `shop_${type}_${Date.now()}.${fileExt}`
+      const filePath = `shop_settings/${fileName}`
+      
+      console.log('Uploading to path:', filePath)
+      
+      const { error: uploadError } = await supabase.storage
+        .from('assets')
+        .upload(filePath, file)
+      
+      if (uploadError) {
+        console.error('Upload error:', uploadError)
+        alert('อัพโหลดไฟล์ไม่สำเร็จ: ' + uploadError.message)
+        return
+      }
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('assets')
+        .getPublicUrl(filePath)
+      
+      console.log('Upload successful, URL:', publicUrl)
+      
+      setShopInfo(prev => ({
+        ...prev,
+        [type + '_url']: publicUrl
+      }))
+    } catch (error: any) {
+      console.error('Error uploading file:', error)
+      alert('ไม่สามารถอัพโหลดไฟล์ได้: ' + (error?.message || 'Unknown error'))
+    }
+  }
+
+  const removeImage = (type: 'logo' | 'stamp' | 'signature') => {
+    setShopInfo(prev => ({
+      ...prev,
+      [type + '_url']: ''
+    }))
   }
 
   const handleSave = async () => {
@@ -88,6 +153,9 @@ export default function ShopSettingsPage() {
           tax_id: shopInfo.tax_id,
           email: shopInfo.email,
           line: shopInfo.line,
+          logo_url: shopInfo.logo_url,
+          stamp_url: shopInfo.stamp_url,
+          signature_url: shopInfo.signature_url,
           updated_at: new Date().toISOString()
         }, { onConflict: 'id' })
       
@@ -171,6 +239,105 @@ export default function ShopSettingsPage() {
             onChange={(e) => setShopInfo({ ...shopInfo, line: e.target.value })}
             placeholder="@more_drugstore"
           />
+
+          {/* Image Uploads Section */}
+          <div className="border-t pt-6 mt-6">
+            <h3 className="text-sm font-medium text-gray-700 mb-4">รูปภาพเอกสาร</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Logo Upload */}
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">โลโก้</label>
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'logo')}
+                />
+                {shopInfo.logo_url ? (
+                  <div className="relative">
+                    <img src={shopInfo.logo_url} alt="Logo" className="h-24 w-24 object-contain border rounded-lg" />
+                    <button
+                      onClick={() => removeImage('logo')}
+                      className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => logoInputRef.current?.click()}
+                    className="h-24 w-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-[#4A90A4] hover:text-[#4A90A4]"
+                  >
+                    <Upload className="h-6 w-6 mb-1" />
+                    <span className="text-xs">อัพโหลด</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Stamp Upload */}
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">ตราประทับ</label>
+                <input
+                  ref={stampInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'stamp')}
+                />
+                {shopInfo.stamp_url ? (
+                  <div className="relative">
+                    <img src={shopInfo.stamp_url} alt="Stamp" className="h-24 w-24 object-contain border rounded-lg" />
+                    <button
+                      onClick={() => removeImage('stamp')}
+                      className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => stampInputRef.current?.click()}
+                    className="h-24 w-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-[#4A90A4] hover:text-[#4A90A4]"
+                  >
+                    <Upload className="h-6 w-6 mb-1" />
+                    <span className="text-xs">อัพโหลด</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Signature Upload */}
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">ลายเซ็น</label>
+                <input
+                  ref={signatureInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'signature')}
+                />
+                {shopInfo.signature_url ? (
+                  <div className="relative">
+                    <img src={shopInfo.signature_url} alt="Signature" className="h-24 w-24 object-contain border rounded-lg" />
+                    <button
+                      onClick={() => removeImage('signature')}
+                      className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => signatureInputRef.current?.click()}
+                    className="h-24 w-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-[#4A90A4] hover:text-[#4A90A4]"
+                  >
+                    <Upload className="h-6 w-6 mb-1" />
+                    <span className="text-xs">อัพโหลด</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
 
           <div className="flex gap-3 pt-4">
             <Button

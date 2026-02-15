@@ -13,7 +13,8 @@ import {
   XCircle,
   Clock,
   Send,
-  AlertCircle
+  AlertCircle,
+  FileDown
 } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -27,7 +28,10 @@ interface Quotation {
   issue_date: string
   expiry_date: string
   total_amount: number
+  subtotal: number
+  tax_amount: number
   status: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired'
+  pdf_url?: string
   created_at: string
   updated_at: string
 }
@@ -51,7 +55,7 @@ export default function QuotationsListPage() {
       setLoading(true)
       let query = supabase
         .from('quotations')
-        .select('id, quotation_number, contact_name, contact_company, issue_date, expiry_date, total_amount, status, created_at, updated_at')
+        .select('id, quotation_number, contact_name, contact_company, issue_date, expiry_date, total_amount, subtotal, tax_amount, status, pdf_url, created_at, updated_at')
         .order('created_at', { ascending: false })
 
       if (statusFilter !== 'all') {
@@ -205,7 +209,7 @@ export default function QuotationsListPage() {
                         {formatDate(quotation.expiry_date)}
                       </td>
                       <td className="px-4 py-3 text-right font-medium text-gray-900">
-                        {formatNumber(quotation.total_amount)}
+                        {formatNumber((quotation.subtotal || 0) + (quotation.tax_amount || 0))}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${status.color}`}>
@@ -216,12 +220,23 @@ export default function QuotationsListPage() {
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-1">
                           <Link 
-                            to={`/quotation/${quotation.id}?print=1`}
+                            to={`/quotation/${quotation.id}?preview=1`}
                             className="p-1 text-gray-400 hover:text-[#4A90A4] rounded"
-                            title="ดูรายละเอียด (พิมพ์)"
+                            title="ดูตัวอย่าง"
                           >
                             <Eye className="h-4 w-4" />
                           </Link>
+                          {quotation.pdf_url && (
+                            <a 
+                              href={quotation.pdf_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1 text-gray-400 hover:text-red-600 rounded"
+                              title="ดู PDF"
+                            >
+                              <FileDown className="h-4 w-4" />
+                            </a>
+                          )}
                           <Link 
                             to={`/quotation?id=${quotation.id}`}
                             className="p-1 text-gray-400 hover:text-blue-600 rounded"
@@ -246,27 +261,6 @@ export default function QuotationsListPage() {
           </div>
         )}
       </Card>
-
-      {/* Summary */}
-      <div className="mt-6 grid grid-cols-2 sm:grid-cols-5 gap-4">
-        {Object.entries(statusConfig).map(([key, config]) => {
-          const count = quotations.filter(q => q.status === key).length
-          const Icon = config.icon
-          return (
-            <Card key={key} className="p-4">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${config.color}`}>
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">{count}</p>
-                  <p className="text-sm text-gray-500">{config.label}</p>
-                </div>
-              </div>
-            </Card>
-          )
-        })}
-      </div>
     </div>
   )
 }

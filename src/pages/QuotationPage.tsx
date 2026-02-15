@@ -1,29 +1,31 @@
 import { useState, useEffect, useRef } from 'react'
+import html2pdf from 'html2pdf.js'
 import { supabase } from '../services/supabase'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useParams } from 'react-router-dom'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
+import { QRCodeSVG } from 'qrcode.react'
 import { 
   FileText, 
   Share2, 
   Printer, 
   Download, 
+  Save,
   MoreHorizontal, 
   Plus, 
   Trash2, 
-  Building, 
-  Phone, 
+  Phone,
   Search,
   X,
   Image as ImageIcon,
   Upload,
   Edit2,
   Check,
-  Calendar,
   Percent,
   ChevronDown,
-  Link as LinkIcon
+  Eye,
+  Copy
 } from 'lucide-react'
 
 interface QuotationItem {
@@ -31,6 +33,8 @@ interface QuotationItem {
   product_id?: string
   product_name: string
   product_image?: string
+  custom_image_url?: string
+  use_custom_image: boolean
   details: string
   description: string
   quantity: number
@@ -60,6 +64,7 @@ interface Product {
   name_en?: string
   barcode?: string
   base_price: number
+  selling_price_incl_vat?: number
   image_url?: string
   unit?: string
   is_active: boolean
@@ -89,7 +94,13 @@ interface Quotation {
   status: 'draft' | 'sent' | 'approved' | 'rejected'
   logo_url?: string
   stamp_url?: string
+  signature_url?: string
+  seller_name?: string
+  receiver_name?: string
+  pdf_url?: string
   show_product_images: boolean
+  show_discount: boolean
+  show_receiver: boolean
   withholding_tax: boolean
   withholding_tax_percent: number
   withholding_tax_amount: number
@@ -105,12 +116,15 @@ const initialItem: QuotationItem = {
   unit_price: 0,
   discount_percent: 0,
   discount_amount: 0,
-  total: 0
+  total: 0,
+  use_custom_image: false
 }
 
 export default function QuotationPage() {
   const [searchParams] = useSearchParams()
-  const quotationId = searchParams.get('id')
+  const params = useParams()
+  const quotationId = searchParams.get('id') || params.id
+  const isPreviewMode = searchParams.get('preview') === '1'
   
   const [quotation, setQuotation] = useState<Quotation>({
     id: '',
@@ -134,7 +148,12 @@ export default function QuotationPage() {
     notes: '',
     terms: 'ราคานี้มีผลภายใน 30 วัน นับจากวันออกใบเสนอราคา',
     status: 'draft',
+    seller_name: '',
+    receiver_name: '',
+    pdf_url: undefined,
     show_product_images: false,
+    show_discount: true,
+    show_receiver: true,
     withholding_tax: false,
     withholding_tax_percent: 3,
     withholding_tax_amount: 0
@@ -152,6 +171,10 @@ export default function QuotationPage() {
   const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [contactSearchTerm, setContactSearchTerm] = useState('')
+  const [attachments, setAttachments] = useState<{name: string, url: string}[]>([])
+  const [showAttachmentPreview, setShowAttachmentPreview] = useState(false)
+  const [previewAttachment, setPreviewAttachment] = useState<{name: string, url: string} | null>(null)
+  const [productImageSize, setProductImageSize] = useState<'small' | 'medium' | 'large'>('small')
   
   const [newContact, setNewContact] = useState({
     name: '',
@@ -165,14 +188,15 @@ export default function QuotationPage() {
   const logoInputRef = useRef<HTMLInputElement>(null)
   const stampInputRef = useRef<HTMLInputElement>(null)
   const moreMenuRef = useRef<HTMLDivElement>(null)
+  const attachmentInputRef = useRef<HTMLInputElement>(null)
 
   // Business settings state
   const [businessSettings, setBusinessSettings] = useState({
-    name: 'More Drug Store',
-    phone: '02-123-4567',
-    email: 'contact@moredrugstore.com',
-    address: '123 ถนนสุขุมวิท กรุงเทพฯ',
-    tax_id: '1234567890123'
+    name: '',
+    phone: '',
+    email: '',
+    address: '',
+    tax_id: ''
   })
 
   // Load business settings from localStorage
@@ -182,11 +206,11 @@ export default function QuotationPage() {
       try {
         const parsed = JSON.parse(saved)
         setBusinessSettings({
-          name: parsed.name || 'More Drug Store',
-          phone: parsed.phone || '02-123-4567',
-          email: parsed.email || 'contact@moredrugstore.com',
-          address: parsed.address || '123 ถนนสุขุมวิท กรุงเทพฯ',
-          tax_id: parsed.tax_id || '1234567890123'
+          name: parsed.name || '',
+          phone: parsed.phone || '',
+          email: parsed.email || '',
+          address: parsed.address || '',
+          tax_id: parsed.tax_id || ''
         })
       } catch (e) {
         console.error('Error loading business settings:', e)
@@ -212,7 +236,7 @@ export default function QuotationPage() {
 
   useEffect(() => {
     calculateTotals()
-  }, [quotation.items, quotation.discount_amount, quotation.tax_rate])
+  }, [quotation.items, quotation.discount_amount, quotation.tax_rate, quotation.withholding_tax, quotation.withholding_tax_percent])
 
   const generateQuotationNumber = async () => {
     try {
@@ -307,7 +331,12 @@ export default function QuotationPage() {
           status: data.status || 'draft',
           logo_url: data.logo_url,
           stamp_url: data.stamp_url,
+          signature_url: data.signature_url,
+          seller_name: data.seller_name || '',
+          pdf_url: data.pdf_url,
           show_product_images: data.show_product_images || false,
+          show_discount: data.show_discount !== false,
+          show_receiver: data.show_receiver !== false,
           withholding_tax: data.withholding_tax || false,
           withholding_tax_percent: data.withholding_tax_percent || 3,
           withholding_tax_amount: data.withholding_tax_amount || 0
@@ -378,9 +407,11 @@ export default function QuotationPage() {
   }
 
   const removeItem = (index: number) => {
-    if (quotation.items.length === 1) return
-    const newItems = quotation.items.filter((_, i) => i !== index)
-    setQuotation(prev => ({ ...prev, items: newItems }))
+    setQuotation(prev => {
+      if (prev.items.length === 1) return prev
+      const newItems = prev.items.filter((_, i) => i !== index)
+      return { ...prev, items: newItems }
+    })
   }
 
   const selectContact = (contact: Contact) => {
@@ -422,7 +453,11 @@ export default function QuotationPage() {
         terms: quotation.terms,
         logo_url: quotation.logo_url,
         stamp_url: quotation.stamp_url,
+        signature_url: quotation.signature_url,
+        seller_name: quotation.seller_name,
+        pdf_url: quotation.pdf_url,
         show_product_images: quotation.show_product_images,
+        show_discount: quotation.show_discount,
         withholding_tax: quotation.withholding_tax,
         withholding_tax_percent: quotation.withholding_tax_percent,
         withholding_tax_amount: quotation.withholding_tax_amount,
@@ -493,19 +528,148 @@ export default function QuotationPage() {
     }
   }
 
+  const handleItemImageUpload = async (file: File, itemIndex: number) => {
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `item_${Date.now()}.${fileExt}`
+      const filePath = `quotation_items/${fileName}`
+      
+      const { error: uploadError } = await supabase.storage
+        .from('assets')
+        .upload(filePath, file)
+      
+      if (uploadError) throw uploadError
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('assets')
+        .getPublicUrl(filePath)
+      
+      setQuotation(prev => ({
+        ...prev,
+        items: prev.items.map((item, i) => 
+          i === itemIndex 
+            ? { ...item, custom_image_url: publicUrl, use_custom_image: true }
+            : item
+        )
+      }))
+    } catch (error) {
+      console.error('Error uploading item image:', error)
+      alert('ไม่สามารถอัพโหลดรูปสินค้าได้')
+    }
+  }
+
   const handlePrint = () => {
     window.print()
   }
 
   const handleShare = () => {
-    const shareUrl = `${window.location.origin}/quotation/${quotation.id || 'preview'}`
-    navigator.clipboard.writeText(shareUrl)
     setShowShareModal(true)
-    setTimeout(() => setShowShareModal(false), 2000)
   }
 
-  const handleDownloadPDF = () => {
-    window.print()
+  const copyShareLink = () => {
+    const shareUrl = `${window.location.origin}/quotation/${quotation.id || 'preview'}?preview=1`
+    navigator.clipboard.writeText(shareUrl)
+    alert('คัดลอกลิงก์แล้ว')
+  }
+
+  const handleSavePDF = async () => {
+    if (!quotation.id) {
+      alert('กรุณาบันทึกใบเสนอราคาก่อน')
+      return
+    }
+
+    const element = document.querySelector('.print-only') as HTMLElement
+    if (!element) {
+      alert('ไม่พบเนื้อหาสำหรับสร้าง PDF')
+      return
+    }
+
+    try {
+      setLoading(true)
+      
+      // Temporarily show the element for PDF generation
+      const originalDisplay = element.style.display
+      element.style.display = 'block'
+
+      const opt = {
+        margin: 10,
+        filename: `ใบเสนอราคา_${quotation.quotation_number}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
+      }
+
+      // Generate PDF blob
+      const pdfBlob = await html2pdf().set(opt).from(element).output('blob')
+      
+      // Restore original display
+      element.style.display = originalDisplay
+
+      // Upload to Supabase storage
+      const fileName = `quotation_${quotation.id}_${Date.now()}.pdf`
+      const filePath = `quotations/pdfs/${fileName}`
+      
+      const { error: uploadError } = await supabase.storage
+        .from('assets')
+        .upload(filePath, pdfBlob, {
+          contentType: 'application/pdf'
+        })
+      
+      if (uploadError) throw uploadError
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('assets')
+        .getPublicUrl(filePath)
+      
+      // Update quotation with pdf_url
+      const { error: updateError } = await supabase
+        .from('quotations')
+        .update({ pdf_url: publicUrl })
+        .eq('id', quotation.id)
+      
+      if (updateError) throw updateError
+      
+      // Update local state
+      setQuotation(prev => ({ ...prev, pdf_url: publicUrl }))
+      
+      alert('บันทึก PDF สำเร็จ')
+    } catch (error) {
+      console.error('Error saving PDF:', error)
+      alert('ไม่สามารถบันทึก PDF ได้')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDownloadPDF = async () => {
+    const element = document.querySelector('.print-only') as HTMLElement
+    if (!element) {
+      alert('ไม่พบเนื้อหาสำหรับสร้าง PDF')
+      return
+    }
+
+    // Temporarily show the element for PDF generation
+    const originalDisplay = element.style.display
+    element.style.display = 'block'
+
+    const opt = {
+      margin: 10,
+      filename: `ใบเสนอราคา_${quotation.quotation_number}.pdf`,
+      image: { type: 'jpeg' as const, quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
+    }
+
+    try {
+      await html2pdf().set(opt).from(element).save()
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+      alert('ไม่สามารถสร้าง PDF ได้')
+    } finally {
+      // Restore original display
+      element.style.display = originalDisplay
+    }
   }
 
   const handleCreateContact = async () => {
@@ -542,12 +706,14 @@ export default function QuotationPage() {
 
   const selectProduct = (product: Product, index: number) => {
     const newItems = [...quotation.items]
+    // Use selling_price_incl_vat if available, otherwise calculate from base_price
+    const vatInclusivePrice = product.selling_price_incl_vat || (product.base_price * 1.07)
     newItems[index] = {
       ...newItems[index],
       product_id: product.id,
       product_name: product.name_th,
       product_image: product.image_url,
-      unit_price: product.base_price * 1.07, // VAT inclusive price
+      unit_price: vatInclusivePrice,
       unit: product.unit || 'ชิ้น'
     }
     
@@ -577,17 +743,130 @@ export default function QuotationPage() {
     return num.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   }
 
+  const handleAttachmentUpload = async (file: File) => {
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `attachment_${Date.now()}.${fileExt}`
+      const filePath = `quotations/attachments/${fileName}`
+      
+      const { error: uploadError } = await supabase.storage
+        .from('assets')
+        .upload(filePath, file)
+      
+      if (uploadError) throw uploadError
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('assets')
+        .getPublicUrl(filePath)
+      
+      setAttachments(prev => [...prev, { name: file.name, url: publicUrl }])
+    } catch (error) {
+      console.error('Error uploading attachment:', error)
+      alert('ไม่สามารถอัพโหลดไฟล์แนบได้')
+    }
+  }
+
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index))
+  }
+
+  // Convert number to Thai text
+  const numberToThaiText = (num: number): string => {
+    const thaiNumbers = ['ศูนย์', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า']
+    const thaiPlaces = ['', 'สิบ', 'ร้อย', 'พัน', 'หมื่น', 'แสน', 'ล้าน']
+    
+    const convertGroup = (n: number): string => {
+      if (n === 0) return ''
+      let result = ''
+      const str = n.toString().padStart(6, '0')
+      
+      for (let i = 0; i < 6; i++) {
+        const digit = parseInt(str[i])
+        const place = 5 - i
+        
+        if (digit !== 0) {
+          if (place === 1 && digit === 1) {
+            result += 'สิบ'
+          } else if (place === 1 && digit === 2) {
+            result += 'ยี่สิบ'
+          } else if (place === 0 && digit === 1 && str[4] !== '0') {
+            result += 'เอ็ด'
+          } else {
+            result += thaiNumbers[digit] + thaiPlaces[place]
+          }
+        }
+      }
+      return result
+    }
+    
+    if (num === 0) return 'ศูนย์บาทถ้วน'
+    
+    const baht = Math.floor(num)
+    const satang = Math.round((num - baht) * 100)
+    
+    let result = ''
+    
+    if (baht > 0) {
+      if (baht >= 1000000) {
+        const millions = Math.floor(baht / 1000000)
+        const remainder = baht % 1000000
+        result += convertGroup(millions) + 'ล้าน'
+        if (remainder > 0) {
+          result += convertGroup(remainder)
+        }
+      } else {
+        result += convertGroup(baht)
+      }
+      result += 'บาท'
+    }
+    
+    if (satang > 0) {
+      result += convertGroup(satang) + 'สตางค์'
+    } else {
+      result += 'ถ้วน'
+    }
+    
+    return result
+  }
+
   return (
-    <div className="max-w-5xl mx-auto">
-      {/* Print Styles */}
+    <div className={'max-w-5xl mx-auto ' + (isPreviewMode ? 'preview-mode' : '')}>
+      {/* Print Styles - Preview Mode Support */}
       <style>{`
         .print-only { display: none; }
+        .preview-mode .print-only { display: block !important; }
+        .preview-mode .no-print { display: none !important; }
         @media print {
           .print-only { display: block !important; }
           .no-print { display: none !important; }
           body { font-family: 'Sarabun', 'Prompt', sans-serif; }
         }
       `}</style>
+
+      {/* Preview Mode Toggle */}
+      {isPreviewMode && (
+        <div className="no-print bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-blue-700">
+            <Eye className="h-5 w-5" />
+            <span className="font-medium">โหมดดูตัวอย่าง</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handlePrint}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+            >
+              <Printer className="h-4 w-4" />
+              พิมพ์
+            </button>
+            <button 
+              onClick={() => window.history.back()}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+            >
+              กลับ
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="no-print flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -645,35 +924,191 @@ export default function QuotationPage() {
         <button onClick={handleDownloadPDF} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="ดาวน์โหลด PDF">
           <Download className="h-5 w-5" />
         </button>
+        <button onClick={handleSavePDF} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="บันทึก PDF ในระบบ">
+          <Save className="h-5 w-5" />
+        </button>
         <div className="relative" ref={moreMenuRef}>
           <button onClick={() => setShowMoreMenu(!showMoreMenu)} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded">
             <MoreHorizontal className="h-5 w-5" />
           </button>
           {showMoreMenu && (
-            <div className="absolute right-0 mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+            <div className="absolute right-0 mt-1 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
               <div className="p-2 space-y-1">
-                <button onClick={() => logoInputRef.current?.click()} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2">
-                  <Upload className="h-4 w-4" />
-                  {quotation.logo_url ? 'เปลี่ยนโลโก้' : 'เพิ่มโลโก้'}
+                {/* Logo Options */}
+                <div className="px-3 py-2 text-xs font-medium text-gray-500 border-b">โลโก้</div>
+                <button 
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded text-left"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (!quotation.logo_url) {
+                      const saved = localStorage.getItem('shop_settings')
+                      if (saved) {
+                        const parsed = JSON.parse(saved)
+                        if (parsed.logo_url) {
+                          setQuotation(prev => ({ ...prev, logo_url: parsed.logo_url }))
+                        } else {
+                          alert('ไม่มีโลโก้ในข้อมูลร้าน กรุณาตั้งค่าที่ ตั้งค่า → ข้อมูลร้าน')
+                        }
+                      }
+                    } else {
+                      setQuotation(prev => ({ ...prev, logo_url: undefined }))
+                    }
+                    setShowMoreMenu(false)
+                  }}
+                >
+                  <div className={`w-4 h-4 rounded border flex items-center justify-center ${quotation.logo_url ? 'bg-[#4A90A4] border-[#4A90A4]' : 'border-gray-300 bg-white'}`}>
+                    {quotation.logo_url && <Check className="w-3 h-3 text-white" />}
+                  </div>
+                  ใช้โลโก้จากข้อมูลร้าน
                 </button>
-                <button onClick={() => stampInputRef.current?.click()} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2">
+                <button onClick={() => { logoInputRef.current?.click(); setShowMoreMenu(false); }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2 pl-9">
                   <Upload className="h-4 w-4" />
-                  {quotation.stamp_url ? 'เปลี่ยนตราประทับ' : 'เพิ่มตราประทับ'}
+                  อัพโหลดโลโก้ใหม่
                 </button>
-                <label className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 rounded">
-                  <input type="checkbox" checked={quotation.show_product_images} onChange={(e) => setQuotation(prev => ({ ...prev, show_product_images: e.target.checked }))} className="rounded" />
-                  แสดงรูปสินค้า
-                </label>
-                {quotation.logo_url && (
-                  <button onClick={() => setQuotation(prev => ({ ...prev, logo_url: undefined }))} className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded">
-                    ลบโลโก้
+                
+                {/* Stamp Options */}
+                <div className="px-3 py-2 text-xs font-medium text-gray-500 border-b mt-2">ตราประทับ</div>
+                <button 
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded text-left"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (!quotation.stamp_url) {
+                      const saved = localStorage.getItem('shop_settings')
+                      if (saved) {
+                        const parsed = JSON.parse(saved)
+                        if (parsed.stamp_url) {
+                          setQuotation(prev => ({ ...prev, stamp_url: parsed.stamp_url }))
+                        } else {
+                          alert('ไม่มีตราประทับในข้อมูลร้าน กรุณาตั้งค่าที่ ตั้งค่า → ข้อมูลร้าน')
+                        }
+                      }
+                    } else {
+                      setQuotation(prev => ({ ...prev, stamp_url: undefined }))
+                    }
+                    setShowMoreMenu(false)
+                  }}
+                >
+                  <div className={`w-4 h-4 rounded border flex items-center justify-center ${quotation.stamp_url ? 'bg-[#4A90A4] border-[#4A90A4]' : 'border-gray-300 bg-white'}`}>
+                    {quotation.stamp_url && <Check className="w-3 h-3 text-white" />}
+                  </div>
+                  ใช้ตราประทับจากข้อมูลร้าน
+                </button>
+                <button onClick={() => { stampInputRef.current?.click(); setShowMoreMenu(false); }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2 pl-9">
+                  <Upload className="h-4 w-4" />
+                  อัพโหลดตราประทับใหม่
+                </button>
+                
+                {/* Signature Option */}
+                <div className="px-3 py-2 text-xs font-medium text-gray-500 border-b mt-2">ลายเซ็น</div>
+                <button 
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded text-left"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (!quotation.signature_url) {
+                      const saved = localStorage.getItem('shop_settings')
+                      if (saved) {
+                        const parsed = JSON.parse(saved)
+                        if (parsed.signature_url) {
+                          setQuotation(prev => ({ ...prev, signature_url: parsed.signature_url }))
+                        } else {
+                          alert('ไม่มีลายเซ็นในข้อมูลร้าน กรุณาตั้งค่าที่ ตั้งค่า → ข้อมูลร้าน')
+                        }
+                      }
+                    } else {
+                      setQuotation(prev => ({ ...prev, signature_url: undefined }))
+                    }
+                    setShowMoreMenu(false)
+                  }}
+                >
+                  <div className={`w-4 h-4 rounded border flex items-center justify-center ${quotation.signature_url ? 'bg-[#4A90A4] border-[#4A90A4]' : 'border-gray-300 bg-white'}`}>
+                    {quotation.signature_url && <Check className="w-3 h-3 text-white" />}
+                  </div>
+                  ใช้ลายเซ็นจากข้อมูลร้าน
+                </button>
+                
+                {/* Product Images Toggle */}
+                <div className="border-t pt-2 mt-2">
+                  <button 
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded text-left"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setQuotation(prev => ({ ...prev, show_product_images: !prev.show_product_images }))
+                    }}
+                  >
+                    <div className={`w-4 h-4 rounded border flex items-center justify-center ${quotation.show_product_images ? 'bg-[#4A90A4] border-[#4A90A4]' : 'border-gray-300 bg-white'}`}>
+                      {quotation.show_product_images && <Check className="w-3 h-3 text-white" />}
+                    </div>
+                    แสดงรูปสินค้า
                   </button>
-                )}
-                {quotation.stamp_url && (
-                  <button onClick={() => setQuotation(prev => ({ ...prev, stamp_url: undefined }))} className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded">
-                    ลบตราประทับ
+                  
+                  {/* Image Size Selection - Only show when product images are enabled */}
+                  {quotation.show_product_images && (
+                    <div className="pl-6 pr-3 py-2 space-y-1">
+                      <div className="text-xs text-gray-500 mb-1">ขนาดรูปสินค้า</div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setProductImageSize('small')
+                          }}
+                          className={`px-2 py-1 text-xs rounded ${productImageSize === 'small' ? 'bg-[#4A90A4] text-white' : 'bg-gray-100 text-gray-600'}`}
+                        >
+                          เล็ก
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setProductImageSize('medium')
+                          }}
+                          className={`px-2 py-1 text-xs rounded ${productImageSize === 'medium' ? 'bg-[#4A90A4] text-white' : 'bg-gray-100 text-gray-600'}`}
+                        >
+                          กลาง
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setProductImageSize('large')
+                          }}
+                          className={`px-2 py-1 text-xs rounded ${productImageSize === 'large' ? 'bg-[#4A90A4] text-white' : 'bg-gray-100 text-gray-600'}`}
+                        >
+                          ใหญ่
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Discount Toggle */}
+                <div className="border-t pt-2 mt-2">
+                  <button 
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded text-left"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setQuotation(prev => ({ ...prev, show_discount: !prev.show_discount }))
+                    }}
+                  >
+                    <div className={`w-4 h-4 rounded border flex items-center justify-center ${quotation.show_discount ? 'bg-[#4A90A4] border-[#4A90A4]' : 'border-gray-300 bg-white'}`}>
+                      {quotation.show_discount && <Check className="w-3 h-3 text-white" />}
+                    </div>
+                    แสดงส่วนลด
                   </button>
-                )}
+                </div>
+
+                {/* Receiver Toggle */}
+                <div className="border-t pt-2 mt-2">
+                  <button 
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded text-left"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setQuotation(prev => ({ ...prev, show_receiver: !prev.show_receiver }))
+                    }}
+                  >
+                    <div className={`w-4 h-4 rounded border flex items-center justify-center ${quotation.show_receiver ? 'bg-[#4A90A4] border-[#4A90A4]' : 'border-gray-300 bg-white'}`}>
+                      {quotation.show_receiver && <Check className="w-3 h-3 text-white" />}
+                    </div>
+                    แสดงผู้รับเอกสาร
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -682,6 +1117,7 @@ export default function QuotationPage() {
 
       <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'logo')} />
       <input ref={stampInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'stamp')} />
+      <input ref={attachmentInputRef} type="file" className="hidden" onChange={(e) => e.target.files?.[0] && handleAttachmentUpload(e.target.files[0])} />
 
       {/* Print-Only Section - FlowAccount Style */}
       <div className="print-only" style={{ fontSize: '12px' }}>
@@ -691,10 +1127,15 @@ export default function QuotationPage() {
             <div style={{ flex: 1 }}>
               {quotation.logo_url && <img src={quotation.logo_url} alt="Logo" style={{ height: '50px', objectFit: 'contain', marginBottom: '8px' }} />}
               <div>
-                <strong>{businessSettings.name}</strong><br />
-                {businessSettings.address}<br />
-                โทร: {businessSettings.phone} | อีเมล: {businessSettings.email}<br />
-                เลขประจำตัวผู้เสียภาษี: {businessSettings.tax_id}
+                {businessSettings.name && <><strong>{businessSettings.name}</strong><br /></>}
+                {businessSettings.address && <>{businessSettings.address}<br /></>}
+                {(businessSettings.phone || businessSettings.email) && <>
+                  {businessSettings.phone && <>โทร: {businessSettings.phone}</>}
+                  {businessSettings.phone && businessSettings.email && ' | '}
+                  {businessSettings.email && <>อีเมล: {businessSettings.email}</>}
+                  <br />
+                </>}
+                {businessSettings.tax_id && <>เลขประจำตัวผู้เสียภาษี: {businessSettings.tax_id}</>}
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
@@ -716,7 +1157,8 @@ export default function QuotationPage() {
             {quotation.contact_company && <>{quotation.contact_company}<br /></>}
             {quotation.contact_address && <>{quotation.contact_address}<br /></>}
             {quotation.contact_tax_id && <>เลขประจำตัวผู้เสียภาษี: {quotation.contact_tax_id}<br /></>}
-            {quotation.contact_phone && <>โทร: {quotation.contact_phone}</>}
+            {quotation.contact_phone && <>โทร: {quotation.contact_phone}<br /></>}
+            {quotation.notes && <><div style={{ marginTop: '8px', whiteSpace: 'pre-wrap' }}>{quotation.notes}</div></>}
           </div>
         </div>
 
@@ -724,18 +1166,36 @@ export default function QuotationPage() {
         <table className="flow-table" style={{ fontSize: '12px' }}>
           <thead>
             <tr>
-              <th style={{ width: '5%' }}>#</th>
-              <th style={{ width: '40%' }}>รายการ</th>
-              <th style={{ width: '10%', textAlign: 'center' }}>จำนวน</th>
-              <th style={{ width: '10%', textAlign: 'center' }}>หน่วย</th>
-              <th style={{ width: '15%', textAlign: 'right' }}>ราคาต่อหน่วย</th>
-              <th style={{ width: '20%', textAlign: 'right' }}>จำนวนเงิน</th>
+              <th style={{ width: '5%', paddingBottom: '8px' }}>#</th>
+              {quotation.show_product_images && <th style={{ width: '8%', textAlign: 'center', paddingBottom: '8px' }}>รูป</th>}
+              <th style={{ width: quotation.show_product_images ? '57%' : '65%', paddingBottom: '8px' }}>รายการ</th>
+              <th style={{ width: '5%', textAlign: 'center', paddingBottom: '8px' }}>จำนวน</th>
+              <th style={{ width: '5%', textAlign: 'center', paddingBottom: '8px' }}>หน่วย</th>
+              <th style={{ width: '10%', textAlign: 'right', paddingBottom: '8px' }}>ราคา/หน่วย</th>
+              <th style={{ width: '10%', textAlign: 'right', paddingBottom: '8px' }}>จำนวนเงิน</th>
             </tr>
           </thead>
           <tbody>
-            {quotation.items.map((item, index) => (
-              <tr key={item.id}>
-                <td>{index + 1}</td>
+            {quotation.items.map((item, index) => {
+              const currentImage = item.use_custom_image ? item.custom_image_url : item.product_image
+              const imageSizeMap = {
+                small: { width: '30px', height: '30px', placeholder: '30px' },
+                medium: { width: '50px', height: '50px', placeholder: '50px' },
+                large: { width: '70px', height: '70px', placeholder: '70px' }
+              }
+              const imgSize = imageSizeMap[productImageSize]
+              return (
+              <tr key={item.id} style={index === 0 ? { borderTop: '1px solid #333', paddingTop: '12px' } : {}}>
+                <td style={{ paddingTop: index === 0 ? '12px' : '0' }}>{index + 1}</td>
+                {quotation.show_product_images && (
+                  <td style={{ textAlign: 'center' }}>
+                    {currentImage ? (
+                      <img src={currentImage} alt={item.product_name} style={{ width: imgSize.width, height: imgSize.height, objectFit: 'cover', borderRadius: '4px' }} />
+                    ) : (
+                      <div style={{ width: imgSize.placeholder, height: imgSize.placeholder, backgroundColor: '#f3f4f6', borderRadius: '4px', margin: '0 auto' }}></div>
+                    )}
+                  </td>
+                )}
                 <td>
                   <strong>{item.product_name}</strong>
                   {item.details && <br />}
@@ -746,17 +1206,36 @@ export default function QuotationPage() {
                 <td style={{ textAlign: 'right' }}>{formatNumber(item.unit_price)}</td>
                 <td style={{ textAlign: 'right' }}>{formatNumber(item.total)}</td>
               </tr>
-            ))}
+            )})}
           </tbody>
         </table>
 
+        {/* Horizontal line after last item */}
+        <div style={{ borderTop: '1px solid #333', marginTop: '8px', marginBottom: '15px' }}></div>
+
         {/* Summary */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '15px', fontSize: '12px' }}>
-          <div style={{ flex: 1 }}>
-            <div className="flow-total" style={{ maxWidth: '280px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '15px', fontSize: '12px' }}>
+          {/* Left side - Terms and Notes */}
+          <div style={{ flex: 1, maxWidth: '50%' }}>
+            {quotation.terms && (
+              <div style={{ fontSize: '11px' }}>
+                <strong>เงื่อนไขการชำระเงิน:</strong><br />
+                <div style={{ whiteSpace: 'pre-wrap' }}>{quotation.terms}</div>
+              </div>
+            )}
+          </div>
+
+          {/* Right side - Pricing Summary and Signature */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '280px', minHeight: '400px' }}>
+            {/* Pricing Summary */}
+            <div className="flow-total" style={{ width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span>รวมเป็นเงิน</span>
                 <span>{formatNumber(quotation.subtotal)} บาท</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span>ภาษีมูลค่าเพิ่ม 7%</span>
+                <span>{formatNumber(quotation.tax_amount)} บาท</span>
               </div>
               {quotation.discount_percent > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -770,19 +1249,9 @@ export default function QuotationPage() {
                   <span>{formatNumber(quotation.discount_amount)} บาท</span>
                 </div>
               )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span>ราคาก่อนภาษี</span>
-                <span>{formatNumber(quotation.subtotal - (quotation.subtotal * quotation.discount_percent / 100) - quotation.discount_amount)} บาท</span>
-              </div>
-              {quotation.tax_rate > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span>ภาษีมูลค่าเพิ่ม {quotation.tax_rate}%</span>
-                  <span>{formatNumber(quotation.tax_amount)} บาท</span>
-                </div>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 'bold', borderTop: '2px solid #333', paddingTop: '8px', marginTop: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 'bold', paddingTop: '8px', marginTop: '8px' }}>
                 <span>ยอดรวมทั้งสิ้น</span>
-                <span>{formatNumber(quotation.total_amount + quotation.withholding_tax_amount)} บาท</span>
+                <span>{formatNumber(quotation.subtotal + quotation.tax_amount)} บาท</span>
               </div>
               {quotation.withholding_tax && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', color: '#666' }}>
@@ -796,30 +1265,54 @@ export default function QuotationPage() {
                   <span>{formatNumber(quotation.total_amount)} บาท</span>
                 </div>
               )}
+              
+              {/* Amount in words */}
+              <div style={{ marginTop: '12px', fontSize: '11px', fontStyle: 'italic', textAlign: 'right' }}>
+                ({numberToThaiText(Math.round((quotation.subtotal + quotation.tax_amount) * 100) / 100)})
+              </div>
             </div>
             
-            {/* Terms and Notes */}
-            {quotation.terms && (
-              <div style={{ marginTop: '15px', fontSize: '11px' }}>
-                <strong>เงื่อนไขการชำระเงิน:</strong><br />
-                <div style={{ whiteSpace: 'pre-wrap' }}>{quotation.terms}</div>
-              </div>
-            )}
-            {quotation.notes && (
-              <div style={{ marginTop: '12px', fontSize: '11px' }}>
-                <strong>หมายเหตุ:</strong><br />
-                {quotation.notes}
-              </div>
-            )}
+            {/* Pricing Summary Section */}
+            <div style={{ width: '280px' }}>
+              {/* Summary content */}
+            </div>
           </div>
+        </div>
 
-          {/* Signature Section - Moved to bottom/footer */}
-          <div style={{ width: '200px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-            {quotation.stamp_url && (
-              <img src={quotation.stamp_url} alt="Stamp" style={{ width: '80px', height: '80px', objectFit: 'contain', marginBottom: '8px', marginLeft: 'auto', marginRight: 'auto' }} />
+        {/* Bottom Section - Signature and Receiver in one row */}
+        <div style={{ position: 'absolute', bottom: '40px', left: '40px', right: '40px', display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end' }}>
+          {/* Document Receiver - Left side */}
+          {quotation.show_receiver && (
+            <div style={{ textAlign: 'center', width: '200px', marginRight: 'auto' }}>
+              <div style={{ height: '54px' }}></div>
+              <div style={{ borderTop: '1px solid #333', paddingTop: '4px' }}>
+                <div style={{ fontSize: '12px' }}>ผู้รับเอกสาร</div>
+                {quotation.receiver_name && (
+                  <div style={{ fontSize: '12px', marginTop: '4px', fontWeight: 'bold' }}>({quotation.receiver_name})</div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Stamp - Center - Absolute positioned */}
+          {quotation.stamp_url && (
+            <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: '20px' }}>
+              <img src={quotation.stamp_url} alt="Stamp" style={{ width: '151px', height: '151px', objectFit: 'contain' }} />
+            </div>
+          )}
+
+          {/* Signature and Seller Name - Right side */}
+          <div style={{ textAlign: 'center', width: '200px' }}>
+            {quotation.signature_url ? (
+              <img src={quotation.signature_url} alt="Signature" style={{ width: '120px', height: '50px', objectFit: 'contain', marginBottom: '4px', display: 'block', marginLeft: 'auto', marginRight: 'auto' }} />
+            ) : (
+              <div style={{ height: '54px' }}></div>
             )}
-            <div style={{ borderTop: '1px solid #333', paddingTop: '8px', marginTop: '40px' }}>
+            <div style={{ borderTop: '1px solid #333', paddingTop: '4px' }}>
               <div style={{ fontSize: '12px' }}>ผู้เสนอราคา</div>
+              {quotation.seller_name && (
+                <div style={{ fontSize: '12px', marginTop: '4px', fontWeight: 'bold' }}>({quotation.seller_name})</div>
+              )}
             </div>
           </div>
         </div>
@@ -829,122 +1322,197 @@ export default function QuotationPage() {
 
       {/* Form Fields - Hidden when printing */}
       <div className="no-print">
-        <Card className="mb-6">
-        <div className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">ชื่อลูกค้า/ร้านค้า</label>
-              <button onClick={() => setShowContactModal(true)} className="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 text-left">
-                <span className={quotation.contact_name ? 'text-gray-900' : 'text-gray-400'}>
-                  {quotation.contact_name || 'เลือกลูกค้าหรือสร้างรายการใหม่'}
-                </span>
-                <ChevronDown className="h-4 w-4 text-gray-400" />
-              </button>
-              
-              {quotation.contact_name && (
-                <div className="mt-3 space-y-1 text-sm text-gray-600">
-                  {quotation.contact_company && <p><Building className="h-4 w-4 inline mr-1" /> {quotation.contact_company}</p>}
-                  {quotation.contact_tax_id && <p>เลขประจำตัวผู้เสียภาษี: {quotation.contact_tax_id}</p>}
-                  {quotation.contact_address && <p>ที่อยู่: {quotation.contact_address}</p>}
-                  {quotation.contact_phone && <p><Phone className="h-4 w-4 inline mr-1" /> {quotation.contact_phone}</p>}
-                </div>
-              )}
+        <Card className="mb-4">
+          <div className="p-4 space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Customer Selection - Compact */}
+              <div className="md:col-span-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">ลูกค้า</label>
+                <button onClick={() => setShowContactModal(true)} className="w-full flex items-center justify-between px-3 py-1.5 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 text-left text-sm">
+                  <span className={quotation.contact_name ? 'text-gray-900' : 'text-gray-400'}>
+                    {quotation.contact_name || 'เลือกลูกค้า...'}
+                  </span>
+                  <ChevronDown className="h-4 w-4 text-gray-400" />
+                </button>
+                
+                {quotation.contact_name && (
+                  <div className="mt-1 text-xs text-gray-600 space-y-0.5">
+                    {quotation.contact_company && <p className="font-medium">{quotation.contact_company}</p>}
+                    {quotation.contact_tax_id && <p>เลขประจำตัวผู้เสียภาษี: {quotation.contact_tax_id}</p>}
+                    {quotation.contact_address && <p className="truncate">{quotation.contact_address}</p>}
+                    {quotation.contact_phone && <p>{quotation.contact_phone}</p>}
+                  </div>
+                )}
+              </div>
 
-              <div className="mt-3">
-                <Input placeholder="เพิ่มบันทึกเกี่ยวกับลูกค้า..." value={quotation.notes} onChange={(e) => setQuotation(prev => ({ ...prev, notes: e.target.value }))} className="text-sm" />
+              {/* Dates - Compact */}
+              <div className="md:col-span-2 flex gap-3">
+                <div className="w-36">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">วันที่</label>
+                  <Input type="date" value={quotation.issue_date} onChange={(e) => setQuotation(prev => ({ ...prev, issue_date: e.target.value }))} className="text-sm py-1.5 w-full" />
+                </div>
+                <div className="w-36">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">ครบกำหนด</label>
+                  <Input type="date" value={quotation.expiry_date} onChange={(e) => setQuotation(prev => ({ ...prev, expiry_date: e.target.value }))} className="text-sm py-1.5 w-full" />
+                </div>
               </div>
             </div>
+            
+            {/* Seller Name Input */}
+            <div className="mt-3">
+              <label className="block text-xs font-medium text-gray-700 mb-1">ชื่อผู้เสนอราคา (ลงในใบเสนอราคา)</label>
+              <Input 
+                type="text" 
+                value={quotation.seller_name || ''} 
+                onChange={(e) => setQuotation(prev => ({ ...prev, seller_name: e.target.value }))}
+                placeholder="ชื่อผู้เสนอราคา..."
+                className="text-sm"
+              />
+            </div>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">วันที่</label>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-400" />
-                    <Input type="date" value={quotation.issue_date} onChange={(e) => setQuotation(prev => ({ ...prev, issue_date: e.target.value }))} className="flex-1" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">ครบกำหนด</label>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-400" />
-                    <Input type="date" value={quotation.expiry_date} onChange={(e) => setQuotation(prev => ({ ...prev, expiry_date: e.target.value }))} className="flex-1" />
-                  </div>
-                </div>
-              </div>
-
-              {/* VAT checkbox removed - prices are VAT inclusive by default */}
+            {/* Document Receiver Name Input */}
+            <div className="mt-3">
+              <label className="block text-xs font-medium text-gray-700 mb-1">ชื่อผู้รับเอกสาร (ลงในใบเสนอราคา)</label>
+              <Input 
+                type="text" 
+                value={quotation.receiver_name || ''} 
+                onChange={(e) => setQuotation(prev => ({ ...prev, receiver_name: e.target.value }))}
+                placeholder="ชื่อผู้รับเอกสาร..."
+                className="text-sm"
+              />
+            </div>
+            
+            {/* Notes - Expandable Textarea */}
+            <div>
+              <textarea 
+                placeholder="บันทึกเกี่ยวกับลูกค้า..." 
+                value={quotation.notes} 
+                onChange={(e) => setQuotation(prev => ({ ...prev, notes: e.target.value }))}
+                rows={2}
+                className="w-full text-sm px-3 py-1.5 border border-gray-300 rounded-lg resize-y min-h-[60px]"
+                style={{ resize: 'both' }}
+              />
             </div>
           </div>
-        </div>
-      </Card>
+        </Card>
 
       <Card className="mb-6">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-[#4A90A4] text-white">
               <tr>
-                <th className="px-3 py-3 text-left text-sm font-medium w-12">#</th>
-                {quotation.show_product_images && <th className="px-3 py-3 text-center text-sm font-medium w-16"></th>}
-                <th className="px-3 py-3 text-left text-sm font-medium">รายละเอียดสินค้า/บริการ</th>
-                <th className="px-3 py-3 text-center text-sm font-medium w-24">จำนวน</th>
-                <th className="px-3 py-3 text-center text-sm font-medium w-20">หน่วย</th>
-                <th className="px-3 py-3 text-right text-sm font-medium w-28">ราคาต่อหน่วย</th>
-                <th className="px-3 py-3 text-right text-sm font-medium w-24">ส่วนลด</th>
-                <th className="px-3 py-3 text-right text-sm font-medium w-28">ราคารวม</th>
-                <th className="px-3 py-3 text-center text-sm font-medium w-10"></th>
+                <th className="px-2 py-2 text-left text-xs font-medium w-8">#</th>
+                {quotation.show_product_images && <th className="px-2 py-2 text-center text-xs font-medium w-14">รูป</th>}
+                <th className="px-2 py-2 text-left text-xs font-medium min-w-[200px]">รายการ</th>
+                <th className="px-2 py-2 text-center text-xs font-medium w-16">จำนวน</th>
+                <th className="px-2 py-2 text-center text-xs font-medium w-14">หน่วย</th>
+                <th className="px-2 py-2 text-right text-xs font-medium w-24">ราคา/หน่วย</th>
+                {quotation.show_discount && <th className="px-2 py-2 text-right text-xs font-medium w-16">ส่วนลด</th>}
+                <th className="px-2 py-2 text-right text-xs font-medium w-24">รวม</th>
+                <th className="px-2 py-2 text-center text-xs font-medium w-8"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {quotation.items.map((item, index) => (
+              {quotation.items.map((item, index) => {
+                const currentImage = item.use_custom_image ? item.custom_image_url : item.product_image
+                return (
                 <tr key={item.id} className="hover:bg-gray-50">
-                  <td className="px-3 py-3 text-sm text-gray-500">{index + 1}</td>
+                  <td className="px-2 py-2 text-xs text-gray-500">{index + 1}</td>
                   {quotation.show_product_images && (
-                    <td className="px-3 py-3 text-center">
-                      {item.product_image ? (
-                        <img src={item.product_image} alt={item.product_name} className="h-10 w-10 object-cover rounded mx-auto" />
-                      ) : (
-                        <div className="h-10 w-10 bg-gray-200 rounded flex items-center justify-center mx-auto">
-                          <ImageIcon className="h-5 w-5 text-gray-400" />
-                        </div>
+                    <td className="px-2 py-2 text-center">
+                      <div className="relative">
+                        {currentImage ? (
+                          <img src={currentImage} alt={item.product_name} className="h-10 w-10 object-cover rounded mx-auto cursor-pointer" onClick={() => {
+                            const input = document.createElement('input')
+                            input.type = 'file'
+                            input.accept = 'image/*'
+                            input.onchange = (e) => {
+                              const file = (e.target as HTMLInputElement).files?.[0]
+                              if (file) handleItemImageUpload(file, index)
+                            }
+                            input.click()
+                          }} />
+                        ) : (
+                          <button onClick={() => {
+                            const input = document.createElement('input')
+                            input.type = 'file'
+                            input.accept = 'image/*'
+                            input.onchange = (e) => {
+                              const file = (e.target as HTMLInputElement).files?.[0]
+                              if (file) handleItemImageUpload(file, index)
+                            }
+                            input.click()
+                          }} className="h-10 w-10 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center mx-auto">
+                            <ImageIcon className="h-4 w-4 text-gray-400" />
+                          </button>
+                        )}
+                        {(item.product_image || item.custom_image_url) && (
+                          <div className="absolute -bottom-1 -right-1">
+                            <button onClick={() => {
+                              setQuotation(prev => ({
+                                ...prev,
+                                items: prev.items.map((it, i) => i === index ? { ...it, use_custom_image: !it.use_custom_image, custom_image_url: it.use_custom_image ? undefined : it.custom_image_url } : it)
+                              }))
+                            }} className="h-4 w-4 bg-blue-500 text-white rounded-full flex items-center justify-center text-[8px]" title={item.use_custom_image ? "ใช้รูปสินค้า" : "ใช้รูปกำหนดเอง"}>
+                              {item.use_custom_image ? 'P' : 'C'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      {(item.product_image || item.custom_image_url) && (
+                        <button onClick={() => {
+                          setQuotation(prev => ({
+                            ...prev,
+                            items: prev.items.map((it, i) => i === index ? { ...it, custom_image_url: undefined, product_image: undefined, use_custom_image: false } : it)
+                          }))
+                        }} className="text-[10px] text-red-500 hover:text-red-700 mt-1">
+                          ลบรูป
+                        </button>
                       )}
                     </td>
                   )}
-                  <td className="px-3 py-3">
+                  <td className="px-2 py-2">
                     <button onClick={() => { setActiveItemIndex(index); setShowProductModal(true); }} className="w-full text-left">
-                      <Input placeholder="คลิกเพื่อเลือกสินค้าหรือพิมพ์ชื่อสินค้า..." value={item.product_name} readOnly className="text-sm mb-1 cursor-pointer bg-gray-50" />
+                      <input type="text" placeholder="เลือกสินค้า..." value={item.product_name} readOnly className="w-full text-sm px-2 py-1 border border-gray-300 rounded cursor-pointer bg-gray-50 hover:bg-white mb-1" />
                     </button>
-                    <Input placeholder="รายละเอียด (เช่น รุ่น, สี, ขนาด...)" value={item.details} onChange={(e) => updateItem(index, 'details', e.target.value)} className="text-sm mb-1" />
-                    <Input placeholder="รายละเอียดเพิ่มเติม..." value={item.description} onChange={(e) => updateItem(index, 'description', e.target.value)} className="text-sm text-gray-500" />
+                    <input type="text" placeholder="รายละเอียด" value={item.details} onChange={(e) => updateItem(index, 'details', e.target.value)} className="w-full text-xs px-2 py-0.5 border border-gray-300 rounded mb-0.5" />
                   </td>
-                  <td className="px-3 py-3">
-                    <Input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)} className="text-center text-sm" />
+                  <td className="px-2 py-2">
+                    <input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)} className="w-full text-center text-xs px-1 py-1 border border-gray-300 rounded" />
                   </td>
-                  <td className="px-3 py-3">
-                    <Input value={item.unit} onChange={(e) => updateItem(index, 'unit', e.target.value)} className="text-center text-sm" />
+                  <td className="px-2 py-2">
+                    <input type="text" value={item.unit} onChange={(e) => updateItem(index, 'unit', e.target.value)} className="w-full text-center text-xs px-1 py-1 border border-gray-300 rounded" />
                   </td>
-                  <td className="px-3 py-3">
-                    <Input type="number" value={item.unit_price} onChange={(e) => updateItem(index, 'unit_price', parseFloat(e.target.value) || 0)} className="text-right text-sm" />
+                  <td className="px-2 py-2">
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      value={Number(item.unit_price).toFixed(2)} 
+                      onChange={(e) => updateItem(index, 'unit_price', parseFloat(e.target.value) || 0)} 
+                      className="w-full text-right text-xs px-1 py-1 border border-gray-300 rounded" 
+                    />
                   </td>
-                  <td className="px-3 py-3">
-                    <div className="flex items-center gap-1">
-                      <Input type="number" value={item.discount_percent} onChange={(e) => updateItem(index, 'discount_percent', parseFloat(e.target.value) || 0)} className="text-right text-sm w-14" />
-                      <span className="text-xs text-gray-500">%</span>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3 text-right text-sm font-medium">{formatNumber(item.total)}</td>
-                  <td className="px-3 py-3 text-center">
-                    <button onClick={() => removeItem(index)} className="text-gray-400 hover:text-red-500" disabled={quotation.items.length === 1}>
-                      <Trash2 className="h-4 w-4" />
+                  {quotation.show_discount && (
+                    <td className="px-2 py-2">
+                      <div className="flex items-center gap-1">
+                        <input type="number" value={item.discount_percent} onChange={(e) => updateItem(index, 'discount_percent', parseFloat(e.target.value) || 0)} className="w-12 text-right text-xs px-1 py-1 border border-gray-300 rounded" />
+                        <span className="text-xs text-gray-500">%</span>
+                      </div>
+                    </td>
+                  )}
+                  <td className="px-2 py-2 text-right text-xs font-medium">{formatNumber(item.total)}</td>
+                  <td className="px-2 py-2 text-center">
+                    <button onClick={() => removeItem(index)} className="text-gray-400 hover:text-red-500 p-1" disabled={quotation.items.length === 1}>
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>
-        <div className="p-4 border-t">
-          <Button variant="secondary" onClick={addItem} className="flex items-center gap-2">
+        <div className="p-3 border-t">
+          <Button variant="secondary" onClick={addItem} className="flex items-center gap-2 text-sm">
             <Plus className="h-4 w-4" />
             เพิ่มรายการ
           </Button>
@@ -960,7 +1528,42 @@ export default function QuotationPage() {
             </div>
             <div className="border-t pt-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">ไฟล์แนบ</label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              {attachments.length > 0 && (
+                <div className="mb-3 space-y-1">
+                  {attachments.map((file, index) => {
+                    const isImage = file.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)
+                    return (
+                      <div key={index} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded text-sm">
+                        <span className="truncate flex-1">{file.name}</span>
+                        <div className="flex items-center gap-2">
+                          {isImage && (
+                            <button 
+                              onClick={() => {
+                                setPreviewAttachment(file)
+                                setShowAttachmentPreview(true)
+                              }} 
+                              className="text-gray-500 hover:text-[#4A90A4]"
+                              title="ดูตัวอย่าง"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                          )}
+                          <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800" title="ดาวน์โหลด">
+                            <Download className="h-4 w-4" />
+                          </a>
+                          <button onClick={() => removeAttachment(index)} className="text-red-500 hover:text-red-700" title="ลบ">
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              <div 
+                onClick={() => attachmentInputRef.current?.click()} 
+                className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 hover:border-[#4A90A4]"
+              >
                 <div className="text-gray-400 mb-2"><Upload className="h-8 w-8 mx-auto" /></div>
                 <p className="text-sm text-gray-500">คลิกเพื่อเลือกไฟล์</p>
                 <p className="text-xs text-gray-400">หรือลากและวางไฟล์ที่นี่</p>
@@ -971,9 +1574,18 @@ export default function QuotationPage() {
 
         <Card>
           <div className="p-4 space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">รวมเป็นเงิน</span>
-              <span className="text-sm font-medium">{formatNumber(quotation.subtotal)}</span>
+            {/* VAT Breakdown */}
+            <div className="flex justify-between items-center text-sm text-gray-600">
+              <span>ราคาก่อน VAT</span>
+              <span>{formatNumber(quotation.subtotal)}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm text-gray-600">
+              <span>VAT 7%</span>
+              <span>{formatNumber(quotation.tax_amount)}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm font-medium text-gray-900 border-t pt-2">
+              <span>รวมเป็นเงิน (รวม VAT)</span>
+              <span>{formatNumber(quotation.subtotal + quotation.tax_amount)}</span>
             </div>
             
             <div className="flex justify-between items-center">
@@ -995,17 +1607,10 @@ export default function QuotationPage() {
               <span className="text-sm font-medium">{formatNumber(quotation.discount_amount)}</span>
             </div>
 
-            <div className="flex justify-between items-center text-sm text-gray-600">
-              <span>ราคาหลังหักส่วนลด</span>
-              <span>{formatNumber(quotation.subtotal - (quotation.subtotal * quotation.discount_percent / 100) - quotation.discount_amount)}</span>
-            </div>
-
-            {/* VAT section removed - prices are VAT inclusive */}
-
             <div className="border-t pt-3">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-gray-900">ยอดรวมทั้งสิ้น</span>
-                <span className="text-xl font-bold text-[#4A90A4]">{formatNumber(quotation.total_amount + quotation.withholding_tax_amount)}</span>
+                <span className="text-xl font-bold text-[#4A90A4]">{formatNumber(quotation.subtotal + quotation.tax_amount)}</span>
               </div>
             </div>
 
@@ -1163,9 +1768,67 @@ export default function QuotationPage() {
       )}
 
       {showShareModal && (
-        <div className="fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 flex items-center gap-2">
-          <LinkIcon className="h-4 w-4" />
-          คัดลอกลิงก์แล้ว
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-sm bg-white">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-bold text-gray-900">แชร์ใบเสนอราคา</h3>
+              <button onClick={() => setShowShareModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              {/* QR Code */}
+              <div className="flex justify-center">
+                <QRCodeSVG 
+                  value={`${window.location.origin}/quotation/${quotation.id || 'preview'}?preview=1`}
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+              <p className="text-sm text-gray-500 text-center">สแกน QR Code เพื่อดูบน iPad</p>
+              
+              {/* Shareable Link */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">ลิงก์สำหรับแชร์</label>
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    value={`${window.location.origin}/quotation/${quotation.id || 'preview'}?preview=1`}
+                    readOnly
+                    className="flex-1 text-sm px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                  />
+                  <button 
+                    onClick={copyShareLink}
+                    className="px-3 py-2 bg-[#4A90A4] text-white rounded-lg hover:bg-[#3d7a8a] flex items-center gap-1"
+                  >
+                    <Copy className="h-4 w-4" />
+                    คัดลอก
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Attachment Preview Modal */}
+      {showAttachmentPreview && previewAttachment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowAttachmentPreview(false)}>
+          <div className="relative max-w-4xl max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <button 
+              onClick={() => setShowAttachmentPreview(false)}
+              className="absolute -top-10 right-0 text-white hover:text-gray-300"
+            >
+              <X className="h-6 w-6" />
+            </button>
+            <img 
+              src={previewAttachment.url} 
+              alt={previewAttachment.name}
+              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+            />
+            <p className="text-white text-center mt-2">{previewAttachment.name}</p>
+          </div>
         </div>
       )}
     </div>
