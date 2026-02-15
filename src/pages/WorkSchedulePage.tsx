@@ -45,6 +45,13 @@ const DEFAULT_SHIFT: ShiftFormData = {
   notes: ''
 }
 
+// Default values for Manager (ผู้จัดการ): 9:00-18:00, 16,000/month salary
+const MANAGER_DEFAULTS = {
+  start_time: '09:00',
+  end_time: '18:00',
+  monthly_salary: 16000
+}
+
 // Default values for Pharmacist (เภสัชกร): Sat-Sun, 11:00-20:30, 150/hr
 const PHARMACIST_DEFAULTS = {
   start_time: '11:00',
@@ -56,6 +63,10 @@ const PHARMACIST_DEFAULTS = {
 const PARTTIME_DEFAULTS = {
   hourly_wage: 40
 }
+
+// Special rates
+const SUNDAY_MANAGER_RATE = 800 // 9:00-20:30 on Sunday
+const OT_RATE = 250 // For 18:00-20:30
 
 export default function WorkSchedulePage() {
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -200,7 +211,43 @@ export default function WorkSchedulePage() {
     e.preventDefault()
     
     const totalHours = calculateShiftHours(formData.start_time, formData.end_time)
-    const totalWage = totalHours * formData.hourly_wage
+    
+    // Special wage calculation for manager
+    let totalWage = totalHours * formData.hourly_wage
+    let otHours = 0
+    let otAmount = 0
+    
+    const date = new Date(formData.work_date)
+    const dayOfWeek = date.getDay() // 0 = Sunday
+    const isSunday = dayOfWeek === 0
+    
+    if (formData.position === 'ผู้จัดการ') {
+      // Check for Sunday special rate: 9:00-20:30 = 800 Baht
+      if (isSunday && formData.start_time === '09:00' && formData.end_time === '20:30') {
+        totalWage = SUNDAY_MANAGER_RATE
+      } else {
+        // Check for OT after 18:00
+        const [endHour, endMin] = formData.end_time.split(':').map(Number)
+        if (endHour > 18 || (endHour === 18 && endMin > 0)) {
+          // Calculate OT hours (after 18:00)
+          const otStartMinutes = 18 * 60
+          const otEndMinutes = endHour * 60 + endMin
+          otHours = (otEndMinutes - otStartMinutes) / 60
+          
+          // OT rate: 250 Baht for 18:00-20:30 (2.5 hours)
+          // Proportional calculation: 250 / 2.5 = 100 Baht per hour
+          const otHourlyRate = OT_RATE / 2.5
+          otAmount = Math.round(otHours * otHourlyRate)
+        }
+        
+        // Base wage: monthly salary / 30 days / 9 hours per day
+        const baseHourlyRate = MANAGER_DEFAULTS.monthly_salary / 30 / 9
+        const regularHours = Math.max(0, totalHours - otHours)
+        totalWage = Math.round(regularHours * baseHourlyRate + otAmount)
+      }
+    } else {
+      totalWage = totalHours * formData.hourly_wage
+    }
     
     const shiftData = {
       ...formData,
@@ -539,6 +586,14 @@ export default function WorkSchedulePage() {
                         start_time: PHARMACIST_DEFAULTS.start_time,
                         end_time: PHARMACIST_DEFAULTS.end_time,
                         hourly_wage: PHARMACIST_DEFAULTS.hourly_wage
+                      })
+                    } else if (newPosition === 'ผู้จัดการ') {
+                      setFormData({
+                        ...formData,
+                        position: newPosition,
+                        start_time: MANAGER_DEFAULTS.start_time,
+                        end_time: MANAGER_DEFAULTS.end_time,
+                        hourly_wage: MANAGER_DEFAULTS.monthly_salary / 30 / 9 // Approx hourly rate
                       })
                     } else if (newPosition === 'พนักงานพาร์ทไทม์') {
                       setFormData({
