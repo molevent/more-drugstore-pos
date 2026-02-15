@@ -351,34 +351,36 @@ export default function WorkSchedulePage() {
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-        <Card className="bg-[#F5F0E8] border-[#D4C9B8]">
-          <div className="p-4 text-center">
-            <Users className="h-6 w-6 text-[#A67B5B] mx-auto mb-2" />
-            <p className="text-xs text-[#8B7355]">พนักงานทั้งหมด</p>
-            <p className="text-2xl font-bold text-[#5C4A32]">{summary.length} คน</p>
-          </div>
-        </Card>
-        <Card className="bg-[#FAF6F0] border-[#D4C9B8]">
-          <div className="p-4 text-center">
-            <Clock className="h-6 w-6 text-[#A67B5B] mx-auto mb-2" />
-            <p className="text-xs text-[#8B7355]">ชั่วโมงรวม</p>
-            <p className="text-2xl font-bold text-[#5C4A32]">
-              {summary.reduce((sum, s) => sum + s.total_hours, 0).toFixed(1)} ชม.
-            </p>
-          </div>
-        </Card>
-        <Card className="bg-[#E8F5E9] border-[#C8E6C9]">
-          <div className="p-4 text-center">
-            <Wallet className="h-6 w-6 text-[#4CAF50] mx-auto mb-2" />
-            <p className="text-xs text-[#4CAF50]">ค่าตอบแทนรวม</p>
-            <p className="text-2xl font-bold text-[#2E7D32]">
-              ฿{summary.reduce((sum, s) => sum + s.total_wage, 0).toLocaleString()}
-            </p>
-          </div>
-        </Card>
-      </div>
+      {/* Summary Cards - Only show in list view */}
+      {viewMode === 'list' && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+          <Card className="bg-[#F5F0E8] border-[#D4C9B8]">
+            <div className="p-4 text-center">
+              <Users className="h-6 w-6 text-[#A67B5B] mx-auto mb-2" />
+              <p className="text-xs text-[#8B7355]">พนักงานทั้งหมด</p>
+              <p className="text-2xl font-bold text-[#5C4A32]">{summary.length} คน</p>
+            </div>
+          </Card>
+          <Card className="bg-[#FAF6F0] border-[#D4C9B8]">
+            <div className="p-4 text-center">
+              <Clock className="h-6 w-6 text-[#A67B5B] mx-auto mb-2" />
+              <p className="text-xs text-[#8B7355]">ชั่วโมงรวม</p>
+              <p className="text-2xl font-bold text-[#5C4A32]">
+                {summary.reduce((sum, s) => sum + s.total_hours, 0).toFixed(1)} ชม.
+              </p>
+            </div>
+          </Card>
+          <Card className="bg-[#E8F5E9] border-[#C8E6C9]">
+            <div className="p-4 text-center">
+              <Wallet className="h-6 w-6 text-[#4CAF50] mx-auto mb-2" />
+              <p className="text-xs text-[#4CAF50]">ค่าตอบแทนรวม</p>
+              <p className="text-2xl font-bold text-[#2E7D32]">
+                ฿{summary.reduce((sum, s) => sum + s.total_wage, 0).toLocaleString()}
+              </p>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Calendar View */}
       {viewMode === 'calendar' && (
@@ -621,10 +623,17 @@ export default function WorkSchedulePage() {
               </div>
               
               <div className="flex gap-3 pt-2">
-                <Button type="button" variant="secondary" onClick={closeModal} className="flex-1">
+                <Button 
+                  type="button" 
+                  onClick={closeModal} 
+                  className="flex-1 bg-white border-2 border-gray-300 text-black hover:bg-gray-50"
+                >
                   ยกเลิก
                 </Button>
-                <Button type="submit" className="flex-1 bg-[#A67B5B] hover:bg-[#8B7355]">
+                <Button 
+                  type="submit" 
+                  className="flex-1 bg-white border-2 border-[#A67B5B] text-black hover:bg-[#F5F0E6]"
+                >
                   {editingShift ? 'บันทึก' : 'เพิ่ม'}
                 </Button>
               </div>
