@@ -385,6 +385,7 @@ export interface SalesStats {
 export interface WorkShift {
   id: string
   employee_name: string
+  position?: string
   work_date: string
   start_time: string
   end_time: string
@@ -401,4 +402,23 @@ export interface WorkScheduleSummary {
   total_days: number
   total_hours: number
   total_wage: number
+}
+
+// ============================================================================
+// EMPLOYEE TYPES
+// ============================================================================
+
+export interface Employee {
+  id: string
+  name: string
+  position: 'ผู้จัดการ' | 'เภสัชกร' | 'พนักงานพาร์ทไทม์'
+  hourly_wage: number
+  monthly_salary: number | null
+  employment_type: 'รายชั่วโมง' | 'รายเดือน'
+  phone?: string
+  email?: string
+  start_date?: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
 }

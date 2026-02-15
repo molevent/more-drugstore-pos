@@ -44,6 +44,7 @@ import ZortOutSyncPage from './pages/ZortOutSyncPage'
 import ProductCatalogPage from './pages/ProductCatalogPage'
 import ProductCatalogsListPage from './pages/ProductCatalogsListPage'
 import WorkSchedulePage from './pages/WorkSchedulePage'
+import EmployeeSettingsPage from './pages/EmployeeSettingsPage'
 import HelpManagementPage from './pages/HelpManagementPage'
 import AuthGuard from './components/auth/AuthGuard'
 import Layout from './components/common/Layout'
@@ -105,6 +106,7 @@ function App() {
                     <Route path="/product-catalog" element={<ProductCatalogPage />} />
                     <Route path="/product-catalogs" element={<ProductCatalogsListPage />} />
                     <Route path="/work-schedule" element={<WorkSchedulePage />} />
+                    <Route path="/employee-settings" element={<EmployeeSettingsPage />} />
                     <Route path="/zortout-sync" element={<ZortOutSyncPage />} />
                     <Route path="/help-management" element={<HelpManagementPage />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
