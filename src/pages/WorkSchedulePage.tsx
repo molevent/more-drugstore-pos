@@ -77,6 +77,7 @@ const OT_RATE = 250 // For 18:00-20:30
 
 export default function WorkSchedulePage() {
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [listViewMonth, setListViewMonth] = useState(new Date()) // For filtering list view
   const [shifts, setShifts] = useState<WorkShift[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [showModal, setShowModal] = useState(false)
@@ -470,37 +471,9 @@ export default function WorkSchedulePage() {
               >
                 <ChevronLeft className="h-5 w-5 text-[#5C4A32]" />
               </button>
-              
-              {/* Month and Year Selectors */}
-              <div className="flex items-center gap-2">
-                <select
-                  value={currentDate.getMonth()}
-                  onChange={(e) => {
-                    const newDate = new Date(currentDate)
-                    newDate.setMonth(parseInt(e.target.value))
-                    setCurrentDate(newDate)
-                  }}
-                  className="px-3 py-1.5 rounded-lg border border-[#D4C9B8] bg-white text-[#5C4A32] font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#A67B5B]"
-                >
-                  {monthNames.map((month, index) => (
-                    <option key={month} value={index}>{month}</option>
-                  ))}
-                </select>
-                <select
-                  value={currentDate.getFullYear()}
-                  onChange={(e) => {
-                    const newDate = new Date(currentDate)
-                    newDate.setFullYear(parseInt(e.target.value))
-                    setCurrentDate(newDate)
-                  }}
-                  className="px-3 py-1.5 rounded-lg border border-[#D4C9B8] bg-white text-[#5C4A32] font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#A67B5B]"
-                >
-                  {[2024, 2025, 2026, 2027, 2028].map((year) => (
-                    <option key={year} value={year}>{year + 543}</option>
-                  ))}
-                </select>
-              </div>
-              
+              <h2 className="text-lg font-bold text-[#5C4A32]">
+                {monthNames[currentDate.getMonth()]} {currentDate.getFullYear() + 543}
+              </h2>
               <button
                 onClick={handleNextMonth}
                 className="p-2 hover:bg-[#F5F0E6] rounded-lg transition-colors"
@@ -534,18 +507,49 @@ export default function WorkSchedulePage() {
       {/* List View */}
       {viewMode === 'list' && (
         <Card className="border-[#E8E0D5]">
+          {/* Month/Year Selector */}
           <div className="p-4 border-b border-[#E8E0D5] bg-[#FAF8F5]">
-            <h2 className="text-base font-bold text-[#5C4A32]">รายการกะงาน</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold text-[#5C4A32]">รายการกะงาน</h2>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setListViewMonth(new Date(listViewMonth.getFullYear(), listViewMonth.getMonth() - 1))}
+                  className="p-2 hover:bg-[#E8E0D5] rounded-lg transition-colors"
+                >
+                  <ChevronLeft className="h-5 w-5 text-[#5C4A32]" />
+                </button>
+                <span className="text-base font-medium text-[#5C4A32] min-w-[140px] text-center">
+                  {listViewMonth.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })}
+                </span>
+                <button
+                  onClick={() => setListViewMonth(new Date(listViewMonth.getFullYear(), listViewMonth.getMonth() + 1))}
+                  className="p-2 hover:bg-[#E8E0D5] rounded-lg transition-colors"
+                >
+                  <ChevronRight className="h-5 w-5 text-[#5C4A32]" />
+                </button>
+              </div>
+            </div>
           </div>
           <div className="divide-y divide-[#E8E0D5]">
-            {shifts.length === 0 ? (
-              <div className="p-8 text-center">
-                <Calendar className="h-12 w-12 text-[#D4C9B8] mx-auto mb-3" />
-                <p className="text-[#8B7355]">ไม่มีรายการกะงาน</p>
-                <p className="text-sm text-[#A67B52] mt-1">คลิก "เพิ่มกะงาน" เพื่อเริ่มต้น</p>
-              </div>
-            ) : (
-              shifts.map((shift) => (
+            {(() => {
+              // Filter shifts by selected month
+              const filteredShifts = shifts.filter(shift => {
+                const shiftDate = new Date(shift.work_date)
+                return shiftDate.getMonth() === listViewMonth.getMonth() && 
+                       shiftDate.getFullYear() === listViewMonth.getFullYear()
+              })
+              
+              if (filteredShifts.length === 0) {
+                return (
+                  <div className="p-8 text-center">
+                    <Calendar className="h-12 w-12 text-[#D4C9B8] mx-auto mb-3" />
+                    <p className="text-[#8B7355]">ไม่มีรายการกะงานในเดือนนี้</p>
+                    <p className="text-sm text-[#A67B52] mt-1">คลิก "เพิ่มกะงาน" เพื่อเริ่มต้น</p>
+                  </div>
+                )
+              }
+              
+              return filteredShifts.map((shift) => (
                 <div key={shift.id} className="p-4 flex items-center justify-between hover:bg-[#FAF8F5]">
                   <div className="flex items-center gap-4">
                     <div className="p-2 bg-[#F5F0E8] rounded-lg">
@@ -583,7 +587,7 @@ export default function WorkSchedulePage() {
                   </div>
                 </div>
               ))
-            )}
+            })()}
           </div>
         </Card>
       )}
