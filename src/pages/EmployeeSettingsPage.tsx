@@ -408,14 +408,14 @@ export default function EmployeeSettingsPage() {
                 <Button 
                   type="button" 
                   onClick={closeModal} 
-                  className="flex-1 bg-white border-2 border-gray-300 text-black hover:bg-gray-50"
+                  className="flex-1 bg-white border-2 border-gray-300 !text-black hover:bg-gray-50"
                 >
                   ยกเลิก
                 </Button>
                 <Button 
                   type="submit" 
                   disabled={loading}
-                  className="flex-1 bg-white border-2 border-[#A67B5B] text-black hover:bg-[#F5F0E6]"
+                  className="flex-1 bg-white border-2 border-[#A67B5B] !text-black hover:bg-[#F5F0E6]"
                 >
                   {loading ? 'กำลังบันทึก...' : (editingEmployee ? 'บันทึก' : 'เพิ่ม')}
                 </Button>
