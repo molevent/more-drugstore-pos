@@ -778,7 +778,7 @@ export default function WorkSchedulePage() {
                       <div>
                         <span className="font-medium text-[#5C4A32]">{emp.employee_name}</span>
                         <p className="text-xs text-[#8B7355]">
-                          ระยะเวลา {emp.months_count} เดือน
+                          {emp.months_count} เดือนที่มีการลา
                         </p>
                       </div>
                     </div>
