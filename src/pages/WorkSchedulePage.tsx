@@ -245,9 +245,7 @@ export default function WorkSchedulePage() {
     const totalHours = calculateShiftHours(formData.start_time, formData.end_time)
     
     // Special wage calculation for manager
-    let totalWage = totalHours * formData.hourly_wage
-    let otHours = 0
-    let otAmount = 0
+    let totalWage = 0
     
     const date = new Date(formData.work_date)
     const dayOfWeek = date.getDay() // 0 = Sunday
@@ -257,25 +255,12 @@ export default function WorkSchedulePage() {
       // Check for Sunday special rate: 9:00-20:30 = 800 Baht
       if (isSunday && formData.start_time === '09:00' && formData.end_time === '20:30') {
         totalWage = SUNDAY_MANAGER_RATE
+      } else if (formData.start_time === '18:00' && formData.end_time === '20:30') {
+        // OT shift: 250 Baht flat rate
+        totalWage = OT_RATE
       } else {
-        // Check for OT after 18:00
-        const [endHour, endMin] = formData.end_time.split(':').map(Number)
-        if (endHour > 18 || (endHour === 18 && endMin > 0)) {
-          // Calculate OT hours (after 18:00)
-          const otStartMinutes = 18 * 60
-          const otEndMinutes = endHour * 60 + endMin
-          otHours = (otEndMinutes - otStartMinutes) / 60
-          
-          // OT rate: 250 Baht for 18:00-20:30 (2.5 hours)
-          // Proportional calculation: 250 / 2.5 = 100 Baht per hour
-          const otHourlyRate = OT_RATE / 2.5
-          otAmount = Math.round(otHours * otHourlyRate)
-        }
-        
-        // Base wage: monthly salary / 30 days / 9 hours per day
-        const baseHourlyRate = MANAGER_DEFAULTS.monthly_salary / 30 / 9
-        const regularHours = Math.max(0, totalHours - otHours)
-        totalWage = Math.round(regularHours * baseHourlyRate + otAmount)
+        // Regular manager shift: 250 Baht flat rate per shift
+        totalWage = OT_RATE
       }
     } else {
       totalWage = totalHours * formData.hourly_wage
@@ -793,22 +778,35 @@ export default function WorkSchedulePage() {
                 {(() => {
                   const hours = calculateShiftHours(formData.start_time, formData.end_time)
                   
-                  // Check for OT shift (18:00-20:30 for Manager)
-                  const isOT = formData.position === 'ผู้จัดการ' && 
-                               formData.start_time === '18:00' && 
-                               formData.end_time === '20:30'
-                  
-                  if (isOT) {
+                  // Manager shifts: flat 250 Baht per shift
+                  if (formData.position === 'ผู้จัดการ') {
+                    const date = new Date(formData.work_date)
+                    const isSunday = date.getDay() === 0
+                    
+                    // Sunday special: 9:00-20:30 = 800 Baht
+                    if (isSunday && formData.start_time === '09:00' && formData.end_time === '20:30') {
+                      return (
+                        <>
+                          <p className="text-sm text-[#8B7355]">ชั่วโมง: {hours.toFixed(1)} ชม. (วันอาทิตย์)</p>
+                          <p className="text-lg font-bold text-[#2E7D32]">
+                            รวม: ฿800 (ค่ากะพิเศษ)
+                          </p>
+                        </>
+                      )
+                    }
+                    
+                    // All other manager shifts: 250 Baht flat
                     return (
                       <>
-                        <p className="text-sm text-[#8B7355]">ชั่วโมง: {hours.toFixed(1)} ชม. (OT)</p>
+                        <p className="text-sm text-[#8B7355]">ชั่วโมง: {hours.toFixed(1)} ชม.</p>
                         <p className="text-lg font-bold text-[#2E7D32]">
-                          รวม: ฿250 (ค่ากะ OT)
+                          รวม: ฿250 (ค่ากะ)
                         </p>
                       </>
                     )
                   }
                   
+                  // Other positions: hourly calculation
                   return (
                     <>
                       <p className="text-sm text-[#8B7355]">ชั่วโมง: {hours.toFixed(1)} ชม.</p>
