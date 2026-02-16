@@ -316,6 +316,12 @@ export default function ExpensesPage() {
     
     setSheetLoading(true)
     try {
+      // Fetch expense categories for keyword matching
+      const { data: categories } = await supabase
+        .from('expense_categories')
+        .select('*')
+        .eq('is_active', true)
+
       // Convert Google Sheet URL to CSV export URL
       const sheetId = extractSheetId(sheetUrl)
       if (!sheetId) {
@@ -330,32 +336,67 @@ export default function ExpensesPage() {
       const csvText = await response.text()
       const rows = parseCSV(csvText)
       
+      // Helper function to find matching category using keywords
+      const findCategoryByKeywords = (sheetCategory: string, sheetSubcategory: string, description: string): string => {
+        if (!categories || categories.length === 0) return 'ค่าอื่นๆ'
+        
+        const searchText = `${sheetCategory} ${sheetSubcategory} ${description}`.toLowerCase()
+        
+        // First try exact match
+        const exactMatch = categories.find(cat => 
+          sheetCategory.toLowerCase().includes(cat.name.toLowerCase()) ||
+          cat.name.toLowerCase().includes(sheetCategory.toLowerCase())
+        )
+        if (exactMatch) return exactMatch.name
+        
+        // Then try keyword matching
+        for (const cat of categories) {
+          if (cat.keywords) {
+            const keywordList = cat.keywords.split(',').map((k: string) => k.trim().toLowerCase())
+            for (const keyword of keywordList) {
+              if (keyword && searchText.includes(keyword)) {
+                return cat.name
+              }
+            }
+          }
+        }
+        
+        return 'ค่าอื่นๆ'
+      }
+      
       // Map CSV data to expense format - all 19 columns
-      const mappedData = rows.slice(sheetConfig.startRow).map((row, index) => ({
-        id: `sheet-${index}`,
-        expense_date: formatDate(row[sheetConfig.dateCol] || ''),
-        sheet_id: row[sheetConfig.sheetIdCol] || '',
-        tax_invoice_number: row[sheetConfig.taxInvoiceCol] || '',
-        document_type: row[sheetConfig.docTypeCol] || '',
-        description: row[sheetConfig.descriptionCol] || '',
-        quantity: parseFloat(row[sheetConfig.quantityCol]) || 0,
-        unit_price: parseFloat(row[sheetConfig.unitPriceCol]) || 0,
-        amount_before_tax: parseFloat(row[sheetConfig.amountBeforeTaxCol]) || 0,
-        vat_amount: parseFloat(row[sheetConfig.vatCol]) || 0,
-        withholding_tax: parseFloat(row[sheetConfig.withholdingTaxCol]) || 0,
-        payment_amount: parseFloat(row[sheetConfig.paymentAmountCol]) || 0,
-        amount: parseFloat(row[sheetConfig.paymentAmountCol]) || 0, // ใช้ยอดชำระเป็นหลัก
-        product_type: row[sheetConfig.productTypeCol] || '',
-        category: row[sheetConfig.categoryCol] || 'ค่าอื่นๆ',
-        subcategory: row[sheetConfig.subcategoryCol] || '',
-        vendor: row[sheetConfig.vendorCol] || '',
-        seller_tax_id: row[sheetConfig.sellerTaxIdCol] || '',
-        requester: row[sheetConfig.requesterCol] || '',
-        evidence_url: row[sheetConfig.evidenceCol] || '',
-        notes: row[sheetConfig.notesCol] || '',
-        payment_method: 'เงินสด', // ไม่มีคอลัมน์ใน Sheet, ใช้ค่า default
-        _isSheetData: true
-      })).filter(item => item.description && item.amount > 0)
+      const mappedData = rows.slice(sheetConfig.startRow).map((row, index) => {
+        const sheetCategory = row[sheetConfig.categoryCol] || ''
+        const sheetSubcategory = row[sheetConfig.subcategoryCol] || ''
+        const description = row[sheetConfig.descriptionCol] || ''
+        const matchedCategory = findCategoryByKeywords(sheetCategory, sheetSubcategory, description)
+        
+        return {
+          id: `sheet-${index}`,
+          expense_date: formatDate(row[sheetConfig.dateCol] || ''),
+          sheet_id: row[sheetConfig.sheetIdCol] || '',
+          tax_invoice_number: row[sheetConfig.taxInvoiceCol] || '',
+          document_type: row[sheetConfig.docTypeCol] || '',
+          description: description,
+          quantity: parseFloat(row[sheetConfig.quantityCol]) || 0,
+          unit_price: parseFloat(row[sheetConfig.unitPriceCol]) || 0,
+          amount_before_tax: parseFloat(row[sheetConfig.amountBeforeTaxCol]) || 0,
+          vat_amount: parseFloat(row[sheetConfig.vatCol]) || 0,
+          withholding_tax: parseFloat(row[sheetConfig.withholdingTaxCol]) || 0,
+          payment_amount: parseFloat(row[sheetConfig.paymentAmountCol]) || 0,
+          amount: parseFloat(row[sheetConfig.paymentAmountCol]) || 0,
+          product_type: row[sheetConfig.productTypeCol] || '',
+          category: matchedCategory,
+          subcategory: sheetSubcategory,
+          vendor: row[sheetConfig.vendorCol] || '',
+          seller_tax_id: row[sheetConfig.sellerTaxIdCol] || '',
+          requester: row[sheetConfig.requesterCol] || '',
+          evidence_url: row[sheetConfig.evidenceCol] || '',
+          notes: row[sheetConfig.notesCol] || '',
+          payment_method: 'เงินสด',
+          _isSheetData: true
+        }
+      }).filter(item => item.description && item.amount > 0)
       
       setSheetData(mappedData)
       setSelectedSheetItems(new Set()) // Reset selection when new data loaded

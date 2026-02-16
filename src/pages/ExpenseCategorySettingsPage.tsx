@@ -22,6 +22,7 @@ interface ExpenseCategory {
   chart_of_accounts_code?: string
   description?: string
   color?: string
+  keywords?: string
   is_active: boolean
   created_at?: string
   updated_at?: string
@@ -50,6 +51,7 @@ export default function ExpenseCategorySettingsPage() {
     code: '',
     chart_of_accounts_code: '',
     description: '',
+    keywords: '',
     color: DEFAULT_COLORS[0],
     is_active: true
   })
@@ -84,6 +86,7 @@ export default function ExpenseCategorySettingsPage() {
         code: formData.code.toUpperCase(),
         chart_of_accounts_code: formData.chart_of_accounts_code || null,
         description: formData.description || null,
+        keywords: formData.keywords || null,
         color: formData.color,
         is_active: formData.is_active
       }
@@ -133,6 +136,7 @@ export default function ExpenseCategorySettingsPage() {
       code: category.code,
       chart_of_accounts_code: category.chart_of_accounts_code || '',
       description: category.description || '',
+      keywords: category.keywords || '',
       color: category.color || DEFAULT_COLORS[0],
       is_active: category.is_active
     })
@@ -145,6 +149,7 @@ export default function ExpenseCategorySettingsPage() {
       code: '',
       chart_of_accounts_code: '',
       description: '',
+      keywords: '',
       color: DEFAULT_COLORS[0],
       is_active: true
     })
@@ -334,6 +339,22 @@ export default function ExpenseCategorySettingsPage() {
                   placeholder="รายละเอียดเพิ่มเติม..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  คีย์เวิร์ดสำคัญ (สำหรับ Google Sheets)
+                </label>
+                <textarea
+                  value={formData.keywords}
+                  onChange={(e) => setFormData({ ...formData, keywords: e.target.value })}
+                  rows={2}
+                  placeholder="คั่นด้วย comma เช่น น้ำประปา,ปั้มน้ำ,ประปา,การประปา"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  ใช้สำหรับ matching ข้อมูลจาก Google Sheets เมื่อชื่อหมวดหมู่ไม่ตรงกัน
+                </p>
               </div>
 
               <div>
