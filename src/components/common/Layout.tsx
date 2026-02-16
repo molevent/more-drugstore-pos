@@ -11,7 +11,8 @@ import {
   Users,
   Wallet,
   Calendar,
-  UserCog
+  UserCog,
+  Banknote
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -84,6 +85,7 @@ export default function Layout({ children }: LayoutProps) {
       items: [
         { name: t('nav.documents'), href: '/expenses', icon: Wallet },
         { name: 'ตารางเข้างาน', href: '/work-schedule', icon: Calendar },
+        { name: 'เงินสดย่อย', href: '/petty-cash', icon: Banknote },
       ]
     },
     {

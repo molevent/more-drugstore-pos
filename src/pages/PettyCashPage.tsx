@@ -1,0 +1,580 @@
+import { useState, useEffect, useMemo } from 'react'
+import { supabase } from '../lib/supabase'
+import { 
+  Banknote, 
+  Plus, 
+  Search, 
+  ChevronLeft,
+  ChevronRight,
+  Wallet,
+  Receipt,
+  TrendingDown,
+  AlertCircle,
+  CheckCircle,
+  X,
+  Download
+} from 'lucide-react'
+import Card from '../components/common/Card'
+import Button from '../components/common/Button'
+import Input from '../components/common/Input'
+
+interface PettyCashFund {
+  id: string
+  month: number
+  year: number
+  initial_amount: number
+  current_balance: number
+  status: 'active' | 'closed' | 'replenished'
+  created_at: string
+}
+
+interface PettyCashExpense {
+  id: string
+  fund_id: string
+  expense_date: string
+  amount: number
+  category: string
+  description: string
+  receipt_number?: string
+  status: 'pending' | 'approved' | 'rejected'
+  created_at: string
+}
+
+const EXPENSE_CATEGORIES = [
+  { value: 'office_supplies', label: 'เครื่องใช้สำนักงาน', icon: '📝' },
+  { value: 'utilities', label: 'ค่าน้ำ/ไฟ/โทรศัพท์', icon: '💡' },
+  { value: 'travel', label: 'ค่าเดินทาง', icon: '🚗' },
+  { value: 'food', label: 'ค่าอาหาร', icon: '🍽️' },
+  { value: 'postage', label: 'ค่าส่งจดหมาย/พัสดุ', icon: '📦' },
+  { value: 'maintenance', label: 'ค่าซ่อมแซม', icon: '🔧' },
+  { value: 'other', label: 'อื่นๆ', icon: '📋' }
+]
+
+const MONTHLY_FUND = 5000 // วงเงินสดย่อยรายเดือน
+
+export default function PettyCashPage() {
+  const navigate = useNavigate()
+  const [currentDate, setCurrentDate] = useState(new Date())
+  const [fund, setFund] = useState<PettyCashFund | null>(null)
+  const [expenses, setExpenses] = useState<PettyCashExpense[]>([])
+  const [showExpenseModal, setShowExpenseModal] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('')
+  
+  const [expenseForm, setExpenseForm] = useState({
+    expense_date: new Date().toISOString().split('T')[0],
+    amount: '',
+    category: '',
+    description: '',
+    receipt_number: ''
+  })
+
+  // Fetch fund and expenses for current month
+  useEffect(() => {
+    fetchFundAndExpenses()
+  }, [currentDate])
+
+  const fetchFundAndExpenses = async () => {
+    const month = currentDate.getMonth() + 1
+    const year = currentDate.getFullYear()
+    
+    try {
+      // Get or create fund for this month
+      let { data: fundData, error: fundError } = await supabase
+        .from('petty_cash_funds')
+        .select('*')
+        .eq('month', month)
+        .eq('year', year)
+        .single()
+
+      if (fundError && fundError.code === 'PGRST116') {
+        // Fund doesn't exist, create it
+        const { data: newFund, error: createError } = await supabase
+          .from('petty_cash_funds')
+          .insert({
+            month,
+            year,
+            initial_amount: MONTHLY_FUND,
+            current_balance: MONTHLY_FUND,
+            status: 'active'
+          })
+          .select()
+          .single()
+        
+        if (createError) throw createError
+        fundData = newFund
+      } else if (fundError) {
+        throw fundError
+      }
+
+      setFund(fundData)
+
+      // Get expenses for this fund
+      if (fundData) {
+        const { data: expensesData, error: expensesError } = await supabase
+          .from('petty_cash_expenses')
+          .select('*')
+          .eq('fund_id', fundData.id)
+          .order('expense_date', { ascending: false })
+        
+        if (expensesError) throw expensesError
+        setExpenses(expensesData || [])
+      }
+    } catch (error) {
+      console.error('Error fetching petty cash data:', error)
+    }
+  }
+
+  // Calculate statistics
+  const stats = useMemo(() => {
+    if (!fund) return null
+    
+    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0)
+    const approvedExpenses = expenses
+      .filter(e => e.status === 'approved')
+      .reduce((sum, e) => sum + e.amount, 0)
+    const pendingExpenses = expenses
+      .filter(e => e.status === 'pending')
+      .reduce((sum, e) => sum + e.amount, 0)
+    
+    // Category breakdown
+    const categoryTotals = expenses.reduce((acc, e) => {
+      acc[e.category] = (acc[e.category] || 0) + e.amount
+      return acc
+    }, {} as Record<string, number>)
+    
+    return {
+      initialAmount: fund.initial_amount,
+      currentBalance: fund.current_balance,
+      totalExpenses,
+      approvedExpenses,
+      pendingExpenses,
+      remainingPercentage: (fund.current_balance / fund.initial_amount) * 100,
+      categoryTotals
+    }
+  }, [fund, expenses])
+
+  // Filter expenses
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter(expense => {
+      const matchesSearch = 
+        expense.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        expense.receipt_number?.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesCategory = !selectedCategory || expense.category === selectedCategory
+      return matchesSearch && matchesCategory
+    })
+  }, [expenses, searchQuery, selectedCategory])
+
+  const handleAddExpense = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!fund) return
+
+    const amount = parseFloat(expenseForm.amount)
+    if (amount <= 0 || amount > fund.current_balance) {
+      alert('จำนวนเงินไม่ถูกต้อง หรือเกินวงเงินที่เหลือ')
+      return
+    }
+
+    try {
+      // Add expense
+      const { error: expenseError } = await supabase
+        .from('petty_cash_expenses')
+        .insert({
+          fund_id: fund.id,
+          expense_date: expenseForm.expense_date,
+          amount,
+          category: expenseForm.category,
+          description: expenseForm.description,
+          receipt_number: expenseForm.receipt_number || null,
+          status: 'approved' // Auto-approve for now
+        })
+
+      if (expenseError) throw expenseError
+
+      // Update fund balance
+      const { error: fundError } = await supabase
+        .from('petty_cash_funds')
+        .update({ 
+          current_balance: fund.current_balance - amount,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', fund.id)
+
+      if (fundError) throw fundError
+
+      // Reset form and refresh
+      setExpenseForm({
+        expense_date: new Date().toISOString().split('T')[0],
+        amount: '',
+        category: '',
+        description: '',
+        receipt_number: ''
+      })
+      setShowExpenseModal(false)
+      await fetchFundAndExpenses()
+      
+    } catch (error) {
+      console.error('Error adding expense:', error)
+      alert('ไม่สามารถบันทึกรายการได้')
+    }
+  }
+
+  const handleReplenish = async () => {
+    if (!fund) return
+    
+    if (!confirm('ต้องการเติมเงินสดย่อยใหม่ (รายเดือน) ใช่หรือไม่?')) return
+
+    try {
+      // Close current fund
+      await supabase
+        .from('petty_cash_funds')
+        .update({ 
+          status: 'replenished',
+          replenished_at: new Date().toISOString()
+        })
+        .eq('id', fund.id)
+
+      // Create new fund for next month or refresh current
+      const nextMonth = currentDate.getMonth() + 2 // +1 for next month, +1 because getMonth is 0-indexed
+      const nextYear = currentDate.getFullYear()
+      
+      await supabase
+        .from('petty_cash_funds')
+        .insert({
+          month: nextMonth > 12 ? 1 : nextMonth,
+          year: nextMonth > 12 ? nextYear + 1 : nextYear,
+          initial_amount: MONTHLY_FUND,
+          current_balance: MONTHLY_FUND,
+          status: 'active'
+        })
+
+      await fetchFundAndExpenses()
+      alert('เติมเงินสดย่อยเรียบร้อย')
+      
+    } catch (error) {
+      console.error('Error replenishing fund:', error)
+    }
+  }
+
+  const exportReport = () => {
+    if (!stats) return
+    
+    const monthName = currentDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })
+    const csvContent = [
+      ['วันที่', 'หมวดหมู่', 'รายการ', 'จำนวนเงิน', 'สถานะ', 'เลขที่ใบเสร็จ'].join(','),
+      ...filteredExpenses.map(e => [
+        new Date(e.expense_date).toLocaleDateString('th-TH'),
+        EXPENSE_CATEGORIES.find(c => c.value === e.category)?.label || e.category,
+        e.description,
+        e.amount,
+        e.status === 'approved' ? 'อนุมัติ' : e.status === 'pending' ? 'รออนุมัติ' : 'ปฏิเสธ',
+        e.receipt_number || '-'
+      ].join(','))
+    ].join('\n')
+
+    const blob = new Blob([`\ufeff${csvContent}`], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `รายงานเงินสดย่อย_${monthName}.csv`
+    link.click()
+  }
+
+  return (
+    <div className="p-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="flex items-start gap-3">
+          <Banknote className="h-8 w-8 text-[#A67B5B] mt-1" />
+          <div>
+            <h1 className="text-2xl font-bold text-[#5C4A32]">เงินสดย่อย</h1>
+            <p className="text-[#8B7355]">วงเงินรายเดือน {MONTHLY_FUND.toLocaleString()} บาท</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={exportReport}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#A67B5B] bg-white text-[#A67B5B] text-sm whitespace-nowrap hover:bg-[#A67B5B]/10 transition-all shadow-sm"
+          >
+            <Download className="h-4 w-4" />
+            ส่งออกรายงาน
+          </button>
+          <button
+            onClick={() => setShowExpenseModal(true)}
+            disabled={!fund || fund.current_balance <= 0}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#A67B5B] bg-white text-[#A67B5B] text-sm whitespace-nowrap hover:bg-[#A67B5B]/10 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Plus className="h-4 w-4" />
+            บันทึกค่าใช้จ่าย
+          </button>
+        </div>
+      </div>
+
+      {/* Month Selector */}
+      <div className="flex items-center justify-between mb-6 bg-[#F5F0E8] rounded-lg p-3">
+        <button
+          onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
+          className="p-2 hover:bg-[#E8E0D5] rounded-lg transition-colors"
+        >
+          <ChevronLeft className="h-5 w-5 text-[#5C4A32]" />
+        </button>
+        <span className="text-base font-medium text-[#5C4A32]">
+          {currentDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })}
+        </span>
+        <button
+          onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
+          className="p-2 hover:bg-[#E8E0D5] rounded-lg transition-colors"
+        >
+          <ChevronRight className="h-5 w-5 text-[#5C4A32]" />
+        </button>
+      </div>
+
+      {/* Statistics Cards */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+          <Card className="bg-[#E8F5E9] border-[#C8E6C9]">
+            <div className="p-4 text-center">
+              <Wallet className="h-6 w-6 text-[#2E7D32] mx-auto mb-2" />
+              <p className="text-xs text-[#2E7D32]">วงเงินตั้งต้น</p>
+              <p className="text-2xl font-bold text-[#2E7D32]">฿{stats.initialAmount.toLocaleString()}</p>
+            </div>
+          </Card>
+          <Card className="bg-[#FFF3E0] border-[#FFCC80]">
+            <div className="p-4 text-center">
+              <Receipt className="h-6 w-6 text-[#E65100] mx-auto mb-2" />
+              <p className="text-xs text-[#E65100]">ใช้ไปแล้ว</p>
+              <p className="text-2xl font-bold text-[#E65100]">฿{stats.totalExpenses.toLocaleString()}</p>
+            </div>
+          </Card>
+          <Card className="bg-[#E3F2FD] border-[#90CAF9]">
+            <div className="p-4 text-center">
+              <Wallet className="h-6 w-6 text-[#1565C0] mx-auto mb-2" />
+              <p className="text-xs text-[#1565C0]">คงเหลือ</p>
+              <p className="text-2xl font-bold text-[#1565C0]">฿{stats.currentBalance.toLocaleString()}</p>
+            </div>
+          </Card>
+          <Card className={`border-[#E8E0D5] ${stats.remainingPercentage < 20 ? 'bg-[#FFEBEE]' : 'bg-[#F5F0E8]'}`}>
+            <div className="p-4 text-center">
+              <TrendingDown className={`h-6 w-6 mx-auto mb-2 ${stats.remainingPercentage < 20 ? 'text-[#C62828]' : 'text-[#A67B5B]'}`} />
+              <p className={`text-xs ${stats.remainingPercentage < 20 ? 'text-[#C62828]' : 'text-[#8B7355]'}`}>เปอร์เซ็นต์ที่เหลือ</p>
+              <p className={`text-2xl font-bold ${stats.remainingPercentage < 20 ? 'text-[#C62828]' : 'text-[#A67B5B]'}`}>
+                {stats.remainingPercentage.toFixed(1)}%
+              </p>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Low Balance Warning */}
+      {stats && stats.remainingPercentage < 20 && (
+        <div className="mb-6 p-4 bg-[#FFEBEE] border border-[#EF5350] rounded-lg flex items-center gap-3">
+          <AlertCircle className="h-5 w-5 text-[#C62828]" />
+          <div>
+            <p className="font-medium text-[#C62828]">วงเงินใกล้หมด</p>
+            <p className="text-sm text-[#C62828]">คงเหลืออีก {stats.remainingPercentage.toFixed(0)}% ควรเติมเงินสดย่อย</p>
+          </div>
+          <button
+            onClick={handleReplenish}
+            className="ml-auto px-4 py-2 bg-[#A67B5B] text-white rounded-lg text-sm hover:bg-[#8B7355] transition-colors"
+          >
+            เติมเงินใหม่
+          </button>
+        </div>
+      )}
+
+      {/* Category Breakdown */}
+      {stats && Object.keys(stats.categoryTotals).length > 0 && (
+        <Card className="mb-6 border-[#E8E0D5]">
+          <div className="p-4 border-b border-[#E8E0D5] bg-[#FAF8F5]">
+            <h2 className="text-base font-bold text-[#5C4A32]">สรุปตามหมวดหมู่</h2>
+          </div>
+          <div className="p-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {Object.entries(stats.categoryTotals).map(([category, total]) => {
+                const cat = EXPENSE_CATEGORIES.find(c => c.value === category)
+                return (
+                  <div key={category} className="flex items-center gap-3 p-3 bg-[#F5F0E8] rounded-lg">
+                    <span className="text-2xl">{cat?.icon || '📋'}</span>
+                    <div>
+                      <p className="text-xs text-[#8B7355]">{cat?.label || category}</p>
+                      <p className="font-bold text-[#5C4A32]">฿{total.toLocaleString()}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Search and Filter */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="ค้นหารายการ..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <select
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A67B5B] bg-white"
+        >
+          <option value="">ทั้งหมด</option>
+          {EXPENSE_CATEGORIES.map(cat => (
+            <option key={cat.value} value={cat.value}>{cat.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Expenses List */}
+      <Card className="border-[#E8E0D5]">
+        <div className="p-4 border-b border-[#E8E0D5] bg-[#FAF8F5]">
+          <h2 className="text-base font-bold text-[#5C4A32]">รายการค่าใช้จ่าย</h2>
+        </div>
+        <div className="divide-y divide-[#E8E0D5]">
+          {filteredExpenses.length === 0 ? (
+            <div className="p-8 text-center">
+              <Receipt className="h-12 w-12 text-[#D4C9B8] mx-auto mb-3" />
+              <p className="text-[#8B7355]">ไม่มีรายการค่าใช้จ่ายในเดือนนี้</p>
+            </div>
+          ) : (
+            filteredExpenses.map((expense) => {
+              const category = EXPENSE_CATEGORIES.find(c => c.value === expense.category)
+              return (
+                <div key={expense.id} className="p-4 flex items-center justify-between hover:bg-[#FAF8F5]">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-[#F5F0E8] rounded-lg">
+                      <span className="text-xl">{category?.icon || '📋'}</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-[#5C4A32]">{expense.description}</p>
+                      <p className="text-sm text-[#8B7355]">
+                        {new Date(expense.expense_date).toLocaleDateString('th-TH')} • {category?.label}
+                      </p>
+                      {expense.receipt_number && (
+                        <p className="text-xs text-[#A67B52]">เลขที่: {expense.receipt_number}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-[#E65100]">฿{expense.amount.toLocaleString()}</p>
+                    {expense.status === 'approved' ? (
+                      <span className="text-xs text-[#2E7D32] flex items-center gap-1">
+                        <CheckCircle className="h-3 w-3" /> อนุมัติ
+                      </span>
+                    ) : expense.status === 'pending' ? (
+                      <span className="text-xs text-[#F57C00]">รออนุมัติ</span>
+                    ) : (
+                      <span className="text-xs text-[#C62828]">ปฏิเสธ</span>
+                    )}
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+      </Card>
+
+      {/* Expense Modal */}
+      {showExpenseModal && fund && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-[#E8E0D5]">
+              <h3 className="text-lg font-bold text-[#5C4A32]">บันทึกค่าใช้จ่าย</h3>
+              <button
+                onClick={() => setShowExpenseModal(false)}
+                className="p-2 hover:bg-[#F5F0E8] rounded-full transition-colors"
+              >
+                <X className="h-5 w-5 text-[#8B7355]" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddExpense} className="p-4 space-y-4">
+              {/* Balance Warning */}
+              <div className="p-3 bg-[#F5F0E8] rounded-lg">
+                <p className="text-sm text-[#8B7355]">วงเงินคงเหลือ: <span className="font-bold text-[#A67B5B]">฿{fund.current_balance.toLocaleString()}</span></p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#5C4A32] mb-1">วันที่</label>
+                <Input
+                  type="date"
+                  value={expenseForm.expense_date}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, expense_date: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#5C4A32] mb-1">หมวดหมู่</label>
+                <select
+                  value={expenseForm.category}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, category: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A67B5B] bg-white"
+                  required
+                >
+                  <option value="">เลือกหมวดหมู่</option>
+                  {EXPENSE_CATEGORIES.map(cat => (
+                    <option key={cat.value} value={cat.value}>{cat.icon} {cat.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#5C4A32] mb-1">รายการ</label>
+                <Input
+                  value={expenseForm.description}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, description: e.target.value })}
+                  placeholder="เช่น ค่าซื้อกระดาษ A4"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#5C4A32] mb-1">จำนวนเงิน (บาท)</label>
+                <Input
+                  type="number"
+                  min="0"
+                  max={fund.current_balance}
+                  step="0.01"
+                  value={expenseForm.amount}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })}
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#5C4A32] mb-1">เลขที่ใบเสร็จ (ถ้ามี)</label>
+                <Input
+                  value={expenseForm.receipt_number}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, receipt_number: e.target.value })}
+                  placeholder="RE-2024-001"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button 
+                  type="button" 
+                  onClick={() => setShowExpenseModal(false)} 
+                  className="flex-1 bg-white border-2 border-gray-300 !text-black hover:bg-gray-50"
+                >
+                  ยกเลิก
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="flex-1 bg-[#A67B5B] border-2 border-[#A67B5B] !text-white hover:bg-[#8B7355]"
+                >
+                  บันทึก
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+    </div>
+  )
+}
