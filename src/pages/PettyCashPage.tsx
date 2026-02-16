@@ -20,7 +20,6 @@ import {
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 
 interface PettyCashFund {
   id: string
@@ -1122,22 +1121,18 @@ export default function PettyCashPage() {
             <form onSubmit={handleEditExpense} className="p-4 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-black mb-1">ประเภทค่าใช้จ่าย</label>
-                <Select
+                <select
                   value={editForm.category}
-                  onValueChange={(value) => setEditForm({ ...editForm, category: value })}
+                  onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded-md bg-white text-black"
                 >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="เลือกประเภท" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {EXPENSE_CATEGORIES.map((cat) => (
-                      <SelectItem key={cat.value} value={cat.value}>
-                        <span className="mr-2">{cat.icon}</span>
-                        {cat.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <option value="">เลือกประเภท</option>
+                  {EXPENSE_CATEGORIES.map((cat) => (
+                    <option key={cat.value} value={cat.value}>
+                      {cat.icon} {cat.label}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
