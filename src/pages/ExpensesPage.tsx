@@ -451,38 +451,38 @@ export default function ExpensesPage() {
           </button>
           <Link 
             to="/purchase-orders"
-            className="flex items-center gap-3 px-5 py-3 bg-[#F5F0E6] rounded-full border border-[#B8C9B8] hover:bg-[#E8EBF0] hover:shadow-md transition-all"
+            className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
           >
-            <ShoppingCart className="h-6 w-6 text-gray-900" />
-            <span className="font-semibold text-gray-900">ใบสั่งซื้อ</span>
+            <ShoppingCart className="h-5 w-5 text-gray-900" />
+            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบสั่งซื้อ</span>
           </Link>
           <Link 
             to="/quotations"
-            className="flex items-center gap-3 px-5 py-3 bg-[#E8DFD0] rounded-full border border-[#B8C9B8] hover:bg-[#D5C4B0] hover:shadow-md transition-all"
+            className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
           >
-            <FileText className="h-6 w-6 text-gray-900" />
-            <span className="font-semibold text-gray-900">ใบเสนอราคา</span>
+            <FileText className="h-5 w-5 text-gray-900" />
+            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบเสนอราคา</span>
           </Link>
           <Link 
             to="/payment-vouchers"
-            className="flex items-center gap-3 px-5 py-3 bg-[#B8C9B8]/10 rounded-full border border-[#B8C9B8] hover:bg-[#B8C9B8]/20 hover:shadow-md transition-all"
+            className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
           >
-            <FileText className="h-6 w-6 text-gray-900" />
-            <span className="font-semibold text-gray-900">ใบสำคัญจ่าย</span>
+            <FileText className="h-5 w-5 text-gray-900" />
+            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบสำคัญจ่าย</span>
           </Link>
           <Link 
             to="/withholding-tax"
-            className="flex items-center gap-3 px-5 py-3 bg-[#7D735F]/10 rounded-full border border-[#7D735F] hover:bg-[#7D735F]/20 hover:shadow-md transition-all"
+            className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
           >
-            <Percent className="h-6 w-6 text-gray-900" />
-            <span className="font-semibold text-gray-900">หัก ณ ที่จ่าย</span>
+            <Percent className="h-5 w-5 text-gray-900" />
+            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">หัก ณ ที่จ่าย</span>
           </Link>
           <Link 
             to="/petty-cash"
-            className="flex items-center gap-3 px-5 py-3 bg-[#D4A574]/10 rounded-full border border-[#D4A574] hover:bg-[#D4A574]/20 hover:shadow-md transition-all"
+            className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
           >
-            <Wallet className="h-6 w-6 text-gray-900" />
-            <span className="font-semibold text-gray-900">เงินสดย่อย</span>
+            <Wallet className="h-5 w-5 text-gray-900" />
+            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">เงินสดย่อย</span>
           </Link>
         </div>
       </div>
