@@ -13,7 +13,8 @@ import {
   CheckCircle,
   X,
   Download,
-  FileText
+  FileText,
+  Trash2
 } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -484,6 +485,40 @@ export default function PettyCashPage() {
     }
   }
 
+  const handleDeleteExpense = async (expenseId: string, amount: number) => {
+    if (!fund) return
+    
+    if (!confirm('ต้องการลบรายการนี้ใช่หรือไม่?')) return
+
+    try {
+      // Delete expense from database
+      const { error: deleteError } = await supabase
+        .from('petty_cash_expenses')
+        .delete()
+        .eq('id', expenseId)
+
+      if (deleteError) throw deleteError
+
+      // Update fund balance - add back the expense amount
+      const { error: fundError } = await supabase
+        .from('petty_cash_funds')
+        .update({ 
+          current_balance: fund.current_balance + amount,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', fund.id)
+
+      if (fundError) throw fundError
+
+      // Refresh data
+      await fetchFundAndExpenses()
+      alert('ลบรายการเรียบร้อย')
+    } catch (error) {
+      console.error('Error deleting expense:', error)
+      alert('ไม่สามารถลบรายการได้')
+    }
+  }
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -678,15 +713,24 @@ export default function PettyCashPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-[#E65100]">฿{expense.amount.toLocaleString()}</p>
-                    {expense.status === 'approved' ? (
-                      <span className="text-xs text-[#2E7D32] flex items-center gap-1">
-                        <CheckCircle className="h-3 w-3" /> อนุมัติ
-                      </span>
-                    ) : expense.status === 'pending' ? (
-                      <span className="text-xs text-[#F57C00]">รออนุมัติ</span>
-                    ) : (
-                      <span className="text-xs text-[#C62828]">ปฏิเสธ</span>
-                    )}
+                    <div className="flex items-center gap-2 justify-end mt-1">
+                      {expense.status === 'approved' ? (
+                        <span className="text-xs text-[#2E7D32] flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3" /> อนุมัติ
+                        </span>
+                      ) : expense.status === 'pending' ? (
+                        <span className="text-xs text-[#F57C00]">รออนุมัติ</span>
+                      ) : (
+                        <span className="text-xs text-[#C62828]">ปฏิเสธ</span>
+                      )}
+                      <button
+                        onClick={() => handleDeleteExpense(expense.id, expense.amount)}
+                        className="p-1 hover:bg-red-100 rounded text-red-500 transition-colors"
+                        title="ลบรายการ"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               )
