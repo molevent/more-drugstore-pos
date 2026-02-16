@@ -63,7 +63,7 @@ export default function PettyCashPage() {
   const [showFundModal, setShowFundModal] = useState(false)
   const [fundAmount, setFundAmount] = useState('')
   const [fundDate, setFundDate] = useState(new Date().toISOString().split('T')[0])
-  const [showStatementModal, setShowStatementModal] = useState(false)
+  const [csvTransactions, setCsvTransactions] = useState<Array<{date: string, time: string, type: string, withdrawal: number, deposit: number, balance: number, channel: string, details: string}>>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   
@@ -709,14 +709,8 @@ export default function PettyCashPage() {
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                 <input
                   type="file"
-                  accept=".pdf,.csv,.xlsx,.xls"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) {
-                      // For now, show a message that this feature needs backend processing
-                      alert('กำลังพัฒนา: ระบบจะอ่านไฟล์ ' + file.name + ' และแสดงรายการสำหรับกระทบยอด')
-                    }
-                  }}
+                  accept=".csv"
+                  onChange={handleCsvUpload}
                   className="hidden"
                   id="statement-upload"
                 />
@@ -725,10 +719,41 @@ export default function PettyCashPage() {
                   className="cursor-pointer flex flex-col items-center gap-2"
                 >
                   <FileText className="h-12 w-12 text-gray-400" />
-                  <span className="text-gray-600">คลิกเพื่ออัพโหลดไฟล์ Statement</span>
-                  <span className="text-xs text-gray-400">รองรับ PDF, CSV, Excel</span>
+                  <span className="text-gray-600">คลิกเพื่ออัพโหลดไฟล์ CSV</span>
+                  <span className="text-xs text-gray-400">รองรับไฟล์ CSV จากธนาคารไทย</span>
                 </label>
               </div>
+
+              {csvTransactions.length > 0 && (
+                <div className="border rounded-lg">
+                  <div className="p-3 bg-gray-50 border-b">
+                    <h4 className="font-medium text-black">รายการจาก Statement ({csvTransactions.length} รายการ)</h4>
+                  </div>
+                  <div className="p-3 max-h-64 overflow-y-auto">
+                    <div className="space-y-2">
+                      {csvTransactions.map((tx, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs">
+                              {tx.type === 'ถอนเงิน' || tx.withdrawal > 0 ? '⬆️' : '⬇️'}
+                            </div>
+                            <div>
+                              <p className="font-medium text-black text-sm">{tx.type} - {tx.details}</p>
+                              <p className="text-xs text-gray-500">{tx.date} {tx.time} | {tx.channel}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className={`font-bold ${tx.withdrawal > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                              {tx.withdrawal > 0 ? '-' : '+'}฿{(tx.withdrawal || tx.deposit).toLocaleString()}
+                            </p>
+                            <span className="text-xs text-gray-400">ยอดคงเหลือ: ฿{tx.balance.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="bg-yellow-50 p-3 rounded-lg">
                 <p className="text-sm text-yellow-800">
