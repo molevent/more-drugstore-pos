@@ -471,7 +471,8 @@ export default function PettyCashPage() {
       await fetchFundAndExpenses()
       setCsvTransactions([])
       setShowStatementModal(false)
-      alert(`นำเข้าสำเร็จ ${importedCount} รายการ`)
+      const skippedCount = csvTransactions.filter(tx => tx.matched && tx.withdrawal > 0).length
+      alert(`นำเข้าสำเร็จ ${importedCount} รายการ (ข้าม ${skippedCount} รายการที่มีอยู่แล้ว)`)
     } catch (error) {
       console.error('Error importing transactions:', error)
       alert('ไม่สามารถนำเข้ารายการได้')
