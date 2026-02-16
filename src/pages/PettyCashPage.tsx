@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '../services/supabase'
 import { 
   Banknote, 
@@ -6,6 +6,7 @@ import {
   Search, 
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Wallet,
   Receipt,
   TrendingDown,
@@ -15,7 +16,9 @@ import {
   Download,
   FileText,
   Trash2,
-  Edit3
+  Edit3,
+  Printer,
+  FileDown
 } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -57,7 +60,7 @@ const EXPENSE_CATEGORIES = [
   { value: 'other', label: 'อื่นๆ', icon: '📋' }
 ]
 
-const MONTHLY_FUND = 5000 // วงเงินสดย่อยรายเดือน
+const MONTHLY_FUND = 542.59 // วงเงินสดย่อยยกมาจากปี 2568
 
 export default function PettyCashPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -69,12 +72,16 @@ export default function PettyCashPage() {
   const [editForm, setEditForm] = useState({
     category: '',
     description: '',
-    amount: ''
+    amount: '',
+    status: 'approved'
   })
   const [showFundModal, setShowFundModal] = useState(false)
   const [fundAmount, setFundAmount] = useState('')
+  const [fundDescription, setFundDescription] = useState('')
   const [fundDate, setFundDate] = useState(new Date().toISOString().split('T')[0])
   const [showStatementModal, setShowStatementModal] = useState(false)
+  const [showExportMenu, setShowExportMenu] = useState(false)
+  const exportMenuRef = useRef<HTMLDivElement>(null)
   const [csvTransactions, setCsvTransactions] = useState<Array<{
     date: string, 
     time: string, 
@@ -158,30 +165,50 @@ export default function PettyCashPage() {
   const stats = useMemo(() => {
     if (!fund) return null
     
-    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0)
-    const approvedExpenses = expenses
-      .filter(e => e.status === 'approved')
+    // Filter expenses by current month/year for stats
+    const monthlyExpenses = expenses.filter(e => {
+      const expenseDate = new Date(e.expense_date)
+      return expenseDate.getFullYear() === currentDate.getFullYear() && 
+             expenseDate.getMonth() === currentDate.getMonth()
+    })
+    
+    // Calculate total replenishments (income) for current month
+    const totalReplenishments = monthlyExpenses
+      .filter(e => e.category === 'income')
+      .reduce((sum, e) => sum + Math.abs(e.amount), 0)
+    
+    const totalExpenses = monthlyExpenses
+      .filter(e => e.category !== 'income')
       .reduce((sum, e) => sum + e.amount, 0)
-    const pendingExpenses = expenses
-      .filter(e => e.status === 'pending')
+    const approvedExpenses = monthlyExpenses
+      .filter(e => e.status === 'approved' && e.category !== 'income')
+      .reduce((sum, e) => sum + e.amount, 0)
+    const pendingExpenses = monthlyExpenses
+      .filter(e => e.status === 'pending' && e.category !== 'income')
       .reduce((sum, e) => sum + e.amount, 0)
     
-    // Category breakdown
-    const categoryTotals = expenses.reduce((acc, e) => {
-      acc[e.category] = (acc[e.category] || 0) + e.amount
-      return acc
-    }, {} as Record<string, number>)
+    // Calculate remaining balance = totalReplenishments - totalExpenses
+    const currentBalance = totalReplenishments - totalExpenses
+    
+    // Category breakdown - only for current month (exclude income)
+    const categoryTotals = monthlyExpenses
+      .filter(e => e.category !== 'income')
+      .reduce((acc, e) => {
+        acc[e.category] = (acc[e.category] || 0) + e.amount
+        return acc
+      }, {} as Record<string, number>)
     
     return {
-      initialAmount: fund.initial_amount,
-      currentBalance: fund.current_balance,
+      initialAmount: totalReplenishments,
+      totalReplenishments,
+      currentBalance,
       totalExpenses,
       approvedExpenses,
       pendingExpenses,
-      remainingPercentage: (fund.current_balance / fund.initial_amount) * 100,
+      remainingPercentage: totalReplenishments > 0 ? (currentBalance / totalReplenishments) * 100 : 0,
       categoryTotals
     }
-  }, [fund, expenses])
+  }, [fund, expenses, currentDate])
 
   // Filter expenses
   const filteredExpenses = useMemo(() => {
@@ -190,9 +217,13 @@ export default function PettyCashPage() {
         expense.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         expense.receipt_number?.toLowerCase().includes(searchQuery.toLowerCase())
       const matchesCategory = !selectedCategory || expense.category === selectedCategory
-      return matchesSearch && matchesCategory
+      // Filter by current month/year
+      const expenseDate = new Date(expense.expense_date)
+      const matchesMonth = expenseDate.getFullYear() === currentDate.getFullYear() && 
+                          expenseDate.getMonth() === currentDate.getMonth()
+      return matchesSearch && matchesCategory && matchesMonth
     })
-  }, [expenses, searchQuery, selectedCategory])
+  }, [expenses, searchQuery, selectedCategory, currentDate])
 
   const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -285,15 +316,133 @@ export default function PettyCashPage() {
     }
   }
 
+  const exportCSV = () => {
+    if (!stats) return
+    
+    const monthName = currentDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric', calendar: 'gregory' })
+    
+    // Sort by date (oldest first)
+    const sortedExpenses = [...filteredExpenses].sort((a, b) => 
+      new Date(a.expense_date).getTime() - new Date(b.expense_date).getTime()
+    )
+    
+    const csvContent = [
+      ['วันที่', 'หมวดหมู่', 'รายการ', 'จำนวนเงิน', 'สถานะ', 'เลขที่ใบเสร็จ'].join(','),
+      ...sortedExpenses.map(e => [
+        new Date(e.expense_date).toLocaleDateString('th-TH', { calendar: 'gregory' }),
+        EXPENSE_CATEGORIES.find(c => c.value === e.category)?.label || (e.category === 'income' ? 'เติมเงิน' : e.category),
+        e.description,
+        e.amount,
+        e.status === 'approved' ? 'อนุมัติ' : e.status === 'pending' ? 'รออนุมัติ' : 'ปฏิเสธ',
+        e.receipt_number || '-'
+      ].join(','))
+    ].join('\n')
+
+    const blob = new Blob([`\ufeff${csvContent}`], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `รายงานเงินสดย่อย_${monthName}.csv`
+    link.click()
+    setShowExportMenu(false)
+  }
+
+  const printReport = () => {
+    if (!stats) return
+    
+    const monthName = currentDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric', calendar: 'gregory' })
+    
+    // Sort by date (oldest first)
+    const sortedExpenses = [...filteredExpenses].sort((a, b) => 
+      new Date(a.expense_date).getTime() - new Date(b.expense_date).getTime()
+    )
+    
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+    
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>รายงานเงินสดย่อย ${monthName}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 15px; font-size: 12px; }
+          h1 { text-align: center; color: #5C4A32; font-size: 18px; margin-bottom: 10px; }
+          p { font-size: 12px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+          th, td { border: 1px solid #ddd; padding: 6px; text-align: left; font-size: 11px; }
+          th { background-color: #A67B5B; color: white; font-size: 11px; }
+          tr:nth-child(even) { background-color: #f9f9f9; }
+          .text-right { text-align: right; }
+          @media print {
+            body { margin: 0; font-size: 10px; }
+            th, td { font-size: 10px; padding: 4px; }
+          }
+        </style>
+      </head>
+      <body>
+        <h1>รายงานเงินสดย่อย ${monthName}</h1>
+        <p style="text-align: center; font-size: 14px; margin-bottom: 20px;">ตั้งวงเงินสดย่อย : 5,000.00 บาท</p>
+        <table>
+          <thead>
+            <tr>
+              <th>วันที่</th>
+              <th>รายการ</th>
+              <th>รายละเอียด</th>
+              <th class="text-right">เงินสดรับ</th>
+              <th class="text-right">เงินสดจ่าย</th>
+              <th>เลขที่ใบเสร็จ</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sortedExpenses.map(e => `
+              <tr>
+                <td>${new Date(e.expense_date).toLocaleDateString('th-TH', { calendar: 'gregory' })}</td>
+                <td>${EXPENSE_CATEGORIES.find(c => c.value === e.category)?.label || (e.category === 'income' ? 'เติมเงิน' : e.category)}</td>
+                <td>${e.description}</td>
+                <td class="text-right">${e.category === 'income' ? Math.abs(e.amount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
+                <td class="text-right">${e.category !== 'income' ? e.amount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
+                <td>${e.receipt_number || '-'}</td>
+              </tr>
+            `).join('')}
+            <tr style="font-weight: bold; background-color: #f5f5f5;">
+              <td colspan="3" style="text-align: right;">ยอดคงเหลือ</td>
+              <td class="text-right" colspan="2">${stats.currentBalance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="no-print" style="margin-top: 20px; text-align: center;">
+          <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">พิมพ์ / บันทึก PDF</button>
+        </div>
+        <style>
+          @media print {
+            .no-print { display: none !important; }
+          }
+        </style>
+      </body>
+      </html>
+    `
+    
+    printWindow.document.write(htmlContent)
+    printWindow.document.close()
+    setShowExportMenu(false)
+  }
+
   const exportReport = () => {
     if (!stats) return
     
-    const monthName = currentDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })
+    const monthName = currentDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric', calendar: 'gregory' })
+    
+    // Sort by date (oldest first)
+    const sortedExpenses = [...filteredExpenses].sort((a, b) => 
+      new Date(a.expense_date).getTime() - new Date(b.expense_date).getTime()
+    )
+    
     const csvContent = [
       ['วันที่', 'หมวดหมู่', 'รายการ', 'จำนวนเงิน', 'สถานะ', 'เลขที่ใบเสร็จ'].join(','),
-      ...filteredExpenses.map(e => [
-        new Date(e.expense_date).toLocaleDateString('th-TH'),
-        EXPENSE_CATEGORIES.find(c => c.value === e.category)?.label || e.category,
+      ...sortedExpenses.map(e => [
+        new Date(e.expense_date).toLocaleDateString('th-TH', { calendar: 'gregory' }),
+        EXPENSE_CATEGORIES.find(c => c.value === e.category)?.label || (e.category === 'income' ? 'เติมเงิน' : e.category),
         e.description,
         e.amount,
         e.status === 'approved' ? 'อนุมัติ' : e.status === 'pending' ? 'รออนุมัติ' : 'ปฏิเสธ',
@@ -319,7 +468,8 @@ export default function PettyCashPage() {
     }
 
     try {
-      const { error } = await supabase
+      // 1. Update fund balance
+      const { error: updateError } = await supabase
         .from('petty_cash_funds')
         .update({ 
           current_balance: fund.current_balance + amount,
@@ -327,9 +477,25 @@ export default function PettyCashPage() {
         })
         .eq('id', fund.id)
 
-      if (error) throw error
+      if (updateError) throw updateError
+
+      // 2. Create income entry in petty_cash_expenses
+      const { error: insertError } = await supabase
+        .from('petty_cash_expenses')
+        .insert({
+          fund_id: fund.id,
+          expense_date: fundDate,
+          amount: -amount, // negative for income
+          category: 'income',
+          description: fundDescription || 'เติมเงินสดย่อย',
+          receipt_number: null,
+          status: 'approved'
+        })
+
+      if (insertError) throw insertError
 
       setFundAmount('')
+      setFundDescription('')
       setFundDate(new Date().toISOString().split('T')[0])
       setShowFundModal(false)
       await fetchFundAndExpenses()
@@ -391,7 +557,9 @@ export default function PettyCashPage() {
           const amount = withdrawal > 0 ? withdrawal : deposit
           const matchedExpense = expenses.find(exp => {
             const expDate = new Date(exp.expense_date).toISOString().split('T')[0]
-            return expDate === isoDate && Math.abs(exp.amount - amount) < 0.01
+            // For withdrawals, match positive amounts; for deposits, match negative amounts (income records)
+            const expAmount = withdrawal > 0 ? exp.amount : -exp.amount
+            return expDate === isoDate && Math.abs(expAmount - amount) < 0.01
           })
           
           if (date && (withdrawal > 0 || deposit > 0)) {
@@ -422,7 +590,8 @@ export default function PettyCashPage() {
   const handleImportStatementTransactions = async () => {
     if (!fund) return
     
-    const unmatchedTransactions = csvTransactions.filter(tx => !tx.matched && tx.withdrawal > 0)
+    // Include both withdrawals (expenses) and deposits (income)
+    const unmatchedTransactions = csvTransactions.filter(tx => !tx.matched && (tx.withdrawal > 0 || tx.deposit > 0))
     if (unmatchedTransactions.length === 0) {
       alert('ไม่มีรายการใหม่ที่ต้องนำเข้า')
       return
@@ -430,6 +599,17 @@ export default function PettyCashPage() {
 
     try {
       let importedCount = 0
+      let skippedCount = 0
+      
+      // Check for existing transactions before importing
+      const { data: existingExpenses } = await supabase
+        .from('petty_cash_expenses')
+        .select('expense_date, description, amount')
+        .eq('fund_id', fund.id)
+      
+      const existingSet = new Set(
+        (existingExpenses || []).map(e => `${e.expense_date}|${e.description}|${Math.abs(e.amount)}`)
+      )
       
       for (const tx of unmatchedTransactions) {
         // Convert date format
@@ -442,30 +622,84 @@ export default function PettyCashPage() {
           isoDate = `${year}-${month}-${day}`
         }
 
-        // Add as new expense
-        const { error } = await supabase
-          .from('petty_cash_expenses')
-          .insert({
-            fund_id: fund.id,
-            expense_date: isoDate,
-            amount: tx.withdrawal,
-            category: 'other',
-            description: `${tx.type} - ${tx.details}`,
-            receipt_number: null,
-            status: 'approved'
-          })
+        // Check if this transaction already exists
+        const description = tx.withdrawal > 0 
+          ? `${tx.type} - ${tx.details}`
+          : `เงินเข้า - ${tx.type} - ${tx.details}`
+        const amount = tx.withdrawal > 0 ? tx.withdrawal : tx.deposit
+        const key = `${isoDate}|${description}|${amount}`
+        
+        if (existingSet.has(key)) {
+          skippedCount++
+          continue
+        }
 
-        if (!error) {
-          importedCount++
+        if (tx.withdrawal > 0) {
+          // Add as expense (withdrawal)
+          const { error } = await supabase
+            .from('petty_cash_expenses')
+            .insert({
+              fund_id: fund.id,
+              expense_date: isoDate,
+              amount: tx.withdrawal,
+              category: 'other',
+              description: `${tx.type} - ${tx.details}`,
+              receipt_number: null,
+              status: 'approved'
+            })
+          if (!error) importedCount++
+        } else if (tx.deposit > 0) {
+          // Add as income/deposit - create a special income record
+          const { error } = await supabase
+            .from('petty_cash_expenses')
+            .insert({
+              fund_id: fund.id,
+              expense_date: isoDate,
+              amount: -tx.deposit,
+              category: 'income',
+              description: `เงินเข้า - ${tx.type} - ${tx.details}`,
+              receipt_number: null,
+              status: 'approved'
+            })
+          if (!error) importedCount++
         }
       }
 
       // Update fund balance
-      const totalImported = unmatchedTransactions.reduce((sum, tx) => sum + tx.withdrawal, 0)
+      const importedWithdrawals = unmatchedTransactions
+        .filter(tx => tx.withdrawal > 0 && !existingSet.has(`${(() => {
+          const dateParts = tx.date.split('-')
+          let isoDate = tx.date
+          if (dateParts.length === 3) {
+            const day = dateParts[0]
+            const month = dateParts[1]
+            const year = '20' + dateParts[2]
+            isoDate = `${year}-${month}-${day}`
+          }
+          return `${isoDate}|${tx.type} - ${tx.details}|${tx.withdrawal}`
+        })()}`))
+        .reduce((sum, tx) => sum + tx.withdrawal, 0)
+      
+      const importedDeposits = unmatchedTransactions
+        .filter(tx => tx.deposit > 0 && !existingSet.has(`${(() => {
+          const dateParts = tx.date.split('-')
+          let isoDate = tx.date
+          if (dateParts.length === 3) {
+            const day = dateParts[0]
+            const month = dateParts[1]
+            const year = '20' + dateParts[2]
+            isoDate = `${year}-${month}-${day}`
+          }
+          return `${isoDate}|เงินเข้า - ${tx.type} - ${tx.details}|${tx.deposit}`
+        })()}`))
+        .reduce((sum, tx) => sum + tx.deposit, 0)
+      
+      const netChange = importedDeposits - importedWithdrawals
+      
       await supabase
         .from('petty_cash_funds')
         .update({ 
-          current_balance: fund.current_balance - totalImported,
+          current_balance: fund.current_balance + netChange,
           updated_at: new Date().toISOString()
         })
         .eq('id', fund.id)
@@ -473,8 +707,8 @@ export default function PettyCashPage() {
       await fetchFundAndExpenses()
       setCsvTransactions([])
       setShowStatementModal(false)
-      const skippedCount = csvTransactions.filter(tx => tx.matched && tx.withdrawal > 0).length
-      alert(`นำเข้าสำเร็จ ${importedCount} รายการ (ข้าม ${skippedCount} รายการที่มีอยู่แล้ว)`)
+      const alreadyMatchedCount = csvTransactions.filter(tx => tx.matched && (tx.withdrawal > 0 || tx.deposit > 0)).length
+      alert(`นำเข้าสำเร็จ ${importedCount} รายการ (ข้าม ${skippedCount + alreadyMatchedCount} รายการที่มีอยู่แล้ว)${importedCount > 0 ? ` - เงินออก: ฿${importedWithdrawals.toLocaleString()}, เงินเข้า: ฿${importedDeposits.toLocaleString()}` : ''}`)
     } catch (error) {
       console.error('Error importing transactions:', error)
       alert('ไม่สามารถนำเข้ารายการได้')
@@ -548,6 +782,7 @@ export default function PettyCashPage() {
         .update({
           category: editForm.category,
           description: editForm.description,
+          status: editForm.status,
           updated_at: new Date().toISOString()
         })
         .eq('id', editingExpense.id)
@@ -572,17 +807,39 @@ export default function PettyCashPage() {
           <Banknote className="h-8 w-8 text-[#A67B5B] mt-1" />
           <div>
             <h1 className="text-2xl font-bold text-[#5C4A32]">เงินสดย่อย</h1>
-            <p className="text-[#8B7355]">วงเงินรายเดือน {MONTHLY_FUND.toLocaleString()} บาท</p>
+            <p className="text-[#8B7355]">จัดการเงินสดย่อย</p>
           </div>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={exportReport}
-            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#A67B5B] bg-white text-[#A67B5B] text-sm whitespace-nowrap hover:bg-[#A67B5B]/10 transition-all shadow-sm"
-          >
-            <Download className="h-4 w-4" />
-            ส่งออกรายงาน
-          </button>
+          <div ref={exportMenuRef} className="relative">
+            <button
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#A67B5B] bg-white text-[#A67B5B] text-sm whitespace-nowrap hover:bg-[#A67B5B]/10 transition-all shadow-sm"
+            >
+              <Download className="h-4 w-4" />
+              ส่งออกรายงาน
+              <ChevronDown className="h-3 w-3" />
+            </button>
+            
+            {showExportMenu && (
+              <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                <button
+                  onClick={printReport}
+                  className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <Printer className="h-4 w-4" />
+                  Print Preview / PDF
+                </button>
+                <button
+                  onClick={exportCSV}
+                  className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <FileDown className="h-4 w-4" />
+                  Export CSV
+                </button>
+              </div>
+            )}
+          </div>
           <button
             onClick={() => setShowStatementModal(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#8B7355] bg-white text-[#8B7355] text-sm whitespace-nowrap hover:bg-[#8B7355]/10 transition-all shadow-sm"
@@ -617,7 +874,7 @@ export default function PettyCashPage() {
           <ChevronLeft className="h-5 w-5 text-[#5C4A32]" />
         </button>
         <span className="text-base font-medium text-[#5C4A32]">
-          {currentDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })}
+          {currentDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric', calendar: 'gregory' })}
         </span>
         <button
           onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
@@ -629,78 +886,36 @@ export default function PettyCashPage() {
 
       {/* Statistics Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           <Card className="bg-white border-gray-200">
-            <div className="p-4 text-center">
-              <Wallet className="h-6 w-6 text-black mx-auto mb-2" />
-              <p className="text-xs text-black">วงเงินตั้งต้น</p>
-              <p className="text-2xl font-bold text-black">฿{stats.initialAmount.toLocaleString()}</p>
+            <div className="p-4 flex flex-col items-center justify-center h-full min-h-[120px]">
+              <Banknote className="h-6 w-6 text-black mb-2" />
+              <p className="text-xs text-black text-center whitespace-nowrap">ยอดยกมา+เติมเงิน</p>
+              <p className="text-lg font-bold text-green-600 text-center">฿{stats.totalReplenishments.toLocaleString()}</p>
             </div>
           </Card>
           <Card className="bg-white border-gray-200">
-            <div className="p-4 text-center">
-              <Receipt className="h-6 w-6 text-black mx-auto mb-2" />
-              <p className="text-xs text-black">ใช้ไปแล้ว</p>
-              <p className="text-2xl font-bold text-black">฿{stats.totalExpenses.toLocaleString()}</p>
+            <div className="p-4 flex flex-col items-center justify-center h-full min-h-[120px]">
+              <Receipt className="h-6 w-6 text-black mb-2" />
+              <p className="text-xs text-black text-center whitespace-nowrap">ใช้ไปแล้ว</p>
+              <p className="text-lg font-bold text-black text-center">฿{stats.totalExpenses.toLocaleString()}</p>
             </div>
           </Card>
           <Card className="bg-white border-gray-200">
-            <div className="p-4 text-center">
-              <Wallet className="h-6 w-6 text-black mx-auto mb-2" />
-              <p className="text-xs text-black">คงเหลือ</p>
-              <p className="text-2xl font-bold text-black">฿{stats.currentBalance.toLocaleString()}</p>
+            <div className="p-4 flex flex-col items-center justify-center h-full min-h-[120px]">
+              <Wallet className="h-6 w-6 text-black mb-2" />
+              <p className="text-xs text-black text-center whitespace-nowrap">คงเหลือ</p>
+              <p className="text-lg font-bold text-black text-center">฿{stats.currentBalance.toLocaleString()}</p>
             </div>
           </Card>
           <Card className="bg-white border-gray-200">
-            <div className="p-4 text-center">
-              <TrendingDown className="h-6 w-6 text-black mx-auto mb-2" />
-              <p className="text-xs text-black">เปอร์เซ็นต์ที่เหลือ</p>
-              <p className="text-2xl font-bold text-black">{stats.remainingPercentage.toFixed(1)}%</p>
+            <div className="p-4 flex flex-col items-center justify-center h-full min-h-[120px]">
+              <TrendingDown className="h-6 w-6 text-black mb-2" />
+              <p className="text-xs text-black text-center whitespace-nowrap">เปอร์เซ็นต์ที่เหลือ</p>
+              <p className="text-lg font-bold text-black text-center">{stats.remainingPercentage.toFixed(1)}%</p>
             </div>
           </Card>
         </div>
-      )}
-
-      {/* Low Balance Warning */}
-      {stats && stats.remainingPercentage < 20 && (
-        <div className="mb-6 p-4 bg-[#FFEBEE] border border-[#EF5350] rounded-lg flex items-center gap-3">
-          <AlertCircle className="h-5 w-5 text-[#C62828]" />
-          <div>
-            <p className="font-medium text-[#C62828]">วงเงินใกล้หมด</p>
-            <p className="text-sm text-[#C62828]">คงเหลืออีก {stats.remainingPercentage.toFixed(0)}% ควรเติมเงินสดย่อย</p>
-          </div>
-          <button
-            onClick={handleReplenish}
-            className="ml-auto px-4 py-2 bg-[#A67B5B] text-white rounded-lg text-sm hover:bg-[#8B7355] transition-colors"
-          >
-            เติมเงินใหม่
-          </button>
-        </div>
-      )}
-
-      {/* Category Breakdown */}
-      {stats && Object.keys(stats.categoryTotals).length > 0 && (
-        <Card className="mb-6 border-[#E8E0D5]">
-          <div className="p-4 border-b border-[#E8E0D5] bg-[#FAF8F5]">
-            <h2 className="text-base font-bold text-[#5C4A32]">สรุปตามหมวดหมู่</h2>
-          </div>
-          <div className="p-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {Object.entries(stats.categoryTotals).map(([category, total]) => {
-                const cat = EXPENSE_CATEGORIES.find(c => c.value === category)
-                return (
-                  <div key={category} className="flex items-center gap-3 p-3 bg-[#F5F0E8] rounded-lg">
-                    <span className="text-2xl">{cat?.icon || '📋'}</span>
-                    <div>
-                      <p className="text-xs text-[#8B7355]">{cat?.label || category}</p>
-                      <p className="font-bold text-[#5C4A32]">฿{total.toLocaleString()}</p>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </Card>
       )}
 
       {/* Search and Filter */}
@@ -726,13 +941,50 @@ export default function PettyCashPage() {
         </select>
       </div>
 
-      {/* Calendar View */}
-      <Card className="border-[#E8E0D5]">
+      {/* Category Breakdown */}
+      {stats && Object.keys(stats.categoryTotals).length > 0 && (
+        <Card className="mb-6 border-[#E8E0D5]">
+          <div className="p-4 border-b border-[#E8E0D5] bg-[#FAF8F5]">
+            <h2 className="text-base font-bold text-[#5C4A32]">สรุปตามหมวดหมู่</h2>
+          </div>
+          <div className="p-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {Object.entries(stats.categoryTotals)
+                .filter(([category]) => category !== 'income')
+                .map(([category, total]) => {
+                const cat = EXPENSE_CATEGORIES.find(c => c.value === category)
+                // Show positive value for income (stored as negative in DB)
+                const displayTotal = category === 'income' ? Math.abs(total) : total
+                return (
+                  <div 
+                    key={category} 
+                    onClick={() => {
+                      setSelectedCategory(category)
+                      // Scroll to expense list
+                      document.getElementById('expense-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    }}
+                    className="flex items-center gap-3 p-3 bg-[#F5F0E8] rounded-lg cursor-pointer hover:bg-[#E8E0D5] transition-colors"
+                  >
+                    <span className="text-2xl">{cat?.icon || '📋'}</span>
+                    <div>
+                      <p className="text-xs text-[#8B7355]">{cat?.label || category}</p>
+                      <p className="font-bold text-[#5C4A32]">฿{displayTotal.toLocaleString()}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Calendar View - Daily Summary */}
+      <Card className="border-[#E8E0D5] mb-6">
         <div className="p-4 border-b border-[#E8E0D5] bg-[#FAF8F5]">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-[#5C4A32]">ปฏิทินรายการค่าใช้จ่าย</h2>
+            <h2 className="text-base font-bold text-[#5C4A32]">สรุปรายการค่าใช้จ่ายรายวัน</h2>
             <div className="text-sm text-[#8B7355]">
-              {filteredExpenses.length} รายการ | ฿{filteredExpenses.reduce((sum, e) => sum + e.amount, 0).toLocaleString()}
+              {filteredExpenses.filter(e => e.category !== 'income').length} รายการ | ฿{filteredExpenses.filter(e => e.category !== 'income').reduce((sum, e) => sum + e.amount, 0).toLocaleString()}
             </div>
           </div>
         </div>
@@ -748,7 +1000,7 @@ export default function PettyCashPage() {
             ))}
           </div>
           
-          {/* Calendar Days */}
+          {/* Calendar Days - Summary Only */}
           <div className="grid grid-cols-7 gap-1">
             {(() => {
               const year = currentDate.getFullYear()
@@ -762,56 +1014,37 @@ export default function PettyCashPage() {
               
               // Empty cells for days before the 1st
               for (let i = 0; i < startDayOfWeek; i++) {
-                days.push(<div key={`empty-${i}`} className="h-24 bg-gray-50 rounded" />)
+                days.push(<div key={`empty-${i}`} className="h-20 bg-gray-50 rounded" />)
               }
               
               // Days of the month
               for (let day = 1; day <= daysInMonth; day++) {
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-                const dayExpenses = filteredExpenses.filter(e => e.expense_date === dateStr)
+                const dayExpenses = filteredExpenses.filter(e => e.expense_date === dateStr && e.category !== 'income')
                 const dayTotal = dayExpenses.reduce((sum, e) => sum + e.amount, 0)
                 const isToday = new Date().toDateString() === new Date(year, month, day).toDateString()
+                const hasExpenses = dayExpenses.length > 0
                 
                 days.push(
                   <div 
                     key={day} 
-                    className={`h-24 border rounded p-1 overflow-y-auto ${
-                      isToday ? 'border-[#A67B5B] bg-[#FAF8F5]' : 'border-[#E8E0D5] bg-white hover:bg-[#FAF8F5]'
+                    className={`h-20 border rounded p-2 flex flex-col justify-between cursor-pointer transition-colors ${
+                      isToday ? 'border-[#A67B5B] bg-[#FAF8F5]' : hasExpenses ? 'border-[#E8E0D5] bg-white hover:bg-[#F5F0E8]' : 'border-[#E8E0D5] bg-white'
                     }`}
+                    onClick={() => {
+                      if (hasExpenses) {
+                        // Scroll to the list section for this date
+                        document.getElementById(`date-${dateStr}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                      }
+                    }}
                   >
-                    <div className={`text-xs font-medium mb-1 ${isToday ? 'text-[#A67B5B]' : 'text-[#5C4A32]'}`}>
+                    <div className={`text-sm font-medium ${isToday ? 'text-[#A67B5B]' : 'text-[#5C4A32]'}`}>
                       {day}
                     </div>
-                    {dayExpenses.length > 0 && (
-                      <div className="space-y-1">
-                        {dayExpenses.slice(0, 3).map((expense, idx) => {
-                          const category = EXPENSE_CATEGORIES.find(c => c.value === expense.category)
-                          return (
-                            <div 
-                              key={expense.id}
-                              onClick={() => {
-                                setEditingExpense(expense)
-                                setEditForm({
-                                  category: expense.category,
-                                  description: expense.description,
-                                  amount: expense.amount.toString()
-                                })
-                                setShowEditModal(true)
-                              }}
-                              className="text-xs p-1 bg-[#F5F0E8] rounded cursor-pointer hover:bg-[#E8E0D5] truncate"
-                              title={`${category?.icon} ${expense.description} - ฿${expense.amount.toLocaleString()}`}
-                            >
-                              <span className="mr-1">{category?.icon}</span>
-                              ฿{expense.amount.toLocaleString()}
-                            </div>
-                          )
-                        })}
-                        {dayExpenses.length > 3 && (
-                          <div className="text-xs text-[#8B7355] text-center">+{dayExpenses.length - 3} รายการ</div>
-                        )}
-                        <div className="text-xs font-bold text-[#E65100] text-right pt-1 border-t border-[#E8E0D5]">
-                          รวม: ฿{dayTotal.toLocaleString()}
-                        </div>
+                    {hasExpenses && (
+                      <div className="text-right">
+                        <div className="text-xs text-[#8B7355]">{dayExpenses.length} รายการ</div>
+                        <div className="text-sm font-bold text-[#E65100]">฿{dayTotal.toLocaleString()}</div>
                       </div>
                     )}
                   </div>
@@ -822,18 +1055,126 @@ export default function PettyCashPage() {
             })()}
           </div>
         </div>
-        
-        {/* Legend */}
-        <div className="px-4 pb-4">
-          <div className="flex flex-wrap gap-2 text-xs text-[#8B7355]">
-            <span className="font-medium">หมวดหมู่:</span>
-            {EXPENSE_CATEGORIES.map(cat => (
-              <span key={cat.value} className="flex items-center gap-1">
-                <span>{cat.icon}</span>
-                <span>{cat.label}</span>
-              </span>
-            ))}
+      </Card>
+
+      {/* Income/Replenishment List */}
+      {filteredExpenses.filter(e => e.category === 'income').length > 0 && (
+        <Card className="border-[#E8E0D5] mb-6">
+          <div className="p-4 border-b border-[#E8E0D5] bg-[#FAF8F5]">
+            <h2 className="text-base font-bold text-[#5C4A32]">รายการเติมเงิน</h2>
           </div>
+          <div className="divide-y divide-[#E8E0D5]">
+            {filteredExpenses
+              .filter(e => e.category === 'income')
+              .map((expense) => (
+                <div 
+                  key={expense.id} 
+                  className="p-4 flex items-center justify-between hover:bg-[#FAF8F5]"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-green-100 rounded-lg">
+                      <Banknote className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-[#5C4A32]">{expense.description}</p>
+                      <p className="text-sm text-[#8B7355]">
+                        {new Date(expense.expense_date).toLocaleDateString('th-TH', { calendar: 'gregory' })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <p className="font-bold text-green-600">+฿{Math.abs(expense.amount).toLocaleString()}</p>
+                    <button
+                      onClick={() => handleDeleteExpense(expense.id, expense.amount)}
+                      className="p-1.5 hover:bg-red-100 rounded text-red-500 transition-colors"
+                      title="ลบรายการ"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Expenses List - Original Style */}
+      <Card id="expense-list" className="border-[#E8E0D5]">
+        <div className="p-4 border-b border-[#E8E0D5] bg-[#FAF8F5]">
+          <h2 className="text-base font-bold text-[#5C4A32]">รายการค่าใช้จ่าย</h2>
+        </div>
+        <div className="divide-y divide-[#E8E0D5]">
+          {filteredExpenses.filter(e => e.category !== 'income').length === 0 ? (
+            <div className="p-8 text-center">
+              <Receipt className="h-12 w-12 text-[#D4C9B8] mx-auto mb-3" />
+              <p className="text-[#8B7355]">ไม่มีรายการค่าใช้จ่ายในเดือนนี้</p>
+            </div>
+          ) : (
+            filteredExpenses
+              .filter(e => e.category !== 'income')
+              .map((expense) => {
+              const category = EXPENSE_CATEGORIES.find(c => c.value === expense.category)
+              return (
+                <div 
+                  key={expense.id} 
+                  id={`date-${expense.expense_date}`}
+                  className="p-4 flex items-center justify-between hover:bg-[#FAF8F5]"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-[#F5F0E8] rounded-lg">
+                      <span className="text-xl">{category?.icon || '📋'}</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-[#5C4A32]">{expense.description}</p>
+                      <p className="text-sm text-[#8B7355]">
+                        {new Date(expense.expense_date).toLocaleDateString('th-TH', { calendar: 'gregory' })} • <span className={expense.category === 'other' ? 'text-red-500 font-semibold' : ''}>{category?.label}</span>
+                      </p>
+                      {expense.receipt_number && (
+                        <p className="text-xs text-[#A67B52]">เลขที่: {expense.receipt_number}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-[#E65100]">฿{expense.amount.toLocaleString()}</p>
+                    <div className="flex items-center gap-2 justify-end mt-1">
+                      {expense.status === 'approved' ? (
+                        <span className="text-xs text-[#2E7D32] flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3" /> อนุมัติ
+                        </span>
+                      ) : expense.status === 'pending' ? (
+                        <span className="text-xs text-[#F57C00]">รออนุมัติ</span>
+                      ) : (
+                        <span className="text-xs text-[#C62828]">ปฏิเสธ</span>
+                      )}
+                      <button
+                        onClick={() => {
+                          setEditingExpense(expense)
+                          setEditForm({
+                            category: expense.category,
+                            description: expense.description,
+                            amount: expense.amount.toString(),
+                            status: expense.status
+                          })
+                          setShowEditModal(true)
+                        }}
+                        className="p-1 hover:bg-blue-100 rounded text-blue-500 transition-colors"
+                        title="แก้ไขรายการ"
+                      >
+                        <Edit3 className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteExpense(expense.id, expense.amount)}
+                        className="p-1 hover:bg-red-100 rounded text-red-500 transition-colors"
+                        title="ลบรายการ"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })
+          )}
         </div>
       </Card>
 
@@ -852,10 +1193,6 @@ export default function PettyCashPage() {
             </div>
             
             <form onSubmit={handleAddFund} className="p-4 space-y-4">
-              <div className="p-3 bg-[#E8F5E9] rounded-lg">
-                <p className="text-sm text-[#2E7D32]">วงเงินคงเหลือปัจจุบัน: <span className="font-bold">฿{fund.current_balance.toLocaleString()}</span></p>
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-[#5C4A32] mb-1">วันที่เติมเงิน</label>
                 <Input
@@ -876,6 +1213,16 @@ export default function PettyCashPage() {
                   onChange={(e) => setFundAmount(e.target.value)}
                   placeholder="0.00"
                   required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#5C4A32] mb-1">คำอธิบาย (ไม่บังคับ)</label>
+                <Input
+                  type="text"
+                  value={fundDescription}
+                  onChange={(e) => setFundDescription(e.target.value)}
+                  placeholder="เช่น เติมเงินประจำเดือน หรือ รับโอนเงิน"
                 />
               </div>
 
@@ -1040,7 +1387,7 @@ export default function PettyCashPage() {
                     <h4 className="font-medium text-black">รายการจาก Statement ({csvTransactions.length} รายการ)</h4>
                     <p className="text-xs text-gray-500 mt-1">
                       {csvTransactions.filter(tx => tx.matched).length} รายการตรงกับในระบบ | 
-                      {csvTransactions.filter(tx => !tx.matched && tx.withdrawal > 0).length} รายการใหม่
+                      {csvTransactions.filter(tx => !tx.matched && (tx.withdrawal > 0 || tx.deposit > 0)).length} รายการใหม่
                     </p>
                   </div>
                   <div className="p-3 max-h-64 overflow-y-auto">
@@ -1130,10 +1477,10 @@ export default function PettyCashPage() {
                 <Button 
                   type="button"
                   onClick={handleImportStatementTransactions}
-                  disabled={csvTransactions.filter(tx => !tx.matched && tx.withdrawal > 0).length === 0}
+                  disabled={csvTransactions.filter(tx => !tx.matched && (tx.withdrawal > 0 || tx.deposit > 0)).length === 0}
                   className="flex-1 bg-[#A67B5B] border-2 border-[#A67B5B] !text-white hover:bg-[#8B7355] disabled:opacity-50"
                 >
-                  นำเข้ารายการใหม่ ({csvTransactions.filter(tx => !tx.matched && tx.withdrawal > 0).length})
+                  นำเข้ารายการใหม่ ({csvTransactions.filter(tx => !tx.matched && (tx.withdrawal > 0 || tx.deposit > 0)).length})
                 </Button>
               </div>
             </div>
@@ -1196,6 +1543,19 @@ export default function PettyCashPage() {
                   className="bg-gray-100"
                 />
                 <p className="text-xs text-gray-500 mt-1">* ไม่สามารถแก้ไขจำนวนเงินได้ (ต้องลบแล้วเพิ่มใหม่)</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">สถานะ</label>
+                <select
+                  value={editForm.status}
+                  onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded-md bg-white text-black"
+                >
+                  <option value="pending">รออนุมัติ</option>
+                  <option value="approved">อนุมัติ</option>
+                  <option value="rejected">ปฏิเสธ</option>
+                </select>
               </div>
 
               <div className="flex gap-3 pt-2">
