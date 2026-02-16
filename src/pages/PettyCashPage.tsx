@@ -14,7 +14,8 @@ import {
   X,
   Download,
   FileText,
-  Trash2
+  Trash2,
+  Edit3
 } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -61,11 +62,29 @@ export default function PettyCashPage() {
   const [fund, setFund] = useState<PettyCashFund | null>(null)
   const [expenses, setExpenses] = useState<PettyCashExpense[]>([])
   const [showExpenseModal, setShowExpenseModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingExpense, setEditingExpense] = useState<PettyCashExpense | null>(null)
+  const [editForm, setEditForm] = useState({
+    category: '',
+    description: '',
+    amount: ''
+  })
   const [showFundModal, setShowFundModal] = useState(false)
   const [fundAmount, setFundAmount] = useState('')
   const [fundDate, setFundDate] = useState(new Date().toISOString().split('T')[0])
   const [showStatementModal, setShowStatementModal] = useState(false)
-  const [csvTransactions, setCsvTransactions] = useState<Array<{date: string, time: string, type: string, withdrawal: number, deposit: number, balance: number, channel: string, details: string}>>([])
+  const [csvTransactions, setCsvTransactions] = useState<Array<{
+    date: string, 
+    time: string, 
+    type: string, 
+    withdrawal: number, 
+    deposit: number, 
+    balance: number, 
+    channel: string, 
+    details: string,
+    matched?: boolean,
+    existingExpenseId?: string
+  }>>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   
@@ -491,7 +510,6 @@ export default function PettyCashPage() {
     if (!confirm('ต้องการลบรายการนี้ใช่หรือไม่?')) return
 
     try {
-      // Delete expense from database
       const { error: deleteError } = await supabase
         .from('petty_cash_expenses')
         .delete()
@@ -499,7 +517,6 @@ export default function PettyCashPage() {
 
       if (deleteError) throw deleteError
 
-      // Update fund balance - add back the expense amount
       const { error: fundError } = await supabase
         .from('petty_cash_funds')
         .update({ 
@@ -510,7 +527,6 @@ export default function PettyCashPage() {
 
       if (fundError) throw fundError
 
-      // Refresh data
       await fetchFundAndExpenses()
       alert('ลบรายการเรียบร้อย')
     } catch (error) {
@@ -519,11 +535,42 @@ export default function PettyCashPage() {
     }
   }
 
-  return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div className="flex items-start gap-3">
+  const handleEditExpense = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingExpense) return
+
+    try {
+      const { error } = await supabase
+        .from('petty_cash_expenses')
+        .update({
+          category: editForm.category,
+          description: editForm.description,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingExpense.id)
+
+      if (error) throw error
+
+      setShowEditModal(false)
+      setEditingExpense(null)
+      await fetchFundAndExpenses()
+      alert('แก้ไขรายการเรียบร้อย')
+    } catch (error) {
+      console.error('Error editing expense:', error)
+      alert('ไม่สามารถแก้ไขรายการได้')
+    }
+  }
+
+  const handleImportStatementTransactions = async () => {
+      // Convert date format
+      const dateParts = tx.date.split('-')
+      let isoDate = tx.date
+      if (dateParts.length === 3) {
+        const day = dateParts[0]
+        const month = dateParts[1]
+        const year = '20' + dateParts[2]
+        isoDate = `${year}-${month}-${day}`
+      }
           <Banknote className="h-8 w-8 text-[#A67B5B] mt-1" />
           <div>
             <h1 className="text-2xl font-bold text-[#5C4A32]">เงินสดย่อย</h1>
@@ -723,6 +770,21 @@ export default function PettyCashPage() {
                       ) : (
                         <span className="text-xs text-[#C62828]">ปฏิเสธ</span>
                       )}
+                      <button
+                        onClick={() => {
+                          setEditingExpense(expense)
+                          setEditForm({
+                            category: expense.category,
+                            description: expense.description,
+                            amount: expense.amount.toString()
+                          })
+                          setShowEditModal(true)
+                        }}
+                        className="p-1 hover:bg-blue-100 rounded text-blue-500 transition-colors"
+                        title="แก้ไขรายการ"
+                      >
+                        <Edit3 className="h-4 w-4" />
+                      </button>
                       <button
                         onClick={() => handleDeleteExpense(expense.id, expense.amount)}
                         className="p-1 hover:bg-red-100 rounded text-red-500 transition-colors"
@@ -1039,6 +1101,90 @@ export default function PettyCashPage() {
                 </Button>
               </div>
             </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && editingExpense && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="text-lg font-bold text-black">แก้ไขรายการค่าใช้จ่าย</h3>
+              <button
+                onClick={() => {
+                  setShowEditModal(false)
+                  setEditingExpense(null)
+                }}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="h-5 w-5 text-black" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleEditExpense} className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">ประเภทค่าใช้จ่าย</label>
+                <Select
+                  value={editForm.category}
+                  onValueChange={(value) => setEditForm({ ...editForm, category: value })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="เลือกประเภท" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EXPENSE_CATEGORIES.map((cat) => (
+                      <SelectItem key={cat.value} value={cat.value}>
+                        <span className="mr-2">{cat.icon}</span>
+                        {cat.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">รายละเอียด</label>
+                <Input
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  placeholder="รายละเอียดค่าใช้จ่าย"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">จำนวนเงิน</label>
+                <Input
+                  type="number"
+                  value={editForm.amount}
+                  onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+                  placeholder="0.00"
+                  disabled
+                  className="bg-gray-100"
+                />
+                <p className="text-xs text-gray-500 mt-1">* ไม่สามารถแก้ไขจำนวนเงินได้ (ต้องลบแล้วเพิ่มใหม่)</p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button 
+                  type="button" 
+                  onClick={() => {
+                    setShowEditModal(false)
+                    setEditingExpense(null)
+                  }} 
+                  className="flex-1 bg-white border-2 border-gray-300 !text-black hover:bg-gray-50"
+                >
+                  ยกเลิก
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="flex-1 bg-[#A67B5B] border-2 border-[#A67B5B] !text-white hover:bg-[#8B7355]"
+                >
+                  บันทึก
+                </Button>
+              </div>
+            </form>
           </Card>
         </div>
       )}
