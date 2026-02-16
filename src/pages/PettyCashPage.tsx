@@ -1099,7 +1099,8 @@ export default function PettyCashPage() {
       )}
 
       {/* Expenses List - Original Style */}
-      <Card id="expense-list" className="border-[#E8E0D5]">
+      <div id="expense-list">
+        <Card className="border-[#E8E0D5]">
         <div className="p-4 border-b border-[#E8E0D5] bg-[#FAF8F5]">
           <h2 className="text-base font-bold text-[#5C4A32]">รายการค่าใช้จ่าย</h2>
         </div>
