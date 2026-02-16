@@ -35,6 +35,18 @@ interface Expense {
   evidence_url?: string
 }
 
+interface Contact {
+  id: string
+  name: string
+  type: 'customer' | 'seller' | 'both'
+  phone?: string
+  email?: string
+  address?: string
+  tax_id?: string
+  notes?: string
+  created_at?: string
+}
+
 const EXPENSE_CATEGORIES = [
   'ค่าน้ำ',
   'ค่าไฟ',
@@ -60,6 +72,7 @@ export default function ExpensesPage() {
   const [showModal, setShowModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
+  const [contacts, setContacts] = useState<Contact[]>([])
   
   // Google Sheets states
   const [viewMode, setViewMode] = useState<'database' | 'sheets' | 'pending'>('database')
@@ -105,6 +118,7 @@ export default function ExpensesPage() {
 
   useEffect(() => {
     fetchExpenses()
+    fetchContacts()
   }, [])
 
   const fetchExpenses = async () => {
@@ -126,6 +140,16 @@ export default function ExpensesPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Fetch contacts that are sellers or both (can supply products/services)
+  const fetchContacts = async () => {
+    const { data } = await supabase
+      .from('contacts')
+      .select('*')
+      .in('type', ['seller', 'both'])
+      .order('name')
+    if (data) setContacts(data)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -1031,13 +1055,18 @@ export default function ExpensesPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">ผู้จำหน่าย/ร้านค้า</label>
-                <input
-                  type="text"
+                <select
                   value={formData.vendor}
                   onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
-                  placeholder="เช่น การไฟฟ้า, ประปา"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
+                >
+                  <option value="">-- เลือกผู้จำหน่าย --</option>
+                  {contacts.map((contact) => (
+                    <option key={contact.id} value={contact.name}>
+                      {contact.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
