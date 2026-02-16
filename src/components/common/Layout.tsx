@@ -93,7 +93,6 @@ export default function Layout({ children }: LayoutProps) {
     {
       title: 'ตั้งค่า',
       items: [
-        { name: 'จัดการพนักงาน', href: '/employee-settings', icon: UserCog },
         { name: t('nav.settings'), href: '/settings', icon: Settings },
       ]
     }

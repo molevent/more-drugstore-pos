@@ -22,7 +22,8 @@ import {
   Receipt,
   Calendar,
   FileText,
-  BookOpen
+  BookOpen,
+  UserCog
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Card from '../components/common/Card'
@@ -205,6 +206,14 @@ export default function SettingsPage() {
         { value: '1 ผู้ใช้งาน' },
       ],
       link: '/settings/users'
+    },
+    {
+      icon: UserCog,
+      iconBg: 'bg-[#4A90A4]/10',
+      iconColor: 'text-[#4A90A4]',
+      title: 'จัดการพนักงาน',
+      subtitle: 'ตั้งค่าพนักงานและสิทธิ์การใช้งาน',
+      link: '/employee-settings'
     },
     {
       icon: Warehouse,
