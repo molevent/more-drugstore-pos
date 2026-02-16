@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 import { 
   Banknote, 
@@ -57,7 +56,6 @@ const EXPENSE_CATEGORIES = [
 const MONTHLY_FUND = 5000 // วงเงินสดย่อยรายเดือน
 
 export default function PettyCashPage() {
-  const navigate = useNavigate()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [fund, setFund] = useState<PettyCashFund | null>(null)
   const [expenses, setExpenses] = useState<PettyCashExpense[]>([])
@@ -66,7 +64,6 @@ export default function PettyCashPage() {
   const [fundAmount, setFundAmount] = useState('')
   const [fundDate, setFundDate] = useState(new Date().toISOString().split('T')[0])
   const [showStatementModal, setShowStatementModal] = useState(false)
-  const [statementTransactions, setStatementTransactions] = useState<Array<{date: string, description: string, amount: number, type: 'debit' | 'credit'}>>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   
