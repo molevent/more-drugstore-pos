@@ -10,7 +10,6 @@ import {
   Wallet,
   Receipt,
   TrendingDown,
-  AlertCircle,
   CheckCircle,
   X,
   Download,
@@ -279,41 +278,9 @@ export default function PettyCashPage() {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleReplenish = async () => {
-    if (!fund) return
-    
-    if (!confirm('ต้องการเติมเงินสดย่อยใหม่ (รายเดือน) ใช่หรือไม่?')) return
-
-    try {
-      // Close current fund
-      await supabase
-        .from('petty_cash_funds')
-        .update({ 
-          status: 'replenished',
-          replenished_at: new Date().toISOString()
-        })
-        .eq('id', fund.id)
-
-      // Create new fund for next month or refresh current
-      const nextMonth = currentDate.getMonth() + 2 // +1 for next month, +1 because getMonth is 0-indexed
-      const nextYear = currentDate.getFullYear()
-      
-      await supabase
-        .from('petty_cash_funds')
-        .insert({
-          month: nextMonth > 12 ? 1 : nextMonth,
-          year: nextMonth > 12 ? nextYear + 1 : nextYear,
-          initial_amount: MONTHLY_FUND,
-          current_balance: MONTHLY_FUND,
-          status: 'active'
-        })
-
-      await fetchFundAndExpenses()
-      alert('เติมเงินสดย่อยเรียบร้อย')
-      
-    } catch (error) {
-      console.error('Error replenishing fund:', error)
-    }
+    // Placeholder - not currently used
   }
 
   const exportCSV = () => {
@@ -428,33 +395,9 @@ export default function PettyCashPage() {
     setShowExportMenu(false)
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const exportReport = () => {
-    if (!stats) return
-    
-    const monthName = currentDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric', calendar: 'gregory' })
-    
-    // Sort by date (oldest first)
-    const sortedExpenses = [...filteredExpenses].sort((a, b) => 
-      new Date(a.expense_date).getTime() - new Date(b.expense_date).getTime()
-    )
-    
-    const csvContent = [
-      ['วันที่', 'หมวดหมู่', 'รายการ', 'จำนวนเงิน', 'สถานะ', 'เลขที่ใบเสร็จ'].join(','),
-      ...sortedExpenses.map(e => [
-        new Date(e.expense_date).toLocaleDateString('th-TH', { calendar: 'gregory' }),
-        EXPENSE_CATEGORIES.find(c => c.value === e.category)?.label || (e.category === 'income' ? 'เติมเงิน' : e.category),
-        e.description,
-        e.amount,
-        e.status === 'approved' ? 'อนุมัติ' : e.status === 'pending' ? 'รออนุมัติ' : 'ปฏิเสธ',
-        e.receipt_number || '-'
-      ].join(','))
-    ].join('\n')
-
-    const blob = new Blob([`\ufeff${csvContent}`], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = `รายงานเงินสดย่อย_${monthName}.csv`
-    link.click()
+    // Placeholder - replaced by exportCSV and printReport
   }
 
   const handleAddFund = async (e: React.FormEvent) => {
