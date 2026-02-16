@@ -11,7 +11,6 @@ import {
   Users,
   Wallet,
   Calendar,
-  UserCog,
   FileText,
   Percent
 } from 'lucide-react'
@@ -151,7 +150,7 @@ export default function Layout({ children }: LayoutProps) {
                       return (
                         <Link
                           key={item.name}
-                          to={item.href}
+                          to={item.href ?? '/'}
                           onClick={() => {
                             if (window.innerWidth < 1024) {
                               setSidebarOpen(false)
