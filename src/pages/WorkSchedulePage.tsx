@@ -425,7 +425,7 @@ export default function WorkSchedulePage() {
                 key={idx}
                 className={`text-xs truncate px-1 py-0.5 rounded cursor-pointer ${
                   shift.notes === 'ลา' 
-                    ? 'text-[#5C4A32] bg-[#F5F0E8] border border-[#E8E0D5]' 
+                    ? 'text-[#E65100] bg-[#FFF3E0] border border-[#FFCC80]' 
                     : 'text-[#5C4A32] bg-[#F5F0E8] hover:bg-[#E8E0D5]'
                 }`}
                 onClick={(e) => {
@@ -493,22 +493,13 @@ export default function WorkSchedulePage() {
             <button
               onClick={() => setViewMode('leave')}
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1 ${
-                viewMode === 'leave' ? 'bg-[#A67B5B] text-white shadow-sm' : 'text-gray-600'
+                viewMode === 'leave' ? 'bg-[#FF9800] text-white shadow-sm' : 'text-gray-600'
               }`}
             >
               <span>🏖️</span>
               การลา
             </button>
           </div>
-          <button
-            onClick={() => {
-              setShowLeaveModal(true)
-            }}
-            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#A67B5B] bg-white text-[#A67B5B] text-sm whitespace-nowrap hover:bg-[#A67B5B]/10 transition-all shadow-sm"
-          >
-            <span className="text-lg">🏖️</span>
-            ลา
-          </button>
           <button
             onClick={() => {
               setFormData(DEFAULT_SHIFT)
@@ -518,6 +509,15 @@ export default function WorkSchedulePage() {
           >
             <Plus className="h-4 w-4" />
             เพิ่มกะงาน
+          </button>
+          <button
+            onClick={() => {
+              setShowLeaveModal(true)
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#FF9800] bg-white text-[#FF9800] text-sm whitespace-nowrap hover:bg-[#FF9800]/10 transition-all shadow-sm"
+          >
+            <span className="text-lg">🏖️</span>
+            ลา
           </button>
         </div>
       </div>
@@ -644,9 +644,9 @@ export default function WorkSchedulePage() {
               }
               
               return filteredShifts.map((shift) => (
-                <div key={shift.id} className={`p-4 flex items-center justify-between hover:bg-[#FAF8F5] ${shift.notes === 'ลา' ? 'bg-[#F5F0E8]' : ''}`}>
+                <div key={shift.id} className={`p-4 flex items-center justify-between hover:bg-[#FAF8F5] ${shift.notes === 'ลา' ? 'bg-[#FFF3E0]' : ''}`}>
                   <div className="flex items-center gap-4">
-                    <div className={`p-2 rounded-lg ${shift.notes === 'ลา' ? 'bg-[#E8E0D5]' : 'bg-[#F5F0E8]'}`}>
+                    <div className={`p-2 rounded-lg ${shift.notes === 'ลา' ? 'bg-[#FFCC80]' : 'bg-[#F5F0E8]'}`}>
                       {shift.notes === 'ลา' ? (
                         <span className="text-xl">🏖️</span>
                       ) : (
@@ -660,7 +660,7 @@ export default function WorkSchedulePage() {
                         {shift.notes !== 'ลา' && `• ${shift.start_time} - ${shift.end_time}`}
                       </p>
                       {shift.notes && (
-                        <p className={`text-xs mt-1 ${shift.notes === 'ลา' ? 'text-[#5C4A32] font-medium' : 'text-[#A67B52]'}`}>
+                        <p className={`text-xs mt-1 ${shift.notes === 'ลา' ? 'text-[#E65100] font-medium' : 'text-[#A67B52]'}`}>
                           {shift.notes === 'ลา' ? '🏖️ ลา' : shift.notes}
                         </p>
                       )}
@@ -669,7 +669,7 @@ export default function WorkSchedulePage() {
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       {shift.notes === 'ลา' ? (
-                        <p className="text-sm font-medium text-[#5C4A32]">ลา 1 วัน</p>
+                        <p className="text-sm font-medium text-[#E65100]">ลา 1 วัน</p>
                       ) : (
                         <>
                           <p className="font-medium text-[#5C4A32]">{shift.total_hours.toFixed(1)} ชม.</p>
@@ -723,12 +723,12 @@ export default function WorkSchedulePage() {
         </Card>
       )}
 
-      {/* Leave Report View - Earth Tone Theme */}
+      {/* Leave Report View */}
       {viewMode === 'leave' && (
         <>
-          {/* Leave Summary Cards - Earth Tone */}
+          {/* Leave Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-            <Card className="bg-[#F5F0E8] border-[#D4C9B8]">
+            <Card className="bg-[#F5F0E8] border-[#E8E0D5]">
               <div className="p-4 text-center">
                 <span className="text-3xl">🏖️</span>
                 <p className="text-xs text-[#8B7355] mt-2">รายการลาทั้งหมด</p>
@@ -737,7 +737,7 @@ export default function WorkSchedulePage() {
                 </p>
               </div>
             </Card>
-            <Card className="bg-[#FAF6F0] border-[#D4C9B8]">
+            <Card className="bg-[#FAF8F5] border-[#E8E0D5]">
               <div className="p-4 text-center">
                 <span className="text-3xl">👥</span>
                 <p className="text-xs text-[#8B7355] mt-2">พนักงานที่ลา</p>
@@ -757,10 +757,10 @@ export default function WorkSchedulePage() {
             </Card>
           </div>
 
-          {/* Leave Summary by Employee - Earth Tone */}
+          {/* Leave Summary by Employee */}
           <Card className="border-[#E8E0D5] mb-6">
             <div className="p-4 border-b border-[#E8E0D5] bg-[#F5F0E8]">
-              <h2 className="text-base font-bold text-[#5C4A32]">🏖️ สรุปการลาแยกตามพนักงาน</h2>
+              <h2 className="text-base font-bold text-[#A67B5B]">🏖️ สรุปการลาแยกตามพนักงาน</h2>
             </div>
             <div className="divide-y divide-[#E8E0D5]">
               {leaveSummary.length === 0 ? (
@@ -778,7 +778,7 @@ export default function WorkSchedulePage() {
                       <div>
                         <span className="font-medium text-[#5C4A32]">{emp.employee_name}</span>
                         <p className="text-xs text-[#8B7355]">
-                          {emp.months_count} เดือนที่มีการลา
+                          ลา {emp.months_count} เดือน
                         </p>
                       </div>
                     </div>
@@ -792,10 +792,10 @@ export default function WorkSchedulePage() {
             </div>
           </Card>
 
-          {/* Monthly Leave Statistics - Earth Tone */}
+          {/* Monthly Leave Statistics */}
           <Card className="border-[#E8E0D5]">
             <div className="p-4 border-b border-[#E8E0D5] bg-[#F5F0E8]">
-              <h2 className="text-base font-bold text-[#5C4A32]">📊 สถิติการลารายเดือน/รายปี</h2>
+              <h2 className="text-base font-bold text-[#A67B5B]">📊 สถิติการลารายเดือน/รายปี</h2>
             </div>
             <div className="p-4">
               {(() => {
@@ -841,50 +841,6 @@ export default function WorkSchedulePage() {
             </div>
           </Card>
         </>
-      )}
-            <div className="p-4">
-              {(() => {
-                // Group leaves by month
-                const monthlyLeaves = new Map<string, number>()
-                shifts
-                  .filter(s => s.notes === 'ลา')
-                  .forEach(s => {
-                    const month = s.work_date.substring(0, 7) // YYYY-MM
-                    monthlyLeaves.set(month, (monthlyLeaves.get(month) || 0) + 1)
-                  })
-                
-                if (monthlyLeaves.size === 0) {
-                  return (
-                    <p className="text-center text-[#8B7355]">ไม่มีข้อมูลการลา</p>
-                  )
-                }
-                
-                return Array.from(monthlyLeaves.entries())
-                  .sort(([a], [b]) => b.localeCompare(a)) // Sort by month descending
-                  .map(([month, count]) => {
-                    const [year, monthNum] = month.split('-')
-                    const monthName = new Date(parseInt(year), parseInt(monthNum) - 1).toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })
-                    
-                    return (
-                      <div key={month} className="flex items-center justify-between py-2 border-b border-[#E8E0D5] last:border-0">
-                        <span className="text-[#5C4A32]">{monthName}</span>
-                        <div className="flex items-center gap-2">
-                          <div className="w-32 bg-[#E8E0D5] rounded-full h-2">
-                            <div 
-                              className="bg-[#A67B5B] h-2 rounded-full"
-                              style={{ width: `${Math.min((count / 30) * 100, 100)}%` }}
-                            />
-                          </div>
-                          <span className="text-sm font-medium text-[#5C4A32] min-w-[60px] text-right">
-                            {count} วัน
-                          </span>
-                        </div>
-                      </div>
-                    )
-                  })
-              })()}
-            </div>
-        </Card>
       )}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1178,8 +1134,8 @@ export default function WorkSchedulePage() {
                 />
               </div>
               
-              <div className="bg-[#F5F0E8] rounded-lg p-3 border border-[#E8E0D5]">
-                <p className="text-sm text-[#5C4A32]">
+              <div className="bg-[#FFF3E0] rounded-lg p-3 border border-[#FFCC80]">
+                <p className="text-sm text-[#E65100]">
                   💡 การลาจะถูกบันทึกโดยไม่คิดค่าแรง (0 บาท) และไม่ถูกหักเงิน
                 </p>
               </div>
@@ -1194,7 +1150,7 @@ export default function WorkSchedulePage() {
                 </Button>
                 <Button 
                   type="submit" 
-                  className="flex-1 bg-[#A67B5B] border-2 border-[#A67B5B] !text-white hover:bg-[#F57C00]"
+                  className="flex-1 bg-[#FF9800] border-2 border-[#FF9800] !text-white hover:bg-[#F57C00]"
                 >
                   บันทึกการลา
                 </Button>
