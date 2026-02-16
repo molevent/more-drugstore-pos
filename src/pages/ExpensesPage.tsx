@@ -76,7 +76,7 @@ export default function ExpensesPage() {
   
   // Google Sheets states
   const [viewMode, setViewMode] = useState<'database' | 'sheets' | 'pending'>('database')
-  const [sheetUrl, setSheetUrl] = useState('')
+  const [sheetUrl, setSheetUrl] = useState('https://docs.google.com/spreadsheets/d/1XShDiX-121PdeNgpsF_dxdsjZDEQ574GUS6_yaQRnRk/edit?gid=109620470#gid=109620470')
   const [sheetData, setSheetData] = useState<any[]>([])
   const [sheetLoading, setSheetLoading] = useState(false)
   const [showSheetSettings, setShowSheetSettings] = useState(false)
@@ -379,8 +379,6 @@ export default function ExpensesPage() {
         payment_method: item.payment_method,
         vendor: item.vendor || null,
         notes: item.notes || null,
-        status: 'pending',
-        source: 'google_sheets',
         // Google Sheets extended fields
         sheet_id: item.sheet_id || null,
         tax_invoice_number: item.tax_invoice_number || null,
@@ -765,7 +763,14 @@ export default function ExpensesPage() {
                   disabled={importing || selectedSheetItems.size === 0}
                   className="bg-green-600 hover:bg-green-700"
                 >
-                  {importing ? 'กำลัง import...' : 'Import ลง Database'}
+                  {importing ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      กำลัง import...
+                    </>
+                  ) : (
+                    'Import ลง Database'
+                  )}
                 </Button>
               </div>
             )}
@@ -960,7 +965,8 @@ export default function ExpensesPage() {
                             setSelectedSheetItems(new Set())
                           }
                         }}
-                        className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                        disabled={importing}
+                        className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">วันที่</th>
@@ -987,7 +993,8 @@ export default function ExpensesPage() {
                             }
                             setSelectedSheetItems(newSelected)
                           }}
-                          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                          disabled={importing}
+                          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         />
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
