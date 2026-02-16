@@ -328,7 +328,18 @@ export default function PettyCashPage() {
       if (!text) return
 
       const lines = text.split('\n').filter(line => line.trim())
-      const transactions: Array<{date: string, time: string, type: string, withdrawal: number, deposit: number, balance: number, channel: string, details: string}> = []
+      const transactions: Array<{
+        date: string, 
+        time: string, 
+        type: string, 
+        withdrawal: number, 
+        deposit: number, 
+        balance: number, 
+        channel: string, 
+        details: string,
+        matched?: boolean,
+        existingExpenseId?: string
+      }> = []
       
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i]
@@ -344,8 +355,36 @@ export default function PettyCashPage() {
           const channel = cols[6]
           const details = cols[7]
           
+          // Convert statement date format (05-01-26) to ISO format (2026-01-05)
+          const dateParts = date.split('-')
+          let isoDate = date
+          if (dateParts.length === 3) {
+            const day = dateParts[0]
+            const month = dateParts[1]
+            const year = '20' + dateParts[2] // 26 -> 2026
+            isoDate = `${year}-${month}-${day}`
+          }
+          
+          // Check if this transaction matches any existing expense
+          const amount = withdrawal > 0 ? withdrawal : deposit
+          const matchedExpense = expenses.find(exp => {
+            const expDate = new Date(exp.expense_date).toISOString().split('T')[0]
+            return expDate === isoDate && Math.abs(exp.amount - amount) < 0.01
+          })
+          
           if (date && (withdrawal > 0 || deposit > 0)) {
-            transactions.push({ date, time, type, withdrawal, deposit, balance, channel, details })
+            transactions.push({ 
+              date, 
+              time, 
+              type, 
+              withdrawal, 
+              deposit, 
+              balance, 
+              channel, 
+              details,
+              matched: !!matchedExpense,
+              existingExpenseId: matchedExpense?.id
+            })
           }
         }
       }
@@ -356,6 +395,93 @@ export default function PettyCashPage() {
       }
     }
     reader.readAsText(file)
+  }
+
+  const handleImportStatementTransactions = async () => {
+    if (!fund) return
+    
+    const unmatchedTransactions = csvTransactions.filter(tx => !tx.matched && tx.withdrawal > 0)
+    if (unmatchedTransactions.length === 0) {
+      alert('ไม่มีรายการใหม่ที่ต้องนำเข้า')
+      return
+    }
+
+    try {
+      let importedCount = 0
+      
+      for (const tx of unmatchedTransactions) {
+        // Convert date format
+        const dateParts = tx.date.split('-')
+        let isoDate = tx.date
+        if (dateParts.length === 3) {
+          const day = dateParts[0]
+          const month = dateParts[1]
+          const year = '20' + dateParts[2]
+          isoDate = `${year}-${month}-${day}`
+        }
+
+        // Add as new expense
+        const { error } = await supabase
+          .from('petty_cash_expenses')
+          .insert({
+            fund_id: fund.id,
+            expense_date: isoDate,
+            amount: tx.withdrawal,
+            category: 'other',
+            description: `${tx.type} - ${tx.details}`,
+            receipt_number: null,
+            status: 'approved'
+          })
+
+        if (!error) {
+          importedCount++
+        }
+      }
+
+      // Update fund balance
+      const totalImported = unmatchedTransactions.reduce((sum, tx) => sum + tx.withdrawal, 0)
+      await supabase
+        .from('petty_cash_funds')
+        .update({ 
+          current_balance: fund.current_balance - totalImported,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', fund.id)
+
+      await fetchFundAndExpenses()
+      setCsvTransactions([])
+      setShowStatementModal(false)
+      alert(`นำเข้าสำเร็จ ${importedCount} รายการ`)
+    } catch (error) {
+      console.error('Error importing transactions:', error)
+      alert('ไม่สามารถนำเข้ารายการได้')
+    }
+  }
+
+  const handleConfirmMatch = async (tx: typeof csvTransactions[0]) => {
+    if (!tx.existingExpenseId) return
+    
+    try {
+      // Update existing expense to mark as reconciled
+      await supabase
+        .from('petty_cash_expenses')
+        .update({ 
+          status: 'reconciled',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', tx.existingExpenseId)
+
+      // Mark this transaction as confirmed
+      setCsvTransactions(prev => prev.map(t => 
+        t.date === tx.date && t.details === tx.details 
+          ? { ...t, matched: true, confirmed: true }
+          : t
+      ))
+      
+      await fetchFundAndExpenses()
+    } catch (error) {
+      console.error('Error confirming match:', error)
+    }
   }
 
   return (
@@ -770,25 +896,37 @@ export default function PettyCashPage() {
                 <div className="border rounded-lg">
                   <div className="p-3 bg-gray-50 border-b">
                     <h4 className="font-medium text-black">รายการจาก Statement ({csvTransactions.length} รายการ)</h4>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {csvTransactions.filter(tx => tx.matched).length} รายการตรงกับในระบบ | 
+                      {csvTransactions.filter(tx => !tx.matched && tx.withdrawal > 0).length} รายการใหม่
+                    </p>
                   </div>
                   <div className="p-3 max-h-64 overflow-y-auto">
                     <div className="space-y-2">
                       {csvTransactions.map((tx, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                        <div key={idx} className={`flex items-center justify-between p-3 border rounded-lg ${tx.matched ? 'bg-green-50 border-green-200' : 'hover:bg-gray-50'}`}>
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs">
-                              {tx.type === 'ถอนเงิน' || tx.withdrawal > 0 ? '⬆️' : '⬇️'}
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs ${tx.matched ? 'bg-green-100' : 'bg-blue-100'}`}>
+                              {tx.matched ? '✓' : (tx.withdrawal > 0 ? '⬆️' : '⬇️')}
                             </div>
                             <div>
                               <p className="font-medium text-black text-sm">{tx.type} - {tx.details}</p>
                               <p className="text-xs text-gray-500">{tx.date} {tx.time} | {tx.channel}</p>
+                              {tx.matched && <span className="text-xs text-green-600">ตรงกับรายการในระบบ</span>}
                             </div>
                           </div>
                           <div className="text-right">
                             <p className={`font-bold ${tx.withdrawal > 0 ? 'text-red-600' : 'text-green-600'}`}>
                               {tx.withdrawal > 0 ? '-' : '+'}฿{(tx.withdrawal || tx.deposit).toLocaleString()}
                             </p>
-                            <span className="text-xs text-gray-400">ยอดคงเหลือ: ฿{tx.balance.toLocaleString()}</span>
+                            {tx.matched && tx.existingExpenseId && (
+                              <button
+                                onClick={() => handleConfirmMatch(tx)}
+                                className="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 mt-1"
+                              >
+                                Confirm
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -839,17 +977,21 @@ export default function PettyCashPage() {
               <div className="flex gap-3 pt-2">
                 <Button 
                   type="button" 
-                  onClick={() => setShowStatementModal(false)} 
+                  onClick={() => {
+                    setCsvTransactions([])
+                    setShowStatementModal(false)
+                  }} 
                   className="flex-1 bg-white border-2 border-gray-300 !text-black hover:bg-gray-50"
                 >
-                  ปิด
+                  ยกเลิก
                 </Button>
                 <Button 
                   type="button"
-                  onClick={() => alert('กำลังพัฒนา: ระบบจะบันทึกผลการกระทบยอด')}
-                  className="flex-1 bg-[#A67B5B] border-2 border-[#A67B5B] !text-white hover:bg-[#8B7355]"
+                  onClick={handleImportStatementTransactions}
+                  disabled={csvTransactions.filter(tx => !tx.matched && tx.withdrawal > 0).length === 0}
+                  className="flex-1 bg-[#A67B5B] border-2 border-[#A67B5B] !text-white hover:bg-[#8B7355] disabled:opacity-50"
                 >
-                  บันทึกการกระทบยอด
+                  นำเข้ารายการใหม่ ({csvTransactions.filter(tx => !tx.matched && tx.withdrawal > 0).length})
                 </Button>
               </div>
             </div>
