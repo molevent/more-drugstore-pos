@@ -114,7 +114,22 @@ export default function ExpensesPage() {
     payment_method: 'เงินสด',
     receipt_number: '',
     vendor: '',
-    notes: ''
+    notes: '',
+    // Google Sheets extended fields
+    sheet_id: '',
+    tax_invoice_number: '',
+    document_type: '',
+    quantity: '',
+    unit_price: '',
+    amount_before_tax: '',
+    vat_amount: '',
+    withholding_tax: '',
+    payment_amount: '',
+    product_type: '',
+    subcategory: '',
+    seller_tax_id: '',
+    requester: '',
+    evidence_url: ''
   })
 
   useEffect(() => {
@@ -165,7 +180,22 @@ export default function ExpensesPage() {
         payment_method: formData.payment_method,
         receipt_number: formData.receipt_number || null,
         vendor: formData.vendor || null,
-        notes: formData.notes || null
+        notes: formData.notes || null,
+        // Google Sheets extended fields
+        sheet_id: formData.sheet_id || null,
+        tax_invoice_number: formData.tax_invoice_number || null,
+        document_type: formData.document_type || null,
+        quantity: parseFloat(formData.quantity) || null,
+        unit_price: parseFloat(formData.unit_price) || null,
+        amount_before_tax: parseFloat(formData.amount_before_tax) || null,
+        vat_amount: parseFloat(formData.vat_amount) || null,
+        withholding_tax: parseFloat(formData.withholding_tax) || null,
+        payment_amount: parseFloat(formData.payment_amount) || null,
+        product_type: formData.product_type || null,
+        subcategory: formData.subcategory || null,
+        seller_tax_id: formData.seller_tax_id || null,
+        requester: formData.requester || null,
+        evidence_url: formData.evidence_url || null
       }
 
       if (editingExpense) {
@@ -216,7 +246,22 @@ export default function ExpensesPage() {
       payment_method: expense.payment_method,
       receipt_number: expense.receipt_number || '',
       vendor: expense.vendor || '',
-      notes: expense.notes || ''
+      notes: expense.notes || '',
+      // Google Sheets extended fields
+      sheet_id: expense.sheet_id || '',
+      tax_invoice_number: expense.tax_invoice_number || '',
+      document_type: expense.document_type || '',
+      quantity: expense.quantity?.toString() || '',
+      unit_price: expense.unit_price?.toString() || '',
+      amount_before_tax: expense.amount_before_tax?.toString() || '',
+      vat_amount: expense.vat_amount?.toString() || '',
+      withholding_tax: expense.withholding_tax?.toString() || '',
+      payment_amount: expense.payment_amount?.toString() || '',
+      product_type: expense.product_type || '',
+      subcategory: expense.subcategory || '',
+      seller_tax_id: expense.seller_tax_id || '',
+      requester: expense.requester || '',
+      evidence_url: expense.evidence_url || ''
     })
     setShowModal(true)
   }
@@ -230,7 +275,22 @@ export default function ExpensesPage() {
       payment_method: 'เงินสด',
       receipt_number: '',
       vendor: '',
-      notes: ''
+      notes: '',
+      // Google Sheets extended fields
+      sheet_id: '',
+      tax_invoice_number: '',
+      document_type: '',
+      quantity: '',
+      unit_price: '',
+      amount_before_tax: '',
+      vat_amount: '',
+      withholding_tax: '',
+      payment_amount: '',
+      product_type: '',
+      subcategory: '',
+      seller_tax_id: '',
+      requester: '',
+      evidence_url: ''
     })
     setEditingExpense(null)
   }
@@ -1142,6 +1202,181 @@ export default function ExpensesPage() {
                   placeholder="รายละเอียดเพิ่มเติม..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+
+              {/* Google Sheets Extended Fields */}
+              <div className="border-t pt-4 mt-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">ข้อมูลเพิ่มเติม (จาก Google Sheets)</h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ไอดี (Sheet ID)</label>
+                    <input
+                      type="text"
+                      value={formData.sheet_id}
+                      onChange={(e) => setFormData({ ...formData, sheet_id: e.target.value })}
+                      placeholder="ID จาก Google Sheet"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">เลขที่ใบกำกับภาษี</label>
+                    <input
+                      type="text"
+                      value={formData.tax_invoice_number}
+                      onChange={(e) => setFormData({ ...formData, tax_invoice_number: e.target.value })}
+                      placeholder="Tax Invoice Number"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ประเภทเอกสาร</label>
+                    <input
+                      type="text"
+                      value={formData.document_type}
+                      onChange={(e) => setFormData({ ...formData, document_type: e.target.value })}
+                      placeholder="เช่น ใบกำกับภาษี"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ประเภทสินค้า</label>
+                    <input
+                      type="text"
+                      value={formData.product_type}
+                      onChange={(e) => setFormData({ ...formData, product_type: e.target.value })}
+                      placeholder="เช่น อุปกรณ์สำนักงาน"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4 mt-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">จำนวน</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.quantity}
+                      onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                      placeholder="0"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ราคาต่อหน่วย</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.unit_price}
+                      onChange={(e) => setFormData({ ...formData, unit_price: e.target.value })}
+                      placeholder="0.00"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ยอดรวมก่อนภาษี</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.amount_before_tax}
+                      onChange={(e) => setFormData({ ...formData, amount_before_tax: e.target.value })}
+                      placeholder="0.00"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4 mt-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ภาษีมูลค่าเพิ่ม</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.vat_amount}
+                      onChange={(e) => setFormData({ ...formData, vat_amount: e.target.value })}
+                      placeholder="0.00"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ภาษีหัก ณ ที่จ่าย</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.withholding_tax}
+                      onChange={(e) => setFormData({ ...formData, withholding_tax: e.target.value })}
+                      placeholder="0.00"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ยอดชำระ</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.payment_amount}
+                      onChange={(e) => setFormData({ ...formData, payment_amount: e.target.value })}
+                      placeholder="0.00"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">หมวดหมู่ย่อย</label>
+                    <input
+                      type="text"
+                      value={formData.subcategory}
+                      onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
+                      placeholder="Subcategory"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">เลขผู้เสียภาษีร้านค้า</label>
+                    <input
+                      type="text"
+                      value={formData.seller_tax_id}
+                      onChange={(e) => setFormData({ ...formData, seller_tax_id: e.target.value })}
+                      placeholder="Tax ID"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ผู้ขอเบิก</label>
+                    <input
+                      type="text"
+                      value={formData.requester}
+                      onChange={(e) => setFormData({ ...formData, requester: e.target.value })}
+                      placeholder="ชื่อผู้ขอเบิก"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">URL หลักฐาน</label>
+                    <input
+                      type="url"
+                      value={formData.evidence_url}
+                      onChange={(e) => setFormData({ ...formData, evidence_url: e.target.value })}
+                      placeholder="https://..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="flex gap-3 pt-4 border-t">
