@@ -91,6 +91,8 @@ export default function WorkSchedulePage() {
   })
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'calendar' | 'list' | 'leave'>('calendar')
+  const [selectedEmployeeForLeave, setSelectedEmployeeForLeave] = useState<string | null>(null)
+  const [maxLeaveDays, setMaxLeaveDays] = useState<number>(10) // Default 10 days per year
 
   // Fetch shifts for current month
   useEffect(() => {
@@ -755,6 +757,21 @@ export default function WorkSchedulePage() {
                 </p>
               </div>
             </Card>
+            <Card className="bg-[#F5F0E8] border-[#E8E0D5]">
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-3xl">📋</span>
+                  <input
+                    type="number"
+                    value={maxLeaveDays}
+                    onChange={(e) => setMaxLeaveDays(parseInt(e.target.value) || 0)}
+                    className="w-16 text-center border border-[#E8E0D5] rounded-lg py-1 text-[#A67B5B] font-bold"
+                    min="0"
+                  />
+                </div>
+                <p className="text-xs text-[#8B7355] text-center">สิทธิ์วันลาสูงสุด/ปี</p>
+              </div>
+            </Card>
             <Card className="bg-[#F5F0E8] border-[#D4C9B8]">
               <div className="p-4 text-center">
                 <span className="text-3xl">📅</span>
@@ -779,7 +796,11 @@ export default function WorkSchedulePage() {
                 </div>
               ) : (
                 leaveSummary.map((emp) => (
-                  <div key={emp.employee_name} className="p-4 flex items-center justify-between hover:bg-[#FAF8F5]">
+                  <div 
+                    key={emp.employee_name} 
+                    className="p-4 flex items-center justify-between hover:bg-[#FAF8F5] cursor-pointer"
+                    onClick={() => setSelectedEmployeeForLeave(emp.employee_name)}
+                  >
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-[#E8E0D5] rounded-lg">
                         <span className="text-xl">🏖️</span>
@@ -787,13 +808,13 @@ export default function WorkSchedulePage() {
                       <div>
                         <span className="font-medium text-[#5C4A32]">{emp.employee_name}</span>
                         <p className="text-xs text-[#8B7355]">
-                          ลาสะสมปีนี้ {emp.current_year_leave_days} วัน
+                          ลาสะสมทั้งหมด {emp.total_leave_days} วัน
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="text-2xl font-bold text-[#A67B5B]">{emp.total_leave_days}</span>
-                      <span className="text-sm text-[#8B7355] ml-1">วัน</span>
+                      <div className="text-2xl font-bold text-[#A67B5B]">{emp.current_year_leave_days}</div>
+                      <div className="text-sm text-[#8B7355]">วัน ปีนี้</div>
                     </div>
                   </div>
                 ))
@@ -1178,6 +1199,90 @@ export default function WorkSchedulePage() {
                 </Button>
               </div>
             </form>
+          </Card>
+        </div>
+      )}
+      {/* Leave History Modal */}
+      {selectedEmployeeForLeave && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-[#E8E0D5] bg-[#F5F0E8]">
+              <h3 className="text-lg font-bold text-[#5C4A32]">
+                🏖️ ประวัติการลา - {selectedEmployeeForLeave}
+              </h3>
+              <button
+                onClick={() => setSelectedEmployeeForLeave(null)}
+                className="p-2 hover:bg-[#E8E0D5] rounded-full transition-colors"
+              >
+                <X className="h-5 w-5 text-[#8B7355]" />
+              </button>
+            </div>
+            
+            <div className="p-4">
+              {/* Summary */}
+              {(() => {
+                const empData = leaveSummary.find(e => e.employee_name === selectedEmployeeForLeave)
+                if (!empData) return null
+                
+                const remainingDays = Math.max(0, maxLeaveDays - empData.current_year_leave_days)
+                
+                return (
+                  <div className="mb-4 p-3 bg-[#F5F0E8] rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#8B7355]">ลาสะสมทั้งหมด</span>
+                      <span className="text-xl font-bold text-[#A67B5B]">{empData.total_leave_days} วัน</span>
+                    </div>
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-[#8B7355]">ลาปีนี้ ({new Date().getFullYear() + 543})</span>
+                      <span className="font-medium text-[#A67B5B]">{empData.current_year_leave_days} วัน</span>
+                    </div>
+                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-[#E8E0D5]">
+                      <span className="text-[#8B7355]">คงเหลือ (สิทธิ์ {maxLeaveDays} วัน)</span>
+                      <span className={`font-bold ${remainingDays === 0 ? 'text-red-600' : 'text-[#2E7D32]'}`}>
+                        {remainingDays} วัน
+                      </span>
+                    </div>
+                  </div>
+                )
+              })()}
+              
+              {/* Leave History List */}
+              <h4 className="text-sm font-medium text-[#5C4A32] mb-3">รายการลาย้อนหลัง</h4>
+              <div className="space-y-2">
+                {shifts
+                  .filter(s => s.employee_name === selectedEmployeeForLeave && s.notes === 'ลา')
+                  .sort((a, b) => new Date(b.work_date).getTime() - new Date(a.work_date).getTime())
+                  .map((shift, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 bg-[#FAF8F5] rounded-lg border border-[#E8E0D5]">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">🏖️</span>
+                        <div>
+                          <p className="font-medium text-[#5C4A32]">
+                            {new Date(shift.work_date).toLocaleDateString('th-TH', { 
+                              day: 'numeric', 
+                              month: 'long', 
+                              year: 'numeric' 
+                            })}
+                          </p>
+                          {shift.notes && shift.notes !== 'ลา' && (
+                            <p className="text-xs text-[#8B7355]">{shift.notes}</p>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleEdit(shift)}
+                        className="p-2 text-[#A67B5B] hover:bg-[#E8E0D5] rounded-lg transition-colors"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                
+                {shifts.filter(s => s.employee_name === selectedEmployeeForLeave && s.notes === 'ลา').length === 0 && (
+                  <p className="text-center text-[#8B7355] py-4">ไม่มีประวัติการลา</p>
+                )}
+              </div>
+            </div>
           </Card>
         </div>
       )}
