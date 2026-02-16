@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
-import { supabase } from '../lib/supabase'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '../services/supabase'
 import { 
   Banknote, 
   Plus, 
@@ -12,7 +13,8 @@ import {
   AlertCircle,
   CheckCircle,
   X,
-  Download
+  Download,
+  FileText
 } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -41,11 +43,13 @@ interface PettyCashExpense {
 }
 
 const EXPENSE_CATEGORIES = [
-  { value: 'office_supplies', label: 'เครื่องใช้สำนักงาน', icon: '📝' },
-  { value: 'utilities', label: 'ค่าน้ำ/ไฟ/โทรศัพท์', icon: '💡' },
+  { value: 'office_supplies', label: 'วัสดุสำนักงาน', icon: '📝' },
+  { value: 'postage', label: 'ค่าส่งไปรษณีย์', icon: '✉️' },
+  { value: 'grab', label: 'ค่าส่ง Grab', icon: '🛵' },
+  { value: 'water', label: 'ค่าน้ำปะปา', icon: '💧' },
+  { value: 'phone', label: 'ค่าโทรศัพท์', icon: '📞' },
   { value: 'travel', label: 'ค่าเดินทาง', icon: '🚗' },
   { value: 'food', label: 'ค่าอาหาร', icon: '🍽️' },
-  { value: 'postage', label: 'ค่าส่งจดหมาย/พัสดุ', icon: '📦' },
   { value: 'maintenance', label: 'ค่าซ่อมแซม', icon: '🔧' },
   { value: 'other', label: 'อื่นๆ', icon: '📋' }
 ]
@@ -58,6 +62,11 @@ export default function PettyCashPage() {
   const [fund, setFund] = useState<PettyCashFund | null>(null)
   const [expenses, setExpenses] = useState<PettyCashExpense[]>([])
   const [showExpenseModal, setShowExpenseModal] = useState(false)
+  const [showFundModal, setShowFundModal] = useState(false)
+  const [fundAmount, setFundAmount] = useState('')
+  const [fundDate, setFundDate] = useState(new Date().toISOString().split('T')[0])
+  const [showStatementModal, setShowStatementModal] = useState(false)
+  const [statementTransactions, setStatementTransactions] = useState<Array<{date: string, description: string, amount: number, type: 'debit' | 'credit'}>>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   
@@ -279,6 +288,37 @@ export default function PettyCashPage() {
     link.click()
   }
 
+  const handleAddFund = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!fund) return
+
+    const amount = parseFloat(fundAmount)
+    if (amount <= 0) {
+      alert('จำนวนเงินต้องมากกว่า 0')
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('petty_cash_funds')
+        .update({ 
+          current_balance: fund.current_balance + amount,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', fund.id)
+
+      if (error) throw error
+
+      setFundAmount('')
+      setShowFundModal(false)
+      await fetchFundAndExpenses()
+      alert('เติมเงินเรียบร้อย')
+    } catch (error) {
+      console.error('Error adding fund:', error)
+      alert('ไม่สามารถเติมเงินได้')
+    }
+  }
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -297,6 +337,20 @@ export default function PettyCashPage() {
           >
             <Download className="h-4 w-4" />
             ส่งออกรายงาน
+          </button>
+          <button
+            onClick={() => setShowStatementModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#8B7355] bg-white text-[#8B7355] text-sm whitespace-nowrap hover:bg-[#8B7355]/10 transition-all shadow-sm"
+          >
+            <FileText className="h-4 w-4" />
+            กระทบยอด Statement
+          </button>
+          <button
+            onClick={() => setShowFundModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#2E7D32] bg-white text-[#2E7D32] text-sm whitespace-nowrap hover:bg-[#2E7D32]/10 transition-all shadow-sm"
+          >
+            <Plus className="h-4 w-4" />
+            เติมเงิน
           </button>
           <button
             onClick={() => setShowExpenseModal(true)}
@@ -331,34 +385,32 @@ export default function PettyCashPage() {
       {/* Statistics Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
-          <Card className="bg-[#E8F5E9] border-[#C8E6C9]">
+          <Card className="bg-white border-gray-200">
             <div className="p-4 text-center">
-              <Wallet className="h-6 w-6 text-[#2E7D32] mx-auto mb-2" />
-              <p className="text-xs text-[#2E7D32]">วงเงินตั้งต้น</p>
-              <p className="text-2xl font-bold text-[#2E7D32]">฿{stats.initialAmount.toLocaleString()}</p>
+              <Wallet className="h-6 w-6 text-black mx-auto mb-2" />
+              <p className="text-xs text-black">วงเงินตั้งต้น</p>
+              <p className="text-2xl font-bold text-black">฿{stats.initialAmount.toLocaleString()}</p>
             </div>
           </Card>
-          <Card className="bg-[#FFF3E0] border-[#FFCC80]">
+          <Card className="bg-white border-gray-200">
             <div className="p-4 text-center">
-              <Receipt className="h-6 w-6 text-[#E65100] mx-auto mb-2" />
-              <p className="text-xs text-[#E65100]">ใช้ไปแล้ว</p>
-              <p className="text-2xl font-bold text-[#E65100]">฿{stats.totalExpenses.toLocaleString()}</p>
+              <Receipt className="h-6 w-6 text-black mx-auto mb-2" />
+              <p className="text-xs text-black">ใช้ไปแล้ว</p>
+              <p className="text-2xl font-bold text-black">฿{stats.totalExpenses.toLocaleString()}</p>
             </div>
           </Card>
-          <Card className="bg-[#E3F2FD] border-[#90CAF9]">
+          <Card className="bg-white border-gray-200">
             <div className="p-4 text-center">
-              <Wallet className="h-6 w-6 text-[#1565C0] mx-auto mb-2" />
-              <p className="text-xs text-[#1565C0]">คงเหลือ</p>
-              <p className="text-2xl font-bold text-[#1565C0]">฿{stats.currentBalance.toLocaleString()}</p>
+              <Wallet className="h-6 w-6 text-black mx-auto mb-2" />
+              <p className="text-xs text-black">คงเหลือ</p>
+              <p className="text-2xl font-bold text-black">฿{stats.currentBalance.toLocaleString()}</p>
             </div>
           </Card>
-          <Card className={`border-[#E8E0D5] ${stats.remainingPercentage < 20 ? 'bg-[#FFEBEE]' : 'bg-[#F5F0E8]'}`}>
+          <Card className="bg-white border-gray-200">
             <div className="p-4 text-center">
-              <TrendingDown className={`h-6 w-6 mx-auto mb-2 ${stats.remainingPercentage < 20 ? 'text-[#C62828]' : 'text-[#A67B5B]'}`} />
-              <p className={`text-xs ${stats.remainingPercentage < 20 ? 'text-[#C62828]' : 'text-[#8B7355]'}`}>เปอร์เซ็นต์ที่เหลือ</p>
-              <p className={`text-2xl font-bold ${stats.remainingPercentage < 20 ? 'text-[#C62828]' : 'text-[#A67B5B]'}`}>
-                {stats.remainingPercentage.toFixed(1)}%
-              </p>
+              <TrendingDown className="h-6 w-6 text-black mx-auto mb-2" />
+              <p className="text-xs text-black">เปอร์เซ็นต์ที่เหลือ</p>
+              <p className="text-2xl font-bold text-black">{stats.remainingPercentage.toFixed(1)}%</p>
             </div>
           </Card>
         </div>
@@ -478,7 +530,67 @@ export default function PettyCashPage() {
         </div>
       </Card>
 
-      {/* Expense Modal */}
+      {/* Fund Modal */}
+      {showFundModal && fund && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-[#E8E0D5]">
+              <h3 className="text-lg font-bold text-[#5C4A32]">เติมเงินสดย่อย</h3>
+              <button
+                onClick={() => setShowFundModal(false)}
+                className="p-2 hover:bg-[#F5F0E8] rounded-full transition-colors"
+              >
+                <X className="h-5 w-5 text-[#8B7355]" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddFund} className="p-4 space-y-4">
+              <div className="p-3 bg-[#E8F5E9] rounded-lg">
+                <p className="text-sm text-[#2E7D32]">วงเงินคงเหลือปัจจุบัน: <span className="font-bold">฿{fund.current_balance.toLocaleString()}</span></p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#5C4A32] mb-1">วันที่เติมเงิน</label>
+                <Input
+                  type="date"
+                  value={fundDate}
+                  onChange={(e) => setFundDate(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#5C4A32] mb-1">จำนวนเงินที่จะเติม (บาท)</label>
+                <Input
+                  type="number"
+                  min="1"
+                  step="0.01"
+                  value={fundAmount}
+                  onChange={(e) => setFundAmount(e.target.value)}
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button 
+                  type="button" 
+                  onClick={() => setShowFundModal(false)} 
+                  className="flex-1 bg-white border-2 border-gray-300 !text-black hover:bg-gray-50"
+                >
+                  ยกเลิก
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="flex-1 bg-[#2E7D32] border-2 border-[#2E7D32] !text-white hover:bg-[#1B5E20]"
+                >
+                  เติมเงิน
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
       {showExpenseModal && fund && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
@@ -572,6 +684,111 @@ export default function PettyCashPage() {
                 </Button>
               </div>
             </form>
+          </Card>
+        </div>
+      )}
+
+      {/* Statement Reconciliation Modal */}
+      {showStatementModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="text-lg font-bold text-black">กระทบยอด Bank Statement</h3>
+              <button
+                onClick={() => setShowStatementModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="h-5 w-5 text-black" />
+              </button>
+            </div>
+            
+            <div className="p-4 space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  อัพโหลดไฟล์ Statement ธนาคาร (PDF) เพื่อกระทบยอดกับรายการเงินสดย่อย
+                </p>
+              </div>
+
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <input
+                  type="file"
+                  accept=".pdf,.csv,.xlsx,.xls"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      // For now, show a message that this feature needs backend processing
+                      alert('กำลังพัฒนา: ระบบจะอ่านไฟล์ ' + file.name + ' และแสดงรายการสำหรับกระทบยอด')
+                    }
+                  }}
+                  className="hidden"
+                  id="statement-upload"
+                />
+                <label 
+                  htmlFor="statement-upload"
+                  className="cursor-pointer flex flex-col items-center gap-2"
+                >
+                  <FileText className="h-12 w-12 text-gray-400" />
+                  <span className="text-gray-600">คลิกเพื่ออัพโหลดไฟล์ Statement</span>
+                  <span className="text-xs text-gray-400">รองรับ PDF, CSV, Excel</span>
+                </label>
+              </div>
+
+              <div className="bg-yellow-50 p-3 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  <strong>คำแนะนำ:</strong> ระบบจะเปรียบเทียบรายการจาก Statement กับรายการที่บันทึกไว้ในระบบ
+                </p>
+              </div>
+
+              <div className="border rounded-lg">
+                <div className="p-3 bg-gray-50 border-b">
+                  <h4 className="font-medium text-black">รายการที่ต้องกระทบยอด - {currentDate.toLocaleString('th-TH', { month: 'long', year: 'numeric' })}</h4>
+                </div>
+                <div className="p-3">
+                  {expenses.length === 0 ? (
+                    <p className="text-gray-500 text-center py-4">ไม่มีรายการค่าใช้จ่ายในเดือนนี้</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {expenses.map((expense) => (
+                        <div key={expense.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                              {EXPENSE_CATEGORIES.find(c => c.value === expense.category)?.icon || '📋'}
+                            </div>
+                            <div>
+                              <p className="font-medium text-black text-sm">{expense.description}</p>
+                              <p className="text-xs text-gray-500">{expense.expense_date} | {expense.receipt_number || 'ไม่มีเลขที่'}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-black">฿{expense.amount.toLocaleString()}</p>
+                            <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800">
+                              รอดำเนินการ
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button 
+                  type="button" 
+                  onClick={() => setShowStatementModal(false)} 
+                  className="flex-1 bg-white border-2 border-gray-300 !text-black hover:bg-gray-50"
+                >
+                  ปิด
+                </Button>
+                <Button 
+                  type="button"
+                  onClick={() => alert('กำลังพัฒนา: ระบบจะบันทึกผลการกระทบยอด')}
+                  className="flex-1 bg-[#A67B5B] border-2 border-[#A67B5B] !text-white hover:bg-[#8B7355]"
+                >
+                  บันทึกการกระทบยอด
+                </Button>
+              </div>
+            </div>
           </Card>
         </div>
       )}
