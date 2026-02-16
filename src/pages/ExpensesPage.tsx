@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle, Percent, FileText, ShoppingCart, BookOpen } from 'lucide-react'
+import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle, Percent, FileText, ShoppingCart, BookOpen, Wallet } from 'lucide-react'
 
 interface Expense {
   id: string
@@ -476,6 +476,13 @@ export default function ExpensesPage() {
           >
             <Percent className="h-6 w-6 text-gray-900" />
             <span className="font-semibold text-gray-900">หัก ณ ที่จ่าย</span>
+          </Link>
+          <Link 
+            to="/petty-cash"
+            className="flex items-center gap-3 px-5 py-3 bg-[#D4A574]/10 rounded-full border border-[#D4A574] hover:bg-[#D4A574]/20 hover:shadow-md transition-all"
+          >
+            <Wallet className="h-6 w-6 text-gray-900" />
+            <span className="font-semibold text-gray-900">เงินสดย่อย</span>
           </Link>
         </div>
       </div>

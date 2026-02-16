@@ -12,7 +12,8 @@ import {
   Wallet,
   Calendar,
   UserCog,
-  Banknote
+  FileText,
+  Percent
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -84,8 +85,9 @@ export default function Layout({ children }: LayoutProps) {
       title: 'เอกสาร',
       items: [
         { name: t('nav.documents'), href: '/expenses', icon: Wallet },
+        { name: 'ใบเสนอราคา', path: '/quotations', icon: FileText },
+        { name: 'ภาษีหัก ณ ที่จ่าย', path: '/withholding-tax', icon: Percent },
         { name: 'ตารางเข้างาน', href: '/work-schedule', icon: Calendar },
-        { name: 'เงินสดย่อย', href: '/petty-cash', icon: Banknote },
       ]
     },
     {
