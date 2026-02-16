@@ -85,8 +85,8 @@ export default function Layout({ children }: LayoutProps) {
       title: 'เอกสาร',
       items: [
         { name: t('nav.documents'), href: '/expenses', icon: Wallet },
-        { name: 'ใบเสนอราคา', path: '/quotations', icon: FileText },
-        { name: 'ภาษีหัก ณ ที่จ่าย', path: '/withholding-tax', icon: Percent },
+        { name: 'ใบเสนอราคา', href: '/quotations', icon: FileText },
+        { name: 'ภาษีหัก ณ ที่จ่าย', href: '/withholding-tax', icon: Percent },
         { name: 'ตารางเข้างาน', href: '/work-schedule', icon: Calendar },
       ]
     },
