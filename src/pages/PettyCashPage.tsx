@@ -1566,8 +1566,7 @@ export default function PettyCashPage() {
                     setShowEditModal(false)
                     setEditingExpense(null)
                   }} 
-                  className="flex-1 bg-white border-2 border-gray-300 !text-black hover:bg-gray-50"
-                >
+                  className="flex-1 bg-white border-2 border-gray-300 !text-black hover:bg-gray-50">
                   ยกเลิก
                 </Button>
                 <Button 
