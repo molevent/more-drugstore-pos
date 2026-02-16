@@ -207,7 +207,7 @@ export default function WorkSchedulePage() {
   // Leave summary by employee
   const leaveSummary = useMemo(() => {
     const leaveMap = new Map<string, { dates: string[]; months: Set<string>; currentYearDates: string[] }>()
-    const currentYear = new Date().getFullYear()
+    const currentYear = listViewMonth.getFullYear() // Use the year from the view selector
     
     shifts
       .filter(shift => shift.notes === 'ลา')
@@ -217,7 +217,7 @@ export default function WorkSchedulePage() {
         const month = shift.work_date.substring(0, 7) // YYYY-MM
         existing.months.add(month)
         
-        // Track current year leaves
+        // Track current year leaves (based on selected view year)
         const shiftYear = parseInt(shift.work_date.split('-')[0])
         if (shiftYear === currentYear) {
           existing.currentYearDates.push(shift.work_date)
@@ -233,7 +233,7 @@ export default function WorkSchedulePage() {
       months_count: data.months.size,
       dates: data.dates
     }))
-  }, [shifts])
+  }, [shifts, listViewMonth])
 
   // Handlers
   const handlePreviousMonth = () => {
