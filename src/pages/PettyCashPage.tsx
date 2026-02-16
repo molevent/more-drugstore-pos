@@ -63,6 +63,7 @@ export default function PettyCashPage() {
   const [showFundModal, setShowFundModal] = useState(false)
   const [fundAmount, setFundAmount] = useState('')
   const [fundDate, setFundDate] = useState(new Date().toISOString().split('T')[0])
+  const [showStatementModal, setShowStatementModal] = useState(false)
   const [csvTransactions, setCsvTransactions] = useState<Array<{date: string, time: string, type: string, withdrawal: number, deposit: number, balance: number, channel: string, details: string}>>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
@@ -307,6 +308,7 @@ export default function PettyCashPage() {
       if (error) throw error
 
       setFundAmount('')
+      setFundDate(new Date().toISOString().split('T')[0])
       setShowFundModal(false)
       await fetchFundAndExpenses()
       alert('เติมเงินเรียบร้อย')
@@ -314,6 +316,46 @@ export default function PettyCashPage() {
       console.error('Error adding fund:', error)
       alert('ไม่สามารถเติมเงินได้')
     }
+  }
+
+  const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const text = event.target?.result as string
+      if (!text) return
+
+      const lines = text.split('\n').filter(line => line.trim())
+      const transactions: Array<{date: string, time: string, type: string, withdrawal: number, deposit: number, balance: number, channel: string, details: string}> = []
+      
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i]
+        const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''))
+        
+        if (cols.length >= 8) {
+          const date = cols[0]
+          const time = cols[1]
+          const type = cols[2]
+          const withdrawal = parseFloat(cols[3]) || 0
+          const deposit = parseFloat(cols[4]) || 0
+          const balance = parseFloat(cols[5]) || 0
+          const channel = cols[6]
+          const details = cols[7]
+          
+          if (date && (withdrawal > 0 || deposit > 0)) {
+            transactions.push({ date, time, type, withdrawal, deposit, balance, channel, details })
+          }
+        }
+      }
+      
+      setCsvTransactions(transactions)
+      if (transactions.length === 0) {
+        alert('ไม่พบรายการในไฟล์ กรุณาตรวจสอบรูปแบบไฟล์ CSV')
+      }
+    }
+    reader.readAsText(file)
   }
 
   return (
