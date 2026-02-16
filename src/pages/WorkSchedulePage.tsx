@@ -808,35 +808,48 @@ export default function WorkSchedulePage() {
                     monthlyLeaves.set(month, (monthlyLeaves.get(month) || 0) + 1)
                   })
                 
-                if (monthlyLeaves.size === 0) {
-                  return (
-                    <p className="text-center text-[#8B7355]">ไม่มีข้อมูลการลา</p>
-                  )
-                }
+                // Get current year or use the year from data
+                const currentYear = new Date().getFullYear()
+                const years = new Set<number>()
+                monthlyLeaves.forEach((_, month) => {
+                  years.add(parseInt(month.split('-')[0]))
+                })
                 
-                return Array.from(monthlyLeaves.entries())
-                  .sort(([a], [b]) => b.localeCompare(a)) // Sort by month descending
-                  .map(([month, count]) => {
-                    const [year, monthNum] = month.split('-')
-                    const monthName = new Date(parseInt(year), parseInt(monthNum) - 1).toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })
+                // If no data, show current year only
+                const yearsToShow = years.size > 0 ? Array.from(years).sort((a, b) => b - a) : [currentYear]
+                
+                return yearsToShow.map(year => {
+                  // Generate all 12 months for this year
+                  const months = []
+                  for (let m = 1; m <= 12; m++) {
+                    const monthKey = `${year}-${String(m).padStart(2, '0')}`
+                    const count = monthlyLeaves.get(monthKey) || 0
+                    const monthName = new Date(year, m - 1).toLocaleDateString('th-TH', { month: 'long' })
                     
-                    return (
-                      <div key={month} className="flex items-center justify-between py-2 border-b border-[#E8E0D5] last:border-0">
-                        <span className="text-[#5C4A32]">{monthName}</span>
+                    months.push(
+                      <div key={monthKey} className="flex items-center justify-between py-2 border-b border-[#E8E0D5] last:border-0">
+                        <span className="text-[#5C4A32]">{monthName} {year + 543}</span>
                         <div className="flex items-center gap-2">
                           <div className="w-32 bg-[#E8E0D5] rounded-full h-2">
                             <div 
-                              className="bg-[#A67B5B] h-2 rounded-full"
+                              className={`h-2 rounded-full ${count > 0 ? 'bg-[#A67B5B]' : 'bg-[#D4C9B8]'}`}
                               style={{ width: `${Math.min((count / 30) * 100, 100)}%` }}
                             />
                           </div>
-                          <span className="text-sm font-medium text-[#A67B5B] min-w-[60px] text-right">
+                          <span className={`text-sm font-medium min-w-[60px] text-right ${count > 0 ? 'text-[#A67B5B]' : 'text-[#D4C9B8]'}`}>
                             {count} วัน
                           </span>
                         </div>
                       </div>
                     )
-                  })
+                  }
+                  
+                  return (
+                    <div key={year} className="mb-4 last:mb-0">
+                      {months}
+                    </div>
+                  )
+                })
               })()}
             </div>
           </Card>
