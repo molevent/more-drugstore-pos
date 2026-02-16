@@ -206,21 +206,30 @@ export default function WorkSchedulePage() {
 
   // Leave summary by employee
   const leaveSummary = useMemo(() => {
-    const leaveMap = new Map<string, { dates: string[]; months: Set<string> }>()
+    const leaveMap = new Map<string, { dates: string[]; months: Set<string>; currentYearDates: string[] }>()
+    const currentYear = new Date().getFullYear()
     
     shifts
       .filter(shift => shift.notes === 'ลา')
       .forEach(shift => {
-        const existing = leaveMap.get(shift.employee_name) || { dates: [], months: new Set() }
+        const existing = leaveMap.get(shift.employee_name) || { dates: [], months: new Set(), currentYearDates: [] }
         existing.dates.push(shift.work_date)
         const month = shift.work_date.substring(0, 7) // YYYY-MM
         existing.months.add(month)
+        
+        // Track current year leaves
+        const shiftYear = parseInt(shift.work_date.split('-')[0])
+        if (shiftYear === currentYear) {
+          existing.currentYearDates.push(shift.work_date)
+        }
+        
         leaveMap.set(shift.employee_name, existing)
       })
     
     return Array.from(leaveMap.entries()).map(([name, data]) => ({
       employee_name: name,
       total_leave_days: data.dates.length,
+      current_year_leave_days: data.currentYearDates.length,
       months_count: data.months.size,
       dates: data.dates
     }))
@@ -778,7 +787,7 @@ export default function WorkSchedulePage() {
                       <div>
                         <span className="font-medium text-[#5C4A32]">{emp.employee_name}</span>
                         <p className="text-xs text-[#8B7355]">
-                          ลา {emp.months_count} เดือน
+                          ลาสะสมปีนี้ {emp.current_year_leave_days} วัน
                         </p>
                       </div>
                     </div>
