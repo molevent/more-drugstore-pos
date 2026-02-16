@@ -46,6 +46,7 @@ import ProductCatalogsListPage from './pages/ProductCatalogsListPage'
 import WorkSchedulePage from './pages/WorkSchedulePage'
 import PettyCashPage from './pages/PettyCashPage'
 import EmployeeSettingsPage from './pages/EmployeeSettingsPage'
+import ExpenseCategorySettingsPage from './pages/ExpenseCategorySettingsPage'
 import HelpManagementPage from './pages/HelpManagementPage'
 import AuthGuard from './components/auth/AuthGuard'
 import Layout from './components/common/Layout'
@@ -104,6 +105,7 @@ function App() {
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/settings/shop" element={<ShopSettingsPage />} />
                     <Route path="/settings/sales-channels" element={<SalesChannelsSettingsPage />} />
+                    <Route path="/settings/expense-categories" element={<ExpenseCategorySettingsPage />} />
                     <Route path="/product-catalog" element={<ProductCatalogPage />} />
                     <Route path="/product-catalogs" element={<ProductCatalogsListPage />} />
                     <Route path="/work-schedule" element={<WorkSchedulePage />} />

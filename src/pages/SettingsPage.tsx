@@ -231,6 +231,14 @@ export default function SettingsPage() {
       subtitle: 'จัดการหมวดหมู่และหมวดหมู่ย่อย',
       link: '/categories-management'
     },
+    {
+      icon: Receipt,
+      iconBg: 'bg-[#A67B5B]/10',
+      iconColor: 'text-[#A67B5B]',
+      title: 'หมวดหมู่ค่าใช้จ่าย',
+      subtitle: 'ตั้งค่ารหัสและแผนผังบัญชี',
+      link: '/settings/expense-categories'
+    },
   ]
 
   // Document Items
