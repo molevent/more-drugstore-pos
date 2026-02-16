@@ -562,16 +562,11 @@ export default function PettyCashPage() {
     }
   }
 
-  const handleImportStatementTransactions = async () => {
-      // Convert date format
-      const dateParts = tx.date.split('-')
-      let isoDate = tx.date
-      if (dateParts.length === 3) {
-        const day = dateParts[0]
-        const month = dateParts[1]
-        const year = '20' + dateParts[2]
-        isoDate = `${year}-${month}-${day}`
-      }
+  return (
+    <div className="p-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
           <Banknote className="h-8 w-8 text-[#A67B5B] mt-1" />
           <div>
             <h1 className="text-2xl font-bold text-[#5C4A32]">เงินสดย่อย</h1>
