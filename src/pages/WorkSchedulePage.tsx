@@ -513,6 +513,15 @@ export default function WorkSchedulePage() {
           </div>
           <button
             onClick={() => {
+              setShowLeaveModal(true)
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#FF9800] bg-white text-[#FF9800] text-sm whitespace-nowrap hover:bg-[#FF9800]/10 transition-all shadow-sm"
+          >
+            <span className="text-lg">🏖️</span>
+            ลา
+          </button>
+          <button
+            onClick={() => {
               setFormData(DEFAULT_SHIFT)
               setShowModal(true)
             }}
@@ -520,15 +529,6 @@ export default function WorkSchedulePage() {
           >
             <Plus className="h-4 w-4" />
             เพิ่มกะงาน
-          </button>
-          <button
-            onClick={() => {
-              setShowLeaveModal(true)
-            }}
-            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#FF9800] bg-white text-[#FF9800] text-sm whitespace-nowrap hover:bg-[#FF9800]/10 transition-all shadow-sm"
-          >
-            <span className="text-lg">🏖️</span>
-            ลา
           </button>
         </div>
       </div>
@@ -963,6 +963,9 @@ export default function WorkSchedulePage() {
                 </select>
               </div>
               
+              {/* Only show time/wage fields after employee is selected */}
+              {formData.employee_name && (
+                <>
               <div>
                 <label className="block text-sm font-medium text-[#5C4A32] mb-1">วันที่</label>
                 <Input
@@ -1080,13 +1083,15 @@ export default function WorkSchedulePage() {
                   )
                 })()}
               </div>
+              </>
+              )}
               
               <div>
                 <label className="block text-sm font-medium text-[#5C4A32] mb-1">หมายเหตุ</label>
                 <Input
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="หมายเหตุ (ถ้ามี)"
+                  placeholder="หมายเหตุ (ถ้ามมี)"
                 />
               </div>
               
