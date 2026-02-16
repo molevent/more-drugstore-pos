@@ -104,6 +104,7 @@ export default function ExpensesPage() {
   })
   const [importing, setImporting] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
+  const [selectedSheetItems, setSelectedSheetItems] = useState<Set<number>>(new Set())
   
   const [formData, setFormData] = useState({
     expense_date: new Date().toISOString().split('T')[0],
@@ -297,6 +298,7 @@ export default function ExpensesPage() {
       })).filter(item => item.description && item.amount > 0)
       
       setSheetData(mappedData)
+      setSelectedSheetItems(new Set()) // Reset selection when new data loaded
     } catch (error) {
       console.error('Error fetching sheet:', error)
       alert('ไม่สามารถดึงข้อมูลจาก Google Sheet ได้ ตรวจสอบว่า Sheet ถูก Publish แล้ว')
@@ -359,9 +361,17 @@ export default function ExpensesPage() {
       return
     }
     
+    // Filter only selected items
+    const itemsToImport = sheetData.filter((_, index) => selectedSheetItems.has(index))
+    
+    if (itemsToImport.length === 0) {
+      alert('กรุณาเลือกรายการที่ต้องการ import')
+      return
+    }
+    
     setImporting(true)
     try {
-      const expensesToInsert = sheetData.map(item => ({
+      const expensesToInsert = itemsToImport.map(item => ({
         expense_date: item.expense_date,
         category: item.category,
         description: item.description,
@@ -392,6 +402,7 @@ export default function ExpensesPage() {
       if (error) throw error
       
       alert(`Import สำเร็จ! เพิ่ม ${expensesToInsert.length} รายการเข้าโซนรออนุมัติ`)
+      setSelectedSheetItems(new Set()) // Clear selection after import
       fetchExpenses()
       setViewMode('database')
     } catch (error) {
@@ -738,6 +749,11 @@ export default function ExpensesPage() {
                 <div>
                   <p className="text-sm text-green-800 font-medium">
                     พบ {sheetData.length} รายการจาก Google Sheet
+                    {selectedSheetItems.size > 0 && (
+                      <span className="ml-2 text-green-600">
+                        (เลือก {selectedSheetItems.size} รายการ)
+                      </span>
+                    )}
                   </p>
                   <p className="text-xs text-green-600">
                     ยอดรวม: ฿{sheetTotalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
@@ -746,7 +762,7 @@ export default function ExpensesPage() {
                 <Button
                   variant="primary"
                   onClick={importSheetToDatabase}
-                  disabled={importing}
+                  disabled={importing || selectedSheetItems.size === 0}
                   className="bg-green-600 hover:bg-green-700"
                 >
                   {importing ? 'กำลัง import...' : 'Import ลง Database'}
@@ -933,6 +949,20 @@ export default function ExpensesPage() {
               <table className="w-full">
                 <thead className="bg-green-50">
                   <tr>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 w-10">
+                      <input
+                        type="checkbox"
+                        checked={selectedSheetItems.size === sheetData.length && sheetData.length > 0}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedSheetItems(new Set(sheetData.map((_, index) => index)))
+                          } else {
+                            setSelectedSheetItems(new Set())
+                          }
+                        }}
+                        className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                      />
+                    </th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">วันที่</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">หมวดหมู่</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">รายการ</th>
@@ -943,7 +973,23 @@ export default function ExpensesPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {sheetData.map((item, index) => (
-                    <tr key={index} className="hover:bg-green-50/50">
+                    <tr key={index} className={`hover:bg-green-50/50 ${selectedSheetItems.has(index) ? 'bg-green-100/50' : ''}`}>
+                      <td className="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedSheetItems.has(index)}
+                          onChange={(e) => {
+                            const newSelected = new Set(selectedSheetItems)
+                            if (e.target.checked) {
+                              newSelected.add(index)
+                            } else {
+                              newSelected.delete(index)
+                            }
+                            setSelectedSheetItems(newSelected)
+                          }}
+                          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                        />
+                      </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
                         {new Date(item.expense_date).toLocaleDateString('th-TH')}
                       </td>
