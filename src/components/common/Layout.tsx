@@ -10,9 +10,7 @@ import {
   X,
   Users,
   Wallet,
-  Calendar,
-  FileText,
-  Percent
+  Calendar
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -84,8 +82,6 @@ export default function Layout({ children }: LayoutProps) {
       title: 'เอกสาร',
       items: [
         { name: t('nav.documents'), href: '/expenses', icon: Wallet },
-        { name: 'ใบเสนอราคา', href: '/quotations', icon: FileText },
-        { name: 'ภาษีหัก ณ ที่จ่าย', href: '/withholding-tax', icon: Percent },
         { name: 'ตารางเข้างาน', href: '/work-schedule', icon: Calendar },
       ]
     },
