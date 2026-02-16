@@ -52,6 +52,8 @@ const EXPENSE_CATEGORIES = [
   { value: 'travel', label: 'ค่าเดินทาง', icon: '🚗' },
   { value: 'food', label: 'ค่าอาหาร', icon: '🍽️' },
   { value: 'maintenance', label: 'ค่าซ่อมแซม', icon: '🔧' },
+  { value: 'housekeeping', label: 'ค่าแม่บ้าน', icon: '🧹' },
+  { value: 'products', label: 'ค่าสินค้า', icon: '📦' },
   { value: 'other', label: 'อื่นๆ', icon: '📋' }
 ]
 
@@ -724,76 +726,114 @@ export default function PettyCashPage() {
         </select>
       </div>
 
-      {/* Expenses List */}
+      {/* Calendar View */}
       <Card className="border-[#E8E0D5]">
         <div className="p-4 border-b border-[#E8E0D5] bg-[#FAF8F5]">
-          <h2 className="text-base font-bold text-[#5C4A32]">รายการค่าใช้จ่าย</h2>
-        </div>
-        <div className="divide-y divide-[#E8E0D5]">
-          {filteredExpenses.length === 0 ? (
-            <div className="p-8 text-center">
-              <Receipt className="h-12 w-12 text-[#D4C9B8] mx-auto mb-3" />
-              <p className="text-[#8B7355]">ไม่มีรายการค่าใช้จ่ายในเดือนนี้</p>
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-[#5C4A32]">ปฏิทินรายการค่าใช้จ่าย</h2>
+            <div className="text-sm text-[#8B7355]">
+              {filteredExpenses.length} รายการ | ฿{filteredExpenses.reduce((sum, e) => sum + e.amount, 0).toLocaleString()}
             </div>
-          ) : (
-            filteredExpenses.map((expense) => {
-              const category = EXPENSE_CATEGORIES.find(c => c.value === expense.category)
-              return (
-                <div key={expense.id} className="p-4 flex items-center justify-between hover:bg-[#FAF8F5]">
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 bg-[#F5F0E8] rounded-lg">
-                      <span className="text-xl">{category?.icon || '📋'}</span>
+          </div>
+        </div>
+        
+        {/* Calendar Grid */}
+        <div className="p-4">
+          {/* Weekday Headers */}
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'].map((day) => (
+              <div key={day} className="text-center text-xs font-medium text-[#8B7355] py-2 bg-[#F5F0E8] rounded">
+                {day}
+              </div>
+            ))}
+          </div>
+          
+          {/* Calendar Days */}
+          <div className="grid grid-cols-7 gap-1">
+            {(() => {
+              const year = currentDate.getFullYear()
+              const month = currentDate.getMonth()
+              const firstDay = new Date(year, month, 1)
+              const lastDay = new Date(year, month + 1, 0)
+              const daysInMonth = lastDay.getDate()
+              const startDayOfWeek = firstDay.getDay()
+              
+              const days = []
+              
+              // Empty cells for days before the 1st
+              for (let i = 0; i < startDayOfWeek; i++) {
+                days.push(<div key={`empty-${i}`} className="h-24 bg-gray-50 rounded" />)
+              }
+              
+              // Days of the month
+              for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                const dayExpenses = filteredExpenses.filter(e => e.expense_date === dateStr)
+                const dayTotal = dayExpenses.reduce((sum, e) => sum + e.amount, 0)
+                const isToday = new Date().toDateString() === new Date(year, month, day).toDateString()
+                
+                days.push(
+                  <div 
+                    key={day} 
+                    className={`h-24 border rounded p-1 overflow-y-auto ${
+                      isToday ? 'border-[#A67B5B] bg-[#FAF8F5]' : 'border-[#E8E0D5] bg-white hover:bg-[#FAF8F5]'
+                    }`}
+                  >
+                    <div className={`text-xs font-medium mb-1 ${isToday ? 'text-[#A67B5B]' : 'text-[#5C4A32]'}`}>
+                      {day}
                     </div>
-                    <div>
-                      <p className="font-medium text-[#5C4A32]">{expense.description}</p>
-                      <p className="text-sm text-[#8B7355]">
-                        {new Date(expense.expense_date).toLocaleDateString('th-TH')} • {category?.label}
-                      </p>
-                      {expense.receipt_number && (
-                        <p className="text-xs text-[#A67B52]">เลขที่: {expense.receipt_number}</p>
-                      )}
-                    </div>
+                    {dayExpenses.length > 0 && (
+                      <div className="space-y-1">
+                        {dayExpenses.slice(0, 3).map((expense, idx) => {
+                          const category = EXPENSE_CATEGORIES.find(c => c.value === expense.category)
+                          return (
+                            <div 
+                              key={expense.id}
+                              onClick={() => {
+                                setEditingExpense(expense)
+                                setEditForm({
+                                  category: expense.category,
+                                  description: expense.description,
+                                  amount: expense.amount.toString()
+                                })
+                                setShowEditModal(true)
+                              }}
+                              className="text-xs p-1 bg-[#F5F0E8] rounded cursor-pointer hover:bg-[#E8E0D5] truncate"
+                              title={`${category?.icon} ${expense.description} - ฿${expense.amount.toLocaleString()}`}
+                            >
+                              <span className="mr-1">{category?.icon}</span>
+                              ฿{expense.amount.toLocaleString()}
+                            </div>
+                          )
+                        })}
+                        {dayExpenses.length > 3 && (
+                          <div className="text-xs text-[#8B7355] text-center">+{dayExpenses.length - 3} รายการ</div>
+                        )}
+                        <div className="text-xs font-bold text-[#E65100] text-right pt-1 border-t border-[#E8E0D5]">
+                          รวม: ฿{dayTotal.toLocaleString()}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-[#E65100]">฿{expense.amount.toLocaleString()}</p>
-                    <div className="flex items-center gap-2 justify-end mt-1">
-                      {expense.status === 'approved' ? (
-                        <span className="text-xs text-[#2E7D32] flex items-center gap-1">
-                          <CheckCircle className="h-3 w-3" /> อนุมัติ
-                        </span>
-                      ) : expense.status === 'pending' ? (
-                        <span className="text-xs text-[#F57C00]">รออนุมัติ</span>
-                      ) : (
-                        <span className="text-xs text-[#C62828]">ปฏิเสธ</span>
-                      )}
-                      <button
-                        onClick={() => {
-                          setEditingExpense(expense)
-                          setEditForm({
-                            category: expense.category,
-                            description: expense.description,
-                            amount: expense.amount.toString()
-                          })
-                          setShowEditModal(true)
-                        }}
-                        className="p-1 hover:bg-blue-100 rounded text-blue-500 transition-colors"
-                        title="แก้ไขรายการ"
-                      >
-                        <Edit3 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteExpense(expense.id, expense.amount)}
-                        className="p-1 hover:bg-red-100 rounded text-red-500 transition-colors"
-                        title="ลบรายการ"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )
-            })
-          )}
+                )
+              }
+              
+              return days
+            })()}
+          </div>
+        </div>
+        
+        {/* Legend */}
+        <div className="px-4 pb-4">
+          <div className="flex flex-wrap gap-2 text-xs text-[#8B7355]">
+            <span className="font-medium">หมวดหมู่:</span>
+            {EXPENSE_CATEGORIES.map(cat => (
+              <span key={cat.value} className="flex items-center gap-1">
+                <span>{cat.icon}</span>
+                <span>{cat.label}</span>
+              </span>
+            ))}
+          </div>
         </div>
       </Card>
 
