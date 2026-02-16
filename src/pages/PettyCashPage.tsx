@@ -278,11 +278,6 @@ export default function PettyCashPage() {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleReplenish = async () => {
-    // Placeholder - not currently used
-  }
-
   const exportCSV = () => {
     if (!stats) return
     
@@ -393,11 +388,6 @@ export default function PettyCashPage() {
     printWindow.document.write(htmlContent)
     printWindow.document.close()
     setShowExportMenu(false)
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const exportReport = () => {
-    // Placeholder - replaced by exportCSV and printReport
   }
 
   const handleAddFund = async (e: React.FormEvent) => {
