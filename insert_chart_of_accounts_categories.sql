@@ -62,4 +62,4 @@ INSERT INTO public.expense_categories (name, description, keywords, color, chart
   ('ค่าอบรมพนักงาน', 'ค่าอบรมและพัฒนาพนักงาน', 'อบรม,training', '#EC4899', '56008', true, 'HR_TRAINING'),
   ('ค่าใช้จ่ายบุคลากรอื่น', 'ค่าใช้จ่ายบุคลากรอื่นๆ', 'ค่าใช้จ่ายอื่น,other,personnel', '#EC4899', '56100', true, 'OTHER_PERSONNEL_EXP')
 
-ON CONFLICT (code) DO NOTHING;
+ON CONFLICT (name) DO NOTHING;
