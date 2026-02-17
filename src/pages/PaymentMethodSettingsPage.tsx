@@ -26,7 +26,14 @@ interface PaymentMethodRule {
   updated_at?: string
 }
 
-const PAYMENT_METHODS = [
+interface PaymentMethod {
+  id: string
+  name: string
+  is_active: boolean
+  created_at?: string
+}
+
+const DEFAULT_PAYMENT_METHODS = [
   'เงินสด',
   'โอนเงิน',
   'บัตรเครดิต',
@@ -36,6 +43,108 @@ const PAYMENT_METHODS = [
 export default function PaymentMethodSettingsPage() {
   const [rules, setRules] = useState<PaymentMethodRule[]>([])
   const [loading, setLoading] = useState(true)
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
+  const [loadingMethods, setLoadingMethods] = useState(true)
+  const [showMethodModal, setShowMethodModal] = useState(false)
+  const [editingMethod, setEditingMethod] = useState<PaymentMethod | null>(null)
+  const [methodFormData, setMethodFormData] = useState({
+    name: '',
+    is_active: true
+  })
+
+  useEffect(() => {
+    fetchRules()
+    fetchPaymentMethods()
+  }, [])
+
+  const fetchPaymentMethods = async () => {
+    setLoadingMethods(true)
+    try {
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .select('*')
+        .order('name', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching payment methods:', error)
+        return
+      }
+
+      // If no data in DB yet, use defaults
+      if (!data || data.length === 0) {
+        const defaultMethods = DEFAULT_PAYMENT_METHODS.map((name, index) => ({
+          id: `default-${index}`,
+          name,
+          is_active: true
+        }))
+        setPaymentMethods(defaultMethods)
+      } else {
+        setPaymentMethods(data)
+      }
+    } catch (error) {
+      console.error('Error fetching payment methods:', error)
+      // Fallback to defaults
+      const defaultMethods = DEFAULT_PAYMENT_METHODS.map((name, index) => ({
+        id: `default-${index}`,
+        name,
+        is_active: true
+      }))
+      setPaymentMethods(defaultMethods)
+    } finally {
+      setLoadingMethods(false)
+    }
+  }
+
+  const handleMethodSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    try {
+      if (editingMethod) {
+        // Update existing method in state only (no DB persistence for now)
+        setPaymentMethods(prev => prev.map(m => 
+          m.id === editingMethod.id 
+            ? { ...m, name: methodFormData.name, is_active: methodFormData.is_active }
+            : m
+        ))
+      } else {
+        // Add new method
+        const newMethod: PaymentMethod = {
+          id: `method-${Date.now()}`,
+          name: methodFormData.name,
+          is_active: methodFormData.is_active
+        }
+        setPaymentMethods(prev => [...prev, newMethod])
+      }
+
+      setShowMethodModal(false)
+      setEditingMethod(null)
+      setMethodFormData({ name: '', is_active: true })
+    } catch (error) {
+      console.error('Error saving payment method:', error)
+      alert('เกิดข้อผิดพลาดในการบันทึก')
+    }
+  }
+
+  const handleDeleteMethod = async (id: string) => {
+    if (!confirm('ต้องการลบวิธีการชำระเงินนี้?')) return
+
+    setPaymentMethods(prev => prev.filter(m => m.id !== id))
+  }
+
+  const handleEditMethod = (method: PaymentMethod) => {
+    setEditingMethod(method)
+    setMethodFormData({
+      name: method.name,
+      is_active: method.is_active
+    })
+    setShowMethodModal(true)
+  }
+
+  const closeMethodModal = () => {
+    setShowMethodModal(false)
+    setEditingMethod(null)
+    setMethodFormData({ name: '', is_active: true })
+  }
   const [showModal, setShowModal] = useState(false)
   const [editingRule, setEditingRule] = useState<PaymentMethodRule | null>(null)
   const [formData, setFormData] = useState({
@@ -162,7 +271,7 @@ export default function PaymentMethodSettingsPage() {
               </div>
               <div>
                 <h1 className="text-xl font-semibold text-[#5A5A5A]">ตั้งค่าวิธีการชำระเงิน</h1>
-                <p className="text-sm text-gray-500">กำหนดค่าเริ่มต้นวิธีการชำระเงินตามคีย์เวิร์ดในรายการค่าใช้จ่าย</p>
+                <p className="text-sm text-black">กำหนดค่าเริ่มต้นวิธีการชำระเงินตามคีย์เวิร์ดในรายการค่าใช้จ่าย</p>
               </div>
             </div>
           </div>
@@ -176,12 +285,80 @@ export default function PaymentMethodSettingsPage() {
             <Settings className="w-5 h-5 text-blue-600 mt-0.5" />
             <div>
               <h3 className="font-medium text-blue-900">วิธีการทำงาน</h3>
-              <p className="text-sm text-blue-700 mt-1">
-                เมื่อสร้างค่าใช้จ่ายใหม่ ระบบจะตรวจสอบคีย์เวิร์ดในรายการค่าใช้จ่าย 
-                และเลือกวิธีการชำระเงินอัตโนมัติตามกฎที่ตั้งไว้ กฎที่มี priority สูงกว่าจะถูกตรวจสอบก่อน
-              </p>
+              <p className="text-sm text-black mt-1">ระบบจะตรวจสอบคีย์เวิร์ดในรายการค่าใช้จ่าย และเลือกวิธีการชำระเงินอัตโนมัติตามกฎที่ตั้งไว้ กฎที่มี priority สูงกว่าจะถูกตรวจสอบก่อน</p>
             </div>
           </div>
+        </Card>
+
+        {/* Payment Methods Section */}
+        <Card className="mb-6">
+          <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="font-medium text-[#5A5A5A] flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-[#7D735F]" />
+              วิธีการชำระเงิน
+            </h2>
+            <Button
+              onClick={() => setShowMethodModal(true)}
+              className="flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              เพิ่มวิธีการชำระเงิน
+            </Button>
+          </div>
+
+          {loadingMethods ? (
+            <div className="p-8 text-center text-black">กำลังโหลด...</div>
+          ) : paymentMethods.length === 0 ? (
+            <div className="p-8 text-center">
+              <CreditCard className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-black">ยังไม่มีวิธีการชำระเงิน</p>
+              <Button
+                onClick={() => setShowMethodModal(true)}
+                variant="secondary"
+                className="mt-4"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                เพิ่มวิธีการชำระเงินแรก
+              </Button>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {paymentMethods.map((method) => (
+                <div
+                  key={method.id}
+                  className={`p-4 flex items-center justify-between hover:bg-gray-50 ${!method.is_active ? 'opacity-60' : ''}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2 py-1 rounded text-sm ${
+                      method.name === 'เงินสด' ? 'bg-green-100 text-green-700' :
+                      method.name === 'โอนเงิน' ? 'bg-blue-100 text-blue-700' :
+                      method.name === 'บัตรเครดิต' ? 'bg-purple-100 text-purple-700' :
+                      'bg-orange-100 text-orange-700'
+                    }`}>
+                      {method.name}
+                    </span>
+                    {!method.is_active && (
+                      <span className="text-xs text-black">(ปิดใช้งาน)</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleEditMethod(method)}
+                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteMethod(method.id)}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
 
         {/* Rules List */}
@@ -201,11 +378,11 @@ export default function PaymentMethodSettingsPage() {
           </div>
 
           {loading ? (
-            <div className="p-8 text-center text-gray-500">กำลังโหลด...</div>
+            <div className="p-8 text-center text-black">กำลังโหลด...</div>
           ) : rules.length === 0 ? (
             <div className="p-8 text-center">
               <Settings className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">ยังไม่มีกฎ</p>
+              <p className="text-black">ยังไม่มีกฎ</p>
               <Button
                 onClick={() => setShowModal(true)}
                 variant="secondary"
@@ -223,7 +400,7 @@ export default function PaymentMethodSettingsPage() {
                   className={`p-4 flex items-center justify-between hover:bg-gray-50 ${!rule.is_active ? 'opacity-60' : ''}`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1 text-gray-400">
+                    <div className="flex items-center gap-1 text-black">
                       <ArrowUp className="w-4 h-4" />
                       <span className="text-sm">{rule.priority}</span>
                     </div>
@@ -232,7 +409,7 @@ export default function PaymentMethodSettingsPage() {
                         <span className="font-medium text-[#5A5A5A]">
                           ถ้าเจอ "{rule.keyword}"
                         </span>
-                        <span className="text-gray-400">→</span>
+                        <span className="text-black">→</span>
                         <span className={`px-2 py-1 rounded text-sm ${
                           rule.payment_method === 'เงินสด' ? 'bg-green-100 text-green-700' :
                           rule.payment_method === 'โอนเงิน' ? 'bg-blue-100 text-blue-700' :
@@ -243,7 +420,7 @@ export default function PaymentMethodSettingsPage() {
                         </span>
                       </div>
                       {!rule.is_active && (
-                        <span className="text-xs text-gray-400">(ปิดใช้งาน)</span>
+                        <span className="text-xs text-black">(ปิดใช้งาน)</span>
                       )}
                     </div>
                   </div>
@@ -297,7 +474,7 @@ export default function PaymentMethodSettingsPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7D735F]/20 focus:border-[#7D735F] outline-none"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-black mt-1">
                   ระบบจะค้นหาคีย์เวิร์ดนี้ในรายการค่าใช้จ่าย (ไม่สนตัวพิมพ์เล็ก/ใหญ่)
                 </p>
               </div>
@@ -312,8 +489,8 @@ export default function PaymentMethodSettingsPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7D735F]/20 focus:border-[#7D735F] outline-none"
                   required
                 >
-                  {PAYMENT_METHODS.map((method) => (
-                    <option key={method} value={method}>{method}</option>
+                  {paymentMethods.map((method: PaymentMethod) => (
+                    <option key={method.id} value={method.name}>{method.name}</option>
                   ))}
                 </select>
               </div>
@@ -328,7 +505,7 @@ export default function PaymentMethodSettingsPage() {
                   onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) || 0 })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7D735F]/20 focus:border-[#7D735F] outline-none"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-black mt-1">
                   ตัวเลขสูง = ตรวจสอบก่อน (default: 0)
                 </p>
               </div>
@@ -351,6 +528,70 @@ export default function PaymentMethodSettingsPage() {
                   type="button"
                   variant="secondary"
                   onClick={closeModal}
+                  className="flex-1"
+                >
+                  ยกเลิก
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 flex items-center justify-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  บันทึก
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      {/* Payment Method Modal */}
+      {showMethodModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-md">
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="font-medium text-[#5A5A5A]">
+                {editingMethod ? 'แก้ไขวิธีการชำระเงิน' : 'เพิ่มวิธีการชำระเงิน'}
+              </h2>
+              <button
+                onClick={closeMethodModal}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <form onSubmit={handleMethodSubmit} className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#5A5A5A] mb-2">
+                  ชื่อวิธีการชำระเงิน <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={methodFormData.name}
+                  onChange={(e) => setMethodFormData({ ...methodFormData, name: e.target.value })}
+                  placeholder="เช่น เงินสด, โอนเงิน, บัตรเครดิต"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7D735F]/20 focus:border-[#7D735F] outline-none"
+                  required
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="method_is_active"
+                  checked={methodFormData.is_active}
+                  onChange={(e) => setMethodFormData({ ...methodFormData, is_active: e.target.checked })}
+                  className="w-4 h-4 text-[#7D735F] border-gray-300 rounded focus:ring-[#7D735F]"
+                />
+                <label htmlFor="method_is_active" className="text-sm text-[#5A5A5A]">
+                  เปิดใช้งาน
+                </label>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={closeMethodModal}
                   className="flex-1"
                 >
                   ยกเลิก
