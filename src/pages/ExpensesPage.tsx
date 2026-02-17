@@ -1373,9 +1373,51 @@ export default function ExpensesPage() {
                 </div>
               </div>
 
-              {/* Category dropdown - filtered by document_type */}
+              {/* Category buttons - limited to specific categories, rest in dropdown */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">หมวด *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">หมวดหมู่ *</label>
+                
+                {/* Quick access buttons for common categories */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {expenseCategories
+                    .filter(cat => [
+                      'ค่าส่ง ปณ. [EMS]',
+                      'ค่าของใช้ - วัสดุสำนักงาน',
+                      'อุปกรณ์สำนักงาน',
+                      'ค่า Service Fee Grab',
+                      'ค่าธรรมเนียม LINE SHOPPING',
+                      'ค่าธรรมเนียม Lazada',
+                      'ค่าธรรมเนียม Kbank',
+                      'ค่าเช่าสำนักงาน',
+                      'ค่าไฟฟ้า',
+                      'ค่าน้ำ',
+                      'ค่าบัญชี'
+                    ].includes(cat.name))
+                    .map(cat => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => {
+                          const isGrabCategory = cat.name.toLowerCase().includes('grab')
+                          setFormData({ 
+                            ...formData, 
+                            category: cat.name,
+                            payment_method: isGrabCategory ? 'Grab Wallet' : formData.payment_method
+                          })
+                        }}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                          formData.category === cat.name
+                            ? 'ring-2 ring-offset-2 ring-gray-400 scale-105'
+                            : 'hover:opacity-80'
+                        }`}
+                        style={{ backgroundColor: cat.color || '#6B7280', color: '#ffffff' }}
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
+                </div>
+
+                {/* Dropdown for all other categories */}
                 <select
                   value={formData.category}
                   onChange={(e) => {
@@ -1389,8 +1431,21 @@ export default function ExpensesPage() {
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">-- เลือกหมวด --</option>
+                  <option value="">-- เลือกหมวดอื่นๆ --</option>
                   {expenseCategories
+                    .filter(cat => ![
+                      'ค่าส่ง ปณ. [EMS]',
+                      'ค่าของใช้ - วัสดุสำนักงาน',
+                      'อุปกรณ์สำนักงาน',
+                      'ค่า Service Fee Grab',
+                      'ค่าธรรมเนียม LINE SHOPPING',
+                      'ค่าธรรมเนียม Lazada',
+                      'ค่าธรรมเนียม Kbank',
+                      'ค่าเช่าสำนักงาน',
+                      'ค่าไฟฟ้า',
+                      'ค่าน้ำ',
+                      'ค่าบัญชี'
+                    ].includes(cat.name))
                     .filter(cat => {
                       // Filter based on document_type
                       if (!formData.document_type) return true
