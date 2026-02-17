@@ -1489,28 +1489,6 @@ export default function ExpensesPage() {
                 </select>
               </div>
 
-              {/* Running No, Tax No - 2 columns */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Running No.</label>
-                  <input
-                    type="text"
-                    value={formData.sheet_id}
-                    onChange={(e) => setFormData({ ...formData, sheet_id: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">เลขที่</label>
-                  <input
-                    type="text"
-                    value={formData.tax_invoice_number}
-                    onChange={(e) => setFormData({ ...formData, tax_invoice_number: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
               {/* Amount, VAT, Withholding - 3 columns */}
               <div className="grid grid-cols-3 gap-4">
                 <div>
