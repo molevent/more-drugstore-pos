@@ -201,6 +201,8 @@ export interface Order {
   notes?: string
   zortout_synced: boolean
   zortout_order_id?: string
+  order_source?: string  // Added for SalesOrdersPage
+  platform_fee?: number  // Added for SalesOrdersPage
   created_at: string
   updated_at: string
 }
@@ -213,6 +215,7 @@ export interface OrderItem {
   quantity: number
   unit_price: number
   discount: number
+  subtotal: number  // Added for Netlify build
   total_price: number
   label_printed: boolean
   label_printed_at?: string

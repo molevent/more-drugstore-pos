@@ -47,18 +47,6 @@ interface Contact {
   created_at?: string
 }
 
-const EXPENSE_CATEGORIES = [
-  'ค่าน้ำ',
-  'ค่าไฟ',
-  'ค่าเช่า',
-  'ค่าซ่อมบำรุง',
-  'ค่าอุปกรณ์สำนักงาน',
-  'ค่าโฆษณา',
-  'ค่าขนส่ง',
-  'ค่าทำความสะอาด',
-  'ค่าอื่นๆ'
-]
-
 const PAYMENT_METHODS = [
   'เงินสด',
   'โอนเงิน',
@@ -158,6 +146,22 @@ export default function ExpensesPage() {
     
     const sheetIds = new Set(data?.map(e => e.sheet_id).filter(Boolean) || [])
     setExistingSheetIds(sheetIds)
+  }
+
+  // Fetch expense categories from database
+  const fetchExpenseCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('expense_categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('name')
+      
+      if (error) throw error
+      setExpenseCategories(data || [])
+    } catch (error) {
+      console.error('Error fetching expense categories:', error)
+    }
   }
 
   const [formData, setFormData] = useState({
@@ -1068,7 +1072,7 @@ export default function ExpensesPage() {
                       <td className="px-4 py-3 text-sm text-gray-900">
                         <div className="flex items-center gap-2 flex-wrap">
                           {expense.description}
-                          {expense.vat_amount > 0 && (
+                          {(expense.vat_amount ?? 0) > 0 && (
                             <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded font-medium">VAT</span>
                           )}
                         </div>
@@ -1240,7 +1244,7 @@ export default function ExpensesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredSheetData.map((item, filteredIndex) => {
+                  {filteredSheetData.map((item, _filteredIndex) => {
                     const originalIndex = sheetData.findIndex(s => s.sheet_id === item.sheet_id);
                     return (
                       <tr key={originalIndex} className={`hover:bg-green-50/50 ${selectedSheetItems.has(originalIndex) ? 'bg-green-100/50' : ''} ${existingSheetIds.has(item.sheet_id) ? 'bg-gray-100/50' : ''}`}>
