@@ -304,19 +304,6 @@ export default function EmployeeSettingsPage() {
     setFormData(DEFAULT_EMPLOYEE)
   }
 
-  // Calculate default wage based on position
-  const getDefaultWage = (position: string) => {
-    switch (position) {
-      case 'เภสัชกร':
-        return 150
-      case 'ผู้จัดการ':
-        return 80
-      case 'พนักงานพาร์ทไทม์':
-      default:
-        return 40
-    }
-  }
-
   return (
     <div>
       {/* Header */}
