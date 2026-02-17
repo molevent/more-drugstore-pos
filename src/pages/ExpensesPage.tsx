@@ -666,7 +666,7 @@ export default function ExpensesPage() {
       {/* Summary Cards - Match Sales Page Style */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         {/* Count Card */}
-        <Card className="flex items-center gap-4">
+        <Card className="flex items-center justify-center gap-4 py-6">
           <div className="w-12 h-12 rounded-xl bg-[#7D735F]/10 flex items-center justify-center flex-shrink-0">
             <Receipt className="h-6 w-6 text-[#7D735F]" />
           </div>
@@ -679,7 +679,7 @@ export default function ExpensesPage() {
         </Card>
         
         {/* Amount Card */}
-        <Card className="flex items-center gap-4">
+        <Card className="flex items-center justify-center gap-4 py-6">
           <div className="w-12 h-12 rounded-xl bg-[#A67B5B]/10 flex items-center justify-center flex-shrink-0">
             <Wallet className="h-6 w-6 text-[#A67B5B]" />
           </div>
