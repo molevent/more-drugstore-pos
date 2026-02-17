@@ -49,6 +49,9 @@ import EmployeeSettingsPage from './pages/EmployeeSettingsPage'
 import ExpenseCategorySettingsPage from './pages/ExpenseCategorySettingsPage'
 import PaymentMethodSettingsPage from './pages/PaymentMethodSettingsPage'
 import HelpManagementPage from './pages/HelpManagementPage'
+import StorefrontPage from './pages/StorefrontPage'
+import ProductDetailPage from './pages/ProductDetailPage'
+import CheckoutPage from './pages/CheckoutPage'
 import AuthGuard from './components/auth/AuthGuard'
 import Layout from './components/common/Layout'
 import { LanguageProvider } from './contexts/LanguageContext'
@@ -58,6 +61,12 @@ function App() {
     <LanguageProvider>
       <BrowserRouter>
         <Routes>
+          {/* Public Storefront Routes - No Authentication Required */}
+          <Route path="/store" element={<StorefrontPage />} />
+          <Route path="/store/product/:id" element={<ProductDetailPage />} />
+          <Route path="/store/checkout" element={<CheckoutPage />} />
+          
+          {/* Admin Routes - Authentication Required */}
           <Route path="/login" element={<LoginPage />} />
           <Route
             path="/*"
