@@ -18,6 +18,7 @@ interface SalesOrder {
   is_cancelled?: boolean
   created_at: string
   updated_at: string
+  order_source?: string
   order_items_count: number
   order_items?: OrderItem[]
 }
@@ -194,6 +195,7 @@ export default function SalesOrdersPage() {
         payment_method: null,
         total: order.total_amount,
         subtotal: order.subtotal,
+        discount: order.discount ?? 0,
         shipping_fee: order.shipping_fee,
         status: order.status,
         platform_id: 'website',

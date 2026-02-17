@@ -9,6 +9,7 @@ interface OrderItem {
   quantity: number
   unit_price: number
   discount: number
+  subtotal: number
   total_price: number
 }
 
@@ -187,6 +188,7 @@ export default function OrderEditModal({ orderId, orderSource = 'pos', onClose, 
       quantity: 1,
       unit_price: product.base_price,
       discount: 0,
+      subtotal: product.base_price,
       total_price: product.base_price
     }
     
