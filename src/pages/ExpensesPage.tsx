@@ -1377,7 +1377,14 @@ export default function ExpensesPage() {
                     <button
                       key={cat.id}
                       type="button"
-                      onClick={() => setFormData({ ...formData, category: cat.name })}
+                      onClick={() => {
+                        const isGrabCategory = cat.name.toLowerCase().includes('grab')
+                        setFormData({ 
+                          ...formData, 
+                          category: cat.name,
+                          payment_method: isGrabCategory ? 'Grab Wallet' : formData.payment_method
+                        })
+                      }}
                       className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                         formData.category === cat.name
                           ? 'ring-2 ring-offset-2 ring-gray-400 scale-105'
