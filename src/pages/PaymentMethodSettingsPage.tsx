@@ -13,8 +13,7 @@ import {
   X,
   Settings,
   Hash,
-  ArrowUp,
-  ArrowDown
+  ArrowUp
 } from 'lucide-react'
 
 interface PaymentMethodRule {
@@ -209,7 +208,7 @@ export default function PaymentMethodSettingsPage() {
               <p className="text-gray-500">ยังไม่มีกฎ</p>
               <Button
                 onClick={() => setShowModal(true)}
-                variant="outline"
+                variant="secondary"
                 className="mt-4"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -350,7 +349,7 @@ export default function PaymentMethodSettingsPage() {
               <div className="flex gap-3 pt-4">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="secondary"
                   onClick={closeModal}
                   className="flex-1"
                 >
