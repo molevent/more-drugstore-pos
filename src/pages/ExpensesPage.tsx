@@ -1381,6 +1381,7 @@ export default function ExpensesPage() {
                 <div className="flex flex-wrap gap-2 mb-3">
                   {expenseCategories
                     .filter(cat => [
+                      'ซื้อสินค้า',
                       'ค่าส่ง ปณ. [EMS]',
                       'ค่าของใช้ - วัสดุสำนักงาน',
                       'อุปกรณ์สำนักงาน',
@@ -1434,6 +1435,7 @@ export default function ExpensesPage() {
                   <option value="">-- เลือกหมวดอื่นๆ --</option>
                   {expenseCategories
                     .filter(cat => ![
+                      'ซื้อสินค้า',
                       'ค่าส่ง ปณ. [EMS]',
                       'ค่าของใช้ - วัสดุสำนักงาน',
                       'อุปกรณ์สำนักงาน',
