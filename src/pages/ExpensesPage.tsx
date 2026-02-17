@@ -1467,7 +1467,7 @@ export default function ExpensesPage() {
                       onChange={(e) => setFormData({ ...formData, has_invoice: e.target.value })}
                       className="w-4 h-4 text-blue-600"
                     />
-                    <span className="text-sm">No / แสดง Yes</span>
+                    <span className="text-sm">No</span>
                   </label>
                 </div>
               </div>
