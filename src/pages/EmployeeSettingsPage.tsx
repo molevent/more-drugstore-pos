@@ -393,7 +393,7 @@ export default function EmployeeSettingsPage() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b border-[#E8E0D5]">
               <h3 className="text-lg font-bold text-black">
                 {editingEmployee ? 'แก้ไขพนักงาน' : 'เพิ่มพนักงาน'}
