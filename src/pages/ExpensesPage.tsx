@@ -173,6 +173,7 @@ export default function ExpensesPage() {
     receipt_number: '',
     vendor: '',
     notes: '',
+    has_invoice: 'no',
     // Google Sheets extended fields
     sheet_id: '',
     tax_invoice_number: '',
@@ -307,6 +308,7 @@ export default function ExpensesPage() {
       receipt_number: expense.receipt_number || '',
       vendor: expense.vendor || '',
       notes: expense.notes || '',
+      has_invoice: 'no',
       // Google Sheets extended fields
       sheet_id: expense.sheet_id || '',
       tax_invoice_number: expense.tax_invoice_number || '',
@@ -336,6 +338,7 @@ export default function ExpensesPage() {
       receipt_number: '',
       vendor: '',
       notes: '',
+      has_invoice: 'no',
       // Google Sheets extended fields
       sheet_id: '',
       tax_invoice_number: '',
@@ -1311,92 +1314,121 @@ export default function ExpensesPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">วันที่ *</label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.expense_date}
-                    onChange={(e) => setFormData({ ...formData, expense_date: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">หมวดหมู่ *</label>
-                  <div className="flex flex-wrap gap-2">
-                    {expenseCategories.map(cat => (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, category: cat.name })}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                          formData.category === cat.name
-                            ? 'ring-2 ring-offset-2 ring-gray-400 scale-105'
-                            : 'hover:opacity-80'
-                        }`}
-                        style={{ backgroundColor: cat.color || '#6B7280', color: '#ffffff' }}
-                      >
-                        {cat.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
+              {/* Date - full width */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">รายการ *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">วันที่ *</label>
                 <input
-                  type="text"
+                  type="date"
                   required
-                  value={formData.description}
-                  onChange={(e) => {
-                    const newDescription = e.target.value
-                    setFormData({ ...formData, description: newDescription })
-                    autoSelectPaymentMethod(newDescription)
-                  }}
-                  placeholder="เช่น ค่าไฟเดือนมกราคม"
+                  value={formData.expense_date}
+                  onChange={(e) => setFormData({ ...formData, expense_date: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* Document Type, Subcategory, Vendor - 3 columns */}
+              <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">จำนวนเงิน *</label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    step="0.01"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">วิธีชำระเงิน *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ประเภท</label>
                   <select
-                    required
-                    value={formData.payment_method}
-                    onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
+                    value={formData.document_type}
+                    onChange={(e) => setFormData({ ...formData, document_type: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
-                    {PAYMENT_METHODS.map(method => (
-                      <option key={method} value={method}>{method}</option>
-                    ))}
+                    <option value="">--</option>
+                    <option value="ใบกำกับภาษี">ใบกำกับภาษี</option>
+                    <option value="ใบเสร็จรับเงิน">ใบเสร็จรับเงิน</option>
+                    <option value="ใบส่งของ">ใบส่งของ</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">หมวด</label>
+                  <select
+                    value={formData.subcategory}
+                    onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">--</option>
+                    <option value="ค่าใช้จ่ายทั่วไป">ค่าใช้จ่ายทั่วไป</option>
+                    <option value="ค่าส่งของ">ค่าส่งของ</option>
+                    <option value="ค่าบริการ">ค่าบริการ</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">หมวดย่อย</label>
+                  <select
+                    value={formData.product_type}
+                    onChange={(e) => setFormData({ ...formData, product_type: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">--</option>
+                    <option value="อุปกรณ์สำนักงาน">อุปกรณ์สำนักงาน</option>
+                    <option value="ค่าขนส่ง">ค่าขนส่ง</option>
+                    <option value="ค่าธรรมเนียม">ค่าธรรมเนียม</option>
                   </select>
                 </div>
               </div>
 
+              {/* Category buttons */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ผู้จำหน่าย/ร้านค้า</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">หมวดหมู่ *</label>
+                <div className="flex flex-wrap gap-2">
+                  {expenseCategories.map(cat => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, category: cat.name })}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                        formData.category === cat.name
+                          ? 'ring-2 ring-offset-2 ring-gray-400 scale-105'
+                          : 'hover:opacity-80'
+                      }`}
+                      style={{ backgroundColor: cat.color || '#6B7280', color: '#ffffff' }}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Has Invoice - Radio buttons */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">มีบิลภาษี</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="has_invoice"
+                      value="yes"
+                      checked={formData.has_invoice === 'yes'}
+                      onChange={(e) => setFormData({ ...formData, has_invoice: e.target.value })}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <span className="text-sm">Yes</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="has_invoice"
+                      value="no"
+                      checked={formData.has_invoice === 'no'}
+                      onChange={(e) => setFormData({ ...formData, has_invoice: e.target.value })}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <span className="text-sm">No / แสดง Yes</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Supplier/Vendor */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ผู้ค้า</label>
                 <select
                   value={formData.vendor}
                   onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">-- เลือกผู้จำหน่าย --</option>
+                  <option value="">Select</option>
                   {contacts.map((contact) => (
                     <option key={contact.id} value={contact.name}>
                       {contact.name}
@@ -1405,43 +1437,182 @@ export default function ExpensesPage() {
                 </select>
               </div>
 
+              {/* Running No, Tax No - 2 columns */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Running No.</label>
+                  <input
+                    type="text"
+                    value={formData.sheet_id}
+                    onChange={(e) => setFormData({ ...formData, sheet_id: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">เลขที่</label>
+                  <input
+                    type="text"
+                    value={formData.tax_invoice_number}
+                    onChange={(e) => setFormData({ ...formData, tax_invoice_number: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Amount, VAT, Withholding - 3 columns */}
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ยอดรวม</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.amount_before_tax}
+                    onChange={(e) => setFormData({ ...formData, amount_before_tax: e.target.value })}
+                    placeholder="0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ราคาก่อน vat</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.vat_amount}
+                    onChange={(e) => setFormData({ ...formData, vat_amount: e.target.value })}
+                    placeholder="0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">หักบุลค่าเพิ่ม</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.withholding_tax}
+                    onChange={(e) => setFormData({ ...formData, withholding_tax: e.target.value })}
+                    placeholder="0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Payment Method */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">เลขที่ใบเสร็จ/ใบกำกับภาษี</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ช่องทางการชำระเงิน</label>
+                <select
+                  value={formData.payment_method}
+                  onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">เงินสด</option>
+                  {PAYMENT_METHODS.map(method => (
+                    <option key={method} value={method}>{method}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Payment Source Account */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Please Select</label>
+                <select
+                  value={formData.requester}
+                  onChange={(e) => setFormData({ ...formData, requester: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Please Select</option>
+                  <option value="กระเป๋าตังค์">กระเป๋าตังค์</option>
+                  <option value="บัญชีธนาคาร">บัญชีธนาคาร</option>
+                </select>
+              </div>
+
+              {/* Payment Date */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">วันที่ชำระเงิน</label>
                 <input
-                  type="text"
-                  value={formData.receipt_number}
-                  onChange={(e) => setFormData({ ...formData, receipt_number: e.target.value })}
-                  placeholder="INV-001"
+                  type="date"
+                  value={formData.expense_date}
+                  onChange={(e) => setFormData({ ...formData, expense_date: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">หมายเหตุ</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={2}
-                  placeholder="รายละเอียดเพิ่มเติม..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
+              {/* Notes Section */}
+              <div className="border-t pt-4 mt-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">หัก ณ กิจจ่าย</h3>
+                
+                {/* Type, Paid by - 2 columns */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ประเภท</label>
+                    <select
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Please Select</option>
+                      {expenseCategories.map(cat => (
+                        <option key={cat.id} value={cat.name}>{cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">จ่ายเงิน</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.payment_amount}
+                      onChange={(e) => setFormData({ ...formData, payment_amount: e.target.value })}
+                      placeholder="0"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">รายละเอียด</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => {
+                      const newDescription = e.target.value
+                      setFormData({ ...formData, description: newDescription })
+                      autoSelectPaymentMethod(newDescription)
+                    }}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* File Uploads */}
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Image Update</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">PDF Upload</label>
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* Google Sheets Extended Fields */}
+              {/* Google Sheets Extended Fields (keep at bottom) */}
               <div className="border-t pt-4 mt-4">
                 <h3 className="text-sm font-semibold text-gray-900 mb-3">ข้อมูลเพิ่มเติม (จาก Google Sheets)</h3>
                 
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">ไอดี (Sheet ID)</label>
-                    <input
-                      type="text"
-                      value={formData.sheet_id}
-                      onChange={(e) => setFormData({ ...formData, sheet_id: e.target.value })}
-                      placeholder="ID จาก Google Sheet"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">เลขที่ใบกำกับภาษี</label>
                     <input
@@ -1452,26 +1623,13 @@ export default function ExpensesPage() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mt-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">ประเภทเอกสาร</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">เลขผู้เสียภาษีร้านค้า</label>
                     <input
                       type="text"
-                      value={formData.document_type}
-                      onChange={(e) => setFormData({ ...formData, document_type: e.target.value })}
-                      placeholder="เช่น ใบกำกับภาษี"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">ประเภทสินค้า</label>
-                    <input
-                      type="text"
-                      value={formData.product_type}
-                      onChange={(e) => setFormData({ ...formData, product_type: e.target.value })}
-                      placeholder="เช่น อุปกรณ์สำนักงาน"
+                      value={formData.seller_tax_id}
+                      onChange={(e) => setFormData({ ...formData, seller_tax_id: e.target.value })}
+                      placeholder="Tax ID"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -1503,76 +1661,15 @@ export default function ExpensesPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">ยอดรวมก่อนภาษี</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">จำนวนเงิน *</label>
                     <input
                       type="number"
+                      required
                       min="0"
                       step="0.01"
-                      value={formData.amount_before_tax}
-                      onChange={(e) => setFormData({ ...formData, amount_before_tax: e.target.value })}
+                      value={formData.amount}
+                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                       placeholder="0.00"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4 mt-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">ภาษีมูลค่าเพิ่ม</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.vat_amount}
-                      onChange={(e) => setFormData({ ...formData, vat_amount: e.target.value })}
-                      placeholder="0.00"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">ภาษีหัก ณ ที่จ่าย</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.withholding_tax}
-                      onChange={(e) => setFormData({ ...formData, withholding_tax: e.target.value })}
-                      placeholder="0.00"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">ยอดชำระ</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.payment_amount}
-                      onChange={(e) => setFormData({ ...formData, payment_amount: e.target.value })}
-                      placeholder="0.00"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mt-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">หมวดหมู่ย่อย</label>
-                    <input
-                      type="text"
-                      value={formData.subcategory}
-                      onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
-                      placeholder="Subcategory"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">เลขผู้เสียภาษีร้านค้า</label>
-                    <input
-                      type="text"
-                      value={formData.seller_tax_id}
-                      onChange={(e) => setFormData({ ...formData, seller_tax_id: e.target.value })}
-                      placeholder="Tax ID"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -1602,18 +1699,59 @@ export default function ExpensesPage() {
                 </div>
               </div>
 
+              {/* Main Description and Receipt Number (keep for compatibility) */}
+              <div className="border-t pt-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">รายการ *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.description}
+                      onChange={(e) => {
+                        const newDescription = e.target.value
+                        setFormData({ ...formData, description: newDescription })
+                        autoSelectPaymentMethod(newDescription)
+                      }}
+                      placeholder="เช่น ค่าไฟเดือนมกราคม"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">เลขที่ใบเสร็จ/ใบกำกับภาษี</label>
+                    <input
+                      type="text"
+                      value={formData.receipt_number}
+                      onChange={(e) => setFormData({ ...formData, receipt_number: e.target.value })}
+                      placeholder="INV-001"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">หมายเหตุ</label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    rows={2}
+                    placeholder="รายละเอียดเพิ่มเติม..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
               <div className="flex gap-3 pt-4 border-t">
-                <Button type="submit" variant="primary" className="flex-1">
-                  {editingExpense ? 'บันทึกการแก้ไข' : 'บันทึก'}
-                </Button>
-                <Button
+                <button type="submit" className="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                  Save
+                </button>
+                <button
                   type="button"
-                  variant="secondary"
                   onClick={() => setShowModal(false)}
-                  className="flex-1"
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
                 >
                   ยกเลิก
-                </Button>
+                </button>
               </div>
             </form>
           </div>
