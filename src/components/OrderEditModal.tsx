@@ -22,11 +22,12 @@ interface Product {
 
 interface OrderEditModalProps {
   orderId: string
+  orderSource?: 'pos' | 'website'
   onClose: () => void
   onSave: () => void
 }
 
-export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditModalProps) {
+export default function OrderEditModal({ orderId, orderSource = 'pos', onClose, onSave }: OrderEditModalProps) {
   const [order, setOrder] = useState<any>(null)
   const [platformName, setPlatformName] = useState<string>('')
   const [items, setItems] = useState<OrderItem[]>([])
@@ -52,9 +53,21 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
     try {
       setLoading(true)
       
+      console.log('OrderEditModal - orderId:', orderId, 'orderSource:', orderSource)
+      
+      // Determine which table to use based on order source
+      const isWebOrder = orderSource === 'website'
+      console.log('OrderEditModal - isWebOrder:', isWebOrder)
+      
+      const orderTable = isWebOrder ? 'web_orders' : 'orders'
+      const itemsTable = isWebOrder ? 'web_order_items' : 'order_items'
+      const orderIdColumn = isWebOrder ? 'web_order_id' : 'order_id'
+      
+      console.log('OrderEditModal - Loading from table:', orderTable)
+      
       // Load order details
       const { data: orderData, error: orderError } = await supabase
-        .from('orders')
+        .from(orderTable)
         .select('*')
         .eq('id', orderId)
         .single()
@@ -62,21 +75,32 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
       if (orderError) throw orderError
       
       // Load order items
+      console.log('OrderEditModal - Querying items with:', { itemsTable, orderIdColumn, orderId })
       const { data: itemsData, error: itemsError } = await supabase
-        .from('order_items')
+        .from(itemsTable)
         .select(`
           *,
           product:products(*)
         `)
-        .eq('order_id', orderId)
+        .eq(orderIdColumn, orderId)
+      
+      console.log('OrderEditModal - Items query result:', itemsData, 'Error:', itemsError)
+      console.log('OrderEditModal - Items count:', itemsData?.length || 0)
+      
+      // Also try a simple query without joins to see if that's the issue
+      const { data: simpleItems, error: simpleError } = await supabase
+        .from(itemsTable)
+        .select('*')
+        .eq(orderIdColumn, orderId)
+      console.log('OrderEditModal - Simple query result:', simpleItems, 'Error:', simpleError)
       
       if (itemsError) throw itemsError
       
       setOrder(orderData)
       setSelectedPaymentMethod(orderData?.payment_method || '')
       
-      // Fetch platform name if platform_id exists
-      if (orderData?.platform_id) {
+      // Fetch platform name if platform_id exists (only for regular orders)
+      if (!isWebOrder && orderData?.platform_id) {
         const { data: platformData } = await supabase
           .from('platforms')
           .select('name')
@@ -91,6 +115,8 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
           }
           setPlatformName(nameMap[platformData.name] || platformData.name)
         }
+      } else if (isWebOrder) {
+        setPlatformName('เว็บไซต์')
       }
       
       // Format items for editing - merge duplicates by product_id only
@@ -234,28 +260,42 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
       if (saving) return // Prevent double submission
       setSaving(true)
       
+      // Determine table names based on order source
+      const isWebOrder = orderSource === 'website'
+      const orderTable = isWebOrder ? 'web_orders' : 'orders'
+      const itemsTable = isWebOrder ? 'web_order_items' : 'order_items'
+      const orderIdColumn = isWebOrder ? 'web_order_id' : 'order_id'
+      
       const { subtotal, discount, total } = calculateTotals()
       
       // Update order with payment method
+      const updateData: any = {
+        subtotal,
+        discount,
+        payment_method: selectedPaymentMethod,
+        updated_at: new Date().toISOString()
+      }
+      
+      // web_orders uses total_amount, orders uses total
+      if (isWebOrder) {
+        updateData.total_amount = total
+      } else {
+        updateData.total = total
+      }
+      
       const { error: orderError } = await supabase
-        .from('orders')
-        .update({
-          subtotal,
-          discount,
-          total,
-          payment_method: selectedPaymentMethod,
-          updated_at: new Date().toISOString()
-        })
+        .from(orderTable)
+        .update(updateData)
         .eq('id', orderId)
       
       if (orderError) throw orderError
       
       // Delete old items
-      console.log('Deleting old items for order:', orderId)
+      console.log('Deleting old items for order:', orderId, 'from table:', itemsTable)
       const { error: deleteError, data: deleteData } = await supabase
-        .from('order_items')
+        .from(itemsTable)
         .delete()
-        .eq('order_id', orderId)
+        .eq(orderIdColumn, orderId)
         .select()
       
       console.log('Delete result:', deleteData)
@@ -266,20 +306,27 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
       }
       
       // Insert new items
-      const orderItems = items.map(item => ({
-        order_id: orderId,
-        product_id: item.product_id,
-        product_name: item.product_name,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        discount: item.discount,
-        total_price: item.total_price
-      }))
+      const orderItems = items.map(item => {
+        const itemData: any = {
+          [orderIdColumn]: orderId,
+          product_id: item.product_id,
+          product_name: item.product_name,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          discount: item.discount,
+          total_price: (item.unit_price * item.quantity) - (item.discount || 0)
+        }
+        // Only add subtotal for web_order_items, not for order_items
+        if (isWebOrder) {
+          itemData.subtotal = (item.unit_price * item.quantity) - (item.discount || 0)
+        }
+        return itemData
+      })
       
-      console.log('Inserting new items:', orderItems)
+      console.log('Inserting new items:', orderItems, 'into table:', itemsTable)
       
       const { error: insertError, data: insertData } = await supabase
-        .from('order_items')
+        .from(itemsTable)
         .insert(orderItems)
         .select()
       
@@ -472,7 +519,7 @@ export default function OrderEditModal({ orderId, onClose, onSave }: OrderEditMo
                       />
                     </td>
                     <td className="px-4 py-3 text-right font-medium">
-                      ฿{item.total_price.toFixed(2)}
+                      ฿{((item.total_price ?? item.subtotal ?? (item.unit_price * item.quantity)) ?? 0).toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <button

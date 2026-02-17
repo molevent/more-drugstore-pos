@@ -173,7 +173,7 @@ ${formData.customer_note ? `📝 หมายเหตุ: ${formData.customer_n
 
       if (orderError || !order) {
         console.error('Error creating order:', orderError)
-        alert('เกิดข้อผิดพลาดในการสั่งซื้อ กรุณาลองใหม่อีกครั้ง')
+        alert(`เกิดข้อผิดพลาด: ${orderError?.message || 'ไม่สามารถสร้างคำสั่งซื้อได้'}`)
         return
       }
 
@@ -184,7 +184,8 @@ ${formData.customer_note ? `📝 หมายเหตุ: ${formData.customer_n
         product_name: item.name,
         unit_price: item.price,
         quantity: item.quantity,
-        subtotal: item.price * item.quantity
+        subtotal: item.price * item.quantity,
+        total_price: item.price * item.quantity
       }))
 
       const { error: itemsError } = await supabase

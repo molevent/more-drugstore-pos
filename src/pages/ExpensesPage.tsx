@@ -106,7 +106,10 @@ export default function ExpensesPage() {
   const [pendingCount, setPendingCount] = useState(0)
   const [selectedSheetItems, setSelectedSheetItems] = useState<Set<number>>(new Set())
   const [existingSheetIds, setExistingSheetIds] = useState<Set<string>>(new Set())
+  const [sheetSearchTerm, setSheetSearchTerm] = useState('')
+  const [selectedMonth, setSelectedMonth] = useState<string>('')
   const [paymentMethodRules, setPaymentMethodRules] = useState<{keyword: string, payment_method: string}[]>([])
+  const [expenseCategories, setExpenseCategories] = useState<any[]>([])
   
   // Fetch payment method rules
   const fetchPaymentMethodRules = async () => {
@@ -187,6 +190,7 @@ export default function ExpensesPage() {
     fetchExpenses()
     fetchContacts()
     fetchPaymentMethodRules()
+    fetchExpenseCategories()
   }, [])
 
   const fetchExpenses = async () => {
@@ -589,6 +593,23 @@ export default function ExpensesPage() {
 
   const sheetTotalAmount = sheetData.reduce((sum, item) => sum + item.amount, 0)
 
+  // Filter sheet data based on search term and month
+  const filteredSheetData = sheetData.filter(item => {
+    const matchesSearch = 
+      item.description?.toLowerCase().includes(sheetSearchTerm.toLowerCase()) ||
+      item.category?.toLowerCase().includes(sheetSearchTerm.toLowerCase()) ||
+      item.vendor?.toLowerCase().includes(sheetSearchTerm.toLowerCase()) ||
+      item.sheet_id?.toLowerCase().includes(sheetSearchTerm.toLowerCase())
+    
+    if (!selectedMonth) return matchesSearch
+    
+    const itemDate = new Date(item.expense_date)
+    const itemMonth = itemDate.toISOString().slice(0, 7) // YYYY-MM
+    const matchesMonth = itemMonth === selectedMonth
+    
+    return matchesSearch && matchesMonth
+  })
+
   // Approval functions
   const handleApprove = async (id: string) => {
     try {
@@ -926,6 +947,51 @@ export default function ExpensesPage() {
               </div>
             )}
 
+            {/* Search and Month Filter */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-2 flex-1">
+                <Search className="h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={sheetSearchTerm}
+                  onChange={(e) => setSheetSearchTerm(e.target.value)}
+                  placeholder="ค้นหารายการ..."
+                  className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-sm"
+                />
+              </div>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm"
+              >
+                <option value="">ทุกเดือน</option>
+                <option value="2026-01">มกราคม 2026</option>
+                <option value="2026-02">กุมภาพันธ์ 2026</option>
+                <option value="2026-03">มีนาคม 2026</option>
+                <option value="2026-04">เมษายน 2026</option>
+                <option value="2026-05">พฤษภาคม 2026</option>
+                <option value="2026-06">มิถุนายน 2026</option>
+                <option value="2026-07">กรกฎาคม 2026</option>
+                <option value="2026-08">สิงหาคม 2026</option>
+                <option value="2026-09">กันยายน 2026</option>
+                <option value="2026-10">ตุลาคม 2026</option>
+                <option value="2026-11">พฤศจิกายน 2026</option>
+                <option value="2026-12">ธันวาคม 2026</option>
+                <option value="2025-01">มกราคม 2025</option>
+                <option value="2025-02">กุมภาพันธ์ 2025</option>
+                <option value="2025-03">มีนาคม 2025</option>
+                <option value="2025-04">เมษายน 2025</option>
+                <option value="2025-05">พฤษภาคม 2025</option>
+                <option value="2025-06">มิถุนายน 2025</option>
+                <option value="2025-07">กรกฎาคม 2025</option>
+                <option value="2025-08">สิงหาคม 2025</option>
+                <option value="2025-09">กันยายน 2025</option>
+                <option value="2025-10">ตุลาคม 2025</option>
+                <option value="2025-11">พฤศจิกายน 2025</option>
+                <option value="2025-12">ธันวาคม 2025</option>
+              </select>
+            </div>
+
             {/* Import Button */}
             {sheetData.length > 0 && (
               <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
@@ -992,14 +1058,21 @@ export default function ExpensesPage() {
                   {filteredExpenses.map((expense) => (
                     <tr key={expense.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm text-gray-900">
-                        {new Date(expense.expense_date).toLocaleDateString('th-TH')}
+                        {new Date(expense.expense_date).toLocaleDateString('en-GB', { year: 'numeric', month: 'numeric', day: 'numeric' })}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
                         <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">
                           {expense.category}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{expense.description}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {expense.description}
+                          {expense.vat_amount > 0 && (
+                            <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded font-medium">VAT</span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-sm text-gray-600">{expense.vendor || '-'}</td>
                       <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
                         ฿{expense.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
@@ -1080,7 +1153,7 @@ export default function ExpensesPage() {
                     {pendingExpenses.map((expense) => (
                       <tr key={expense.id} className="hover:bg-yellow-50/50">
                         <td className="px-4 py-3 text-sm text-gray-900">
-                          {new Date(expense.expense_date).toLocaleDateString('th-TH')}
+                          {new Date(expense.expense_date).toLocaleDateString('en-GB', { year: 'numeric', month: 'numeric', day: 'numeric' })}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">
                           <span className="px-2 py-1 bg-yellow-100 rounded-full text-xs">
@@ -1126,12 +1199,12 @@ export default function ExpensesPage() {
       {/* Google Sheets Data View */}
       {viewMode === 'sheets' && (
         <Card>
-          {sheetData.length === 0 ? (
+          {filteredSheetData.length === 0 ? (
             <div className="text-center py-12">
               <Sheet className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-600">ยังไม่มีข้อมูลจาก Google Sheet</p>
+              <p className="text-gray-600">{sheetSearchTerm ? 'ไม่พบรายการที่ค้นหา' : 'ยังไม่มีข้อมูลจาก Google Sheet'}</p>
               <p className="text-sm text-gray-500 mt-1">
-                ใส่ URL แล้วกด "ดึงข้อมูล" เพื่อแสดงข้อมูลจาก Google Sheet
+                {sheetSearchTerm ? 'ลองค้นหาด้วยคำอื่น' : 'ใส่ URL แล้วกด "ดึงข้อมูล" เพื่อแสดงข้อมูลจาก Google Sheet'}
               </p>
             </div>
           ) : (
@@ -1142,12 +1215,16 @@ export default function ExpensesPage() {
                     <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 w-10">
                       <input
                         type="checkbox"
-                        checked={selectedSheetItems.size === sheetData.length && sheetData.length > 0}
+                        checked={selectedSheetItems.size === filteredSheetData.length && filteredSheetData.length > 0}
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setSelectedSheetItems(new Set(sheetData.map((_, index) => index)))
+                            const indices = filteredSheetData.map((_, idx) => {
+                              const originalIndex = sheetData.findIndex(item => item.sheet_id === filteredSheetData[idx].sheet_id);
+                              return originalIndex;
+                            }).filter(i => i !== -1);
+                            setSelectedSheetItems(new Set(indices));
                           } else {
-                            setSelectedSheetItems(new Set())
+                            setSelectedSheetItems(new Set());
                           }
                         }}
                         disabled={importing}
@@ -1163,46 +1240,49 @@ export default function ExpensesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {sheetData.map((item, index) => (
-                    <tr key={index} className={`hover:bg-green-50/50 ${selectedSheetItems.has(index) ? 'bg-green-100/50' : ''} ${existingSheetIds.has(item.sheet_id) ? 'bg-gray-100/50' : ''}`}>
-                      <td className="px-4 py-3 text-center">
-                        <input
-                          type="checkbox"
-                          checked={selectedSheetItems.has(index)}
-                          onChange={(e) => {
-                            const newSelected = new Set(selectedSheetItems)
-                            if (e.target.checked) {
-                              newSelected.add(index)
-                            } else {
-                              newSelected.delete(index)
-                            }
-                            setSelectedSheetItems(newSelected)
-                          }}
-                          disabled={importing || existingSheetIds.has(item.sheet_id)}
-                          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                        />
-                        {existingSheetIds.has(item.sheet_id) && (
-                          <span className="ml-1 text-xs text-orange-500">(imported)</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
-                        {new Date(item.expense_date).toLocaleDateString('th-TH')}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        <span className="px-2 py-1 bg-green-100 rounded-full text-xs">
-                          {item.category}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{item.description}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{item.vendor || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
-                        ฿{item.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 text-center">
-                        {item.payment_method}
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredSheetData.map((item, filteredIndex) => {
+                    const originalIndex = sheetData.findIndex(s => s.sheet_id === item.sheet_id);
+                    return (
+                      <tr key={originalIndex} className={`hover:bg-green-50/50 ${selectedSheetItems.has(originalIndex) ? 'bg-green-100/50' : ''} ${existingSheetIds.has(item.sheet_id) ? 'bg-gray-100/50' : ''}`}>
+                        <td className="px-4 py-3 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedSheetItems.has(originalIndex)}
+                            onChange={(e) => {
+                              const newSelected = new Set(selectedSheetItems);
+                              if (e.target.checked) {
+                                newSelected.add(originalIndex);
+                              } else {
+                                newSelected.delete(originalIndex);
+                              }
+                              setSelectedSheetItems(newSelected);
+                            }}
+                            disabled={importing || existingSheetIds.has(item.sheet_id)}
+                            className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                          {existingSheetIds.has(item.sheet_id) && (
+                            <span className="ml-1 text-xs text-orange-500">(imported)</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {new Date(item.expense_date).toLocaleDateString('en-GB', { year: 'numeric', month: 'numeric', day: 'numeric' })}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600">
+                          <span className="px-2 py-1 bg-green-100 rounded-full text-xs">
+                            {item.category}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">{item.description}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{item.vendor || '-'}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
+                          ฿{item.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600 text-center">
+                          {item.payment_method}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1246,8 +1326,9 @@ export default function ExpensesPage() {
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
-                    {EXPENSE_CATEGORIES.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
+                    <option value="">เลือกหมวดหมู่</option>
+                    {expenseCategories.map(cat => (
+                      <option key={cat.id} value={cat.name}>{cat.name}</option>
                     ))}
                   </select>
                 </div>

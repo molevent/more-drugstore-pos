@@ -70,6 +70,7 @@ export default function SalesOrdersPage() {
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [loadingDetail, setLoadingDetail] = useState(false)
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null)
+  const [editingOrderSource, setEditingOrderSource] = useState<'pos' | 'website'>('pos')
   const [platformsMap, setPlatformsMap] = useState<Record<string, string>>({})
 
   // Fetch platforms for mapping UUID to name
@@ -107,7 +108,8 @@ export default function SalesOrdersPage() {
     try {
       console.log('Fetching orders from Supabase...')
       
-      let query = supabase
+      // Fetch regular orders
+      let regularQuery = supabase
         .from('orders')
         .select(`
           id,
@@ -125,29 +127,50 @@ export default function SalesOrdersPage() {
         .order('created_at', { ascending: false })
 
       if (dateFrom) {
-        query = query.gte('created_at', dateFrom + 'T00:00:00')
+        regularQuery = regularQuery.gte('created_at', dateFrom + 'T00:00:00')
       }
       if (dateTo) {
-        query = query.lte('created_at', dateTo + 'T23:59:59')
+        regularQuery = regularQuery.lte('created_at', dateTo + 'T23:59:59')
       }
 
-      const { data, error } = await query
+      const { data: regularOrders, error: regularError } = await regularQuery
 
-      console.log('Supabase response:', { data, error, count: data?.length })
+      // Fetch web orders (e-commerce)
+      let webQuery = supabase
+        .from('web_orders')
+        .select(`
+          id,
+          order_number,
+          customer_name,
+          customer_phone,
+          total_amount,
+          subtotal,
+          shipping_fee,
+          status,
+          created_at,
+          updated_at,
+          web_order_items(count)
+        `)
+        .order('created_at', { ascending: false })
 
-      if (error) {
-        console.error('Supabase error:', error)
-        alert('ไม่สามารถโหลดรายการขายได้: ' + error.message)
-        return
+      if (dateFrom) {
+        webQuery = webQuery.gte('created_at', dateFrom + 'T00:00:00')
+      }
+      if (dateTo) {
+        webQuery = webQuery.lte('created_at', dateTo + 'T23:59:59')
       }
 
-      if (!data || data.length === 0) {
-        console.log('No orders found in database')
-        setOrders([])
-        return
+      const { data: webOrders, error: webError } = await webQuery
+
+      if (regularError) {
+        console.error('Supabase error (regular orders):', regularError)
+      }
+      if (webError) {
+        console.error('Supabase error (web orders):', webError)
       }
 
-      const formattedOrders = data?.map((order: any) => ({
+      // Format regular orders
+      const formattedRegularOrders = (regularOrders || []).map((order: any) => ({
         id: order.id,
         order_number: order.order_number,
         customer_name: order.customer_name,
@@ -156,13 +179,36 @@ export default function SalesOrdersPage() {
         subtotal: order.subtotal,
         discount: order.discount,
         platform_id: order.platform_id,
+        order_source: 'pos',
         created_at: order.created_at,
         updated_at: order.updated_at,
         order_items_count: order.order_items?.[0]?.count || 0
-      })) || []
+      }))
 
-      console.log('Formatted orders:', formattedOrders)
-      setOrders(formattedOrders)
+      // Format web orders
+      const formattedWebOrders = (webOrders || []).map((order: any) => ({
+        id: order.id,
+        order_number: order.order_number,
+        customer_name: order.customer_name,
+        customer_phone: order.customer_phone,
+        payment_method: null,
+        total: order.total_amount,
+        subtotal: order.subtotal,
+        shipping_fee: order.shipping_fee,
+        status: order.status,
+        platform_id: 'website',
+        order_source: 'website',
+        created_at: order.created_at,
+        updated_at: order.updated_at,
+        order_items_count: order.web_order_items?.[0]?.count || 0
+      }))
+
+      // Combine and sort by date
+      const allOrders = [...formattedRegularOrders, ...formattedWebOrders]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+      console.log('Formatted orders:', allOrders)
+      setOrders(allOrders)
     } catch (err: any) {
       console.error('Exception fetching orders:', err)
       alert('เกิดข้อผิดพลาด: ' + err.message)
@@ -216,11 +262,18 @@ export default function SalesOrdersPage() {
     return PAYMENT_METHODS[paymentMethod] || paymentMethod
   }
 
-  const handleViewOrder = async (orderId: string) => {
+  const handleViewOrder = async (orderId: string, orderSource?: string) => {
     setLoadingDetail(true)
     try {
+      // Check if this is a web order
+      const isWebOrder = orderSource === 'website'
+      
+      const tableName = isWebOrder ? 'web_orders' : 'orders'
+      const itemsTableName = isWebOrder ? 'web_order_items' : 'order_items'
+      const orderIdColumn = isWebOrder ? 'web_order_id' : 'order_id'
+      
       const { data: order, error: orderError } = await supabase
-        .from('orders')
+        .from(tableName)
         .select('*')
         .eq('id', orderId)
         .single()
@@ -232,9 +285,9 @@ export default function SalesOrdersPage() {
       }
 
       const { data: items, error: itemsError } = await supabase
-        .from('order_items')
+        .from(itemsTableName)
         .select('*')
-        .eq('order_id', orderId)
+        .eq(orderIdColumn, orderId)
 
       if (itemsError) {
         console.error('Error fetching order items:', itemsError)
@@ -257,6 +310,7 @@ export default function SalesOrdersPage() {
 
       setSelectedOrder({
         ...order,
+        order_source: orderSource || 'pos',
         order_items: mergedItems || []
       })
       setShowDetailModal(true)
@@ -273,38 +327,59 @@ export default function SalesOrdersPage() {
     setSelectedOrder(null)
   }
 
-  const handleDeleteOrder = async (orderId: string) => {
+  const handleDeleteOrder = async (orderId: string, orderSource?: string) => {
     if (!confirm('ต้องการลบออเดอร์นี้ใช่หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้')) {
       return
     }
 
     try {
+      const isWebOrder = orderSource === 'website'
+      const itemsTable = isWebOrder ? 'web_order_items' : 'order_items'
+      const orderTable = isWebOrder ? 'web_orders' : 'orders'
+      const orderIdColumn = isWebOrder ? 'web_order_id' : 'order_id'
+      
+      console.log('Deleting order:', orderId, 'isWebOrder:', isWebOrder)
+      console.log('Tables:', itemsTable, orderTable, 'Column:', orderIdColumn)
+      
       // Delete order items first (due to foreign key constraint)
-      const { error: itemsError } = await supabase
-        .from('order_items')
+      const { data: deletedItems, error: itemsError } = await supabase
+        .from(itemsTable)
         .delete()
-        .eq('order_id', orderId)
+        .eq(orderIdColumn, orderId)
+        .select()
+
+      console.log('Deleted items:', deletedItems, 'Error:', itemsError)
 
       if (itemsError) {
         console.error('Error deleting order items:', itemsError)
-        alert('ไม่สามารถลบรายการสินค้าในออเดอร์ได้')
+        alert('ไม่สามารถลบรายการสินค้าในออเดอร์ได้: ' + itemsError.message)
         return
       }
 
       // Delete order
-      const { error: orderError } = await supabase
-        .from('orders')
+      const { data: deletedOrder, error: orderError } = await supabase
+        .from(orderTable)
         .delete()
         .eq('id', orderId)
+        .select()
+
+      console.log('Deleted order:', deletedOrder, 'Error:', orderError)
 
       if (orderError) {
         console.error('Error deleting order:', orderError)
-        alert('ไม่สามารถลบออเดอร์ได้')
+        alert('ไม่สามารถลบออเดอร์ได้: ' + orderError.message)
+        return
+      }
+
+      if (!deletedOrder || deletedOrder.length === 0) {
+        console.error('No order was deleted - order may not exist')
+        alert('ไม่พบออเดอร์ที่ต้องการลบ')
         return
       }
 
       alert('ลบออเดอร์สำเร็จ')
-      fetchOrders() // Refresh the orders list
+      await fetchOrders() // Refresh the orders list
+      console.log('Orders refreshed, count:', orders.length)
     } catch (err: any) {
       console.error('Exception deleting order:', err)
       alert('เกิดข้อผิดพลาด: ' + err.message)
@@ -594,13 +669,16 @@ export default function SalesOrdersPage() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center">
                       <div className="flex items-center gap-2 justify-center">
-                        <Button variant="secondary" size="sm" onClick={() => handleViewOrder(order.id)}>
+                        <Button variant="secondary" size="sm" onClick={() => handleViewOrder(order.id, order.order_source)}>
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button 
                           variant="primary" 
                           size="sm" 
-                          onClick={() => setEditingOrderId(order.id)}
+                          onClick={() => {
+                            setEditingOrderId(order.id)
+                            setEditingOrderSource(order.order_source as 'pos' | 'website')
+                          }}
                         >
                           <Edit className="h-4 w-4 mr-1" />
                           แก้ไข
@@ -616,7 +694,7 @@ export default function SalesOrdersPage() {
                         <Button 
                           variant="danger" 
                           size="sm" 
-                          onClick={() => handleDeleteOrder(order.id)}
+                          onClick={() => handleDeleteOrder(order.id, order.order_source)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -741,15 +819,20 @@ export default function SalesOrdersPage() {
         <OrderEditModal
           key={editingOrderId}
           orderId={editingOrderId}
-          onClose={() => setEditingOrderId(null)}
+          orderSource={editingOrderSource}
+          onClose={() => {
+            setEditingOrderId(null)
+            setEditingOrderSource('pos')
+          }}
           onSave={async () => {
             setEditingOrderId(null)
+            setEditingOrderSource('pos')
             await fetchOrders() // Refresh orders list
             // Also refresh order detail if it's showing the edited order
             if (showDetailModal && selectedOrder?.id === editingOrderId) {
               // Clear first then refetch to ensure fresh data
               setSelectedOrder(null)
-              setTimeout(() => handleViewOrder(editingOrderId), 500)
+              setTimeout(() => handleViewOrder(editingOrderId, editingOrderSource), 500)
             }
           }}
         />

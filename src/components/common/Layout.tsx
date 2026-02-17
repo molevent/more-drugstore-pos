@@ -10,7 +10,8 @@ import {
   X,
   Users,
   Wallet,
-  Calendar
+  Calendar,
+  Globe
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -70,6 +71,7 @@ export default function Layout({ children }: LayoutProps) {
       title: 'สินค้า',
       items: [
         { name: t('nav.products'), href: '/products', icon: Boxes },
+        { name: 'เว็บไซต์ร้าน', href: '/store', icon: Globe },
       ]
     },
     {
