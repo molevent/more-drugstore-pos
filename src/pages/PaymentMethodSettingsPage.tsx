@@ -543,6 +543,8 @@ export default function PaymentMethodSettingsPage() {
             </form>
           </Card>
         </div>
+      )}
+
       {/* Payment Method Modal */}
       {showMethodModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
