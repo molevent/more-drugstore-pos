@@ -239,6 +239,14 @@ export default function SettingsPage() {
       subtitle: 'ตั้งค่ารหัสและแผนผังบัญชี',
       link: '/settings/expense-categories'
     },
+    {
+      icon: CreditCard,
+      iconBg: 'bg-[#4A90A4]/10',
+      iconColor: 'text-[#4A90A4]',
+      title: 'กฎการชำระเงิน',
+      subtitle: 'ตั้งค่าวิธีการชำระเงินตามคีย์เวิร์ด',
+      link: '/settings/payment-method-rules'
+    },
   ]
 
   // Document Items

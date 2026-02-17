@@ -1,0 +1,373 @@
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { supabase } from '../services/supabase'
+import Card from '../components/common/Card'
+import Button from '../components/common/Button'
+import { 
+  CreditCard, 
+  Plus, 
+  ArrowLeft, 
+  Edit2, 
+  Trash2, 
+  Save,
+  X,
+  Settings,
+  Hash,
+  ArrowUp,
+  ArrowDown
+} from 'lucide-react'
+
+interface PaymentMethodRule {
+  id: string
+  keyword: string
+  payment_method: string
+  priority: number
+  is_active: boolean
+  created_at?: string
+  updated_at?: string
+}
+
+const PAYMENT_METHODS = [
+  'เงินสด',
+  'โอนเงิน',
+  'บัตรเครดิต',
+  'เช็ค'
+]
+
+export default function PaymentMethodSettingsPage() {
+  const [rules, setRules] = useState<PaymentMethodRule[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showModal, setShowModal] = useState(false)
+  const [editingRule, setEditingRule] = useState<PaymentMethodRule | null>(null)
+  const [formData, setFormData] = useState({
+    keyword: '',
+    payment_method: 'เงินสด',
+    priority: 0,
+    is_active: true
+  })
+
+  useEffect(() => {
+    fetchRules()
+  }, [])
+
+  const fetchRules = async () => {
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('payment_method_rules')
+        .select('*')
+        .order('priority', { ascending: false })
+        .order('keyword', { ascending: true })
+
+      if (error) throw error
+      setRules(data || [])
+    } catch (error) {
+      console.error('Error fetching rules:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    try {
+      const ruleData = {
+        keyword: formData.keyword.toLowerCase().trim(),
+        payment_method: formData.payment_method,
+        priority: formData.priority,
+        is_active: formData.is_active
+      }
+
+      if (editingRule) {
+        const { error } = await supabase
+          .from('payment_method_rules')
+          .update(ruleData)
+          .eq('id', editingRule.id)
+        if (error) throw error
+      } else {
+        const { error } = await supabase
+          .from('payment_method_rules')
+          .insert(ruleData)
+        if (error) throw error
+      }
+
+      setShowModal(false)
+      setEditingRule(null)
+      setFormData({
+        keyword: '',
+        payment_method: 'เงินสด',
+        priority: 0,
+        is_active: true
+      })
+      fetchRules()
+    } catch (error) {
+      console.error('Error saving rule:', error)
+      alert('เกิดข้อผิดพลาดในการบันทึก')
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('ต้องการลบกฎนี้?')) return
+
+    try {
+      const { error } = await supabase
+        .from('payment_method_rules')
+        .delete()
+        .eq('id', id)
+      if (error) throw error
+      fetchRules()
+    } catch (error) {
+      console.error('Error deleting rule:', error)
+      alert('เกิดข้อผิดพลาดในการลบ')
+    }
+  }
+
+  const handleEdit = (rule: PaymentMethodRule) => {
+    setEditingRule(rule)
+    setFormData({
+      keyword: rule.keyword,
+      payment_method: rule.payment_method,
+      priority: rule.priority,
+      is_active: rule.is_active
+    })
+    setShowModal(true)
+  }
+
+  const closeModal = () => {
+    setShowModal(false)
+    setEditingRule(null)
+    setFormData({
+      keyword: '',
+      payment_method: 'เงินสด',
+      priority: 0,
+      is_active: true
+    })
+  }
+
+  return (
+    <div className="min-h-screen bg-[#F5F5F3] pb-24">
+      {/* Header */}
+      <header className="bg-white shadow-sm sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center gap-4">
+            <Link
+              to="/settings"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 text-gray-600" />
+            </Link>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-[#7D735F]/10 rounded-lg flex items-center justify-center">
+                <CreditCard className="w-5 h-5 text-[#7D735F]" />
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold text-[#5A5A5A]">ตั้งค่าวิธีการชำระเงิน</h1>
+                <p className="text-sm text-gray-500">กำหนดค่าเริ่มต้นวิธีการชำระเงินตามคีย์เวิร์ดในรายการค่าใช้จ่าย</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        {/* Info Card */}
+        <Card className="mb-6 p-4 bg-blue-50 border border-blue-200">
+          <div className="flex items-start gap-3">
+            <Settings className="w-5 h-5 text-blue-600 mt-0.5" />
+            <div>
+              <h3 className="font-medium text-blue-900">วิธีการทำงาน</h3>
+              <p className="text-sm text-blue-700 mt-1">
+                เมื่อสร้างค่าใช้จ่ายใหม่ ระบบจะตรวจสอบคีย์เวิร์ดในรายการค่าใช้จ่าย 
+                และเลือกวิธีการชำระเงินอัตโนมัติตามกฎที่ตั้งไว้ กฎที่มี priority สูงกว่าจะถูกตรวจสอบก่อน
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Rules List */}
+        <Card>
+          <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="font-medium text-[#5A5A5A] flex items-center gap-2">
+              <Hash className="w-5 h-5 text-[#7D735F]" />
+              กฎการเลือกวิธีการชำระเงิน
+            </h2>
+            <Button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              เพิ่มกฎ
+            </Button>
+          </div>
+
+          {loading ? (
+            <div className="p-8 text-center text-gray-500">กำลังโหลด...</div>
+          ) : rules.length === 0 ? (
+            <div className="p-8 text-center">
+              <Settings className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500">ยังไม่มีกฎ</p>
+              <Button
+                onClick={() => setShowModal(true)}
+                variant="outline"
+                className="mt-4"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                เพิ่มกฎแรก
+              </Button>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {rules.map((rule) => (
+                <div
+                  key={rule.id}
+                  className={`p-4 flex items-center justify-between hover:bg-gray-50 ${!rule.is_active ? 'opacity-60' : ''}`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1 text-gray-400">
+                      <ArrowUp className="w-4 h-4" />
+                      <span className="text-sm">{rule.priority}</span>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-[#5A5A5A]">
+                          ถ้าเจอ "{rule.keyword}"
+                        </span>
+                        <span className="text-gray-400">→</span>
+                        <span className={`px-2 py-1 rounded text-sm ${
+                          rule.payment_method === 'เงินสด' ? 'bg-green-100 text-green-700' :
+                          rule.payment_method === 'โอนเงิน' ? 'bg-blue-100 text-blue-700' :
+                          rule.payment_method === 'บัตรเครดิต' ? 'bg-purple-100 text-purple-700' :
+                          'bg-orange-100 text-orange-700'
+                        }`}>
+                          {rule.payment_method}
+                        </span>
+                      </div>
+                      {!rule.is_active && (
+                        <span className="text-xs text-gray-400">(ปิดใช้งาน)</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleEdit(rule)}
+                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(rule.id)}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </main>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-md">
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="font-medium text-[#5A5A5A]">
+                {editingRule ? 'แก้ไขกฎ' : 'เพิ่มกฎใหม่'}
+              </h2>
+              <button
+                onClick={closeModal}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#5A5A5A] mb-2">
+                  คีย์เวิร์ด <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.keyword}
+                  onChange={(e) => setFormData({ ...formData, keyword: e.target.value })}
+                  placeholder="เช่น service fee, grab, lazada"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7D735F]/20 focus:border-[#7D735F] outline-none"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  ระบบจะค้นหาคีย์เวิร์ดนี้ในรายการค่าใช้จ่าย (ไม่สนตัวพิมพ์เล็ก/ใหญ่)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#5A5A5A] mb-2">
+                  วิธีการชำระเงิน <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.payment_method}
+                  onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7D735F]/20 focus:border-[#7D735F] outline-none"
+                  required
+                >
+                  {PAYMENT_METHODS.map((method) => (
+                    <option key={method} value={method}>{method}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#5A5A5A] mb-2">
+                  Priority (ลำดับความสำคัญ)
+                </label>
+                <input
+                  type="number"
+                  value={formData.priority}
+                  onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) || 0 })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7D735F]/20 focus:border-[#7D735F] outline-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  ตัวเลขสูง = ตรวจสอบก่อน (default: 0)
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="is_active"
+                  checked={formData.is_active}
+                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                  className="w-4 h-4 text-[#7D735F] border-gray-300 rounded focus:ring-[#7D735F]"
+                />
+                <label htmlFor="is_active" className="text-sm text-[#5A5A5A]">
+                  เปิดใช้งานกฎนี้
+                </label>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeModal}
+                  className="flex-1"
+                >
+                  ยกเลิก
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 flex items-center justify-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  บันทึก
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+    </div>
+  )
+}

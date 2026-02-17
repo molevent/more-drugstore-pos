@@ -106,6 +106,40 @@ export default function ExpensesPage() {
   const [pendingCount, setPendingCount] = useState(0)
   const [selectedSheetItems, setSelectedSheetItems] = useState<Set<number>>(new Set())
   const [existingSheetIds, setExistingSheetIds] = useState<Set<string>>(new Set())
+  const [paymentMethodRules, setPaymentMethodRules] = useState<{keyword: string, payment_method: string}[]>([])
+  
+  // Fetch payment method rules
+  const fetchPaymentMethodRules = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('payment_method_rules')
+        .select('keyword, payment_method')
+        .eq('is_active', true)
+        .order('priority', { ascending: false })
+      
+      if (error) {
+        console.error('Error fetching payment method rules:', error)
+        return
+      }
+      
+      setPaymentMethodRules(data || [])
+    } catch (error) {
+      console.error('Error fetching payment method rules:', error)
+    }
+  }
+  
+  // Auto-select payment method based on description
+  const autoSelectPaymentMethod = (description: string) => {
+    if (!description || paymentMethodRules.length === 0) return
+    
+    const lowerDesc = description.toLowerCase()
+    for (const rule of paymentMethodRules) {
+      if (lowerDesc.includes(rule.keyword.toLowerCase())) {
+        setFormData(prev => ({ ...prev, payment_method: rule.payment_method }))
+        return
+      }
+    }
+  }
   
   // Fetch existing sheet IDs to prevent duplicate imports
   const fetchExistingSheetIds = async () => {
@@ -152,6 +186,7 @@ export default function ExpensesPage() {
   useEffect(() => {
     fetchExpenses()
     fetchContacts()
+    fetchPaymentMethodRules()
   }, [])
 
   const fetchExpenses = async () => {
@@ -1224,7 +1259,11 @@ export default function ExpensesPage() {
                   type="text"
                   required
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) => {
+                    const newDescription = e.target.value
+                    setFormData({ ...formData, description: newDescription })
+                    autoSelectPaymentMethod(newDescription)
+                  }}
                   placeholder="เช่น ค่าไฟเดือนมกราคม"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
