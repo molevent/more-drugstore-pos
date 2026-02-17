@@ -1336,9 +1336,9 @@ export default function ExpensesPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">--</option>
-                    <option value="ใบกำกับภาษี">ใบกำกับภาษี</option>
-                    <option value="ใบเสร็จรับเงิน">ใบเสร็จรับเงิน</option>
-                    <option value="ใบส่งของ">ใบส่งของ</option>
+                    <option value="ซื้อสินค้า">ซื้อสินค้า</option>
+                    <option value="ค่าใช้จ่ายในการขาย">ค่าใช้จ่ายในการขาย</option>
+                    <option value="ค่าใช้จ่ายในการบริหาร">ค่าใช้จ่ายในการบริหาร</option>
                   </select>
                 </div>
                 <div>
