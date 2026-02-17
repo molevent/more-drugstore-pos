@@ -1474,7 +1474,7 @@ export default function ExpensesPage() {
 
               {/* Supplier/Vendor */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ผู้ค้า</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">คู่ค้า</label>
                 <select
                   value={formData.vendor}
                   onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
@@ -1487,6 +1487,30 @@ export default function ExpensesPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Tax Invoice Info - moved under vendor */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">เลขที่ใบกำกับภาษี</label>
+                  <input
+                    type="text"
+                    value={formData.tax_invoice_number}
+                    onChange={(e) => setFormData({ ...formData, tax_invoice_number: e.target.value })}
+                    placeholder="Tax Invoice Number"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">เลขผู้เสียภาษีร้านค้า</label>
+                  <input
+                    type="text"
+                    value={formData.seller_tax_id}
+                    onChange={(e) => setFormData({ ...formData, seller_tax_id: e.target.value })}
+                    placeholder="Tax ID"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
 
               {/* Amount, VAT, Withholding - 3 columns */}
@@ -1641,29 +1665,6 @@ export default function ExpensesPage() {
               {/* Google Sheets Extended Fields (keep at bottom) */}
               <div className="border-t pt-4 mt-4">
                 <h3 className="text-sm font-semibold text-gray-900 mb-3">ข้อมูลเพิ่มเติม (จาก Google Sheets)</h3>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">เลขที่ใบกำกับภาษี</label>
-                    <input
-                      type="text"
-                      value={formData.tax_invoice_number}
-                      onChange={(e) => setFormData({ ...formData, tax_invoice_number: e.target.value })}
-                      placeholder="Tax Invoice Number"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">เลขผู้เสียภาษีร้านค้า</label>
-                    <input
-                      type="text"
-                      value={formData.seller_tax_id}
-                      onChange={(e) => setFormData({ ...formData, seller_tax_id: e.target.value })}
-                      placeholder="Tax ID"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
 
                 <div className="grid grid-cols-3 gap-4 mt-3">
                   <div>
