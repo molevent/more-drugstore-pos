@@ -105,7 +105,24 @@ export default function ExpensesPage() {
   const [importing, setImporting] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
   const [selectedSheetItems, setSelectedSheetItems] = useState<Set<number>>(new Set())
+  const [existingSheetIds, setExistingSheetIds] = useState<Set<string>>(new Set())
   
+  // Fetch existing sheet IDs to prevent duplicate imports
+  const fetchExistingSheetIds = async () => {
+    const { data, error } = await supabase
+      .from('expenses')
+      .select('sheet_id')
+      .not('sheet_id', 'is', null)
+    
+    if (error) {
+      console.error('Error fetching existing sheet IDs:', error)
+      return
+    }
+    
+    const sheetIds = new Set(data?.map(e => e.sheet_id).filter(Boolean) || [])
+    setExistingSheetIds(sheetIds)
+  }
+
   const [formData, setFormData] = useState({
     expense_date: new Date().toISOString().split('T')[0],
     category: 'ค่าอื่นๆ',
@@ -322,6 +339,9 @@ export default function ExpensesPage() {
         .select('*')
         .eq('is_active', true)
 
+      // Fetch existing sheet IDs to check for duplicates
+      await fetchExistingSheetIds()
+
       // Convert Google Sheet URL to CSV export URL
       const sheetId = extractSheetId(sheetUrl)
       if (!sheetId) {
@@ -462,13 +482,25 @@ export default function ExpensesPage() {
       return
     }
     
-    // Filter only selected items
-    const itemsToImport = sheetData.filter((_, index) => selectedSheetItems.has(index))
+    // Filter only selected items and exclude duplicates
+    const itemsToImport = sheetData.filter((item, index) => 
+      selectedSheetItems.has(index) && !existingSheetIds.has(item.sheet_id)
+    )
+    
+    const duplicateCount = sheetData.filter((item, index) => 
+      selectedSheetItems.has(index) && existingSheetIds.has(item.sheet_id)
+    ).length
     
     if (itemsToImport.length === 0) {
-      alert('กรุณาเลือกรายการที่ต้องการ import')
+      alert(duplicateCount > 0 
+        ? `รายการที่เลือกทั้งหมด (${duplicateCount} รายการ) เคยถูก import แล้ว` 
+        : 'กรุณาเลือกรายการที่ต้องการ import'
+      )
       return
     }
+    
+    // Generate import batch ID
+    const importBatchId = `import-${Date.now()}`
     
     setImporting(true)
     try {
@@ -494,13 +526,21 @@ export default function ExpensesPage() {
         subcategory: item.subcategory || null,
         seller_tax_id: item.seller_tax_id || null,
         requester: item.requester || null,
-        evidence_url: item.evidence_url || null
+        evidence_url: item.evidence_url || null,
+        // Import tracking fields
+        import_batch_id: importBatchId,
+        imported_at: new Date().toISOString(),
+        import_source: 'google_sheets'
       }))
       
       const { error } = await supabase.from('expenses').insert(expensesToInsert)
       if (error) throw error
       
-      alert(`Import สำเร็จ! เพิ่ม ${expensesToInsert.length} รายการเข้าโซนรออนุมัติ`)
+      const message = duplicateCount > 0
+        ? `Import สำเร็จ! เพิ่ม ${expensesToInsert.length} รายการ (ข้าม ${duplicateCount} รายการที่เคย import แล้ง)`
+        : `Import สำเร็จ! เพิ่ม ${expensesToInsert.length} รายการเข้าโซนรออนุมัติ`
+      
+      alert(message)
       setSelectedSheetItems(new Set()) // Clear selection after import
       fetchExpenses()
       setViewMode('database')
@@ -1089,7 +1129,7 @@ export default function ExpensesPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {sheetData.map((item, index) => (
-                    <tr key={index} className={`hover:bg-green-50/50 ${selectedSheetItems.has(index) ? 'bg-green-100/50' : ''}`}>
+                    <tr key={index} className={`hover:bg-green-50/50 ${selectedSheetItems.has(index) ? 'bg-green-100/50' : ''} ${existingSheetIds.has(item.sheet_id) ? 'bg-gray-100/50' : ''}`}>
                       <td className="px-4 py-3 text-center">
                         <input
                           type="checkbox"
@@ -1103,9 +1143,12 @@ export default function ExpensesPage() {
                             }
                             setSelectedSheetItems(newSelected)
                           }}
-                          disabled={importing}
+                          disabled={importing || existingSheetIds.has(item.sheet_id)}
                           className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         />
+                        {existingSheetIds.has(item.sheet_id) && (
+                          <span className="ml-1 text-xs text-orange-500">(imported)</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
                         {new Date(item.expense_date).toLocaleDateString('th-TH')}
