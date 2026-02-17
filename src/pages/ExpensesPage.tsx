@@ -1327,7 +1327,8 @@ export default function ExpensesPage() {
               </div>
 
               {/* Document Type, Subcategory, Vendor - 3 columns */}
-              <div className="grid grid-cols-3 gap-4">
+              {/* Document Type and Category */}
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">ประเภท</label>
                   <select
@@ -1343,19 +1344,6 @@ export default function ExpensesPage() {
                     <option value="ซื้อสินค้า">ซื้อสินค้า</option>
                     <option value="ค่าใช้จ่ายในการขาย">ค่าใช้จ่ายในการขาย</option>
                     <option value="ค่าใช้จ่ายในการบริหาร">ค่าใช้จ่ายในการบริหาร</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">หมวด</label>
-                  <select
-                    value={formData.subcategory}
-                    onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">--</option>
-                    <option value="ค่าใช้จ่ายทั่วไป">ค่าใช้จ่ายทั่วไป</option>
-                    <option value="ค่าส่งของ">ค่าส่งของ</option>
-                    <option value="ค่าบริการ">ค่าบริการ</option>
                   </select>
                 </div>
               </div>
