@@ -663,25 +663,34 @@ export default function ExpensesPage() {
         </button>
       </div>
 
-      {/* Summary Card */}
-      <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-blue-600 font-medium">
-              ค่าใช้จ่ายทั้งหมด {viewMode === 'sheets' && '(จาก Google Sheet)'}
-            </p>
-            <p className="text-3xl font-bold text-blue-900">
-              ฿{(viewMode === 'database' ? totalAmount : sheetTotalAmount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-            </p>
+      {/* Summary Cards - Match Sales Page Style */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        {/* Count Card */}
+        <Card className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-[#7D735F]/10 flex items-center justify-center flex-shrink-0">
+            <Receipt className="h-6 w-6 text-[#7D735F]" />
           </div>
-          <div className="text-right">
+          <div>
             <p className="text-sm text-gray-600">จำนวนรายการ</p>
-            <p className="text-xl font-semibold text-gray-800">
+            <p className="text-2xl font-bold text-gray-900">
               {viewMode === 'database' ? filteredExpenses.length : sheetData.length}
             </p>
           </div>
-        </div>
-      </Card>
+        </Card>
+        
+        {/* Amount Card */}
+        <Card className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-[#A67B5B]/10 flex items-center justify-center flex-shrink-0">
+            <Wallet className="h-6 w-6 text-[#A67B5B]" />
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">ยอดรวมค่าใช้จ่าย</p>
+            <p className="text-2xl font-bold text-gray-900">
+              ฿{(viewMode === 'database' ? totalAmount : sheetTotalAmount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+            </p>
+          </div>
+        </Card>
+      </div>
 
       {/* Actions Bar - Database View */}
       {viewMode === 'database' && (
