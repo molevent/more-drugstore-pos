@@ -462,7 +462,6 @@ export default function EmployeeSettingsPage() {
                   </div>
                 </div>
               </div>
-              </div>
 
               {/* ข้อมูลภาษาอังกฤษ */}
               <div className="border-b pb-4 mb-4">
