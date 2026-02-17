@@ -1588,20 +1588,6 @@ export default function ExpensesPage() {
                 </select>
               </div>
 
-              {/* Payment Source Account */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Please Select</label>
-                <select
-                  value={formData.requester}
-                  onChange={(e) => setFormData({ ...formData, requester: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Please Select</option>
-                  <option value="กระเป๋าตังค์">กระเป๋าตังค์</option>
-                  <option value="บัญชีธนาคาร">บัญชีธนาคาร</option>
-                </select>
-              </div>
-
               {/* Payment Date */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">วันที่ชำระเงิน</label>
