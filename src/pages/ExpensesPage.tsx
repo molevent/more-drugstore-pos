@@ -1323,18 +1323,24 @@ export default function ExpensesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">หมวดหมู่ *</label>
-                  <select
-                    required
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">เลือกหมวดหมู่</option>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">หมวดหมู่ *</label>
+                  <div className="flex flex-wrap gap-2">
                     {expenseCategories.map(cat => (
-                      <option key={cat.id} value={cat.name}>{cat.name}</option>
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, category: cat.name })}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                          formData.category === cat.name
+                            ? 'ring-2 ring-offset-2 ring-gray-400 scale-105'
+                            : 'hover:opacity-80'
+                        }`}
+                        style={{ backgroundColor: cat.color || '#6B7280', color: '#ffffff' }}
+                      >
+                        {cat.name}
+                      </button>
                     ))}
-                  </select>
+                  </div>
                 </div>
               </div>
 
