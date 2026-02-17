@@ -1358,19 +1358,6 @@ export default function ExpensesPage() {
                     <option value="ค่าบริการ">ค่าบริการ</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">หมวดย่อย</label>
-                  <select
-                    value={formData.product_type}
-                    onChange={(e) => setFormData({ ...formData, product_type: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">--</option>
-                    <option value="อุปกรณ์สำนักงาน">อุปกรณ์สำนักงาน</option>
-                    <option value="ค่าขนส่ง">ค่าขนส่ง</option>
-                    <option value="ค่าธรรมเนียม">ค่าธรรมเนียม</option>
-                  </select>
-                </div>
               </div>
 
               {/* Category buttons - limited to specific categories, rest in dropdown */}
