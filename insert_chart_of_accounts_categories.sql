@@ -21,7 +21,7 @@ INSERT INTO public.expense_categories (name, description, keywords, color, chart
   ('ค่าธรรมเนียม TikTok Shop', 'ค่าธรรมเนียมแพลตฟอร์ม TikTok Shop', 'tiktok,ธรรมเนียม,platform', '#F97316', '52008', true, 'TIKTOK_PLATFORM_FEE'),
   ('ค่าธรรมเนียม Grab', 'ค่าธรรมเนียมแพลตฟอร์ม Grab', 'grab,ธรรมเนียม,platform,grab wallet', '#F97316', '52009', true, 'GRAB_PLATFORM_FEE'),
   ('ค่าธรรมเนียม LINE SHOPPING', 'ค่าธรรมเนียมแพลตฟอร์ม LINE', 'line,ธรรมเนียม,platform', '#F97316', '52010', true, 'LINE_PLATFORM_FEE'),
-  ('ค่าใช้จ่ายอื่นในการขาย', 'ค่าใช้จ่ายอื่นๆ ในการขาย', 'ค่าใช้จ่ายอื่น,other,selling', '#F97316', '52100', true, 'OTHER_SELLING_EXPENSES'),
+  ('ค่าใช้จ่ายอื่นในการขาย', 'ค่าใช้จ่ายอื่นๆ ในการขาย', 'ค่าใช้จ่ายอื่น,other,selling', '#F97316', '52100', true, 'OTHER_SELL_EXP'),
 
 -- 53xxxxx ค่าใช้จ่ายในการบริหาร (Administrative Expenses)
   ('ค่าเช่าสำนักงาน', 'ค่าเช่าพื้นที่สำนักงานและร้านค้า', 'เช่า,rent,สำนักงาน,office', '#3B82F6', '53001', true, 'OFFICE_RENT'),
@@ -37,7 +37,7 @@ INSERT INTO public.expense_categories (name, description, keywords, color, chart
   ('ค่าบัญชี', 'ค่าบริการสำนักงานบัญชี', 'บัญชี,accounting,accountant', '#3B82F6', '53011', true, 'ACCOUNTING_FEES'),
   ('ค่าปรึกษา', 'ค่าบริการที่ปรึกษา', 'ที่ปรึกษา,consultant,consulting', '#3B82F6', '53012', true, 'CONSULTING_FEES'),
   ('ค่าอบรมและสัมนา', 'ค่าอบรมพนักงานและสัมนา', 'อบรม,training,สัมนา,seminar', '#3B82F6', '53013', true, 'TRAINING'),
-  ('ค่าใช้จ่ายอื่นในการบริหาร', 'ค่าใช้จ่ายอื่นๆ ในการบริหาร', 'ค่าใช้จ่ายอื่น,other,administrative', '#3B82F6', '53100', true, 'OTHER_ADMIN_EXPENSES'),
+  ('ค่าใช้จ่ายอื่นในการบริหาร', 'ค่าใช้จ่ายอื่นๆ ในการบริหาร', 'ค่าใช้จ่ายอื่น,other,administrative', '#3B82F6', '53100', true, 'OTHER_ADMIN_EXP'),
 
 -- 54xxxxx รายจ่ายอื่น (Other Expenses)
   ('ค่าใช้จ่ายอื่น', 'รายจ่ายอื่นๆ ที่ไม่เข้ากลุ่ม', 'ค่าใช้จ่ายอื่น,other,miscellaneous', '#8B5CF6', '54000', true, 'OTHER_EXPENSES'),
@@ -49,17 +49,17 @@ INSERT INTO public.expense_categories (name, description, keywords, color, chart
   ('ค่าดอกเบี้ยจ่าย', 'ค่าดอกเบี้ยจากการกู้ยืม', 'ดอกเบี้ย,interest,กู้,loan', '#06B6D4', '55002', true, 'INTEREST_EXPENSE'),
   ('ค่าธรรมเนียมบัตรเครดิต', 'ค่าธรรมเนียมรูดบัตรเครดิต', 'บัตรเครดิต,credit card,ธรรมเนียม', '#06B6D4', '55003', true, 'CREDIT_CARD_FEES'),
   ('ค่าธรรมเนียมโอนเงิน', 'ค่าธรรมเนียมโอนเงิน', 'โอนเงิน,transfer,ธรรมเนียม', '#06B6D4', '55004', true, 'TRANSFER_FEES'),
-  ('ค่าใช้จ่ายทางการเงินอื่น', 'ค่าใช้จ่ายทางการเงินอื่นๆ', 'ค่าใช้จ่ายอื่น,other,finance', '#06B6D4', '55100', true, 'OTHER_FINANCE_EXPENSES'),
+  ('ค่าใช้จ่ายทางการเงินอื่น', 'ค่าใช้จ่ายทางการเงินอื่นๆ', 'ค่าใช้จ่ายอื่น,other,finance', '#06B6D4', '55100', true, 'OTHER_FINANCE_EXP'),
 
 -- 56xxxxx ค่าใช้จ่ายบุคลากร (Personnel Expenses)
   ('เงินเดือน', 'เงินเดือนพนักงาน', 'เงินเดือน,salary,พนักงาน,payroll', '#EC4899', '56001', true, 'SALARY'),
   ('ค่าล่วงเวลา', 'ค่าล่วงเวลาและค่าทำงานนอกเวลา', 'OT,overtime,ล่วงเวลา', '#EC4899', '56002', true, 'OVERTIME'),
   ('ค่าคอมมิชชั่นพนักงาน', 'ค่าคอมมิชชั่นพนักงานขาย', 'คอมมิชชั่น,commission,พนักงาน', '#EC4899', '56003', true, 'STAFF_COMMISSION'),
-  ('ค่าโบนัส', 'ค่าโบนัสและรางวัลพนักงาน', 'โบนัส,bonus,รางวัล,performance', '#EC4899', '56004', true, 'BONUS'),
-  ('ค่าสวัสดิการ', 'ค่าสวัสดิการพนักงาน', 'สวัสดิการ,benefits,welfare', '#EC4899', '56005', true, 'BENEFITS'),
-  ('ค่าประกันสังคม', 'ค่าประกันสังคมนายจ้าง', 'ประกันสังคม,social security,ปภส', '#EC4899', '56006', true, 'SOCIAL_SECURITY'),
-  ('เงินสมทบกองทุนสำรองเลี้ยงชีพ', 'เงินสมทบกองทุนสำรองเลี้ยงชีพ', 'กองทุน,provident fund,pvf', '#EC4899', '56007', true, 'PROVIDENT_FUND'),
-  ('ค่าอบรมพนักงาน', 'ค่าอบรมและพัฒนาพนักงาน', 'อบรม,training,พัฒนา,hr', '#EC4899', '56008', true, 'HR_TRAINING'),
-  ('ค่าใช้จ่ายบุคลากรอื่น', 'ค่าใช้จ่ายบุคลากรอื่นๆ', 'ค่าใช้จ่ายอื่น,other,personnel,hr', '#EC4899', '56100', true, 'OTHER_PERSONNEL_EXPENSES')
+  ('ค่าโบนัส', 'ค่าโบนัสและรางวัลพนักงาน', 'โบนัส,bonus,รางวัล', '#EC4899', '56004', true, 'BONUS'),
+  ('ค่าสวัสดิการ', 'ค่าสวัสดิการพนักงาน', 'สวัสดิการ,benefits', '#EC4899', '56005', true, 'BENEFITS'),
+  ('ค่าประกันสังคม', 'ค่าประกันสังคมนายจ้าง', 'ประกันสังคม,social security', '#EC4899', '56006', true, 'SOCIAL_SECURITY'),
+  ('เงินสมทบกองทุนสำรองเลี้ยงชีพ', 'เงินสมทบกองทุนสำรองเลี้ยงชีพ', 'กองทุน,provident fund', '#EC4899', '56007', true, 'PROVIDENT_FUND'),
+  ('ค่าอบรมพนักงาน', 'ค่าอบรมและพัฒนาพนักงาน', 'อบรม,training', '#EC4899', '56008', true, 'HR_TRAINING'),
+  ('ค่าใช้จ่ายบุคลากรอื่น', 'ค่าใช้จ่ายบุคลากรอื่นๆ', 'ค่าใช้จ่ายอื่น,other,personnel', '#EC4899', '56100', true, 'OTHER_PERSONNEL_EXP')
 
 ON CONFLICT (name) DO NOTHING;
