@@ -98,6 +98,7 @@ export default function ExpensesPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>('')
   const [paymentMethodRules, setPaymentMethodRules] = useState<{keyword: string, payment_method: string}[]>([])
   const [expenseCategories, setExpenseCategories] = useState<any[]>([])
+  const [paymentMethods, setPaymentMethods] = useState<string[]>([])
   
   // Fetch payment method rules
   const fetchPaymentMethodRules = async () => {
@@ -164,6 +165,22 @@ export default function ExpensesPage() {
     }
   }
 
+  // Fetch payment methods from database
+  const fetchPaymentMethods = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .select('name')
+        .eq('is_active', true)
+        .order('name')
+      
+      if (error) throw error
+      setPaymentMethods(data?.map(pm => pm.name) || [])
+    } catch (error) {
+      console.error('Error fetching payment methods:', error)
+    }
+  }
+
   const [formData, setFormData] = useState({
     expense_date: new Date().toISOString().split('T')[0],
     category: 'ค่าอื่นๆ',
@@ -196,6 +213,7 @@ export default function ExpensesPage() {
     fetchContacts()
     fetchPaymentMethodRules()
     fetchExpenseCategories()
+    fetchPaymentMethods()
   }, [])
 
   const fetchExpenses = async () => {
@@ -1562,7 +1580,9 @@ export default function ExpensesPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">เงินสด</option>
-                  {PAYMENT_METHODS.map(method => (
+                  {paymentMethods.length > 0 ? paymentMethods.map(method => (
+                    <option key={method} value={method}>{method}</option>
+                  )) : PAYMENT_METHODS.map(method => (
                     <option key={method} value={method}>{method}</option>
                   ))}
                 </select>
