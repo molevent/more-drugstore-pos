@@ -1332,7 +1332,11 @@ export default function ExpensesPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">ประเภท</label>
                   <select
                     value={formData.document_type}
-                    onChange={(e) => setFormData({ ...formData, document_type: e.target.value })}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      document_type: e.target.value,
+                      category: '' // Reset category when document_type changes
+                    })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">--</option>
@@ -1369,33 +1373,42 @@ export default function ExpensesPage() {
                 </div>
               </div>
 
-              {/* Category buttons */}
+              {/* Category dropdown - filtered by document_type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">หมวดหมู่ *</label>
-                <div className="flex flex-wrap gap-2">
-                  {expenseCategories.map(cat => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => {
-                        const isGrabCategory = cat.name.toLowerCase().includes('grab')
-                        setFormData({ 
-                          ...formData, 
-                          category: cat.name,
-                          payment_method: isGrabCategory ? 'Grab Wallet' : formData.payment_method
-                        })
-                      }}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                        formData.category === cat.name
-                          ? 'ring-2 ring-offset-2 ring-gray-400 scale-105'
-                          : 'hover:opacity-80'
-                      }`}
-                      style={{ backgroundColor: cat.color || '#6B7280', color: '#ffffff' }}
-                    >
-                      {cat.name}
-                    </button>
-                  ))}
-                </div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">หมวด *</label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => {
+                    const selectedCat = expenseCategories.find(cat => cat.name === e.target.value)
+                    const isGrabCategory = selectedCat?.name.toLowerCase().includes('grab')
+                    setFormData({ 
+                      ...formData, 
+                      category: e.target.value,
+                      payment_method: isGrabCategory ? 'Grab Wallet' : formData.payment_method
+                    })
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- เลือกหมวด --</option>
+                  {expenseCategories
+                    .filter(cat => {
+                      // Filter based on document_type
+                      if (!formData.document_type) return true
+                      const code = cat.chart_of_accounts_code || ''
+                      if (formData.document_type === 'ซื้อสินค้า') {
+                        return code.startsWith('51')
+                      } else if (formData.document_type === 'ค่าใช้จ่ายในการขาย') {
+                        return code.startsWith('52')
+                      } else if (formData.document_type === 'ค่าใช้จ่ายในการบริหาร') {
+                        return code.startsWith('53')
+                      }
+                      return true
+                    })
+                    .map(cat => (
+                      <option key={cat.id} value={cat.name}>{cat.name}</option>
+                    ))
+                  }
+                </select>
               </div>
 
               {/* Has Invoice - Radio buttons */}
