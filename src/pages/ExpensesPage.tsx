@@ -1540,7 +1540,7 @@ export default function ExpensesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">หักบุลค่าเพิ่ม</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ภาษีมูลค่าเพิ่ม</label>
                   <input
                     type="number"
                     min="0"
