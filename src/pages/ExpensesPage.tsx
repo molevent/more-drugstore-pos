@@ -561,25 +561,33 @@ export default function ExpensesPage() {
 
   // Open payment voucher modal with pre-filled data from expense
   const openPaymentVoucherModal = async () => {
-    const voucherNumber = await generatePaymentVoucherNumber(formData.expense_date)
-    
-    setPaymentVoucherForm({
-      voucher_date: formData.expense_date,
-      voucher_number: voucherNumber,
-      payee_name: formData.vendor || '',
-      payee_tax_id: formData.seller_tax_id || '',
-      amount: formData.amount || '',
-      amount_in_words: '',
-      description: formData.description || '',
-      payment_method: formData.payment_method || 'เงินสด',
-      bank_name: '',
-      bank_account: '',
-      check_number: '',
-      approved_by: '',
-      notes: formData.notes || ''
-    })
-    
-    setShowPaymentVoucherModal(true)
+    console.log('Opening payment voucher modal...', formData.expense_date)
+    try {
+      const voucherNumber = await generatePaymentVoucherNumber(formData.expense_date)
+      console.log('Generated voucher number:', voucherNumber)
+      
+      setPaymentVoucherForm({
+        voucher_date: formData.expense_date,
+        voucher_number: voucherNumber,
+        payee_name: formData.vendor || '',
+        payee_tax_id: formData.seller_tax_id || '',
+        amount: formData.amount || '',
+        amount_in_words: '',
+        description: formData.description || '',
+        payment_method: formData.payment_method || 'เงินสด',
+        bank_name: '',
+        bank_account: '',
+        check_number: '',
+        approved_by: '',
+        notes: formData.notes || ''
+      })
+      
+      setShowPaymentVoucherModal(true)
+      console.log('Payment voucher modal opened')
+    } catch (error) {
+      console.error('Error opening payment voucher modal:', error)
+      alert('เกิดข้อผิดพลาดในการเปิดใบสำคัญจ่าย')
+    }
   }
 
   // Reset payment voucher form
