@@ -43,6 +43,10 @@ interface SummaryData {
   inputVat: number
   outputVat: number
   vatBalance: number
+  // Cash Flow
+  cashIn: number
+  cashOut: number
+  cashFlowBalance: number
 }
 
 export default function ExecutiveSummaryPage() {
@@ -67,7 +71,10 @@ export default function ExecutiveSummaryPage() {
     newCustomersToday: 0,
     inputVat: 0,
     outputVat: 0,
-    vatBalance: 0
+    vatBalance: 0,
+    cashIn: 0,
+    cashOut: 0,
+    cashFlowBalance: 0
   })
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
@@ -165,6 +172,11 @@ export default function ExecutiveSummaryPage() {
       const inputVatTotal = expensesWithVat?.reduce((sum: number, e: any) => sum + (e.vat_amount || 0), 0) || 0
       const vatDiff = outputVatTotal - inputVatTotal
 
+      // Calculate Cash Flow (monthly)
+      const cashInTotal = monthSalesTotal
+      const cashOutTotal = monthExpensesData?.reduce((sum: number, e: any) => sum + (e.amount || 0), 0) || 0
+      const cashFlowDiff = cashInTotal - cashOutTotal
+
       setSummaryData({
         todaySales: todaySalesTotal,
         todayOrders: todayOrders?.length || 0,
@@ -186,7 +198,10 @@ export default function ExecutiveSummaryPage() {
         newCustomersToday: newCustomers?.length || 0,
         inputVat: inputVatTotal,
         outputVat: outputVatTotal,
-        vatBalance: vatDiff
+        vatBalance: vatDiff,
+        cashIn: cashInTotal,
+        cashOut: cashOutTotal,
+        cashFlowBalance: cashFlowDiff
       })
       setLastUpdated(new Date())
     } catch (error) {
@@ -414,6 +429,62 @@ export default function ExecutiveSummaryPage() {
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
                     {summaryData.vatBalance >= 0 ? 'ต้องนำส่งกรมสรรพากร' : 'ได้รับคืน/เคลม'}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </section>
+
+        {/* Cash Flow Summary */}
+        <section>
+          <div className="flex items-center gap-2 mb-4">
+            <Wallet className="h-5 w-5 text-teal-600" />
+            <h2 className="text-lg font-semibold text-gray-800">กระแสเงินสด (Cash Flow) เดือนนี้</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card className="hover:shadow-lg transition-all cursor-pointer border-l-4 border-l-green-500">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-2 rounded-lg bg-green-100">
+                      <ArrowUpRight className="h-5 w-5 text-green-600" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-600">เงินเข้า</p>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(summaryData.cashIn)}</p>
+                  <p className="text-xs text-gray-500 mt-1">ยอดขายรวมเดือนนี้</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="hover:shadow-lg transition-all cursor-pointer border-l-4 border-l-red-500">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-2 rounded-lg bg-red-100">
+                      <ArrowUpRight className="h-5 w-5 text-red-600 rotate-180" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-600">เงินออก</p>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(summaryData.cashOut)}</p>
+                  <p className="text-xs text-gray-500 mt-1">ค่าใช้จ่ายเดือนนี้</p>
+                </div>
+              </div>
+            </Card>
+            <Card className={`hover:shadow-lg transition-all cursor-pointer border-l-4 ${summaryData.cashFlowBalance >= 0 ? 'border-l-green-500' : 'border-l-red-500'}`}>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`p-2 rounded-lg ${summaryData.cashFlowBalance >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
+                      <DollarSign className={`h-5 w-5 ${summaryData.cashFlowBalance >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+                    </div>
+                    <p className="text-sm font-medium text-gray-600">ส่วนต่างเงินเข้า-ออก</p>
+                  </div>
+                  <p className={`text-2xl font-bold ${summaryData.cashFlowBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {summaryData.cashFlowBalance >= 0 ? '+' : ''}{formatCurrency(summaryData.cashFlowBalance)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {summaryData.cashFlowBalance >= 0 ? 'กระแสเงินสดบวก' : 'กระแสเงินสดลบ'}
                   </p>
                 </div>
               </div>
