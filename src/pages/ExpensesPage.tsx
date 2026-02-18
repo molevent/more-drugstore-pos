@@ -641,6 +641,8 @@ export default function ExpensesPage() {
           console.error('Error linking voucher to expense:', updateError)
         } else {
           console.log('Linked voucher', voucherResult.id, 'to expense', editingExpense.id)
+          // Update local state so UI immediately shows "ดูใบสำคัญจ่าย" button
+          setEditingExpense({ ...editingExpense, payment_voucher_id: voucherResult.id })
         }
       }
 
