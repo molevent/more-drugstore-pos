@@ -482,6 +482,24 @@ export default function ExpensesPage() {
 
   const [selectedShortcutCategory, setSelectedShortcutCategory] = useState<string | null>(null)
 
+  // Payment Voucher Modal states
+  const [showPaymentVoucherModal, setShowPaymentVoucherModal] = useState(false)
+  const [paymentVoucherForm, setPaymentVoucherForm] = useState({
+    voucher_date: new Date().toISOString().split('T')[0],
+    voucher_number: '',
+    payee_name: '',
+    payee_tax_id: '',
+    amount: '',
+    amount_in_words: '',
+    description: '',
+    payment_method: 'เงินสด',
+    bank_name: '',
+    bank_account: '',
+    check_number: '',
+    approved_by: '',
+    notes: ''
+  })
+
   const createExpenseWithCategory = (category: string, description: string = '') => {
     resetForm()
     setSelectedShortcutCategory(category)
@@ -508,6 +526,113 @@ export default function ExpensesPage() {
     { name: 'ซื้อสินค้า', category: 'ซื้อสินค้า', color: 'bg-pink-500', icon: 'Package' },
     { name: 'อุปกรณ์สำนักงาน', category: 'อุปกรณ์สำนักงาน', color: 'bg-pink-600', icon: 'Monitor' },
   ]
+
+  // Generate payment voucher number
+  const generatePaymentVoucherNumber = async (date: string): Promise<string> => {
+    const dateObj = new Date(date)
+    const yy = String(dateObj.getFullYear()).slice(-2)
+    const mm = String(dateObj.getMonth() + 1).padStart(2, '0')
+    const dd = String(dateObj.getDate()).padStart(2, '0')
+    const datePrefix = `PV-${yy}${mm}${dd}`
+    
+    const { data, error } = await supabase
+      .from('payment_vouchers')
+      .select('voucher_number')
+      .ilike('voucher_number', `${datePrefix}-%`)
+      .order('voucher_number', { ascending: false })
+      .limit(1)
+    
+    if (error) {
+      console.error('Error fetching existing vouchers:', error)
+    }
+    
+    let sequence = 1
+    if (data && data.length > 0) {
+      const lastNumber = data[0].voucher_number
+      const lastSequence = parseInt(lastNumber.split('-')[2]) || 0
+      sequence = lastSequence + 1
+    }
+    
+    return `${datePrefix}-${String(sequence).padStart(3, '0')}`
+  }
+
+  // Open payment voucher modal with pre-filled data from expense
+  const openPaymentVoucherModal = async () => {
+    const voucherNumber = await generatePaymentVoucherNumber(formData.expense_date)
+    
+    setPaymentVoucherForm({
+      voucher_date: formData.expense_date,
+      voucher_number: voucherNumber,
+      payee_name: formData.vendor || '',
+      payee_tax_id: formData.seller_tax_id || '',
+      amount: formData.amount || '',
+      amount_in_words: '',
+      description: formData.description || '',
+      payment_method: formData.payment_method || 'เงินสด',
+      bank_name: '',
+      bank_account: '',
+      check_number: '',
+      approved_by: '',
+      notes: formData.notes || ''
+    })
+    
+    setShowPaymentVoucherModal(true)
+  }
+
+  // Reset payment voucher form
+  const resetPaymentVoucherForm = () => {
+    setPaymentVoucherForm({
+      voucher_date: new Date().toISOString().split('T')[0],
+      voucher_number: '',
+      payee_name: '',
+      payee_tax_id: '',
+      amount: '',
+      amount_in_words: '',
+      description: '',
+      payment_method: 'เงินสด',
+      bank_name: '',
+      bank_account: '',
+      check_number: '',
+      approved_by: '',
+      notes: ''
+    })
+  }
+
+  // Handle save payment voucher
+  const handleSavePaymentVoucher = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    try {
+      const voucherData = {
+        voucher_date: paymentVoucherForm.voucher_date,
+        voucher_number: paymentVoucherForm.voucher_number,
+        payee_name: paymentVoucherForm.payee_name,
+        payee_tax_id: paymentVoucherForm.payee_tax_id || null,
+        amount: parseFloat(paymentVoucherForm.amount) || 0,
+        amount_in_words: paymentVoucherForm.amount_in_words || null,
+        description: paymentVoucherForm.description,
+        payment_method: paymentVoucherForm.payment_method,
+        bank_name: paymentVoucherForm.bank_name || null,
+        bank_account: paymentVoucherForm.bank_account || null,
+        check_number: paymentVoucherForm.check_number || null,
+        approved_by: paymentVoucherForm.approved_by || null,
+        notes: paymentVoucherForm.notes || null
+      }
+
+      const { error } = await supabase
+        .from('payment_vouchers')
+        .insert([voucherData])
+      
+      if (error) throw error
+
+      setShowPaymentVoucherModal(false)
+      resetPaymentVoucherForm()
+      alert('สร้างใบสำคัญจ่ายสำเร็จ!')
+    } catch (error) {
+      console.error('Error saving voucher:', error)
+      alert('เกิดข้อผิดพลาดในการบันทึกใบสำคัญจ่าย')
+    }
+  }
 
   const filteredExpenses = expenses.filter(expense =>
     expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1993,16 +2118,25 @@ export default function ExpensesPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">ใบสำคัญจ่าย</label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigate('/payment-vouchers', { state: { expenseData: formData } })
-                    }}
-                    className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                  >
-                    <FileText className="h-4 w-4" />
-                    ออกใบสำคัญจ่าย
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={openPaymentVoucherModal}
+                      className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                    >
+                      <FileText className="h-4 w-4" />
+                      ออกใบสำคัญจ่าย
+                    </button>
+                    {editingExpense?.payment_voucher_id && (
+                      <Link
+                        to={`/payment-vouchers?highlight=${editingExpense.payment_voucher_id}`}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                      >
+                        <FileText className="h-4 w-4" />
+                        ดูใบสำคัญจ่าย
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -2111,6 +2245,209 @@ export default function ExpensesPage() {
                   className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
                 >
                   ยกเลิก
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Voucher Modal */}
+      {showPaymentVoucherModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-xl font-bold text-gray-900">
+                ออกใบสำคัญจ่าย
+              </h2>
+              <button
+                onClick={() => {
+                  setShowPaymentVoucherModal(false)
+                  resetPaymentVoucherForm()
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <span className="text-2xl">&times;</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleSavePaymentVoucher} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">เลขที่ *</label>
+                  <input
+                    type="text"
+                    required
+                    value={paymentVoucherForm.voucher_number}
+                    onChange={(e) => setPaymentVoucherForm({ ...paymentVoucherForm, voucher_number: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="PV-001"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">วันที่ *</label>
+                  <input
+                    type="date"
+                    required
+                    value={paymentVoucherForm.voucher_date}
+                    onChange={(e) => setPaymentVoucherForm({ ...paymentVoucherForm, voucher_date: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ผู้รับเงิน *</label>
+                <input
+                  type="text"
+                  required
+                  value={paymentVoucherForm.payee_name}
+                  onChange={(e) => setPaymentVoucherForm({ ...paymentVoucherForm, payee_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="ชื่อผู้รับเงิน"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">เลขประจำตัวผู้เสียภาษี</label>
+                  <input
+                    type="text"
+                    value={paymentVoucherForm.payee_tax_id}
+                    onChange={(e) => setPaymentVoucherForm({ ...paymentVoucherForm, payee_tax_id: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="เลข 13 หลัก"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">วิธีการชำระเงิน *</label>
+                  <select
+                    required
+                    value={paymentVoucherForm.payment_method}
+                    onChange={(e) => setPaymentVoucherForm({ ...paymentVoucherForm, payment_method: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="เงินสด">เงินสด</option>
+                    <option value="โอนเงิน">โอนเงิน</option>
+                    <option value="เช็ค">เช็ค</option>
+                  </select>
+                </div>
+              </div>
+
+              {paymentVoucherForm.payment_method === 'โอนเงิน' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อธนาคาร</label>
+                    <input
+                      type="text"
+                      value={paymentVoucherForm.bank_name}
+                      onChange={(e) => setPaymentVoucherForm({ ...paymentVoucherForm, bank_name: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="ชื่อธนาคาร"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">เลขที่บัญชี</label>
+                    <input
+                      type="text"
+                      value={paymentVoucherForm.bank_account}
+                      onChange={(e) => setPaymentVoucherForm({ ...paymentVoucherForm, bank_account: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="เลขที่บัญชี"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {paymentVoucherForm.payment_method === 'เช็ค' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">เลขที่เช็ค</label>
+                  <input
+                    type="text"
+                    value={paymentVoucherForm.check_number}
+                    onChange={(e) => setPaymentVoucherForm({ ...paymentVoucherForm, check_number: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="เลขที่เช็ค"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">รายการ *</label>
+                <textarea
+                  required
+                  value={paymentVoucherForm.description}
+                  onChange={(e) => setPaymentVoucherForm({ ...paymentVoucherForm, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  rows={2}
+                  placeholder="รายละเอียดการจ่ายเงิน"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">จำนวนเงิน *</label>
+                  <input
+                    type="number"
+                    required
+                    step="0.01"
+                    min="0"
+                    value={paymentVoucherForm.amount}
+                    onChange={(e) => setPaymentVoucherForm({ ...paymentVoucherForm, amount: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">จำนวนเงินตัวอักษร</label>
+                  <input
+                    type="text"
+                    value={paymentVoucherForm.amount_in_words}
+                    onChange={(e) => setPaymentVoucherForm({ ...paymentVoucherForm, amount_in_words: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="หนึ่งพันบาทถ้วน"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">อนุมัติโดย</label>
+                <input
+                  type="text"
+                  value={paymentVoucherForm.approved_by}
+                  onChange={(e) => setPaymentVoucherForm({ ...paymentVoucherForm, approved_by: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="ชื่อผู้อนุมัติ"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">หมายเหตุ</label>
+                <textarea
+                  value={paymentVoucherForm.notes}
+                  onChange={(e) => setPaymentVoucherForm({ ...paymentVoucherForm, notes: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  rows={2}
+                  placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPaymentVoucherModal(false)
+                    resetPaymentVoucherForm()
+                  }}
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  บันทึกใบสำคัญจ่าย
                 </button>
               </div>
             </form>
