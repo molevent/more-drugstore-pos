@@ -622,14 +622,31 @@ export default function ExpensesPage() {
         notes: paymentVoucherForm.notes || null
       }
 
-      const { error } = await supabase
+      const { data: voucherResult, error } = await supabase
         .from('payment_vouchers')
         .insert([voucherData])
+        .select('id')
+        .single()
       
       if (error) throw error
 
+      // If editing an expense, link the voucher to it
+      if (editingExpense && voucherResult) {
+        const { error: updateError } = await supabase
+          .from('expenses')
+          .update({ payment_voucher_id: voucherResult.id })
+          .eq('id', editingExpense.id)
+        
+        if (updateError) {
+          console.error('Error linking voucher to expense:', updateError)
+        } else {
+          console.log('Linked voucher', voucherResult.id, 'to expense', editingExpense.id)
+        }
+      }
+
       setShowPaymentVoucherModal(false)
       resetPaymentVoucherForm()
+      fetchExpenses() // Refresh to show the PV badge
       alert('สร้างใบสำคัญจ่ายสำเร็จ!')
     } catch (error) {
       console.error('Error saving voucher:', error)
