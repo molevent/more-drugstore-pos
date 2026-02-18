@@ -667,7 +667,7 @@ export default function PaymentVoucherPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3 p-4 border-t bg-gray-50">
+            <div className="flex gap-3 p-4 border-t bg-gray-50 print:hidden">
               <button
                 onClick={() => window.print()}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
