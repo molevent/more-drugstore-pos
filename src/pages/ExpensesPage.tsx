@@ -1438,7 +1438,7 @@ export default function ExpensesPage() {
                             <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 text-xs rounded font-medium" title="รอใบเสร็จ">รอบิล</span>
                           )}
                           {expense.payment_voucher_id && (
-                            <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded font-bold flex items-center gap-1 shadow-sm" title="มีใบสำคัญจ่ายแล้ว">
+                            <span className="px-2 py-1 bg-blue-200 text-blue-800 text-xs rounded font-medium flex items-center gap-1 shadow-sm" title="มีใบสำคัญจ่ายแล้ว">
                               <FileText className="h-3 w-3" />
                               PV
                             </span>
@@ -1537,7 +1537,7 @@ export default function ExpensesPage() {
                             <span className="ml-2 px-1.5 py-0.5 bg-orange-100 text-orange-700 text-xs rounded font-medium" title="รอใบเสร็จ">รอบิล</span>
                           )}
                           {expense.payment_voucher_id && (
-                            <span className="ml-2 px-2 py-1 bg-blue-600 text-white text-xs rounded font-bold flex items-center gap-1 shadow-sm inline-flex" title="มีใบสำคัญจ่ายแล้ว">
+                            <span className="ml-2 px-2 py-1 bg-blue-200 text-blue-800 text-xs rounded font-medium flex items-center gap-1 shadow-sm inline-flex" title="มีใบสำคัญจ่ายแล้ว">
                               <FileText className="h-3 w-3" />
                               PV
                             </span>
