@@ -39,6 +39,10 @@ interface SummaryData {
   todayEWallet: number
   totalCustomers: number
   newCustomersToday: number
+  // Tax Summary
+  inputVat: number
+  outputVat: number
+  vatBalance: number
 }
 
 export default function ExecutiveSummaryPage() {
@@ -60,7 +64,10 @@ export default function ExecutiveSummaryPage() {
     todayTransfer: 0,
     todayEWallet: 0,
     totalCustomers: 0,
-    newCustomersToday: 0
+    newCustomersToday: 0,
+    inputVat: 0,
+    outputVat: 0,
+    vatBalance: 0
   })
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
@@ -130,6 +137,18 @@ export default function ExecutiveSummaryPage() {
         .eq('type', 'customer')
         .gte('created_at', today)
 
+      // Fetch VAT data from orders (Output VAT - ภาษีขาย)
+      const { data: ordersWithVat } = await supabase
+        .from('orders')
+        .select('vat_amount')
+        .gte('created_at', firstDayOfMonth)
+
+      // Fetch VAT data from expenses (Input VAT - ภาษีซื้อ)
+      const { data: expensesWithVat } = await supabase
+        .from('expenses')
+        .select('vat_amount')
+        .gte('expense_date', firstDayOfMonth)
+
       const todaySalesTotal = todayOrders?.reduce((sum: number, o: any) => sum + (o.total_amount || 0), 0) || 0
       const monthSalesTotal = monthOrders?.reduce((sum: number, o: any) => sum + (o.total_amount || 0), 0) || 0
       
@@ -139,6 +158,11 @@ export default function ExecutiveSummaryPage() {
       const todayEWalletTotal = todayOrders?.filter((o: any) => ['grab_wallet', 'shopee_wallet', 'lineman_wallet'].includes(o.payment_method)).reduce((sum: number, o: any) => sum + (o.total_amount || 0), 0) || 0
 
       const lowStockCount = products?.filter((p: any) => p.quantity <= p.reorder_point).length || 0
+
+      // Calculate VAT
+      const outputVatTotal = ordersWithVat?.reduce((sum: number, o: any) => sum + (o.vat_amount || 0), 0) || 0
+      const inputVatTotal = expensesWithVat?.reduce((sum: number, e: any) => sum + (e.vat_amount || 0), 0) || 0
+      const vatDiff = outputVatTotal - inputVatTotal
 
       setSummaryData({
         todaySales: todaySalesTotal,
@@ -158,7 +182,10 @@ export default function ExecutiveSummaryPage() {
         todayTransfer: todayTransferTotal,
         todayEWallet: todayEWalletTotal,
         totalCustomers: customers?.length || 0,
-        newCustomersToday: newCustomers?.length || 0
+        newCustomersToday: newCustomers?.length || 0,
+        inputVat: inputVatTotal,
+        outputVat: outputVatTotal,
+        vatBalance: vatDiff
       })
       setLastUpdated(new Date())
     } catch (error) {
@@ -331,6 +358,62 @@ export default function ExecutiveSummaryPage() {
                   </div>
                   <p className="text-2xl font-bold text-gray-900">{formatCurrency(summaryData.todayEWallet)}</p>
                   <p className="text-xs text-gray-500 mt-1">Grab, Shopee, LINE</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </section>
+
+        {/* Tax Summary - VAT */}
+        <section>
+          <div className="flex items-center gap-2 mb-4">
+            <Receipt className="h-5 w-5 text-indigo-600" />
+            <h2 className="text-lg font-semibold text-gray-800">สรุปภาษีมูลค่าเพิ่ม (VAT) เดือนนี้</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card className="hover:shadow-lg transition-all cursor-pointer border-l-4 border-l-green-500">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-2 rounded-lg bg-green-100">
+                      <Receipt className="h-5 w-5 text-green-600" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-600">ภาษีซื้อ (Input VAT)</p>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(summaryData.inputVat)}</p>
+                  <p className="text-xs text-gray-500 mt-1">จากค่าใช้จ่าย/ซื้อสินค้า</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="hover:shadow-lg transition-all cursor-pointer border-l-4 border-l-blue-500">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-2 rounded-lg bg-blue-100">
+                      <Receipt className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-600">ภาษีขาย (Output VAT)</p>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(summaryData.outputVat)}</p>
+                  <p className="text-xs text-gray-500 mt-1">จากยอดขาย</p>
+                </div>
+              </div>
+            </Card>
+            <Card className={`hover:shadow-lg transition-all cursor-pointer border-l-4 ${summaryData.vatBalance >= 0 ? 'border-l-red-500' : 'border-l-green-500'}`}>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`p-2 rounded-lg ${summaryData.vatBalance >= 0 ? 'bg-red-100' : 'bg-green-100'}`}>
+                      <DollarSign className={`h-5 w-5 ${summaryData.vatBalance >= 0 ? 'text-red-600' : 'text-green-600'}`} />
+                    </div>
+                    <p className="text-sm font-medium text-gray-600">ส่วนต่างภาษีซื้อ-ขาย</p>
+                  </div>
+                  <p className={`text-2xl font-bold ${summaryData.vatBalance >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {summaryData.vatBalance >= 0 ? '+' : ''}{formatCurrency(summaryData.vatBalance)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {summaryData.vatBalance >= 0 ? 'ต้องนำส่งกรมสรรพากร' : 'ได้รับคืน/เคลม'}
+                  </p>
                 </div>
               </div>
             </Card>
