@@ -1,9 +1,26 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle, Percent, FileText, ShoppingCart, BookOpen, Wallet } from 'lucide-react'
+import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle, Percent, FileText, ShoppingCart, BookOpen, Wallet, Printer } from 'lucide-react'
+
+interface PaymentVoucher {
+  id: string
+  voucher_date: string
+  voucher_number: string
+  payee_name: string
+  payee_tax_id?: string
+  amount: number
+  amount_in_words?: string
+  description: string
+  payment_method: string
+  bank_name?: string
+  bank_account?: string
+  check_number?: string
+  approved_by?: string
+  notes?: string
+}
 
 interface Expense {
   id: string
@@ -503,6 +520,11 @@ export default function ExpensesPage() {
     notes: ''
   })
 
+  // View Payment Voucher Print Modal states
+  const [showViewVoucherModal, setShowViewVoucherModal] = useState(false)
+  const [viewVoucher, setViewVoucher] = useState<PaymentVoucher | null>(null)
+  const printRef = useRef<HTMLDivElement>(null)
+
   const createExpenseWithCategory = (category: string, description: string = '') => {
     resetForm()
     setSelectedShortcutCategory(category)
@@ -661,6 +683,27 @@ export default function ExpensesPage() {
     } catch (error) {
       console.error('Error saving voucher:', error)
       alert('เกิดข้อผิดพลาดในการบันทึกใบสำคัญจ่าย')
+    }
+  }
+
+  // Fetch and view payment voucher
+  const handleViewPaymentVoucher = async (voucherId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('payment_vouchers')
+        .select('*')
+        .eq('id', voucherId)
+        .single()
+      
+      if (error) throw error
+      
+      if (data) {
+        setViewVoucher(data)
+        setShowViewVoucherModal(true)
+      }
+    } catch (error) {
+      console.error('Error fetching voucher:', error)
+      alert('เกิดข้อผิดพลาดในการโหลดใบสำคัญจ่าย')
     }
   }
 
@@ -2170,13 +2213,14 @@ export default function ExpensesPage() {
                       ออกใบสำคัญจ่าย
                     </button>
                     {editingExpense?.payment_voucher_id && (
-                      <Link
-                        to={`/payment-vouchers?highlight=${editingExpense.payment_voucher_id}`}
+                      <button
+                        type="button"
+                        onClick={() => handleViewPaymentVoucher(editingExpense.payment_voucher_id!)}
                         className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
                       >
                         <FileText className="h-4 w-4" />
                         ดูใบสำคัญจ่าย
-                      </Link>
+                      </button>
                     )}
                   </div>
                 </div>
@@ -2493,6 +2537,156 @@ export default function ExpensesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Payment Voucher Print Modal */}
+      {showViewVoucherModal && viewVoucher && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-auto">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-[800px]">
+            {/* Print Content - A4 Style */}
+            <div ref={printRef} className="p-8 bg-white">
+              {/* Header */}
+              <div className="flex justify-between items-start mb-6">
+                <div className="flex items-center gap-4">
+                  {/* Logo */}
+                  <div className="w-20 h-20 rounded-full border-2 border-gray-400 flex items-center justify-center bg-white">
+                    <div className="text-center text-xs text-gray-600">
+                      <div className="font-bold">Sa-ang</div>
+                      <div className="text-[8px]">PHARMACY</div>
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-800">หจก. สระอางพาณิชย์</h2>
+                    <p className="text-sm text-gray-600">สำนักงานใหญ่</p>
+                  </div>
+                </div>
+                <div className="text-right text-sm">
+                  <div className="flex gap-2 mb-1">
+                    <span className="text-gray-600">เลขที่</span>
+                    <span className="font-medium">{viewVoucher.voucher_number}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-gray-600">วันที่</span>
+                    <span className="font-medium">{viewVoucher.voucher_date}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Title */}
+              <div className="bg-blue-100 py-2 px-4 mb-4">
+                <h1 className="text-xl font-bold text-center text-gray-800">
+                  ใบสำคัญจ่าย {viewVoucher.voucher_number}
+                </h1>
+              </div>
+
+              {/* Payee Info */}
+              <div className="mb-6 text-sm">
+                <div className="flex gap-2 mb-1">
+                  <span className="text-gray-600">จ่ายให้ :</span>
+                  <span className="font-medium">{viewVoucher.payee_name}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-gray-600">โดย :</span>
+                  <span className="font-medium">S/A {viewVoucher.payee_tax_id || '-'}</span>
+                </div>
+              </div>
+
+              {/* Table */}
+              <table className="w-full text-sm mb-6">
+                <thead>
+                  <tr className="border-b-2 border-gray-800">
+                    <th className="py-2 px-2 text-left text-gray-600 font-normal">วันที่เอกสาร</th>
+                    <th className="py-2 px-2 text-left text-gray-600 font-normal">รายการ</th>
+                    <th className="py-2 px-2 text-left text-gray-600 font-normal">เลขที่เอกสาร</th>
+                    <th className="py-2 px-2 text-right text-gray-600 font-normal">ยอดรับสินค้าหรือบริการ</th>
+                    <th className="py-2 px-2 text-right text-gray-600 font-normal">ภาษีมูลค่าเพิ่ม</th>
+                    <th className="py-2 px-2 text-right text-gray-600 font-normal">จำนวนเงินรวม</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-gray-300">
+                    <td className="py-2 px-2">{viewVoucher.voucher_date}</td>
+                    <td className="py-2 px-2">{viewVoucher.description}</td>
+                    <td className="py-2 px-2">{viewVoucher.voucher_number}</td>
+                    <td className="py-2 px-2 text-right">
+                      {viewVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-2 px-2 text-right">0.00</td>
+                    <td className="py-2 px-2 text-right">
+                      {viewVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                  <tr className="border-t-2 border-gray-800 font-medium bg-gray-50">
+                    <td className="py-2 px-2" colSpan={3}></td>
+                    <td className="py-2 px-2 text-right">
+                      {viewVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-2 px-2 text-right">0.00</td>
+                    <td className="py-2 px-2 text-right">
+                      {viewVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Notes and Summary */}
+              <div className="flex justify-between mt-8 text-sm">
+                {/* Left - Notes */}
+                <div className="w-1/2 pr-8">
+                  <div className="mb-3">
+                    <span className="text-gray-600">หมายเหตุ :</span>
+                    <div className="border-b border-gray-300 mt-1 h-6"></div>
+                  </div>
+                  <div className="mb-3">
+                    <span className="text-gray-600">ผู้ติดต่อ</span>
+                    <div className="border-b border-gray-300 mt-1 h-6"></div>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">อนุมัติ</span>
+                    <div className="border-b border-gray-300 mt-1 h-6"></div>
+                  </div>
+                </div>
+
+                {/* Right - Summary */}
+                <div className="w-1/2 pl-8">
+                  <div className="flex justify-between py-1 border-b border-gray-200">
+                    <span className="text-gray-600">รวม</span>
+                    <span>{viewVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-gray-200">
+                    <span className="text-gray-600">ภาษีหัก ณ ที่จ่าย</span>
+                    <span>0.00</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-gray-200">
+                    <span className="text-gray-600">ภาษีมูลค่าเพิ่ม</span>
+                    <span>0.00</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b-2 border-gray-800 font-medium">
+                    <span>รวมทั้งสิ้น</span>
+                    <span>{viewVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 p-4 border-t bg-gray-50 print:hidden">
+              <button
+                onClick={() => window.print()}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                <Printer className="h-4 w-4" />
+                พิมพ์
+              </button>
+              <button
+                onClick={() => setShowViewVoucherModal(false)}
+                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
+              >
+                ปิด
+              </button>
+            </div>
           </div>
         </div>
       )}
