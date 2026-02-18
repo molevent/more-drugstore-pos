@@ -512,6 +512,18 @@ export default function ExpensesPage() {
 
   const [selectedShortcutCategory, setSelectedShortcutCategory] = useState<string | null>(null)
 
+  // Add Contact Modal states
+  const [showAddContactModal, setShowAddContactModal] = useState(false)
+  const [newContactForm, setNewContactForm] = useState({
+    name: '',
+    type: 'seller' as 'customer' | 'seller' | 'both',
+    phone: '',
+    email: '',
+    address: '',
+    tax_id: '',
+    notes: ''
+  })
+
   // Payment Voucher Modal states
   const [showPaymentVoucherModal, setShowPaymentVoucherModal] = useState(false)
   const [paymentVoucherForm, setPaymentVoucherForm] = useState({
@@ -695,6 +707,59 @@ export default function ExpensesPage() {
     } catch (error) {
       console.error('Error saving voucher:', error)
       alert('เกิดข้อผิดพลาดในการบันทึกใบสำคัญจ่าย')
+    }
+  }
+
+  // Handle save new contact
+  const handleSaveNewContact = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!newContactForm.name.trim()) {
+      alert('กรุณากรอกชื่อคู่ค้า')
+      return
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('contacts')
+        .insert([{
+          name: newContactForm.name.trim(),
+          type: newContactForm.type,
+          phone: newContactForm.phone || null,
+          email: newContactForm.email || null,
+          address: newContactForm.address || null,
+          tax_id: newContactForm.tax_id || null,
+          notes: newContactForm.notes || null
+        }])
+        .select('*')
+        .single()
+      
+      if (error) throw error
+      
+      if (data) {
+        // Refresh contacts list
+        await fetchContacts()
+        
+        // Auto-select the new contact in the form
+        setFormData({ ...formData, vendor: data.name })
+        
+        // Close modal and reset form
+        setShowAddContactModal(false)
+        setNewContactForm({
+          name: '',
+          type: 'seller',
+          phone: '',
+          email: '',
+          address: '',
+          tax_id: '',
+          notes: ''
+        })
+        
+        alert('เพิ่มคู่ค้าใหม่สำเร็จ!')
+      }
+    } catch (error) {
+      console.error('Error saving contact:', error)
+      alert('เกิดข้อผิดพลาดในการบันทึกคู่ค้า')
     }
   }
 
@@ -1958,7 +2023,7 @@ export default function ExpensesPage() {
                 <>
                   {/* Date - full width */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">วันที่ *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">วันที่ ตามเอกสาร *</label>
                 <input
                   type="date"
                   required
@@ -2005,20 +2070,6 @@ export default function ExpensesPage() {
                     >
                       <option value="">-- เลือกหมวดอื่นๆ --</option>
                       {expenseCategories
-                        .filter(cat => ![
-                          'ซื้อสินค้า',
-                          'ค่าส่ง ปณ. [EMS]',
-                          'ค่าของใช้ - วัสดุสำนักงาน',
-                          'อุปกรณ์สำนักงาน',
-                          'ค่า Service Fee Grab',
-                          'ค่าธรรมเนียม LINE SHOPPING',
-                          'ค่าธรรมเนียม Lazada',
-                          'ค่าธรรมเนียม Kbank',
-                          'ค่าเช่าสำนักงาน',
-                          'ค่าไฟฟ้า',
-                          'ค่าน้ำ',
-                          'ค่าบัญชี'
-                        ].includes(cat.name))
                         .filter(cat => {
                           // Filter based on document_type
                           if (!formData.document_type) return true
@@ -2043,8 +2094,6 @@ export default function ExpensesPage() {
 
               {/* Category buttons - limited to specific categories */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">หมวดหมู่ *</label>
-                
                 {/* When coming from shortcut, show only selected category as compact badge */}
                 {selectedShortcutCategory ? (
                   <div className="flex items-center gap-2">
@@ -2088,15 +2137,17 @@ export default function ExpensesPage() {
                               category: cat.name,
                               payment_method: isGrabCategory ? 'Grab Wallet' : formData.payment_method
                             })
-                            // Navigate to payment voucher page with expense data
-                            navigate(`/payment-vouchers/${cat.name}`, { state: { expenseData: formData } })
                           }}
-                          className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                          className={`px-3 py-2 rounded-lg text-sm font-medium transition-all border-2 ${
                             formData.category === cat.name
-                              ? 'ring-2 ring-offset-2 ring-gray-400 scale-105'
-                              : 'hover:opacity-80'
+                              ? 'text-white scale-105 shadow-md'
+                              : 'bg-white hover:bg-gray-50'
                           }`}
-                          style={{ backgroundColor: cat.color || '#6B7280', color: '#ffffff' }}
+                          style={{ 
+                            backgroundColor: formData.category === cat.name ? (cat.color || '#6B7280') : 'transparent',
+                            borderColor: cat.color || '#6B7280',
+                            color: formData.category === cat.name ? '#ffffff' : (cat.color || '#6B7280')
+                          }}
                         >
                           {cat.name}
                         </button>
@@ -2139,18 +2190,28 @@ export default function ExpensesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">คู่ค้า</label>
-                  <select
-                    value={formData.vendor}
-                    onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select</option>
-                    {contacts.map((contact) => (
-                      <option key={contact.id} value={contact.name}>
-                        {contact.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex gap-2">
+                    <select
+                      value={formData.vendor}
+                      onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select</option>
+                      {contacts.map((contact) => (
+                        <option key={contact.id} value={contact.name}>
+                          {contact.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddContactModal(true)}
+                      className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1 whitespace-nowrap"
+                    >
+                      <Plus className="h-4 w-4" />
+                      เพิ่มคู่ค้า
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">เลขประจำตัวผู้เสียภาษี</label>
@@ -2236,7 +2297,13 @@ export default function ExpensesPage() {
                     step="0.01"
                     required
                     value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      amount: e.target.value,
+                      // Reset withholding tax when amount changes
+                      withholding_percent: '',
+                      withholding_tax: ''
+                    })}
                     placeholder="0.00"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
@@ -2247,8 +2314,8 @@ export default function ExpensesPage() {
                     type="number"
                     min="0"
                     step="0.01"
-                    value={formData.withholding_tax}
-                    onChange={(e) => setFormData({ ...formData, withholding_tax: e.target.value })}
+                    value={formData.vat_amount}
+                    onChange={(e) => setFormData({ ...formData, vat_amount: e.target.value })}
                     placeholder="0"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
@@ -2260,93 +2327,100 @@ export default function ExpensesPage() {
                     min="0"
                     step="0.01"
                     value={formData.vat_amount}
-                    onChange={(e) => setFormData({ ...formData, vat_amount: e.target.value })}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      vat_amount: e.target.value,
+                      // Reset withholding tax when base amount changes
+                      withholding_percent: '',
+                      withholding_tax: ''
+                    })}
                     placeholder="0"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
 
-              {/* Withholding Tax Section */}
+              {/* Withholding Tax Section - Compact Single Line */}
               <div className="border-t pt-4 mt-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">หัก ณ ที่จ่าย</h3>
-                
-                {/* Mode selection */}
-                <div className="flex gap-4 mb-3">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="withholding_mode"
-                      value="none"
-                      checked={formData.withholding_mode === 'none' || !formData.withholding_mode}
-                      onChange={(e) => setFormData({ ...formData, withholding_mode: e.target.value, withholding_percent: '', withholding_tax: '' })}
-                      className="w-4 h-4 text-blue-600"
-                    />
-                    <span className="text-sm text-gray-700">ไม่มี</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="withholding_mode"
-                      value="withhold"
-                      checked={formData.withholding_mode === 'withhold'}
-                      onChange={(e) => setFormData({ ...formData, withholding_mode: e.target.value })}
-                      className="w-4 h-4 text-blue-600"
-                    />
-                    <span className="text-sm text-gray-700">หัก ณ ที่จ่าย</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="withholding_mode"
-                      value="continuous"
-                      checked={formData.withholding_mode === 'continuous'}
-                      onChange={(e) => setFormData({ ...formData, withholding_mode: e.target.value })}
-                      className="w-4 h-4 text-blue-600"
-                    />
-                    <span className="text-sm text-gray-700">ออกให้ตลอดไป</span>
-                  </label>
-                </div>
-
-                {/* Percentage selection and calculated amount */}
-                {(formData.withholding_mode === 'withhold' || formData.withholding_mode === 'continuous') && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">อัตราหัก (%)</label>
-                      <select
-                        value={formData.withholding_percent}
-                        onChange={(e) => {
-                          const percent = e.target.value
-                          const baseAmount = parseFloat(formData.vat_amount) || 0
-                          const calculatedTax = percent ? (baseAmount * parseFloat(percent) / 100).toFixed(2) : ''
-                          setFormData({ 
-                            ...formData, 
-                            withholding_percent: percent,
-                            withholding_tax: calculatedTax
-                          })
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">-- เลือก --</option>
-                        <option value="3">3%</option>
-                        <option value="5">5%</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">ยอดหัก (จากราคาก่อน VAT)</label>
+                <div className="flex flex-wrap items-end gap-3">
+                  {/* Label */}
+                  <span className="text-sm font-semibold text-gray-900 mb-2">หัก ณ ที่จ่าย:</span>
+                  
+                  {/* Mode selection - compact */}
+                  <div className="flex gap-3">
+                    <label className="flex items-center gap-1.5 cursor-pointer">
                       <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={formData.withholding_tax}
-                        onChange={(e) => setFormData({ ...formData, withholding_tax: e.target.value })}
-                        placeholder="0.00"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-50"
-                        readOnly
+                        type="radio"
+                        name="withholding_mode"
+                        value="none"
+                        checked={formData.withholding_mode === 'none' || !formData.withholding_mode}
+                        onChange={(e) => setFormData({ ...formData, withholding_mode: e.target.value, withholding_percent: '', withholding_tax: '' })}
+                        className="w-4 h-4 text-blue-600"
                       />
-                    </div>
+                      <span className="text-sm text-gray-700">ไม่มี</span>
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="withholding_mode"
+                        value="withhold"
+                        checked={formData.withholding_mode === 'withhold'}
+                        onChange={(e) => setFormData({ ...formData, withholding_mode: e.target.value })}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <span className="text-sm text-gray-700">หัก ณ ที่จ่าย</span>
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="withholding_mode"
+                        value="continuous"
+                        checked={formData.withholding_mode === 'continuous'}
+                        onChange={(e) => setFormData({ ...formData, withholding_mode: e.target.value })}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <span className="text-sm text-gray-700">ออกให้ตลอดไป</span>
+                    </label>
                   </div>
-                )}
+
+                  {/* Percentage and Amount - inline */}
+                  {(formData.withholding_mode === 'withhold' || formData.withholding_mode === 'continuous') && (
+                    <>
+                      <div className="w-24">
+                        <select
+                          value={formData.withholding_percent}
+                          onChange={(e) => {
+                            const percent = e.target.value
+                            const baseAmount = parseFloat(formData.vat_amount) || 0
+                            const calculatedTax = percent ? (baseAmount * parseFloat(percent) / 100).toFixed(2) : ''
+                            setFormData({ 
+                              ...formData, 
+                              withholding_percent: percent,
+                              withholding_tax: calculatedTax
+                            })
+                          }}
+                          className="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                        >
+                          <option value="">--%</option>
+                          <option value="3">3%</option>
+                          <option value="5">5%</option>
+                        </select>
+                      </div>
+                      <div className="w-32">
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={formData.withholding_tax}
+                          onChange={(e) => setFormData({ ...formData, withholding_tax: e.target.value })}
+                          placeholder="ยอดหัก"
+                          className="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-50 text-sm"
+                          readOnly
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* Payment fields - 4 columns: Method, Date, Slip, Voucher */}
@@ -2881,6 +2955,144 @@ export default function ExpensesPage() {
                 ปิด
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Contact Modal */}
+      {showAddContactModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-xl font-bold text-gray-900">เพิ่มคู่ค้าใหม่</h2>
+              <button
+                onClick={() => {
+                  setShowAddContactModal(false)
+                  setNewContactForm({
+                    name: '',
+                    type: 'seller',
+                    phone: '',
+                    email: '',
+                    address: '',
+                    tax_id: '',
+                    notes: ''
+                  })
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <Plus className="h-6 w-6 rotate-45" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveNewContact} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อคู่ค้า *</label>
+                <input
+                  type="text"
+                  required
+                  value={newContactForm.name}
+                  onChange={(e) => setNewContactForm({ ...newContactForm, name: e.target.value })}
+                  placeholder="ชื่อบริษัทหรือบุคคล"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ประเภท</label>
+                <select
+                  value={newContactForm.type}
+                  onChange={(e) => setNewContactForm({ ...newContactForm, type: e.target.value as 'customer' | 'seller' | 'both' })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="seller">ผู้ขาย (Seller)</option>
+                  <option value="customer">ลูกค้า (Customer)</option>
+                  <option value="both">ทั้งสองอย่าง (Both)</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">เบอร์โทรศัพท์</label>
+                  <input
+                    type="tel"
+                    value={newContactForm.phone}
+                    onChange={(e) => setNewContactForm({ ...newContactForm, phone: e.target.value })}
+                    placeholder="0xx-xxx-xxxx"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">อีเมล</label>
+                  <input
+                    type="email"
+                    value={newContactForm.email}
+                    onChange={(e) => setNewContactForm({ ...newContactForm, email: e.target.value })}
+                    placeholder="email@example.com"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">เลขประจำตัวผู้เสียภาษี</label>
+                <input
+                  type="text"
+                  value={newContactForm.tax_id}
+                  onChange={(e) => setNewContactForm({ ...newContactForm, tax_id: e.target.value })}
+                  placeholder="เลข 13 หลัก"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ที่อยู่</label>
+                <textarea
+                  value={newContactForm.address}
+                  onChange={(e) => setNewContactForm({ ...newContactForm, address: e.target.value })}
+                  rows={2}
+                  placeholder="ที่อยู่คู่ค้า..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">หมายเหตุ</label>
+                <textarea
+                  value={newContactForm.notes}
+                  onChange={(e) => setNewContactForm({ ...newContactForm, notes: e.target.value })}
+                  rows={2}
+                  placeholder="หมายเหตุเพิ่มเติม..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddContactModal(false)
+                    setNewContactForm({
+                      name: '',
+                      type: 'seller',
+                      phone: '',
+                      email: '',
+                      address: '',
+                      tax_id: '',
+                      notes: ''
+                    })
+                  }}
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  บันทึกคู่ค้า
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

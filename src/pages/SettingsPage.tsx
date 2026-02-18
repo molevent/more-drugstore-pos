@@ -23,7 +23,8 @@ import {
   Calendar,
   FileText,
   BookOpen,
-  UserCog
+  UserCog,
+  BarChart3
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Card from '../components/common/Card'
@@ -289,6 +290,14 @@ export default function SettingsPage() {
 
   // Audit Section Items
   const auditItems = [
+    {
+      icon: BarChart3,
+      iconBg: 'bg-[#7D735F]/10',
+      iconColor: 'text-[#7D735F]',
+      title: 'สรุปภาพรวมธุรกิจ',
+      subtitle: 'Executive Summary สำหรับผู้บริหาร',
+      link: '/executive-summary'
+    },
     {
       icon: Wallet,
       iconBg: 'bg-[#B8C9B8]/10',

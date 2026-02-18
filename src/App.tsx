@@ -36,6 +36,7 @@ import CashierClosingReportPage from './pages/CashierClosingReportPage'
 import ReceiptTaxInvoiceReportPage from './pages/ReceiptTaxInvoiceReportPage'
 import PaymentSummaryPage from './pages/PaymentSummaryPage'
 import QuotationPage from './pages/QuotationPage'
+import ExecutiveSummaryPage from './pages/ExecutiveSummaryPage'
 import QuotationsListPage from './pages/QuotationsListPage'
 import SettingsPage from './pages/SettingsPage'
 import ShopSettingsPage from './pages/ShopSettingsPage'
@@ -109,6 +110,7 @@ function App() {
                     <Route path="/cashier-closing-report" element={<CashierClosingReportPage />} />
                     <Route path="/payment-summary" element={<PaymentSummaryPage />} />
                     <Route path="/receipt-tax-invoice-report" element={<ReceiptTaxInvoiceReportPage />} />
+                    <Route path="/executive-summary" element={<ExecutiveSummaryPage />} />
                     <Route path="/quotation" element={<QuotationPage />} />
                     <Route path="/quotation/:id" element={<QuotationPage />} />
                     <Route path="/quotations" element={<QuotationsListPage />} />
