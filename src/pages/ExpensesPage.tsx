@@ -236,6 +236,8 @@ export default function ExpensesPage() {
         .order('expense_date', { ascending: false })
 
       if (error) throw error
+      console.log('Fetched expenses:', data?.length, 'items')
+      console.log('Expenses with payment_voucher_id:', data?.filter(e => e.payment_voucher_id).length || 0)
       setExpenses(data || [])
       
       // Count pending expenses
@@ -1418,7 +1420,10 @@ export default function ExpensesPage() {
                             <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 text-xs rounded font-medium" title="รอใบเสร็จ">รอบิล</span>
                           )}
                           {expense.payment_voucher_id && (
-                            <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded font-medium" title="มีใบสำคัญจ่ายแล้ว">PV</span>
+                            <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded font-bold flex items-center gap-1 shadow-sm" title="มีใบสำคัญจ่ายแล้ว">
+                              <FileText className="h-3 w-3" />
+                              PV
+                            </span>
                           )}
                         </div>
                       </td>
@@ -1514,7 +1519,10 @@ export default function ExpensesPage() {
                             <span className="ml-2 px-1.5 py-0.5 bg-orange-100 text-orange-700 text-xs rounded font-medium" title="รอใบเสร็จ">รอบิล</span>
                           )}
                           {expense.payment_voucher_id && (
-                            <span className="ml-2 px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded font-medium" title="มีใบสำคัญจ่ายแล้ว">PV</span>
+                            <span className="ml-2 px-2 py-1 bg-blue-600 text-white text-xs rounded font-bold flex items-center gap-1 shadow-sm inline-flex" title="มีใบสำคัญจ่ายแล้ว">
+                              <FileText className="h-3 w-3" />
+                              PV
+                            </span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">{expense.vendor || '-'}</td>
