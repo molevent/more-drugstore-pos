@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { FileText, Plus, Search, Trash2, Edit2, BookOpen, Printer } from 'lucide-react'
+import { FileText, Plus, Search, Trash2, Edit2, BookOpen, Printer, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface PaymentVoucher {
   id: string
@@ -32,6 +32,8 @@ export default function PaymentVoucherPage() {
   const [editingVoucher, setEditingVoucher] = useState<PaymentVoucher | null>(null)
   const [showPrintModal, setShowPrintModal] = useState(false)
   const [printVoucher, setPrintVoucher] = useState<PaymentVoucher | null>(null)
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list')
+  const [currentMonth, setCurrentMonth] = useState(new Date())
   const printRef = useRef<HTMLDivElement>(null)
   
   const [formData, setFormData] = useState({
@@ -242,6 +244,31 @@ export default function PaymentVoucherPage() {
             />
           </div>
         </div>
+        {/* View Mode Toggle */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setViewMode('list')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+              viewMode === 'list'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <FileText className="h-4 w-4" />
+            รายการ
+          </button>
+          <button
+            onClick={() => setViewMode('calendar')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+              viewMode === 'calendar'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <CalendarIcon className="h-4 w-4" />
+            ปฏิทิน
+          </button>
+        </div>
         <Button
           variant="primary"
           onClick={() => {
@@ -254,7 +281,7 @@ export default function PaymentVoucherPage() {
         </Button>
       </div>
 
-      {/* Vouchers List */}
+      {/* Vouchers List or Calendar View */}
       {error ? (
         <Card className="p-8 text-center">
           <p className="text-red-600 mb-4">{error}</p>
@@ -265,81 +292,176 @@ export default function PaymentVoucherPage() {
             ลองใหม่
           </button>
         </Card>
-      ) : (
-      <Card>
-        {loading ? (
-          <p className="text-center text-gray-600 py-8">กำลังโหลด...</p>
-        ) : filteredVouchers.length === 0 ? (
-          <div className="text-center py-12">
-            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600">ไม่มีรายการใบสำคัญจ่าย</p>
-            <p className="text-sm text-gray-500 mt-1">คลิก "เพิ่มใบสำคัญจ่าย" เพื่อบันทึก</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">เลขที่</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">วันที่</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">ผู้รับเงิน</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">รายการ</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">จำนวนเงิน</th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">การชำระเงิน</th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">พิมพ์</th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-700"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredVouchers.map((voucher) => (
-                  <tr key={voucher.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                      {voucher.voucher_number}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {new Date(voucher.voucher_date).toLocaleDateString('th-TH')}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{voucher.payee_name}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{voucher.description}</td>
-                    <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
-                      ฿{voucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600 text-center">
-                      {voucher.payment_method}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => {
-                            setPrintVoucher(voucher)
-                            setShowPrintModal(true)
-                          }}
-                          className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                          title="พิมพ์ใบสำคัญจ่าย"
-                        >
-                          <Printer className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(voucher)}
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(voucher.id)}
-                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
+      ) : viewMode === 'list' ? (
+        <Card>
+          {loading ? (
+            <p className="text-center text-gray-600 py-8">กำลังโหลด...</p>
+          ) : filteredVouchers.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-600">ไม่มีรายการใบสำคัญจ่าย</p>
+              <p className="text-sm text-gray-500 mt-1">คลิก "เพิ่มใบสำคัญจ่าย" เพื่อบันทึก</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">เลขที่</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">วันที่</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">ผู้รับเงิน</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">รายการ</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">จำนวนเงิน</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">การชำระเงิน</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">พิมพ์</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700"></th>
                   </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredVouchers.map((voucher) => (
+                    <tr key={voucher.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                        {voucher.voucher_number}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {new Date(voucher.voucher_date).toLocaleDateString('th-TH')}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">{voucher.payee_name}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{voucher.description}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
+                        ฿{voucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 text-center">
+                        {voucher.payment_method}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => {
+                              setPrintVoucher(voucher)
+                              setShowPrintModal(true)
+                            }}
+                            className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                            title="พิมพ์ใบสำคัญจ่าย"
+                          >
+                            <Printer className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(voucher)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(voucher.id)}
+                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      ) : (
+        /* Calendar View */
+        <Card>
+          {loading ? (
+            <p className="text-center text-gray-600 py-8">กำลังโหลด...</p>
+          ) : (
+            <div className="p-4">
+              {/* Calendar Header */}
+              <div className="flex items-center justify-between mb-4">
+                <button
+                  onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {currentMonth.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })}
+                </h3>
+                <button
+                  onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7 gap-1">
+                {/* Day Headers */}
+                {['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'].map(day => (
+                  <div key={day} className="text-center py-2 text-sm font-medium text-gray-600">
+                    {day}
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+
+                {/* Calendar Days */}
+                {(() => {
+                  const year = currentMonth.getFullYear()
+                  const month = currentMonth.getMonth()
+                  const firstDay = new Date(year, month, 1).getDay()
+                  const daysInMonth = new Date(year, month + 1, 0).getDate()
+                  const days = []
+
+                  // Empty cells for days before the first day of the month
+                  for (let i = 0; i < firstDay; i++) {
+                    days.push(<div key={`empty-${i}`} className="h-24" />)
+                  }
+
+                  // Days of the month
+                  for (let day = 1; day <= daysInMonth; day++) {
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                    const dayVouchers = filteredVouchers.filter(v => v.voucher_date === dateStr)
+                    const hasVouchers = dayVouchers.length > 0
+                    const totalDayAmount = dayVouchers.reduce((sum, v) => sum + v.amount, 0)
+
+                    days.push(
+                      <div
+                        key={day}
+                        className={`h-24 border rounded-lg p-2 ${
+                          hasVouchers ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
+                        }`}
+                      >
+                        <div className="text-sm font-medium text-gray-900">{day}</div>
+                        {hasVouchers && (
+                          <div className="mt-1">
+                            <div className="text-xs text-blue-600 font-medium">
+                              {dayVouchers.length} รายการ
+                            </div>
+                            <div className="text-xs text-gray-600">
+                              ฿{totalDayAmount.toLocaleString('th-TH')}
+                            </div>
+                            {dayVouchers.map(v => (
+                              <div
+                                key={v.id}
+                                className="mt-1 text-xs bg-white rounded px-1 py-0.5 truncate cursor-pointer hover:bg-blue-100"
+                                onClick={() => {
+                                  setPrintVoucher(v)
+                                  setShowPrintModal(true)
+                                }}
+                              >
+                                {v.voucher_number}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  }
+
+                  return days
+                })()}
+              </div>
+            </div>
+          )}
+        </Card>
       )}
 
       {/* Add/Edit Modal */}
