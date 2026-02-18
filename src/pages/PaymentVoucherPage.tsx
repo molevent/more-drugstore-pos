@@ -121,6 +121,16 @@ export default function PaymentVoucherPage() {
     if (!confirm('ต้องการลบใบสำคัญจ่ายนี้?')) return
     
     try {
+      // First, clear payment_voucher_id from any linked expenses
+      const { error: updateError } = await supabase
+        .from('expenses')
+        .update({ payment_voucher_id: null })
+        .eq('payment_voucher_id', id)
+      
+      if (updateError) {
+        console.error('Error unlinking voucher from expenses:', updateError)
+      }
+
       const { error } = await supabase
         .from('payment_vouchers')
         .delete()
