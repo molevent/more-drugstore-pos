@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -76,7 +76,6 @@ const PAYMENT_METHODS = [
 ]
 
 export default function ExpensesPage() {
-  const navigate = useNavigate()
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
