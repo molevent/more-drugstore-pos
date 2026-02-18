@@ -17,8 +17,21 @@ import {
   PieChart,
   Activity,
   Store,
-  UserPlus
+  UserPlus,
+  LineChart as LineChartIcon
 } from 'lucide-react'
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  BarChart,
+  Bar
+} from 'recharts'
 
 interface SummaryData {
   todaySales: number
@@ -78,6 +91,9 @@ export default function ExecutiveSummaryPage() {
   })
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
+  
+  // 12-month chart data
+  const [monthlyChartData, setMonthlyChartData] = useState<any[]>([])
 
   useEffect(() => {
     fetchSummaryData()
@@ -224,6 +240,60 @@ export default function ExecutiveSummaryPage() {
     return new Intl.NumberFormat('th-TH').format(value)
   }
 
+  // Fetch 12 months of data for chart
+  const fetchMonthlyChartData = async () => {
+    try {
+      const months = []
+      const now = new Date()
+      
+      // Generate last 12 months
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+        const monthStart = d.toISOString().split('T')[0]
+        const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split('T')[0]
+        const monthName = d.toLocaleDateString('th-TH', { month: 'short', year: '2-digit' })
+        
+        // Fetch orders for this month
+        const { data: monthOrders } = await supabase
+          .from('orders')
+          .select('total_amount, cost_price, vat_amount')
+          .gte('created_at', monthStart)
+          .lte('created_at', monthEnd + 'T23:59:59')
+        
+        // Fetch expenses for this month
+        const { data: monthExpenses } = await supabase
+          .from('expenses')
+          .select('amount, vat_amount')
+          .gte('expense_date', monthStart)
+          .lte('expense_date', monthEnd)
+        
+        const sales = monthOrders?.reduce((sum: number, o: any) => sum + (o.total_amount || 0), 0) || 0
+        const costs = monthOrders?.reduce((sum: number, o: any) => sum + ((o.cost_price || 0) * (o.quantity || 1)), 0) || 0
+        const expenses = monthExpenses?.reduce((sum: number, e: any) => sum + (e.amount || 0), 0) || 0
+        const profit = sales - costs - expenses
+        const cashIn = sales
+        const cashOut = expenses
+        
+        months.push({
+          month: monthName,
+          sales,
+          cashIn,
+          cashOut,
+          profit
+        })
+      }
+      
+      setMonthlyChartData(months)
+    } catch (error) {
+      console.error('Error fetching monthly chart data:', error)
+    }
+  }
+
+  // Fetch chart data on mount
+  useEffect(() => {
+    fetchMonthlyChartData()
+  }, [])
+
   return (
     <div className="min-h-screen bg-gray-50 pb-8">
       {/* Header */}
@@ -315,6 +385,66 @@ export default function ExecutiveSummaryPage() {
               </div>
             </Card>
           </div>
+        </section>
+
+        {/* 12-Month Comparison Chart */}
+        <section>
+          <div className="flex items-center gap-2 mb-4">
+            <LineChartIcon className="h-5 w-5 text-indigo-600" />
+            <h2 className="text-lg font-semibold text-gray-800">กราฟเปรียบเทียบ 12 เดือน</h2>
+          </div>
+          <Card className="p-4">
+            <div className="h-80 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={monthlyChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                  <YAxis 
+                    tick={{ fontSize: 12 }} 
+                    tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip 
+                    formatter={(value: number) => formatCurrency(value)}
+                    labelStyle={{ color: '#374151' }}
+                  />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="sales" 
+                    name="ยอดขาย" 
+                    stroke="#10b981" 
+                    strokeWidth={2}
+                    dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="cashIn" 
+                    name="กระแสเงินสดบวก (เงินเข้า)" 
+                    stroke="#22c55e" 
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={{ fill: '#22c55e', strokeWidth: 2, r: 4 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="cashOut" 
+                    name="กระแสเงินสดลบ (เงินออก)" 
+                    stroke="#ef4444" 
+                    strokeWidth={2}
+                    dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="profit" 
+                    name="กำไร/ขาดทุน" 
+                    stroke="#6366f1" 
+                    strokeWidth={2}
+                    dot={{ fill: '#6366f1', strokeWidth: 2, r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
         </section>
 
         {/* Payment Methods */}
