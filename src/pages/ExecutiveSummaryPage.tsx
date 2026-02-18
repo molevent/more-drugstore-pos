@@ -411,9 +411,9 @@ export default function ExecutiveSummaryPage() {
                     type="monotone" 
                     dataKey="sales" 
                     name="ยอดขาย" 
-                    stroke="#10b981" 
+                    stroke="#f97316" 
                     strokeWidth={2}
-                    dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+                    dot={{ fill: '#f97316', strokeWidth: 2, r: 4 }}
                   />
                   <Line 
                     type="monotone" 
