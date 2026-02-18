@@ -238,17 +238,18 @@ export default function ExecutiveSummaryPage() {
     return new Intl.NumberFormat('th-TH').format(value)
   }
 
-  // Fetch 12 months of data for chart
+  // Fetch 12 months of data for chart (Jan 2026 - Dec 2026)
   const fetchMonthlyChartData = async () => {
     try {
       const months = []
-      const now = new Date()
+      const startYear = 2026
       
-      // Generate last 12 months
-      for (let i = 11; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      // Generate 12 months from Jan 2026 to Dec 2026
+      for (let i = 0; i < 12; i++) {
+        const month = i
+        const d = new Date(startYear, month, 1)
         const monthStart = d.toISOString().split('T')[0]
-        const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split('T')[0]
+        const monthEnd = new Date(startYear, month + 1, 0).toISOString().split('T')[0]
         const monthName = d.toLocaleDateString('th-TH', { month: 'short', year: '2-digit' })
         
         // Fetch orders for this month
