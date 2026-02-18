@@ -74,7 +74,8 @@ export default function ExecutiveSummaryPage() {
 
   useEffect(() => {
     fetchSummaryData()
-    const interval = setInterval(fetchSummaryData, 5 * 60 * 1000)
+    // Real-time updates every 30 seconds
+    const interval = setInterval(fetchSummaryData, 30 * 1000)
     return () => clearInterval(interval)
   }, [])
 
@@ -220,7 +221,7 @@ export default function ExecutiveSummaryPage() {
                 สรุปภาพรวมธุรกิจ (Executive Summary)
               </h1>
               <p className="text-gray-600 mt-1 text-sm">
-                รายงานสรุปสำหรับผู้บริหาร - อัปเดตล่าสุด: {lastUpdated.toLocaleTimeString('th-TH')}
+                รายงานสรุปสำหรับผู้บริหาร - อัปเดต Real-time ทุก 30 วินาที | ล่าสุด: {lastUpdated.toLocaleTimeString('th-TH')}
               </p>
             </div>
             <div className="flex gap-2">
