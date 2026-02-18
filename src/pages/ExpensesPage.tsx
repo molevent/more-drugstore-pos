@@ -36,6 +36,7 @@ interface Expense {
   payment_voucher_id?: string
   withholding_mode?: string
   withholding_percent?: string
+  evidence_url?: string
 }
 
 interface Contact {
@@ -58,6 +59,7 @@ const PAYMENT_METHODS = [
 ]
 
 export default function ExpensesPage() {
+  const navigate = useNavigate()
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)

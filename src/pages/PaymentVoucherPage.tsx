@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { FileText, Plus, Search, Trash2, Edit2, BookOpen, Printer, X } from 'lucide-react'
+import { FileText, Plus, Search, Trash2, Edit2, BookOpen, Printer } from 'lucide-react'
 
 interface PaymentVoucher {
   id: string
