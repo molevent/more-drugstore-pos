@@ -523,6 +523,8 @@ export default function ExpensesPage() {
   // View Payment Voucher Print Modal states
   const [showViewVoucherModal, setShowViewVoucherModal] = useState(false)
   const [viewVoucher, setViewVoucher] = useState<PaymentVoucher | null>(null)
+  const [viewVoucherCategory, setViewVoucherCategory] = useState<string>('')
+  const [shopSettings, setShopSettings] = useState<{ name: string; logo_url: string } | null>(null)
   const printRef = useRef<HTMLDivElement>(null)
 
   const createExpenseWithCategory = (category: string, description: string = '') => {
@@ -689,16 +691,32 @@ export default function ExpensesPage() {
   // Fetch and view payment voucher
   const handleViewPaymentVoucher = async (voucherId: string) => {
     try {
-      const { data, error } = await supabase
+      // Fetch voucher data
+      const { data: voucherData, error: voucherError } = await supabase
         .from('payment_vouchers')
         .select('*')
         .eq('id', voucherId)
         .single()
       
-      if (error) throw error
+      if (voucherError) throw voucherError
       
-      if (data) {
-        setViewVoucher(data)
+      // Fetch associated expense to get category
+      const { data: expenseData } = await supabase
+        .from('expenses')
+        .select('category')
+        .eq('payment_voucher_id', voucherId)
+        .single()
+      
+      // Fetch shop settings for logo and business name
+      const { data: shopData } = await supabase
+        .from('shop_settings')
+        .select('name, logo_url')
+        .single()
+      
+      if (voucherData) {
+        setViewVoucher(voucherData)
+        setViewVoucherCategory(expenseData?.category || '-')
+        setShopSettings(shopData || { name: 'ห้างหุ้นส่วนจำกัด สะอางพาณิชย์', logo_url: '' })
         setShowViewVoucherModal(true)
       }
     } catch (error) {
@@ -2551,14 +2569,22 @@ export default function ExpensesPage() {
               <div className="flex justify-between items-start mb-6">
                 <div className="flex items-center gap-4">
                   {/* Logo */}
-                  <div className="w-20 h-20 rounded-full border-2 border-gray-400 flex items-center justify-center bg-white">
-                    <div className="text-center text-xs text-gray-600">
-                      <div className="font-bold">Sa-ang</div>
-                      <div className="text-[8px]">PHARMACY</div>
+                  {shopSettings?.logo_url ? (
+                    <img 
+                      src={shopSettings.logo_url} 
+                      alt="Logo" 
+                      className="w-20 h-20 object-contain rounded-full border-2 border-gray-400"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full border-2 border-gray-400 flex items-center justify-center bg-white">
+                      <div className="text-center text-xs text-gray-600">
+                        <div className="font-bold">Sa-ang</div>
+                        <div className="text-[8px]">PHARMACY</div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   <div>
-                    <h2 className="text-lg font-bold text-gray-800">หจก. สระอางพาณิชย์</h2>
+                    <h2 className="text-lg font-bold text-gray-800">{shopSettings?.name || 'ห้างหุ้นส่วนจำกัด สะอางพาณิชย์'}</h2>
                     <p className="text-sm text-gray-600">สำนักงานใหญ่</p>
                   </div>
                 </div>
@@ -2587,9 +2613,13 @@ export default function ExpensesPage() {
                   <span className="text-gray-600">จ่ายให้ :</span>
                   <span className="font-medium">{viewVoucher.payee_name}</span>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 mb-1">
                   <span className="text-gray-600">โดย :</span>
                   <span className="font-medium">S/A {viewVoucher.payee_tax_id || '-'}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-gray-600">หมวดหมู่ :</span>
+                  <span className="font-medium">{viewVoucherCategory}</span>
                 </div>
               </div>
 
