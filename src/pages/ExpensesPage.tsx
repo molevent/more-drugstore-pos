@@ -1417,6 +1417,9 @@ export default function ExpensesPage() {
                           {!expense.receipt_number && expense.delivery_number && (
                             <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 text-xs rounded font-medium" title="รอใบเสร็จ">รอบิล</span>
                           )}
+                          {expense.payment_voucher_id && (
+                            <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded font-medium" title="มีใบสำคัญจ่ายแล้ว">PV</span>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">{expense.vendor || '-'}</td>
@@ -1509,6 +1512,9 @@ export default function ExpensesPage() {
                         <td className="px-4 py-3 text-sm text-gray-900">{expense.description}
                           {!expense.receipt_number && expense.delivery_number && (
                             <span className="ml-2 px-1.5 py-0.5 bg-orange-100 text-orange-700 text-xs rounded font-medium" title="รอใบเสร็จ">รอบิล</span>
+                          )}
+                          {expense.payment_voucher_id && (
+                            <span className="ml-2 px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded font-medium" title="มีใบสำคัญจ่ายแล้ว">PV</span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">{expense.vendor || '-'}</td>
