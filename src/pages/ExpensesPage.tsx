@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -33,7 +33,9 @@ interface Expense {
   subcategory?: string
   seller_tax_id?: string
   requester?: string
-  evidence_url?: string
+  payment_voucher_id?: string
+  withholding_mode?: string
+  withholding_percent?: string
 }
 
 interface Contact {
