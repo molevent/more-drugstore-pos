@@ -237,7 +237,8 @@ export default function ExpensesPage() {
 
       if (error) throw error
       console.log('Fetched expenses:', data?.length, 'items')
-      console.log('Expenses with payment_voucher_id:', data?.filter(e => e.payment_voucher_id).length || 0)
+      console.log('Sample expense data:', data?.[0])
+      console.log('Expenses with payment_voucher_id:', data?.filter(e => e.payment_voucher_id).map(e => ({id: e.id, desc: e.description, pvid: e.payment_voucher_id})))
       setExpenses(data || [])
       
       // Count pending expenses
