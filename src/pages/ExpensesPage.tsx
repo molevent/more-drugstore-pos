@@ -81,6 +81,19 @@ export default function ExpensesPage() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  
+  // Get default date range: 1st of last month to today
+  const today = new Date()
+  const firstOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+  const formatDateValue = (date: Date) => date.toISOString().split('T')[0]
+
+  // Filter states - with default date range
+  const [filterDateFrom, setFilterDateFrom] = useState(formatDateValue(firstOfLastMonth))
+  const [filterDateTo, setFilterDateTo] = useState(formatDateValue(today))
+  const [filterCategory, setFilterCategory] = useState('')
+  const [filterPaymentMethod, setFilterPaymentMethod] = useState('')
+  const [filterStatus, setFilterStatus] = useState('')
+  
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [contacts, setContacts] = useState<Contact[]>([])
   
@@ -116,7 +129,6 @@ export default function ExpensesPage() {
     startRow: 4              // ข้อมูลเริ่มแถว 5
   })
   const [importing, setImporting] = useState(false)
-  const [pendingCount, setPendingCount] = useState(0)
   const [selectedSheetItems, setSelectedSheetItems] = useState<Set<number>>(new Set())
   const [existingSheetIds, setExistingSheetIds] = useState<Set<string>>(new Set())
   const [sheetSearchTerm, setSheetSearchTerm] = useState('')
@@ -258,9 +270,7 @@ export default function ExpensesPage() {
       console.log('Expenses with payment_voucher_id:', data?.filter(e => e.payment_voucher_id).map(e => ({id: e.id, desc: e.description, pvid: e.payment_voucher_id})))
       setExpenses(data || [])
       
-      // Count pending expenses
-      const pending = data?.filter(e => e.status === 'pending').length || 0
-      setPendingCount(pending)
+      // Removed pending count - no longer needed
     } catch (error) {
       console.error('Error fetching expenses:', error)
     } finally {
@@ -538,20 +548,20 @@ export default function ExpensesPage() {
     setShowModal(true)
   }
 
-  // Expense shortcuts configuration
+  // Expense shortcuts configuration - Bridgerton Blue borders
   const expenseShortcuts = [
-    { name: 'ค่า Service Fee Grab', category: 'ค่า Service Fee Grab', color: 'bg-green-600', icon: 'Grab' },
-    { name: 'ค่าของใช้ - วัสดุสำนักงาน', category: 'ค่าของใช้ - วัสดุสำนักงาน', color: 'bg-teal-600', icon: 'Office' },
-    { name: 'ค่าเช่าสำนักงาน', category: 'ค่าเช่าสำนักงาน', color: 'bg-teal-500', icon: 'Building' },
-    { name: 'ค่าธรรมเนียม Kbank', category: 'ค่าธรรมเนียม Kbank', color: 'bg-green-500', icon: 'Bank' },
-    { name: 'ค่าธรรมเนียม Lazada', category: 'ค่าธรรมเนียม Lazada', color: 'bg-orange-500', icon: 'Shopping' },
-    { name: 'ค่าธรรมเนียม LINE SHOPPING', category: 'ค่าธรรมเนียม LINE SHOPPING', color: 'bg-orange-600', icon: 'Shopping' },
-    { name: 'ค่าน้ำ', category: 'ค่าน้ำ', color: 'bg-blue-500', icon: 'Droplet' },
-    { name: 'ค่าบัญชี', category: 'ค่าบัญชี', color: 'bg-blue-600', icon: 'Calculator' },
-    { name: 'ค่าไฟฟ้า', category: 'ค่าไฟฟ้า', color: 'bg-rose-500', icon: 'Zap' },
-    { name: 'ค่าส่ง ปณ. [EMS]', category: 'ค่าส่ง ปณ. [EMS]', color: 'bg-rose-600', icon: 'Truck' },
-    { name: 'ซื้อสินค้า', category: 'ซื้อสินค้า', color: 'bg-pink-500', icon: 'Package' },
-    { name: 'อุปกรณ์สำนักงาน', category: 'อุปกรณ์สำนักงาน', color: 'bg-pink-600', icon: 'Monitor' },
+    { name: 'ซื้อสินค้า', category: 'ซื้อสินค้า', color: '#A8C4D9', icon: 'Package' },
+    { name: 'ค่าของใช้ - วัสดุสำนักงาน', category: 'ค่าของใช้ - วัสดุสำนักงาน', color: '#A8C4D9', icon: 'Office' },
+    { name: 'ค่า Service Fee Grab', category: 'ค่า Service Fee Grab', color: '#A8C4D9', icon: 'Grab' },
+    { name: 'ค่าเช่าสำนักงาน', category: 'ค่าเช่าสำนักงาน', color: '#A8C4D9', icon: 'Building' },
+    { name: 'ค่าธรรมเนียม Kbank', category: 'ค่าธรรมเนียม Kbank', color: '#A8C4D9', icon: 'Bank' },
+    { name: 'ค่าธรรมเนียม Lazada', category: 'ค่าธรรมเนียม Lazada', color: '#A8C4D9', icon: 'Shopping' },
+    { name: 'ค่าธรรมเนียม LINE SHOPPING', category: 'ค่าธรรมเนียม LINE SHOPPING', color: '#A8C4D9', icon: 'Shopping' },
+    { name: 'ค่าน้ำ', category: 'ค่าน้ำ', color: '#A8C4D9', icon: 'Droplet' },
+    { name: 'ค่าบัญชี', category: 'ค่าบัญชี', color: '#A8C4D9', icon: 'Calculator' },
+    { name: 'ค่าไฟฟ้า', category: 'ค่าไฟฟ้า', color: '#A8C4D9', icon: 'Zap' },
+    { name: 'ค่าส่ง ปณ. [EMS]', category: 'ค่าส่ง ปณ. [EMS]', color: '#A8C4D9', icon: 'Truck' },
+    { name: 'อุปกรณ์สำนักงาน', category: 'อุปกรณ์สำนักงาน', color: '#A8C4D9', icon: 'Monitor' },
   ]
 
   // Generate payment voucher number
@@ -725,11 +735,33 @@ export default function ExpensesPage() {
     }
   }
 
-  const filteredExpenses = expenses.filter(expense =>
-    expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expense.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expense.vendor?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredExpenses = expenses.filter(expense => {
+    // Text search
+    const matchesSearch = !searchTerm || 
+      expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expense.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expense.vendor?.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    // Date range filter
+    const matchesDateFrom = !filterDateFrom || expense.expense_date >= filterDateFrom
+    const matchesDateTo = !filterDateTo || expense.expense_date <= filterDateTo
+    
+    // Category filter
+    const matchesCategory = !filterCategory || expense.category === filterCategory
+    
+    // Payment method filter
+    const matchesPaymentMethod = !filterPaymentMethod || expense.payment_method === filterPaymentMethod
+    
+    // Status filter
+    let matchesStatus = true
+    if (filterStatus === 'waiting_receipt') {
+      matchesStatus = !expense.receipt_number
+    } else if (filterStatus === 'waiting_payment') {
+      matchesStatus = !expense.payment_voucher_id
+    }
+    
+    return matchesSearch && matchesDateFrom && matchesDateTo && matchesCategory && matchesPaymentMethod && matchesStatus
+  })
 
   const totalAmount = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0)
 
@@ -737,15 +769,21 @@ export default function ExpensesPage() {
   const pendingExpenses = expenses.filter(e => e.status === 'pending')
   const pendingTotalAmount = pendingExpenses.reduce((sum, e) => sum + e.amount, 0)
 
-  // Waiting for receipt (have delivery_number but no receipt_number)
-  const waitingReceiptExpenses = expenses.filter(e => !e.receipt_number && e.delivery_number)
+  // Waiting for receipt (no receipt_number, regardless of delivery_number)
+  const waitingReceiptExpenses = expenses.filter(e => !e.receipt_number)
   const waitingReceiptCount = waitingReceiptExpenses.length
   const waitingReceiptAmount = waitingReceiptExpenses.reduce((sum, e) => sum + e.amount, 0)
 
-  // Waiting for payment voucher (approved but no payment_voucher created)
-  const waitingPaymentExpenses = expenses.filter(e => e.status === 'approved' && !e.payment_voucher_id)
+  // Waiting for payment voucher (no payment_voucher_id, regardless of status)
+  const waitingPaymentExpenses = expenses.filter(e => !e.payment_voucher_id)
   const waitingPaymentCount = waitingPaymentExpenses.length
   const waitingPaymentAmount = waitingPaymentExpenses.reduce((sum, e) => sum + e.amount, 0)
+
+  // VAT and Non-VAT expenses (based on filteredExpenses)
+  const vatExpenses = filteredExpenses.filter(e => (e.vat_amount ?? 0) > 0)
+  const vatTotalAmount = vatExpenses.reduce((sum, e) => sum + e.amount, 0)
+  const nonVatExpenses = filteredExpenses.filter(e => (e.vat_amount ?? 0) <= 0)
+  const nonVatTotalAmount = nonVatExpenses.reduce((sum, e) => sum + e.amount, 0)
 
   // Google Sheets functions
   const fetchSheetData = async () => {
@@ -1107,28 +1145,12 @@ export default function ExpensesPage() {
           onClick={() => setViewMode('database')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
             viewMode === 'database'
-              ? 'bg-[#7D735F] text-white'
+              ? 'bg-[#A8C4D9] text-white'
               : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
           }`}
         >
           <Database className="h-4 w-4" />
           ฐานข้อมูล
-        </button>
-        <button
-          onClick={() => setViewMode('pending')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-            viewMode === 'pending'
-              ? 'bg-[#A67B5B] text-white'
-              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-          }`}
-        >
-          <Clock className="h-4 w-4" />
-          รออนุมัติ
-          {pendingCount > 0 && (
-            <span className="bg-[#D4756A] text-white text-xs rounded-full px-2 py-0.5">
-              {pendingCount}
-            </span>
-          )}
         </button>
         <button
           onClick={() => setViewMode('sheets')}
@@ -1144,9 +1166,9 @@ export default function ExpensesPage() {
       </div>
 
       {/* Summary Cards - Match Sales Page Style */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
         {/* Count Card */}
-        <Card className="flex items-center justify-center gap-4 py-6">
+        <Card className="flex items-center justify-center gap-4 py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
           <div className="w-12 h-12 rounded-xl bg-[#7D735F]/10 flex items-center justify-center flex-shrink-0">
             <Receipt className="h-6 w-6 text-[#7D735F]" />
           </div>
@@ -1159,7 +1181,7 @@ export default function ExpensesPage() {
         </Card>
         
         {/* Amount Card */}
-        <Card className="flex items-center justify-center gap-4 py-6">
+        <Card className="flex items-center justify-center gap-4 py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
           <div className="w-12 h-12 rounded-xl bg-[#A67B5B]/10 flex items-center justify-center flex-shrink-0">
             <Wallet className="h-6 w-6 text-[#A67B5B]" />
           </div>
@@ -1172,7 +1194,7 @@ export default function ExpensesPage() {
         </Card>
 
         {/* Waiting for Receipt Card */}
-        <Card className="flex items-center justify-center gap-4 py-6">
+        <Card className="flex items-center justify-center gap-4 py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
           <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
             <Clock className="h-6 w-6 text-orange-600" />
           </div>
@@ -1188,7 +1210,7 @@ export default function ExpensesPage() {
         </Card>
 
         {/* Waiting for Payment Voucher Card */}
-        <Card className="flex items-center justify-center gap-4 py-6">
+        <Card className="flex items-center justify-center gap-4 py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
           <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
             <FileText className="h-6 w-6 text-blue-600" />
           </div>
@@ -1202,51 +1224,193 @@ export default function ExpensesPage() {
             </p>
           </div>
         </Card>
+
+        {/* VAT Expenses Card */}
+        <Card className="flex items-center justify-center gap-4 py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
+          <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+            <Percent className="h-6 w-6 text-green-600" />
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">ค่าใช้จ่ายมี VAT</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {vatExpenses.length}
+            </p>
+            <p className="text-xs text-green-600">
+              ฿{vatTotalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+            </p>
+          </div>
+        </Card>
+
+        {/* Non-VAT Expenses Card */}
+        <Card className="flex items-center justify-center gap-4 py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
+          <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+            <Receipt className="h-6 w-6 text-gray-600" />
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">ค่าใช้จ่ายไม่มี VAT</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {nonVatExpenses.length}
+            </p>
+            <p className="text-xs text-gray-600">
+              ฿{nonVatTotalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+            </p>
+          </div>
+        </Card>
       </div>
 
       {/* Expense Category Shortcuts - Quick Add */}
       {viewMode === 'database' && (
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">หมวดหมู่ *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">บันทึกค่าใช้จ่าย *</label>
           <div className="flex flex-wrap gap-2">
             {expenseShortcuts.map((shortcut) => (
               <button
                 key={shortcut.name}
                 onClick={() => createExpenseWithCategory(shortcut.category, shortcut.name)}
-                className={`${shortcut.color} text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity shadow-sm`}
+                className="bg-white border-2 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-900 transition-all shadow-sm hover:bg-gray-50"
+                style={{ borderColor: shortcut.color }}
               >
                 {shortcut.name}
               </button>
             ))}
+            <button
+              onClick={() => {
+                resetForm()
+                setShowModal(true)
+              }}
+              className="flex items-center gap-1 bg-[#A67B5B] border-2 border-gray-300 px-3 py-1.5 rounded-lg text-sm font-medium text-white transition-all shadow-sm hover:bg-[#8B6B4F]"
+            >
+              <Plus className="h-4 w-4" />
+              เพิ่มค่าใช้จ่ายอื่นๆ
+            </button>
           </div>
         </div>
       )}
 
-      {/* Actions Bar - Database View */}
+      {/* Actions Bar - Database View with Filters */}
       {viewMode === 'database' && (
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <div className="flex-1 relative">
-            <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-3 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-              <Search className="h-5 w-5 text-gray-400 flex-shrink-0" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="ค้นหารายการ..."
-                className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-base"
-              />
+        <div className="flex flex-col gap-2 mb-6">
+          {/* Compact Filter Row */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Search Input */}
+            <div className="flex-1 min-w-[200px] relative">
+              <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-3 py-2 border border-transparent focus-within:border-[#A8C4D9] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#A8C4D9]/20 transition-all">
+                <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="ค้นหา..."
+                  className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-sm min-w-0"
+                />
+              </div>
             </div>
+            
+            {/* Date From */}
+            <input
+              type="date"
+              value={filterDateFrom}
+              onChange={(e) => setFilterDateFrom(e.target.value)}
+              className="px-2 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-[#A8C4D9] focus:border-[#A8C4D9] w-[130px]"
+              placeholder="จาก"
+            />
+            
+            <span className="text-gray-400">-</span>
+            
+            {/* Date To */}
+            <input
+              type="date"
+              value={filterDateTo}
+              onChange={(e) => setFilterDateTo(e.target.value)}
+              className="px-2 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-[#A8C4D9] focus:border-[#A8C4D9] w-[130px]"
+              placeholder="ถึง"
+            />
+            
+            {/* Category Filter */}
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="px-2 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-[#A8C4D9] focus:border-[#A8C4D9] w-[140px]"
+            >
+              <option value="">ทุกหมวด</option>
+              {expenseShortcuts.map((shortcut) => (
+                <option key={shortcut.category} value={shortcut.category}>
+                  {shortcut.category}
+                </option>
+              ))}
+            </select>
+            
+            {/* Payment Method Filter */}
+            <select
+              value={filterPaymentMethod}
+              onChange={(e) => setFilterPaymentMethod(e.target.value)}
+              className="px-2 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-[#A8C4D9] focus:border-[#A8C4D9] w-[120px]"
+            >
+              <option value="">ทุกวิธีชำระ</option>
+              {PAYMENT_METHODS.map((method) => (
+                <option key={method} value={method}>
+                  {method}
+                </option>
+              ))}
+            </select>
+            
+            {/* Status Filter */}
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-2 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-[#A8C4D9] focus:border-[#A8C4D9] w-[110px]"
+            >
+              <option value="">ทุกสถานะ</option>
+              <option value="waiting_receipt">รอใบเสร็จ</option>
+              <option value="waiting_payment">รอใบสำคัญ</option>
+            </select>
+            
+            {/* Clear Button */}
+            {(searchTerm || filterDateFrom || filterDateTo || filterCategory || filterPaymentMethod || filterStatus) && (
+              <button
+                onClick={() => {
+                  setSearchTerm('')
+                  setFilterDateFrom(formatDateValue(firstOfLastMonth))
+                  setFilterDateTo(formatDateValue(today))
+                  setFilterCategory('')
+                  setFilterPaymentMethod('')
+                  setFilterStatus('')
+                }}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                title="ล้างตัวกรอง"
+              >
+                <XCircle className="h-4 w-4" />
+              </button>
+            )}
           </div>
-          <button
-            onClick={() => {
-              resetForm()
-              setShowModal(true)
-            }}
-            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#A67B5B] bg-white text-[#A67B5B] text-sm whitespace-nowrap hover:bg-[#A67B5B]/10 transition-all shadow-sm"
-          >
-            <Plus className="h-4 w-4" />
-            เพิ่มค่าใช้จ่าย
-          </button>
+          
+          {/* Active Filters Tags */}
+          {(searchTerm || filterDateFrom || filterDateTo || filterCategory || filterPaymentMethod || filterStatus) && (
+            <div className="flex flex-wrap gap-1 text-xs">
+              {searchTerm && (
+                <span className="px-2 py-0.5 bg-[#A8C4D9]/20 text-[#5B7A8B] rounded-full">
+                  ค้นหา: {searchTerm}
+                </span>
+              )}
+              {(filterDateFrom || filterDateTo) && (
+                <span className="px-2 py-0.5 bg-[#A8C4D9]/20 text-[#5B7A8B] rounded-full">
+                  {filterDateFrom || '...'} ถึง {filterDateTo || '...'}
+                </span>
+              )}
+              {filterCategory && (
+                <span className="px-2 py-0.5 bg-[#A8C4D9]/20 text-[#5B7A8B] rounded-full">{filterCategory}</span>
+              )}
+              {filterPaymentMethod && (
+                <span className="px-2 py-0.5 bg-[#A8C4D9]/20 text-[#5B7A8B] rounded-full">{filterPaymentMethod}</span>
+              )}
+              {filterStatus === 'waiting_receipt' && (
+                <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full">รอใบเสร็จ</span>
+              )}
+              {filterStatus === 'waiting_payment' && (
+                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">รอใบสำคัญ</span>
+              )}
+            </div>
+          )}
         </div>
       )}
 
