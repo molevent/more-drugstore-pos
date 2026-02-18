@@ -393,6 +393,26 @@ export default function PaymentVoucherPage() {
                 </button>
               </div>
 
+              {/* Monthly Total */}
+              {(() => {
+                const year = currentMonth.getFullYear()
+                const month = currentMonth.getMonth()
+                const monthVouchers = filteredVouchers.filter(v => {
+                  const vDate = new Date(v.voucher_date)
+                  return vDate.getFullYear() === year && vDate.getMonth() === month
+                })
+                const monthTotal = monthVouchers.reduce((sum, v) => sum + v.amount, 0)
+                
+                return (
+                  <div className="bg-blue-100 rounded-lg p-3 mb-4 flex justify-between items-center">
+                    <span className="text-blue-800 font-medium">ยอดรวมในเดือนนี้</span>
+                    <span className="text-xl font-bold text-blue-900">
+                      ฿{monthTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                )
+              })()}
+
               {/* Calendar Grid */}
               <div className="grid grid-cols-7 gap-1">
                 {/* Day Headers */}
