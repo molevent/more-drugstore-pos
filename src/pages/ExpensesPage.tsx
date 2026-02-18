@@ -304,7 +304,7 @@ export default function ExpensesPage() {
     e.preventDefault()
     
     try {
-      const expenseData = {
+      const expenseData: any = {
         expense_date: formData.expense_date,
         category: formData.category,
         description: formData.description,
