@@ -28,9 +28,7 @@ import {
   CartesianGrid, 
   Tooltip, 
   Legend, 
-  ResponsiveContainer,
-  BarChart,
-  Bar
+  ResponsiveContainer
 } from 'recharts'
 
 interface SummaryData {
@@ -404,7 +402,7 @@ export default function ExecutiveSummaryPage() {
                     tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
                   />
                   <Tooltip 
-                    formatter={(value: number) => formatCurrency(value)}
+                    formatter={(value: number | string | undefined) => typeof value === 'number' ? formatCurrency(value) : ''}
                     labelStyle={{ color: '#374151' }}
                   />
                   <Legend />
