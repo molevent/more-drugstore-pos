@@ -300,8 +300,8 @@ export default function TaxInvoicesListPage() {
           </table>
           
           <div style="text-align: right; font-size: 10px; margin-top: 8px; border-top: 1px dashed #000; padding-top: 8px;">
-            <p>รวมเป็นเงิน: ${formatCurrency(selectedOrder.total * 0.93)}</p>
-            <p>VAT 7%: ${formatCurrency(selectedOrder.total * 0.07)}</p>
+            <p>รวมเป็นเงิน: ${formatCurrency(selectedOrder.total / 1.07)}</p>
+            <p>VAT 7%: ${formatCurrency(selectedOrder.total - (selectedOrder.total / 1.07))}</p>
             <p style="font-weight: bold; font-size: 11px; margin-top: 4px;">ยอดรวม: ${formatCurrency(selectedOrder.total)}</p>
           </div>
           
@@ -366,8 +366,8 @@ export default function TaxInvoicesListPage() {
             <tr>
               <td style="width: 50%;"></td>
               <td style="width: 50%; text-align: right;">
-                <strong>รวมเป็นเงิน:</strong> ${formatCurrency(selectedOrder.total * 0.93)}<br>
-                <strong>ภาษีมูลค่าเพิ่ม 7%:</strong> ${formatCurrency(selectedOrder.total * 0.07)}<br>
+                <strong>รวมเป็นเงิน:</strong> ${formatCurrency(selectedOrder.total / 1.07)}<br>
+                <strong>ภาษีมูลค่าเพิ่ม 7%:</strong> ${formatCurrency(selectedOrder.total - (selectedOrder.total / 1.07))}<br>
                 <strong style="font-size: 14px;">จำนวนเงินรวมทั้งสิ้น:</strong> <strong style="font-size: 14px;">${formatCurrency(selectedOrder.total)}</strong>
               </td>
             </tr>
@@ -882,8 +882,8 @@ export default function TaxInvoicesListPage() {
                       </tbody>
                     </table>
                     <div className="mt-6 text-right text-sm">
-                      <p><strong>รวมเป็นเงิน:</strong> {formatCurrency(selectedOrder.total * 0.93)}</p>
-                      <p><strong>ภาษีมูลค่าเพิ่ม 7%:</strong> {formatCurrency(selectedOrder.total * 0.07)}</p>
+                      <p><strong>รวมเป็นเงิน:</strong> {formatCurrency(selectedOrder.total / 1.07)}</p>
+                      <p><strong>ภาษีมูลค่าเพิ่ม 7%:</strong> {formatCurrency(selectedOrder.total - (selectedOrder.total / 1.07))}</p>
                       <p className="text-lg font-bold mt-2">
                         จำนวนเงินรวมทั้งสิ้น: {formatCurrency(selectedOrder.total)}                      </p>
                     </div>
