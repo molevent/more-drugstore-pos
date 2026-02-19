@@ -94,7 +94,7 @@ export default function UserManagementPage() {
     e.preventDefault()
     
     // Auto-generate email from username if not provided
-    const email = formData.email || `${formData.username.toLowerCase()}@moredrug.local`
+    const email = formData.email || `${formData.username.toLowerCase()}@moredrug.co.th`
     
     try {
       if (editingUser) {
