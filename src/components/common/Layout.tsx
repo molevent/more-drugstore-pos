@@ -11,7 +11,8 @@ import {
   Users,
   Wallet,
   Calendar,
-  Globe
+  Globe,
+  Receipt
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -90,6 +91,7 @@ export default function Layout({ children }: LayoutProps) {
       title: 'เอกสาร',
       items: [
         { name: t('nav.documents'), href: '/expenses', icon: Wallet, id: 'documents' as const },
+        { name: 'ใบกำกับภาษี', href: '/tax-invoices', icon: Receipt, id: 'tax_invoices' as const },
         { name: 'ตารางเข้างาน', href: '/work-schedule', icon: Calendar, id: 'work_schedule' as const },
       ].filter(item => canAccessMenu(userRole, item.id))
     },

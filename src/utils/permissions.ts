@@ -10,6 +10,7 @@ export type MenuSection =
   | 'products'      // สินค้า
   | 'website'       // เว็บไซต์ร้าน
   | 'documents'     // เอกสาร
+  | 'tax_invoices'  // ใบกำกับภาษี
   | 'reports'       // รายงาน
   | 'settings'      // ตั้งค่า
   | 'users'         // การจัดการผู้ใช้
@@ -73,6 +74,13 @@ export const MENU_PERMISSIONS: MenuPermission[] = [
       { label: 'เอกสารหัก ณ ที่จ่าย', path: '/withholding-tax' },
       { label: 'สลิปเงินเดือน', path: '/payslips' }
     ]
+  },
+  {
+    id: 'tax_invoices',
+    label: 'ใบกำกับภาษี',
+    icon: 'Receipt',
+    path: '/tax-invoices',
+    allowedRoles: ['owner', 'manager', 'accountant']
   },
   {
     id: 'reports',

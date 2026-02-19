@@ -38,6 +38,7 @@ import PaymentSummaryPage from './pages/PaymentSummaryPage'
 import QuotationPage from './pages/QuotationPage'
 import ExecutiveSummaryPage from './pages/ExecutiveSummaryPage'
 import QuotationsListPage from './pages/QuotationsListPage'
+import TaxInvoicesListPage from './pages/TaxInvoicesListPage'
 import SettingsPage from './pages/SettingsPage'
 import ShopSettingsPage from './pages/ShopSettingsPage'
 import SalesChannelsSettingsPage from './pages/SalesChannelsSettingsPage'
@@ -112,6 +113,7 @@ function App() {
                     <Route path="/cashier-closing-report" element={<CashierClosingReportPage />} />
                     <Route path="/payment-summary" element={<PaymentSummaryPage />} />
                     <Route path="/receipt-tax-invoice-report" element={<ReceiptTaxInvoiceReportPage />} />
+                    <Route path="/tax-invoices" element={<TaxInvoicesListPage />} />
                     <Route path="/executive-summary" element={<ExecutiveSummaryPage />} />
                     <Route path="/quotation" element={<QuotationPage />} />
                     <Route path="/quotation/:id" element={<QuotationPage />} />
