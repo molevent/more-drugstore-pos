@@ -1241,8 +1241,8 @@ export default function ExpensesPage() {
       {/* Summary Cards - Match Sales Page Style */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
         {/* Count Card */}
-        <Card className="flex items-center justify-center gap-4 py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
-          <div className="w-12 h-12 rounded-xl bg-[#7D735F]/10 flex items-center justify-center flex-shrink-0">
+        <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
+          <div className="w-12 h-12 rounded-xl bg-[#7D735F]/10 flex items-center justify-center mb-2">
             <Receipt className="h-6 w-6 text-[#7D735F]" />
           </div>
           <div>
@@ -1254,8 +1254,8 @@ export default function ExpensesPage() {
         </Card>
         
         {/* Amount Card */}
-        <Card className="flex items-center justify-center gap-4 py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
-          <div className="w-12 h-12 rounded-xl bg-[#A67B5B]/10 flex items-center justify-center flex-shrink-0">
+        <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
+          <div className="w-12 h-12 rounded-xl bg-[#A67B5B]/10 flex items-center justify-center mb-2">
             <Wallet className="h-6 w-6 text-[#A67B5B]" />
           </div>
           <div>
@@ -1267,8 +1267,8 @@ export default function ExpensesPage() {
         </Card>
 
         {/* Waiting for Receipt Card */}
-        <Card className="flex items-center justify-center gap-4 py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
-          <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
+        <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
+          <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center mb-2">
             <Clock className="h-6 w-6 text-orange-600" />
           </div>
           <div>
@@ -1283,8 +1283,8 @@ export default function ExpensesPage() {
         </Card>
 
         {/* Waiting for Payment Voucher Card */}
-        <Card className="flex items-center justify-center gap-4 py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
-          <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+        <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
+          <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center mb-2">
             <FileText className="h-6 w-6 text-blue-600" />
           </div>
           <div>
@@ -1299,8 +1299,8 @@ export default function ExpensesPage() {
         </Card>
 
         {/* VAT Expenses Card */}
-        <Card className="flex items-center justify-center gap-4 py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
-          <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+        <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
+          <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center mb-2">
             <Percent className="h-6 w-6 text-green-600" />
           </div>
           <div>
@@ -1315,8 +1315,8 @@ export default function ExpensesPage() {
         </Card>
 
         {/* Non-VAT Expenses Card */}
-        <Card className="flex items-center justify-center gap-4 py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
-          <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+        <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
+          <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mb-2">
             <Receipt className="h-6 w-6 text-gray-600" />
           </div>
           <div>
