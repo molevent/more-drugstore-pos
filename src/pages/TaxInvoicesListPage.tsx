@@ -14,7 +14,11 @@ import {
   BookOpen,
   ArrowLeft,
   Printer,
-  Edit
+  X,
+  ShoppingCart,
+  CreditCard,
+  Wallet,
+  ArrowUpRight
 } from 'lucide-react'
 import Card from '../components/common/Card'
 import Input from '../components/common/Input'
@@ -34,11 +38,40 @@ interface TaxInvoice {
   updated_at: string
 }
 
+interface OrderItem {
+  id: string
+  product_name: string
+  quantity: number
+  unit_price: number
+  total_price: number
+}
+
+interface Order {
+  id: string
+  order_number: string
+  customer_name: string
+  customer_tax_id?: string
+  customer_address?: string
+  total: number
+  vat_amount?: number
+  payment_method: string
+  created_at: string
+  order_items?: OrderItem[]
+  platform_id?: string
+}
+
+type ModalType = 'view' | 'edit' | 'print' | null
+
 export default function TaxInvoicesListPage() {
   const [taxInvoices, setTaxInvoices] = useState<TaxInvoice[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [dateFilter, setDateFilter] = useState<string>('')
+  
+  // Modal states
+  const [activeModal, setActiveModal] = useState<ModalType>(null)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [modalLoading, setModalLoading] = useState(false)
 
   const fetchTaxInvoices = async () => {
     try {
@@ -95,19 +128,131 @@ export default function TaxInvoicesListPage() {
     return num.toLocaleString('th-TH', { minimumFractionDigits: 2 })
   }
 
-  const handleView = (orderId: string, orderSource: string) => {
-    // Open order details in new tab
-    window.open(`/sales-orders?view=${orderId}&source=${orderSource}`, '_blank')
+  const getPaymentMethodName = (method: string) => {
+    const methods: Record<string, string> = {
+      cash: 'เงินสด',
+      credit_card: 'บัตรเครดิต',
+      transfer: 'โอนเงิน',
+      grab_wallet: 'Grab',
+      shopee_wallet: 'Shopee',
+      lineman_wallet: 'Lineman'
+    }
+    return methods[method] || method
   }
 
-  const handlePrint = (orderId: string, orderSource: string) => {
-    // Open print view in new tab
-    window.open(`/sales-orders?print=${orderId}&source=${orderSource}`, '_blank')
+  const fetchOrderDetails = async (orderId: string, orderSource: string) => {
+    try {
+      setModalLoading(true)
+      const orderTable = orderSource === 'web' ? 'web_orders' : 'orders'
+      const itemsTable = orderSource === 'web' ? 'web_order_items' : 'order_items'
+      
+      const { data: order, error: orderError } = await supabase
+        .from(orderTable)
+        .select('*')
+        .eq('id', orderId)
+        .single()
+      
+      if (orderError) throw orderError
+      
+      const { data: items, error: itemsError } = await supabase
+        .from(itemsTable)
+        .select('*')
+        .eq('order_id', orderId)
+      
+      if (itemsError) throw itemsError
+      
+      setSelectedOrder({ ...order, order_items: items || [] })
+    } catch (error) {
+      console.error('Error fetching order details:', error)
+    } finally {
+      setModalLoading(false)
+    }
   }
 
-  const handleEdit = (orderId: string, orderSource: string) => {
-    // Open order edit in new tab
-    window.open(`/sales-orders?edit=${orderId}&source=${orderSource}`, '_blank')
+  const openModal = async (type: ModalType, orderId: string, orderSource: string) => {
+    await fetchOrderDetails(orderId, orderSource)
+    setActiveModal(type)
+  }
+
+  const closeModal = () => {
+    setActiveModal(null)
+    setSelectedOrder(null)
+  }
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('th-TH', { 
+      day: '2-digit', 
+      month: 'short', 
+      year: 'numeric'
+    })
+  }
+
+  const handlePrintTaxInvoice = () => {
+    if (!selectedOrder) return
+    
+    const printContent = `
+      <div style="font-family: 'TH Sarabun New', sans-serif; width: 210mm; min-height: 297mm; padding: 15px; font-size: 14px; box-sizing: border-box;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h2 style="margin: 0; font-size: 18px;">ใบกำกับภาษี/ใบเสร็จรับเงิน</h2>
+          <p style="margin: 5px 0; font-size: 12px;">Tax Invoice/Receipt</p>
+        </div>
+        <table style="width: 100%; margin-bottom: 20px; font-size: 12px;">
+          <tr>
+            <td style="width: 50%;">
+              <strong>เลขที่:</strong> ${selectedOrder.order_number}<br>
+              <strong>วันที่:</strong> ${formatDate(selectedOrder.created_at)}
+            </td>
+            <td style="width: 50%; text-align: right;">
+              <strong>ลูกค้า:</strong> ${selectedOrder.customer_name}<br>
+              ${selectedOrder.customer_tax_id ? `<strong>เลขผู้เสียภาษี:</strong> ${selectedOrder.customer_tax_id}<br>` : ''}
+            </td>
+          </tr>
+        </table>
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px;">
+          <thead>
+            <tr style="border-top: 2px solid #333; border-bottom: 1px solid #333;">
+              <th style="padding: 8px; text-align: left;">#</th>
+              <th style="padding: 8px; text-align: left;">รายการ</th>
+              <th style="padding: 8px; text-align: center;">จำนวน</th>
+              <th style="padding: 8px; text-align: right;">ราคา/หน่วย</th>
+              <th style="padding: 8px; text-align: right;">จำนวนเงิน</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${selectedOrder.order_items?.map((item, index) => `
+              <tr>
+                <td style="padding: 8px;">${index + 1}</td>
+                <td style="padding: 8px;">${item.product_name}</td>
+                <td style="padding: 8px; text-align: center;">${item.quantity}</td>
+                <td style="padding: 8px; text-align: right;">${formatCurrency(item.unit_price)}</td>
+                <td style="padding: 8px; text-align: right;">${formatCurrency(item.total_price)}</td>
+              </tr>
+            `).join('') || ''}
+          </tbody>
+        </table>
+        <table style="width: 100%; font-size: 12px; margin-top: 20px;">
+          <tr>
+            <td style="width: 50%;"></td>
+            <td style="width: 50%; text-align: right;">
+              <strong>รวมเป็นเงิน:</strong> ${formatCurrency(selectedOrder.total * 0.93)} บาท<br>
+              <strong>ภาษีมูลค่าเพิ่ม 7%:</strong> ${formatCurrency(selectedOrder.total * 0.07)} บาท<br>
+              <strong style="font-size: 14px;">จำนวนเงินรวมทั้งสิ้น:</strong> <strong style="font-size: 14px;">${formatCurrency(selectedOrder.total)} บาท</strong>
+            </td>
+          </tr>
+        </table>
+        <div style="margin-top: 40px; text-align: center; font-size: 12px;">
+          <p>ขอบคุณที่ใช้บริการ</p>
+          <p>Thank you for your business</p>
+        </div>
+      </div>
+    `
+    
+    const printWindow = window.open('', '_blank')
+    if (printWindow) {
+      printWindow.document.write(printContent)
+      printWindow.document.close()
+      printWindow.print()
+    }
   }
 
   return (
@@ -306,23 +451,16 @@ export default function TaxInvoicesListPage() {
                     <td className="px-4 py-4 whitespace-nowrap text-center">
                       <div className="flex items-center gap-2 justify-center">
                         <button
-                          onClick={() => handleView(invoice.order_id, invoice.order_source)}
+                          onClick={() => openModal('view', invoice.order_id, invoice.order_source)}
                           className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
-                          title="ดูรายละเอียดออเดอร์"
+                          title="ดูรายละเอียด"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => handleEdit(invoice.order_id, invoice.order_source)}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all"
-                          title="แก้ไขออเดอร์"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handlePrint(invoice.order_id, invoice.order_source)}
+                          onClick={() => openModal('print', invoice.order_id, invoice.order_source)}
                           className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
-                          title="พิมพ์ใบกำกับภาษี"
+                          title="พิมพ์"
                         >
                           <Printer className="h-4 w-4" />
                         </button>
@@ -335,6 +473,187 @@ export default function TaxInvoicesListPage() {
           </div>
         )}
       </Card>
+
+      {/* View Modal */}
+      {activeModal === 'view' && selectedOrder && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-[#F5EFE6]">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Eye className="h-5 w-5 text-[#7D735F]" />
+                รายละเอียดออเดอร์
+              </h3>
+              <button onClick={closeModal} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1">
+              {modalLoading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#7D735F] mx-auto"></div>
+                  <p className="mt-4 text-gray-500">กำลังโหลด...</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Card>
+                      <p className="text-sm text-gray-500">เลขที่ออเดอร์</p>
+                      <p className="font-medium">{selectedOrder.order_number}</p>
+                    </Card>
+                    <Card>
+                      <p className="text-sm text-gray-500">วันที่</p>
+                      <p className="font-medium">{formatDateTime(selectedOrder.created_at)}</p>
+                    </Card>
+                  </div>
+                  <Card>
+                    <h4 className="font-medium mb-4 flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      ข้อมูลลูกค้า
+                    </h4>
+                    <div className="space-y-2">
+                      <p><span className="text-gray-500">ชื่อ:</span> {selectedOrder.customer_name}</p>
+                      {selectedOrder.customer_tax_id && (
+                        <p><span className="text-gray-500">เลขผู้เสียภาษี:</span> {selectedOrder.customer_tax_id}</p>
+                      )}
+                      {selectedOrder.customer_address && (
+                        <p><span className="text-gray-500">ที่อยู่:</span> {selectedOrder.customer_address}</p>
+                      )}
+                    </div>
+                  </Card>
+                  <Card>
+                    <h4 className="font-medium mb-4 flex items-center gap-2">
+                      <ShoppingCart className="h-4 w-4" />
+                      รายการสินค้า
+                    </h4>
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-3 py-2 text-left">#</th>
+                          <th className="px-3 py-2 text-left">สินค้า</th>
+                          <th className="px-3 py-2 text-center">จำนวน</th>
+                          <th className="px-3 py-2 text-right">ราคา/หน่วย</th>
+                          <th className="px-3 py-2 text-right">รวม</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedOrder.order_items?.map((item, index) => (
+                          <tr key={item.id} className="border-t">
+                            <td className="px-3 py-2">{index + 1}</td>
+                            <td className="px-3 py-2">{item.product_name}</td>
+                            <td className="px-3 py-2 text-center">{item.quantity}</td>
+                            <td className="px-3 py-2 text-right">{formatCurrency(item.unit_price)}</td>
+                            <td className="px-3 py-2 text-right">{formatCurrency(item.total_price)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </Card>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Card>
+                      <p className="text-sm text-gray-500 mb-1">วิธีชำระเงิน</p>
+                      <p className="font-medium flex items-center gap-2">
+                        {selectedOrder.payment_method === 'cash' && <Wallet className="h-4 w-4" />}
+                        {selectedOrder.payment_method === 'credit_card' && <CreditCard className="h-4 w-4" />}
+                        {selectedOrder.payment_method === 'transfer' && <ArrowUpRight className="h-4 w-4" />}
+                        {getPaymentMethodName(selectedOrder.payment_method)}
+                      </p>
+                    </Card>
+                    <Card className="text-right">
+                      <p className="text-sm text-gray-500">ยอดรวมทั้งสิ้น</p>
+                      <p className="text-2xl font-bold text-[#7D735F]">{formatCurrency(selectedOrder.total)} บาท</p>
+                    </Card>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Print Modal */}
+      {activeModal === 'print' && selectedOrder && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-[#F5EFE6]">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Printer className="h-5 w-5 text-[#7D735F]" />
+                พิมพ์ใบกำกับภาษี
+              </h3>
+              <button onClick={closeModal} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1">
+              {modalLoading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#7D735F] mx-auto"></div>
+                  <p className="mt-4 text-gray-500">กำลังโหลด...</p>
+                </div>
+              ) : (
+                <>
+                  <div className="border-2 border-gray-300 p-8 mb-6 bg-white">
+                    <div className="text-center mb-6">
+                      <h2 className="text-xl font-bold mb-1">ใบกำกับภาษี/ใบเสร็จรับเงิน</h2>
+                      <p className="text-sm text-gray-500">Tax Invoice/Receipt</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
+                      <div>
+                        <p><strong>เลขที่:</strong> {selectedOrder.order_number}</p>
+                        <p><strong>วันที่:</strong> {formatDate(selectedOrder.created_at)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p><strong>ลูกค้า:</strong> {selectedOrder.customer_name}</p>
+                        {selectedOrder.customer_tax_id && (
+                          <p><strong>เลขผู้เสียภาษี:</strong> {selectedOrder.customer_tax_id}</p>
+                        )}
+                      </div>
+                    </div>
+                    <table className="w-full text-sm border-collapse">
+                      <thead>
+                        <tr className="border-t-2 border-b border-gray-800">
+                          <th className="py-2 text-left">#</th>
+                          <th className="py-2 text-left">รายการ</th>
+                          <th className="py-2 text-center">จำนวน</th>
+                          <th className="py-2 text-right">ราคา/หน่วย</th>
+                          <th className="py-2 text-right">จำนวนเงิน</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedOrder.order_items?.map((item, index) => (
+                          <tr key={item.id} className="border-b border-gray-200">
+                            <td className="py-2">{index + 1}</td>
+                            <td className="py-2">{item.product_name}</td>
+                            <td className="py-2 text-center">{item.quantity}</td>
+                            <td className="py-2 text-right">{formatCurrency(item.unit_price)}</td>
+                            <td className="py-2 text-right">{formatCurrency(item.total_price)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div className="mt-6 text-right text-sm">
+                      <p><strong>รวมเป็นเงิน:</strong> {formatCurrency(selectedOrder.total * 0.93)} บาท</p>
+                      <p><strong>ภาษีมูลค่าเพิ่ม 7%:</strong> {formatCurrency(selectedOrder.total * 0.07)} บาท</p>
+                      <p className="text-lg font-bold mt-2">
+                        จำนวนเงินรวมทั้งสิ้น: {formatCurrency(selectedOrder.total)} บาท
+                      </p>
+                    </div>
+                    <div className="mt-8 text-center text-sm text-gray-500">
+                      <p>ขอบคุณที่ใช้บริการ</p>
+                      <p>Thank you for your business</p>
+                    </div>
+                  </div>
+                  <div className="flex justify-center">
+                    <Button onClick={handlePrintTaxInvoice} className="flex items-center gap-2">
+                      <Printer className="h-4 w-4" />
+                      พิมพ์เอกสาร
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
