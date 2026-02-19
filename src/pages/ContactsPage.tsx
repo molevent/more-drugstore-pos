@@ -479,28 +479,27 @@ export default function ContactsPage() {
               </div>
 
               <div className="flex gap-3 pt-2">
+                <Button type="submit" variant="primary" className="flex-1">
+                  {editingContact ? 'บันทึกการแก้ไข' : 'เพิ่มผู้ติดต่อ'}
+                </Button>
+                <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>
+                  ยกเลิก
+                </Button>
                 {editingContact && (
-                  <Button 
-                    type="button" 
-                    variant="danger" 
+                  <button
+                    type="button"
                     onClick={() => {
                       if (editingContact) {
                         handleDelete(editingContact.id)
                         setShowModal(false)
                       }
                     }}
-                    className="flex-1"
+                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    title="ลบผู้ติดต่อ"
                   >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    ลบผู้ติดต่อ
-                  </Button>
+                    <Trash2 className="h-5 w-5" />
+                  </button>
                 )}
-                <Button type="submit" variant="primary" className={editingContact ? 'flex-1' : 'flex-1'}>
-                  {editingContact ? 'บันทึกการแก้ไข' : 'เพิ่มผู้ติดต่อ'}
-                </Button>
-                <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>
-                  ยกเลิก
-                </Button>
               </div>
             </form>
           </Card>
