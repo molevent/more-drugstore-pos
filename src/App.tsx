@@ -128,6 +128,7 @@ function App() {
                     <Route path="/zortout-sync" element={<ZortOutSyncPage />} />
                     <Route path="/help-management" element={<HelpManagementPage />} />
                     <Route path="/settings/users" element={<UserManagementPage />} />
+                    <Route path="/users" element={<UserManagementPage />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   </Routes>
                 </Layout>
