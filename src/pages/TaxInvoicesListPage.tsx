@@ -352,9 +352,9 @@ export default function TaxInvoicesListPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-3 mb-6">
-        <div className="w-full md:w-40">
-          <div className="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2 transition-all">
+      <div className="flex items-center gap-2 mb-6">
+        <div className="flex-1 max-w-[140px]">
+          <div className="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-2">
             <Search className="h-4 w-4 text-gray-500 flex-shrink-0" />
             <input
               type="text"
@@ -365,21 +365,19 @@ export default function TaxInvoicesListPage() {
             />
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-1">
-          <Input
+        <div className="flex items-center gap-1 flex-1">
+          <input
             type="date"
-            placeholder="จากวันที่"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="w-28 md:w-32 text-xs py-1.5 px-2"
+            className="bg-gray-100 border-none rounded-lg text-xs py-2 px-2 w-24 outline-none"
           />
-          <span className="text-gray-500 text-xs">-</span>
-          <Input
+          <span className="text-gray-400 text-xs">-</span>
+          <input
             type="date"
-            placeholder="ถึงวันที่"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="w-28 md:w-32 text-xs py-1.5 px-2"
+            className="bg-gray-100 border-none rounded-lg text-xs py-2 px-2 w-24 outline-none"
           />
         </div>
       </div>
