@@ -607,13 +607,16 @@ export default function SalesOrdersPage() {
       // Fetch shop settings
       const { data: shopData } = await supabase
         .from('shop_settings')
-        .select('name, address, tax_id, phone')
+        .select('name, address, tax_id, phone, logo_url, stamp_url, signature_url')
         .single()
 
       const shopName = shopData?.name || 'ห้างหุ้นส่วนจำกัด สะอางพาณิชย์'
       const shopAddress = shopData?.address || ''
       const shopTaxId = shopData?.tax_id || ''
       const shopPhone = shopData?.phone || ''
+      const logoUrl = shopData?.logo_url || ''
+      const stampUrl = shopData?.stamp_url || ''
+      const signatureUrl = shopData?.signature_url || ''
 
       // Generate professional tax invoice content matching the example format
       const taxInvoiceContent = `
@@ -623,9 +626,7 @@ export default function SalesOrdersPage() {
             <tr>
               <!-- Logo/Company Info -->
               <td style="width: 60%; vertical-align: top;">
-                <div style="border: 2px solid #333; border-radius: 50%; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
-                  <span style="font-size: 12px; text-align: center; color: #666;">Logo</span>
-                </div>
+                ${logoUrl ? `<img src="${logoUrl}" alt="Logo" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px;" />` : `<div style="border: 2px solid #333; border-radius: 50%; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;"><span style="font-size: 12px; text-align: center; color: #666;">Logo</span></div>`}
                 <p style="margin: 3px 0; font-size: 13px; font-weight: bold;">${shopName}</p>
                 <p style="margin: 3px 0; font-size: 12px;">${shopAddress}</p>
                 <p style="margin: 3px 0; font-size: 12px;">เลขประจำตัวผู้เสียภาษี: ${shopTaxId}</p>
@@ -783,12 +784,10 @@ export default function SalesOrdersPage() {
                 <p style="margin: 5px 0 0 0; font-size: 12px;">ผู้จ่ายเงิน</p>
               </td>
               <td style="width: 30%; text-align: center; vertical-align: middle; padding: 10px;">
-                <div style="border: 2px solid #0066cc; border-radius: 50%; width: 100px; height: 100px; margin: 0 auto; display: flex; align-items: center; justify-content: center; color: #0066cc; font-weight: bold;">
-                  <span style="font-size: 11px; text-align: center;">ตราบริษัท<br/>Saang</span>
-                </div>
+                ${stampUrl ? `<img src="${stampUrl}" alt="Stamp" style="width: 100px; height: 100px; object-fit: contain;" />` : `<div style="border: 2px solid #0066cc; border-radius: 50%; width: 100px; height: 100px; margin: 0 auto; display: flex; align-items: center; justify-content: center; color: #0066cc; font-weight: bold;"><span style="font-size: 11px; text-align: center;">ตราบริษัท<br/>Saang</span></div>`}
               </td>
               <td style="width: 35%; text-align: center; vertical-align: top; padding: 10px;">
-                <p style="margin: 0; font-size: 12px;">_____________________</p>
+                ${signatureUrl ? `<img src="${signatureUrl}" alt="Signature" style="max-width: 120px; max-height: 60px; object-fit: contain; margin-bottom: 5px;" /><br/>` : `<p style="margin: 0; font-size: 12px;">_____________________</p>`}
                 <p style="margin: 5px 0 0 0; font-size: 12px;">ผู้รับเงิน</p>
                 <p style="margin: 3px 0 0 0; font-size: 11px; color: #666;">${new Date().toLocaleDateString('th-TH')}</p>
               </td>
