@@ -65,7 +65,8 @@ export default function TaxInvoicesListPage() {
   const [taxInvoices, setTaxInvoices] = useState<TaxInvoice[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [dateFilter, setDateFilter] = useState<string>('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   
   // Modal states
   const [activeModal, setActiveModal] = useState<ModalType>(null)
@@ -80,15 +81,16 @@ export default function TaxInvoicesListPage() {
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (dateFilter) {
-        const startOfDay = new Date(dateFilter)
+      if (dateFrom) {
+        const startOfDay = new Date(dateFrom)
         startOfDay.setHours(0, 0, 0, 0)
-        const endOfDay = new Date(dateFilter)
+        query = query.gte('created_at', startOfDay.toISOString())
+      }
+      
+      if (dateTo) {
+        const endOfDay = new Date(dateTo)
         endOfDay.setHours(23, 59, 59, 999)
-        
-        query = query
-          .gte('created_at', startOfDay.toISOString())
-          .lte('created_at', endOfDay.toISOString())
+        query = query.lte('created_at', endOfDay.toISOString())
       }
 
       const { data, error } = await query
@@ -104,7 +106,7 @@ export default function TaxInvoicesListPage() {
 
   useEffect(() => {
     fetchTaxInvoices()
-  }, [dateFilter])
+  }, [dateFrom, dateTo])
 
   const filteredTaxInvoices = taxInvoices.filter(ti => 
     ti.tax_invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -354,7 +356,7 @@ export default function TaxInvoicesListPage() {
       <Card className="mb-6">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 min-w-[200px]">
-            <div className="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2.5 border border-transparent focus-within:border-[#B8D4E3] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#B8D4E3]/30 transition-all">
+            <div className="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2.5 transition-all">
               <Search className="h-4 w-4 text-gray-500" />
               <span className="text-sm font-medium text-gray-700 whitespace-nowrap">ค้นหา</span>
               <input
@@ -366,12 +368,21 @@ export default function TaxInvoicesListPage() {
               />
             </div>
           </div>
-          <div className="w-full sm:w-48">
+          <div className="flex items-center gap-2">
             <Input
               type="date"
-              placeholder="เลือกวันที่"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
+              placeholder="จากวันที่"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="w-40"
+            />
+            <span className="text-gray-500">-</span>
+            <Input
+              type="date"
+              placeholder="ถึงวันที่"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="w-40"
             />
           </div>
         </div>
@@ -430,7 +441,7 @@ export default function TaxInvoicesListPage() {
             <Receipt className="h-16 w-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">ไม่พบใบกำกับภาษี</h3>
             <p className="text-gray-500">
-              {searchTerm || dateFilter ? 'ลองเปลี่ยนเงื่อนไขการค้นหา' : 'ยังไม่มีใบกำกับภาษีในระบบ'}
+              {searchTerm || dateFrom || dateTo ? 'ลองเปลี่ยนเงื่อนไขการค้นหา' : 'ยังไม่มีใบกำกับภาษีในระบบ'}
             </p>
           </div>
         ) : (
