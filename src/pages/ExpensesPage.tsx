@@ -1269,7 +1269,7 @@ export default function ExpensesPage() {
         {/* Waiting for Payment Voucher Card - WONDEROUS BLUE */}
         <Card className="flex flex-col items-center justify-center text-center py-3 px-4 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
           <div className="text-center">
-            <p className="text-sm text-gray-600">รอทำใบสำคัณจ่าย</p>
+            <p className="text-sm text-gray-600">รอทำใบสำคัญจ่าย</p>
             <p className="text-2xl font-bold text-gray-900">
               {waitingPaymentCount}
             </p>
