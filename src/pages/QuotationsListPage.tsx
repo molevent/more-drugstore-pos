@@ -15,7 +15,8 @@ import {
   Send,
   AlertCircle,
   FileDown,
-  BookOpen
+  BookOpen,
+  ArrowLeft
 } from 'lucide-react'
 import Card from '../components/common/Card'
 import Input from '../components/common/Input'
@@ -127,6 +128,13 @@ export default function QuotationsListPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex items-start gap-3">
+          <a
+            href="/expenses"
+            className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+            title="กลับไปหน้าเอกสาร"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </a>
           <FileText className="h-8 w-8 text-[#7D735F] mt-1" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">รายการใบเสนอราคา</h1>
