@@ -1239,6 +1239,44 @@ export default function ExpensesPage() {
           <Sheet className="h-4 w-4" />
           ดึงข้อมูล
         </button>
+
+        {/* Quick Links */}
+        <div className="w-px h-8 bg-gray-300 mx-2"></div>
+        <Link 
+          to="/purchase-orders"
+          className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
+        >
+          <ShoppingCart className="h-5 w-5 text-gray-900" />
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบสั่งซื้อ</span>
+        </Link>
+        <Link 
+          to="/quotations"
+          className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
+        >
+          <FileText className="h-5 w-5 text-gray-900" />
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบเสนอราคา</span>
+        </Link>
+        <Link 
+          to="/payment-vouchers"
+          className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
+        >
+          <FileText className="h-5 w-5 text-gray-900" />
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบสำคัญจ่าย</span>
+        </Link>
+        <Link 
+          to="/withholding-tax"
+          className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
+        >
+          <Percent className="h-5 w-5 text-gray-900" />
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">หัก ณ ที่จ่าย</span>
+        </Link>
+        <Link 
+          to="/petty-cash"
+          className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
+        >
+          <Wallet className="h-5 w-5 text-gray-900" />
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">เงินสดย่อย</span>
+        </Link>
       </div>
 
       {/* Summary Cards - Match Sales Page Style */}
