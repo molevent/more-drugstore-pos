@@ -34,6 +34,8 @@ export default function UserManagementPage() {
   const navigate = useNavigate()
   const { user: currentUser } = useAuthStore()
   
+  console.log('UserManagementPage rendering, currentUser:', currentUser)
+  
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -54,17 +56,22 @@ export default function UserManagementPage() {
 
   // Check if current user can manage users - TEMPORARILY DISABLED FOR TESTING
   const canManageUsers = true // Allow all users for now
+  console.log('canManageUsers:', canManageUsers)
 
   useEffect(() => {
+    console.log('UserManagementPage useEffect triggered')
     fetchUsers()
   }, [])
 
   const fetchUsers = async () => {
+    console.log('fetchUsers called')
     try {
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .order('created_at', { ascending: false })
+      
+      console.log('fetchUsers result:', { data, error })
       
       if (error) throw error
       setUsers(data || [])
@@ -222,8 +229,13 @@ export default function UserManagementPage() {
     { value: 'accountant', label: 'นักบัญชี' }
   ]
 
+  console.log('About to return JSX, loading:', loading, 'users.length:', users.length)
+
   return (
     <div className="min-h-screen bg-[#F5EFE6]">
+      <div style={{ padding: '20px', background: 'red', color: 'white' }}>
+        DEBUG: UserManagementPage Loaded
+      </div>
       {/* Header */}
       <div className="bg-white border-b border-[#E8E0D5] px-4 sm:px-6 py-4">
         <div className="max-w-7xl mx-auto">
