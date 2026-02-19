@@ -388,7 +388,7 @@ export default function TaxInvoicesListPage() {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <Card className="bg-white hover:border-blue-300 hover:border-2 transition-all cursor-pointer">
+        <Card className="bg-white hover:border-white hover:border-2 hover:shadow-lg transition-all cursor-pointer">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-[#F5EFE6] rounded-lg">
               <FileText className="h-6 w-6 text-[#7D735F]" />
@@ -399,7 +399,7 @@ export default function TaxInvoicesListPage() {
             </div>
           </div>
         </Card>
-        <Card className="bg-white hover:border-blue-300 hover:border-2 transition-all cursor-pointer">
+        <Card className="bg-white hover:border-white hover:border-2 hover:shadow-lg transition-all cursor-pointer">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-[#F5EFE6] rounded-lg">
               <DollarSign className="h-6 w-6 text-[#7D735F]" />
@@ -412,7 +412,7 @@ export default function TaxInvoicesListPage() {
             </div>
           </div>
         </Card>
-        <Card className="bg-white hover:border-blue-300 hover:border-2 transition-all cursor-pointer">
+        <Card className="bg-white hover:border-white hover:border-2 hover:shadow-lg transition-all cursor-pointer">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-[#F5EFE6] rounded-lg">
               <Percent className="h-6 w-6 text-[#7D735F]" />
