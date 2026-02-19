@@ -915,292 +915,286 @@ export default function QuotationPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="no-print flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <a
-            href="/quotations"
-            className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
-            title="กลับไปหน้ารายการใบเสนอราคา"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </a>
-          <div>
-            <div className="flex items-center gap-2">
-              <FileText className="h-8 w-8 text-[#4A90A4]" />
-              <h1 className="text-xl font-bold text-gray-900">สร้างใบเสนอราคา</h1>
-              {editingQuotationNumber ? (
-                <div className="flex items-center gap-1">
-                  <Input
-                    value={quotation.quotation_number}
-                    onChange={(e) => setQuotation(prev => ({ ...prev, quotation_number: e.target.value }))}
-                    className="w-40 text-sm"
-                    onBlur={() => setEditingQuotationNumber(false)}
-                    onKeyDown={(e) => e.key === 'Enter' && setEditingQuotationNumber(false)}
-                    autoFocus
-                  />
-                  <button onClick={() => setEditingQuotationNumber(false)} className="text-green-600">
-                    <Check className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1">
-                  <span className="text-sm text-gray-500">{quotation.quotation_number}</span>
-                  <button 
-                    onClick={() => setEditingQuotationNumber(true)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <Edit2 className="h-3 w-3" />
-                  </button>
-                </div>
-              )}
+      {/* Header - All controls in one row */}
+      <div className="no-print mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          {/* Left: Title */}
+          <div className="flex items-center gap-3">
+            <a
+              href="/quotations"
+              className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+              title="กลับไปหน้ารายการใบเสนอราคา"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </a>
+            <div>
+              <div className="flex items-center gap-2">
+                <FileText className="h-8 w-8 text-[#4A90A4]" />
+                <h1 className="text-xl font-bold text-gray-900">สร้างใบเสนอราคา</h1>
+                {editingQuotationNumber ? (
+                  <div className="flex items-center gap-1">
+                    <Input
+                      value={quotation.quotation_number}
+                      onChange={(e) => setQuotation(prev => ({ ...prev, quotation_number: e.target.value }))}
+                      className="w-40 text-sm"
+                      onBlur={() => setEditingQuotationNumber(false)}
+                      onKeyDown={(e) => e.key === 'Enter' && setEditingQuotationNumber(false)}
+                      autoFocus
+                    />
+                    <button onClick={() => setEditingQuotationNumber(false)} className="text-green-600">
+                      <Check className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm text-gray-500">{quotation.quotation_number}</span>
+                    <button 
+                      onClick={() => setEditingQuotationNumber(true)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <Edit2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" onClick={() => window.history.back()}>
-            ปิดหน้าต่าง
-          </Button>
-          <Button onClick={handleSave} disabled={loading} className="bg-[#7cb342] hover:bg-[#6ba32e] text-white">
-            {loading ? 'กำลังบันทึก...' : 'บันทึกร่าง'}
-          </Button>
-        </div>
-      </div>
-
-      {/* Tabs and Toolbar - Combined in one row */}
-      <div className="no-print flex items-center justify-between mb-4">
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
-          <button
-            onClick={() => setActiveTab('quotation')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-              activeTab === 'quotation'
-                ? 'bg-white text-[#4A90A4] shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <FileText className="h-4 w-4" />
-            ใบเสนอราคา
-          </button>
-          <button
-            onClick={() => setActiveTab('profit')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-              activeTab === 'profit'
-                ? 'bg-white text-[#4A90A4] shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <Calculator className="h-4 w-4" />
-            ต้นทุน/กำไร
-          </button>
-        </div>
-        
-        {/* Toolbar buttons */}
-        <div className="flex items-center gap-1">
-          <button onClick={handleShare} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="แชร์ลิงก์">
-            <Share2 className="h-5 w-5" />
-          </button>
-          <button onClick={handlePrint} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="พิมพ์">
-            <Printer className="h-5 w-5" />
-          </button>
-          <button onClick={handleDownloadPDF} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="ดาวน์โหลด PDF">
-            <Download className="h-5 w-5" />
-          </button>
-          <button onClick={handleSavePDF} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="บันทึก PDF ในระบบ">
-            <Save className="h-5 w-5" />
-          </button>
-          <div className="relative" ref={moreMenuRef}>
-            <button onClick={() => setShowMoreMenu(!showMoreMenu)} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded">
-              <MoreHorizontal className="h-5 w-5" />
+          
+          {/* Center: Tabs */}
+          <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+            <button
+              onClick={() => setActiveTab('quotation')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                activeTab === 'quotation'
+                  ? 'bg-white text-[#4A90A4] shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <FileText className="h-4 w-4" />
+              ใบเสนอราคา
             </button>
-          {showMoreMenu && (
-            <div className="absolute right-0 mt-1 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-              <div className="p-2 space-y-1">
-                {/* Logo Options */}
-                <div className="px-3 py-2 text-xs font-medium text-gray-500 border-b">โลโก้</div>
-                <button 
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded text-left"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (!quotation.logo_url) {
-                      const saved = localStorage.getItem('shop_settings')
-                      if (saved) {
-                        const parsed = JSON.parse(saved)
-                        if (parsed.logo_url) {
-                          setQuotation(prev => ({ ...prev, logo_url: parsed.logo_url }))
-                        } else {
-                          alert('ไม่มีโลโก้ในข้อมูลร้าน กรุณาตั้งค่าที่ ตั้งค่า → ข้อมูลร้าน')
-                        }
-                      }
-                    } else {
-                      setQuotation(prev => ({ ...prev, logo_url: undefined }))
-                    }
-                    setShowMoreMenu(false)
-                  }}
-                >
-                  <div className={`w-4 h-4 rounded border flex items-center justify-center ${quotation.logo_url ? 'bg-[#4A90A4] border-[#4A90A4]' : 'border-gray-300 bg-white'}`}>
-                    {quotation.logo_url && <Check className="w-3 h-3 text-white" />}
-                  </div>
-                  ใช้โลโก้จากข้อมูลร้าน
+            <button
+              onClick={() => setActiveTab('profit')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                activeTab === 'profit'
+                  ? 'bg-white text-[#4A90A4] shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Calculator className="h-4 w-4" />
+              ต้นทุน/กำไร
+            </button>
+          </div>
+          
+          {/* Right: Toolbar + Actions */}
+          <div className="flex items-center gap-2">
+            {/* Toolbar buttons */}
+            <div className="flex items-center gap-1 mr-2 border-r border-gray-300 pr-2">
+              <button onClick={handleShare} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="แชร์ลิงก์">
+                <Share2 className="h-5 w-5" />
+              </button>
+              <button onClick={handlePrint} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="พิมพ์">
+                <Printer className="h-5 w-5" />
+              </button>
+              <button onClick={handleDownloadPDF} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="ดาวน์โหลด PDF">
+                <Download className="h-5 w-5" />
+              </button>
+              <button onClick={handleSavePDF} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="บันทึก PDF">
+                <Save className="h-5 w-5" />
+              </button>
+              {/* More menu with all options */}
+              <div className="relative" ref={moreMenuRef}>
+                <button onClick={() => setShowMoreMenu(!showMoreMenu)} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="เมนูเพิ่มเติม">
+                  <MoreHorizontal className="h-5 w-5" />
                 </button>
-                <button onClick={() => { logoInputRef.current?.click(); setShowMoreMenu(false); }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2 pl-9">
-                  <Upload className="h-4 w-4" />
-                  อัพโหลดโลโก้ใหม่
-                </button>
-                
-                {/* Stamp Options */}
-                <div className="px-3 py-2 text-xs font-medium text-gray-500 border-b mt-2">ตราประทับ</div>
-                <button 
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded text-left"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (!quotation.stamp_url) {
-                      const saved = localStorage.getItem('shop_settings')
-                      if (saved) {
-                        const parsed = JSON.parse(saved)
-                        if (parsed.stamp_url) {
-                          setQuotation(prev => ({ ...prev, stamp_url: parsed.stamp_url }))
-                        } else {
-                          alert('ไม่มีตราประทับในข้อมูลร้าน กรุณาตั้งค่าที่ ตั้งค่า → ข้อมูลร้าน')
-                        }
-                      }
-                    } else {
-                      setQuotation(prev => ({ ...prev, stamp_url: undefined }))
-                    }
-                    setShowMoreMenu(false)
-                  }}
-                >
-                  <div className={`w-4 h-4 rounded border flex items-center justify-center ${quotation.stamp_url ? 'bg-[#4A90A4] border-[#4A90A4]' : 'border-gray-300 bg-white'}`}>
-                    {quotation.stamp_url && <Check className="w-3 h-3 text-white" />}
-                  </div>
-                  ใช้ตราประทับจากข้อมูลร้าน
-                </button>
-                <button onClick={() => { stampInputRef.current?.click(); setShowMoreMenu(false); }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2 pl-9">
-                  <Upload className="h-4 w-4" />
-                  อัพโหลดตราประทับใหม่
-                </button>
-                
-                {/* Signature Option */}
-                <div className="px-3 py-2 text-xs font-medium text-gray-500 border-b mt-2">ลายเซ็น</div>
-                <button 
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded text-left"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (!quotation.signature_url) {
-                      const saved = localStorage.getItem('shop_settings')
-                      if (saved) {
-                        const parsed = JSON.parse(saved)
-                        if (parsed.signature_url) {
-                          setQuotation(prev => ({ ...prev, signature_url: parsed.signature_url }))
-                        } else {
-                          alert('ไม่มีลายเซ็นในข้อมูลร้าน กรุณาตั้งค่าที่ ตั้งค่า → ข้อมูลร้าน')
-                        }
-                      }
-                    } else {
-                      setQuotation(prev => ({ ...prev, signature_url: undefined }))
-                    }
-                    setShowMoreMenu(false)
-                  }}
-                >
-                  <div className={`w-4 h-4 rounded border flex items-center justify-center ${quotation.signature_url ? 'bg-[#4A90A4] border-[#4A90A4]' : 'border-gray-300 bg-white'}`}>
-                    {quotation.signature_url && <Check className="w-3 h-3 text-white" />}
-                  </div>
-                  ใช้ลายเซ็นจากข้อมูลร้าน
-                </button>
-                
-                {/* Product Images Toggle */}
-                <div className="border-t pt-2 mt-2">
-                  <button 
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded text-left"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setQuotation(prev => ({ ...prev, show_product_images: !prev.show_product_images }))
-                    }}
-                  >
-                    <div className={`w-4 h-4 rounded border flex items-center justify-center ${quotation.show_product_images ? 'bg-[#4A90A4] border-[#4A90A4]' : 'border-gray-300 bg-white'}`}>
-                      {quotation.show_product_images && <Check className="w-3 h-3 text-white" />}
-                    </div>
-                    แสดงรูปสินค้า
-                  </button>
-                  
-                  {/* Image Size Selection - Only show when product images are enabled */}
-                  {quotation.show_product_images && (
-                    <div className="pl-6 pr-3 py-2 space-y-1">
-                      <div className="text-xs text-gray-500 mb-1">ขนาดรูปสินค้า</div>
-                      <div className="flex gap-2">
-                        <button
+                {showMoreMenu && (
+                  <div className="absolute right-0 mt-1 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                    <div className="p-2 space-y-1">
+                      {/* Logo Options */}
+                      <div className="px-3 py-2 text-xs font-medium text-gray-500 border-b">โลโก้</div>
+                      <button 
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded text-left"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (!quotation.logo_url) {
+                            const saved = localStorage.getItem('shop_settings')
+                            if (saved) {
+                              const parsed = JSON.parse(saved)
+                              if (parsed.logo_url) {
+                                setQuotation(prev => ({ ...prev, logo_url: parsed.logo_url }))
+                              } else {
+                                alert('ไม่มีโลโก้ในข้อมูลร้าน กรุณาตั้งค่าที่ ตั้งค่า → ข้อมูลร้าน')
+                              }
+                            }
+                          } else {
+                            setQuotation(prev => ({ ...prev, logo_url: undefined }))
+                          }
+                          setShowMoreMenu(false)
+                        }}
+                      >
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${quotation.logo_url ? 'bg-[#4A90A4] border-[#4A90A4]' : 'border-gray-300 bg-white'}`}>
+                          {quotation.logo_url && <Check className="w-3 h-3 text-white" />}
+                        </div>
+                        ใช้โลโก้จากข้อมูลร้าน
+                      </button>
+                      <button onClick={() => { logoInputRef.current?.click(); setShowMoreMenu(false); }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2 pl-9">
+                        <Upload className="h-4 w-4" />
+                        อัพโหลดโลโก้ใหม่
+                      </button>
+                      
+                      {/* Stamp Options */}
+                      <div className="px-3 py-2 text-xs font-medium text-gray-500 border-b mt-2">ตราประทับ</div>
+                      <button 
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded text-left"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (!quotation.stamp_url) {
+                            const saved = localStorage.getItem('shop_settings')
+                            if (saved) {
+                              const parsed = JSON.parse(saved)
+                              if (parsed.stamp_url) {
+                                setQuotation(prev => ({ ...prev, stamp_url: parsed.stamp_url }))
+                              } else {
+                                alert('ไม่มีตราประทับในข้อมูลร้าน กรุณาตั้งค่าที่ ตั้งค่า → ข้อมูลร้าน')
+                              }
+                            }
+                          } else {
+                            setQuotation(prev => ({ ...prev, stamp_url: undefined }))
+                          }
+                          setShowMoreMenu(false)
+                        }}
+                      >
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${quotation.stamp_url ? 'bg-[#4A90A4] border-[#4A90A4]' : 'border-gray-300 bg-white'}`}>
+                          {quotation.stamp_url && <Check className="w-3 h-3 text-white" />}
+                        </div>
+                        ใช้ตราประทับจากข้อมูลร้าน
+                      </button>
+                      <button onClick={() => { stampInputRef.current?.click(); setShowMoreMenu(false); }} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2 pl-9">
+                        <Upload className="h-4 w-4" />
+                        อัพโหลดตราประทับใหม่
+                      </button>
+                      
+                      {/* Signature Option */}
+                      <div className="px-3 py-2 text-xs font-medium text-gray-500 border-b mt-2">ลายเซ็น</div>
+                      <button 
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded text-left"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (!quotation.signature_url) {
+                            const saved = localStorage.getItem('shop_settings')
+                            if (saved) {
+                              const parsed = JSON.parse(saved)
+                              if (parsed.signature_url) {
+                                setQuotation(prev => ({ ...prev, signature_url: parsed.signature_url }))
+                              } else {
+                                alert('ไม่มีลายเซ็นในข้อมูลร้าน กรุณาตั้งค่าที่ ตั้งค่า → ข้อมูลร้าน')
+                              }
+                            }
+                          } else {
+                            setQuotation(prev => ({ ...prev, signature_url: undefined }))
+                          }
+                          setShowMoreMenu(false)
+                        }}
+                      >
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${quotation.signature_url ? 'bg-[#4A90A4] border-[#4A90A4]' : 'border-gray-300 bg-white'}`}>
+                          {quotation.signature_url && <Check className="w-3 h-3 text-white" />}
+                        </div>
+                        ใช้ลายเซ็นจากข้อมูลร้าน
+                      </button>
+                      
+                      {/* Product Images Toggle */}
+                      <div className="border-t pt-2 mt-2">
+                        <button 
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded text-left"
                           onClick={(e) => {
                             e.stopPropagation()
-                            setProductImageSize('small')
+                            setQuotation(prev => ({ ...prev, show_product_images: !prev.show_product_images }))
                           }}
-                          className={`px-2 py-1 text-xs rounded ${productImageSize === 'small' ? 'bg-[#4A90A4] text-white' : 'bg-gray-100 text-gray-600'}`}
                         >
-                          เล็ก
+                          <div className={`w-4 h-4 rounded border flex items-center justify-center ${quotation.show_product_images ? 'bg-[#4A90A4] border-[#4A90A4]' : 'border-gray-300 bg-white'}`}>
+                            {quotation.show_product_images && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          แสดงรูปสินค้า
                         </button>
-                        <button
+                        {quotation.show_product_images && (
+                          <div className="pl-6 pr-3 py-2 space-y-1">
+                            <div className="text-xs text-gray-500 mb-1">ขนาดรูปสินค้า</div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setProductImageSize('small') }}
+                                className={`px-2 py-1 text-xs rounded ${productImageSize === 'small' ? 'bg-[#4A90A4] text-white' : 'bg-gray-100 text-gray-600'}`}
+                              >
+                                เล็ก
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setProductImageSize('medium') }}
+                                className={`px-2 py-1 text-xs rounded ${productImageSize === 'medium' ? 'bg-[#4A90A4] text-white' : 'bg-gray-100 text-gray-600'}`}
+                              >
+                                กลาง
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setProductImageSize('large') }}
+                                className={`px-2 py-1 text-xs rounded ${productImageSize === 'large' ? 'bg-[#4A90A4] text-white' : 'bg-gray-100 text-gray-600'}`}
+                              >
+                                ใหญ่
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Discount Toggle */}
+                      <div className="border-t pt-2 mt-2">
+                        <button 
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded text-left"
                           onClick={(e) => {
                             e.stopPropagation()
-                            setProductImageSize('medium')
+                            setQuotation(prev => ({ ...prev, show_discount: !prev.show_discount }))
                           }}
-                          className={`px-2 py-1 text-xs rounded ${productImageSize === 'medium' ? 'bg-[#4A90A4] text-white' : 'bg-gray-100 text-gray-600'}`}
                         >
-                          กลาง
+                          <div className={`w-4 h-4 rounded border flex items-center justify-center ${quotation.show_discount ? 'bg-[#4A90A4] border-[#4A90A4]' : 'border-gray-300 bg-white'}`}>
+                            {quotation.show_discount && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          แสดงส่วนลด
                         </button>
-                        <button
+                      </div>
+
+                      {/* Receiver Toggle */}
+                      <div className="border-t pt-2 mt-2">
+                        <button 
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded text-left"
                           onClick={(e) => {
                             e.stopPropagation()
-                            setProductImageSize('large')
+                            setQuotation(prev => ({ ...prev, show_receiver: !prev.show_receiver }))
                           }}
-                          className={`px-2 py-1 text-xs rounded ${productImageSize === 'large' ? 'bg-[#4A90A4] text-white' : 'bg-gray-100 text-gray-600'}`}
                         >
-                          ใหญ่
+                          <div className={`w-4 h-4 rounded border flex items-center justify-center ${quotation.show_receiver ? 'bg-[#4A90A4] border-[#4A90A4]' : 'border-gray-300 bg-white'}`}>
+                            {quotation.show_receiver && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          แสดงผู้รับเอกสาร
                         </button>
                       </div>
                     </div>
-                  )}
-                </div>
-                
-                {/* Discount Toggle */}
-                <div className="border-t pt-2 mt-2">
-                  <button 
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded text-left"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setQuotation(prev => ({ ...prev, show_discount: !prev.show_discount }))
-                    }}
-                  >
-                    <div className={`w-4 h-4 rounded border flex items-center justify-center ${quotation.show_discount ? 'bg-[#4A90A4] border-[#4A90A4]' : 'border-gray-300 bg-white'}`}>
-                      {quotation.show_discount && <Check className="w-3 h-3 text-white" />}
-                    </div>
-                    แสดงส่วนลด
-                  </button>
-                </div>
-
-                {/* Receiver Toggle */}
-                <div className="border-t pt-2 mt-2">
-                  <button 
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded text-left"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setQuotation(prev => ({ ...prev, show_receiver: !prev.show_receiver }))
-                    }}
-                  >
-                    <div className={`w-4 h-4 rounded border flex items-center justify-center ${quotation.show_receiver ? 'bg-[#4A90A4] border-[#4A90A4]' : 'border-gray-300 bg-white'}`}>
-                      {quotation.show_receiver && <Check className="w-3 h-3 text-white" />}
-                    </div>
-                    แสดงผู้รับเอกสาร
-                  </button>
-                </div>
+                  </div>
+                )}
               </div>
             </div>
-          )}
+            {/* Action buttons */}
+            <Button variant="secondary" onClick={() => window.history.back()}>
+              ปิดหน้าต่าง
+            </Button>
+            <Button onClick={handleSave} disabled={loading} className="bg-[#7cb342] hover:bg-[#6ba32e] text-white">
+              {loading ? 'กำลังบันทึก...' : 'บันทึกร่าง'}
+            </Button>
+          </div>
         </div>
       </div>
 
+      {/* Hidden file inputs */}
       <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'logo')} />
       <input ref={stampInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'stamp')} />
       <input ref={attachmentInputRef} type="file" className="hidden" onChange={(e) => e.target.files?.[0] && handleAttachmentUpload(e.target.files[0])} />
 
-      {/* Print-Only Section - FlowAccount Style */}
       <div className="print-only" style={{ fontSize: '12px' }}>
         {/* Seller Info - From Business Settings */}
         <div className="flow-seller-info" style={{ marginBottom: '15px' }}>
@@ -2294,7 +2288,6 @@ export default function QuotationPage() {
           </div>
         </div>
       )}
-    </div>
     </div>
   )
 }
