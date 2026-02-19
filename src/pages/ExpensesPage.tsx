@@ -1240,81 +1240,81 @@ export default function ExpensesPage() {
 
       {/* Summary Cards - Match Sales Page Style */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-        {/* Combined Count & Amount Card */}
-        <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer col-span-2 sm:col-span-1">
-          <div className="w-12 h-12 rounded-xl bg-[#7D735F]/10 flex items-center justify-center mb-2">
-            <Receipt className="h-6 w-6 text-[#7D735F]" />
+        {/* Combined Count & Amount Card - IVORY LACE */}
+        <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#D4C5B3] hover:border-2 transition-all cursor-pointer col-span-2 sm:col-span-1">
+          <div className="w-12 h-12 rounded-xl bg-[#F5F0E6] flex items-center justify-center mb-2">
+            <Receipt className="h-6 w-6 text-[#8B7355]" />
           </div>
           <div>
             <p className="text-sm text-gray-600">ยอดรวมค่าใช้จ่าย</p>
             <p className="text-2xl font-bold text-gray-900">
               {viewMode === 'database' ? filteredExpenses.length : sheetData.length}
             </p>
-            <p className="text-xs text-[#7D735F] mt-1">
+            <p className="text-xs text-[#8B7355] mt-1">
               ฿{(viewMode === 'database' ? totalAmount : sheetTotalAmount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </p>
           </div>
         </Card>
 
-        {/* Waiting for Receipt Card */}
-        <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
-          <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center mb-2">
-            <Clock className="h-6 w-6 text-orange-600" />
+        {/* Waiting for Receipt Card - LEMON CHIFFON */}
+        <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#E6D7A8] hover:border-2 transition-all cursor-pointer">
+          <div className="w-12 h-12 rounded-xl bg-[#F5E6C8] flex items-center justify-center mb-2">
+            <Clock className="h-6 w-6 text-[#B8A060]" />
           </div>
           <div>
             <p className="text-sm text-gray-600">รอรับใบเสร็จ</p>
             <p className="text-2xl font-bold text-gray-900">
               {waitingReceiptCount}
             </p>
-            <p className="text-xs text-orange-600">
+            <p className="text-xs text-[#B8A060]">
               ฿{waitingReceiptAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </p>
           </div>
         </Card>
 
-        {/* Waiting for Payment Voucher Card */}
+        {/* Waiting for Payment Voucher Card - WONDEROUS BLUE */}
         <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
-          <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center mb-2">
-            <FileText className="h-6 w-6 text-blue-600" />
+          <div className="w-12 h-12 rounded-xl bg-[#B8D4E3] flex items-center justify-center mb-2">
+            <FileText className="h-6 w-6 text-[#5B7A8B]" />
           </div>
           <div>
             <p className="text-sm text-gray-600">รอทำใบสำคัญจ่าย</p>
             <p className="text-2xl font-bold text-gray-900">
               {waitingPaymentCount}
             </p>
-            <p className="text-xs text-blue-600">
+            <p className="text-xs text-[#5B7A8B]">
               ฿{waitingPaymentAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </p>
           </div>
         </Card>
 
-        {/* VAT Expenses Card */}
-        <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
-          <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center mb-2">
-            <Percent className="h-6 w-6 text-green-600" />
+        {/* VAT Expenses Card - RAINWASHED */}
+        <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#A8C4B8] hover:border-2 transition-all cursor-pointer">
+          <div className="w-12 h-12 rounded-xl bg-[#C5D5C5] flex items-center justify-center mb-2">
+            <Percent className="h-6 w-6 text-[#5B7A6B]" />
           </div>
           <div>
             <p className="text-sm text-gray-600">ค่าใช้จ่ายมี VAT</p>
             <p className="text-2xl font-bold text-gray-900">
               {vatExpenses.length}
             </p>
-            <p className="text-xs text-green-600">
+            <p className="text-xs text-[#5B7A6B]">
               ฿{vatTotalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </p>
           </div>
         </Card>
 
-        {/* Non-VAT Expenses Card */}
-        <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
-          <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mb-2">
-            <Receipt className="h-6 w-6 text-gray-600" />
+        {/* Non-VAT Expenses Card - AGAPAHNTHUS */}
+        <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#B8B8C8] hover:border-2 transition-all cursor-pointer">
+          <div className="w-12 h-12 rounded-xl bg-[#C5C9D9] flex items-center justify-center mb-2">
+            <Receipt className="h-6 w-6 text-[#6B6B8B]" />
           </div>
           <div>
             <p className="text-sm text-gray-600">ค่าใช้จ่ายไม่มี VAT</p>
             <p className="text-2xl font-bold text-gray-900">
               {nonVatExpenses.length}
             </p>
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-[#6B6B8B]">
               ฿{nonVatTotalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </p>
           </div>
