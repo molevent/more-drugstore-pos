@@ -18,7 +18,8 @@ import {
   Activity,
   Store,
   UserPlus,
-  LineChart as LineChartIcon
+  LineChart as LineChartIcon,
+  Banknote
 } from 'lucide-react'
 import { 
   LineChart, 
@@ -58,6 +59,10 @@ interface SummaryData {
   cashIn: number
   cashOut: number
   cashFlowBalance: number
+  // Petty Cash
+  pettyCashBalance: number
+  pettyCashMonthExpenses: number
+  pettyCashReplenishments: number
 }
 
 export default function ExecutiveSummaryPage() {
@@ -85,7 +90,10 @@ export default function ExecutiveSummaryPage() {
     vatBalance: 0,
     cashIn: 0,
     cashOut: 0,
-    cashFlowBalance: 0
+    cashFlowBalance: 0,
+    pettyCashBalance: 0,
+    pettyCashMonthExpenses: 0,
+    pettyCashReplenishments: 0
   })
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
@@ -186,6 +194,27 @@ export default function ExecutiveSummaryPage() {
       const inputVatTotal = expensesWithVat?.reduce((sum: number, e: any) => sum + (e.vat_amount || 0), 0) || 0
       const vatDiff = outputVatTotal - inputVatTotal
 
+      // Fetch petty cash data for current month
+      const currentMonth = new Date().getMonth() + 1
+      const currentYear = new Date().getFullYear()
+      
+      const { data: pettyCashFund } = await supabase
+        .from('petty_cash_funds')
+        .select('current_balance, initial_amount')
+        .eq('month', currentMonth)
+        .eq('year', currentYear)
+        .single()
+
+      const { data: pettyCashExpenses } = await supabase
+        .from('petty_cash_expenses')
+        .select('amount, category')
+        .gte('expense_date', firstDayOfMonth)
+
+      // Calculate Petty Cash
+      const pettyCashReplenishmentsTotal = pettyCashExpenses?.filter((e: any) => e.category === 'income').reduce((sum: number, e: any) => sum + Math.abs(e.amount || 0), 0) || 0
+      const pettyCashMonthExpensesTotal = pettyCashExpenses?.filter((e: any) => e.category !== 'income').reduce((sum: number, e: any) => sum + (e.amount || 0), 0) || 0
+      const pettyCashBalanceCurrent = pettyCashFund?.current_balance || 0
+
       // Calculate Cash Flow (monthly)
       const cashInTotal = monthSalesTotal
       const cashOutTotal = monthExpensesData?.reduce((sum: number, e: any) => sum + (e.amount || 0), 0) || 0
@@ -215,7 +244,10 @@ export default function ExecutiveSummaryPage() {
         vatBalance: vatDiff,
         cashIn: cashInTotal,
         cashOut: cashOutTotal,
-        cashFlowBalance: cashFlowDiff
+        cashFlowBalance: cashFlowDiff,
+        pettyCashBalance: pettyCashBalanceCurrent,
+        pettyCashMonthExpenses: pettyCashMonthExpensesTotal,
+        pettyCashReplenishments: pettyCashReplenishmentsTotal
       })
       setLastUpdated(new Date())
     } catch (error) {
@@ -615,6 +647,58 @@ export default function ExecutiveSummaryPage() {
                   <p className="text-xs text-gray-500 mt-1">
                     {summaryData.cashFlowBalance >= 0 ? 'กระแสเงินสดบวก' : 'กระแสเงินสดลบ'}
                   </p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </section>
+
+        {/* Petty Cash Summary */}
+        <section>
+          <div className="flex items-center gap-2 mb-4">
+            <Banknote className="h-5 w-5 text-[#A67B5B]" />
+            <h2 className="text-lg font-semibold text-gray-800">เงินสดย่อย (Petty Cash) เดือนนี้</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card className="hover:shadow-lg transition-all cursor-pointer border-l-4 border-l-green-500">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-2 rounded-lg bg-green-100">
+                      <Wallet className="h-5 w-5 text-green-600" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-600">ยอดยกมา+เติมเงิน</p>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(summaryData.pettyCashReplenishments)}</p>
+                  <p className="text-xs text-gray-500 mt-1">วงเงินสดย่อยเดือนนี้</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="hover:shadow-lg transition-all cursor-pointer border-l-4 border-l-orange-500">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-2 rounded-lg bg-orange-100">
+                      <Receipt className="h-5 w-5 text-orange-600" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-600">ใช้ไปแล้ว</p>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(summaryData.pettyCashMonthExpenses)}</p>
+                  <p className="text-xs text-gray-500 mt-1">ค่าใช้จ่ายเงินสดย่อย</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="hover:shadow-lg transition-all cursor-pointer border-l-4 border-l-blue-500">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-2 rounded-lg bg-blue-100">
+                      <Banknote className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-600">คงเหลือ</p>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(summaryData.pettyCashBalance)}</p>
+                  <p className="text-xs text-gray-500 mt-1">ยอดคงเหลือในกองเงิน</p>
                 </div>
               </div>
             </Card>
