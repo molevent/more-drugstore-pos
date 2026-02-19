@@ -17,7 +17,8 @@ import {
   CreditCard,
   Wallet,
   ArrowUpRight,
-  Edit
+  Edit,
+  RefreshCw
 } from 'lucide-react'
 import Card from '../components/common/Card'
 import Input from '../components/common/Input'
@@ -346,8 +347,7 @@ export default function TaxInvoicesListPage() {
             onClick={fetchTaxInvoices}
             className="flex items-center gap-2"
           >
-            <Filter className="h-4 w-4" />
-            รีเฟรช
+            <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
       </div>
