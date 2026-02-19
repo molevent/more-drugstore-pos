@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { supabase } from '../services/supabase'
-import { User, UserRole } from '../types'
+import { User, UserRole, ActivityLog } from '../types'
 import { 
   Users, 
   Plus, 
@@ -18,8 +18,8 @@ import {
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { getRoleDisplayName, getRoleBadgeColor, getRoleDescription, canPerformAction } from '../utils/permissions'
-import { ActivityLog, getUserActivityLogs, formatActivityLog } from '../services/activityLogService'
+import { getRoleDisplayName, getRoleBadgeColor, getRoleDescription } from '../utils/permissions'
+import { getUserActivityLogs, formatActivityLog } from '../services/activityLogService'
 
 interface UserFormData {
   username: string
