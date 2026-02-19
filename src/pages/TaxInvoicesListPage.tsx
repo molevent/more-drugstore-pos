@@ -1,14 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
-import { Link } from 'react-router-dom'
 import { 
   FileText, 
   Search, 
   Filter,
   Eye,
-  Calendar,
   User,
-  Hash,
   Building2,
   MapPin,
   DollarSign,
@@ -16,7 +13,8 @@ import {
   Receipt,
   BookOpen,
   ArrowLeft,
-  Printer
+  Printer,
+  Edit
 } from 'lucide-react'
 import Card from '../components/common/Card'
 import Input from '../components/common/Input'
@@ -82,13 +80,6 @@ export default function TaxInvoicesListPage() {
     ti.customer_tax_id?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('th-TH', { 
-      day: '2-digit', 
-      month: 'short', 
-      year: 'numeric' 
-    })
-  }
 
   const formatDateTime = (date: string) => {
     return new Date(date).toLocaleString('th-TH', { 
@@ -104,10 +95,19 @@ export default function TaxInvoicesListPage() {
     return num.toLocaleString('th-TH', { minimumFractionDigits: 2 })
   }
 
-  const handlePrint = async (orderId: string, orderSource: string) => {
-    // Open order details for printing
-    const orderTable = orderSource === 'web' ? 'web_orders' : 'orders'
+  const handleView = (orderId: string, orderSource: string) => {
+    // Open order details in new tab
+    window.open(`/sales-orders?view=${orderId}&source=${orderSource}`, '_blank')
+  }
+
+  const handlePrint = (orderId: string, orderSource: string) => {
+    // Open print view in new tab
     window.open(`/sales-orders?print=${orderId}&source=${orderSource}`, '_blank')
+  }
+
+  const handleEdit = (orderId: string, orderSource: string) => {
+    // Open order edit in new tab
+    window.open(`/sales-orders?edit=${orderId}&source=${orderSource}`, '_blank')
   }
 
   return (
@@ -175,38 +175,38 @@ export default function TaxInvoicesListPage() {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <Card className="bg-gradient-to-br from-[#7D735F] to-[#9B8F7E]">
+        <Card className="bg-white hover:border-blue-500 hover:border-2 transition-all cursor-pointer">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-white/20 rounded-lg">
-              <FileText className="h-6 w-6 text-white" />
+            <div className="p-3 bg-[#F5EFE6] rounded-lg">
+              <FileText className="h-6 w-6 text-[#7D735F]" />
             </div>
             <div>
-              <p className="text-white/80 text-sm">จำนวนใบกำกับภาษี</p>
-              <p className="text-white text-2xl font-bold">{filteredTaxInvoices.length}</p>
+              <p className="text-gray-500 text-sm">จำนวนใบกำกับภาษี</p>
+              <p className="text-gray-900 text-2xl font-bold">{filteredTaxInvoices.length}</p>
             </div>
           </div>
         </Card>
-        <Card className="bg-gradient-to-br from-[#5C4A32] to-[#7D735F]">
+        <Card className="bg-white hover:border-blue-500 hover:border-2 transition-all cursor-pointer">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-white/20 rounded-lg">
-              <DollarSign className="h-6 w-6 text-white" />
+            <div className="p-3 bg-[#F5EFE6] rounded-lg">
+              <DollarSign className="h-6 w-6 text-[#7D735F]" />
             </div>
             <div>
-              <p className="text-white/80 text-sm">ยอดรวมทั้งหมด</p>
-              <p className="text-white text-2xl font-bold">
+              <p className="text-gray-500 text-sm">ยอดรวมทั้งหมด</p>
+              <p className="text-gray-900 text-2xl font-bold">
                 {formatCurrency(filteredTaxInvoices.reduce((sum, ti) => sum + (ti.total_amount || 0), 0))}
               </p>
             </div>
           </div>
         </Card>
-        <Card className="bg-gradient-to-br from-[#4A5568] to-[#718096]">
+        <Card className="bg-white hover:border-blue-500 hover:border-2 transition-all cursor-pointer">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-white/20 rounded-lg">
-              <Percent className="h-6 w-6 text-white" />
+            <div className="p-3 bg-[#F5EFE6] rounded-lg">
+              <Percent className="h-6 w-6 text-[#7D735F]" />
             </div>
             <div>
-              <p className="text-white/80 text-sm">ภาษีมูลค่าเพิ่มรวม</p>
-              <p className="text-white text-2xl font-bold">
+              <p className="text-gray-500 text-sm">ภาษีมูลค่าเพิ่มรวม</p>
+              <p className="text-gray-900 text-2xl font-bold">
                 {formatCurrency(filteredTaxInvoices.reduce((sum, ti) => sum + (ti.vat_amount || 0), 0))}
               </p>
             </div>
@@ -305,13 +305,20 @@ export default function TaxInvoicesListPage() {
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-center">
                       <div className="flex items-center gap-2 justify-center">
-                        <Link
-                          to={`/sales-orders?view=${invoice.order_id}&source=${invoice.order_source}`}
+                        <button
+                          onClick={() => handleView(invoice.order_id, invoice.order_source)}
                           className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
                           title="ดูรายละเอียดออเดอร์"
                         >
                           <Eye className="h-4 w-4" />
-                        </Link>
+                        </button>
+                        <button
+                          onClick={() => handleEdit(invoice.order_id, invoice.order_source)}
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all"
+                          title="แก้ไขออเดอร์"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
                         <button
                           onClick={() => handlePrint(invoice.order_id, invoice.order_source)}
                           className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
