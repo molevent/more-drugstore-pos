@@ -353,7 +353,7 @@ export default function TaxInvoicesListPage() {
 
       {/* Filters */}
       <div className="flex items-center gap-2 mb-6">
-        <div className="flex-1 max-w-[400px]">
+        <div className="flex-1 max-w-[800px]">
           <div className="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-2">
             <Search className="h-4 w-4 text-gray-500 flex-shrink-0" />
             <input
