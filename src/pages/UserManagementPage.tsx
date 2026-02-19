@@ -197,15 +197,15 @@ export default function UserManagementPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="bg-white border-b border-[#E8E0D5] px-4 py-4">
+      <div className="bg-white border-b border-gray-200 px-4 py-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/settings')} className="p-2 text-[#8B7355] hover:text-[#5C4A32] rounded-full">
+            <button onClick={() => navigate('/settings')} className="p-2 text-gray-600 hover:text-black rounded-full">
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-[#5C4A32]">การจัดการผู้ใช้</h1>
-              <p className="text-[#8B7355]">จัดการบัญชีผู้ใช้และสิทธิ์การเข้าถึง</p>
+              <h1 className="text-2xl font-bold text-black">การจัดการผู้ใช้</h1>
+              <p className="text-gray-600">จัดการบัญชีผู้ใช้และสิทธิ์การเข้าถึง</p>
             </div>
             <Button onClick={() => handleOpenModal()} className="bg-[#2E5266]">
               <Plus className="h-4 w-4 mr-2" /> เพิ่มผู้ใช้
@@ -219,14 +219,14 @@ export default function UserManagementPage() {
           {roleOptions.map(role => {
             const count = users.filter(u => u.role === role.value).length
             return (
-              <Card key={role.value} className="bg-white border-[#E8E0D5]">
+              <Card key={role.value} className="bg-white border-gray-200">
                 <div className="flex items-center gap-3">
                   <div className={`p-2 rounded-lg ${getRoleBadgeColor(role.value as UserRole).split(' ')[0]}`}>
                     <Shield className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-xs text-[#8B7355]">{role.label}</p>
-                    <p className="text-xl font-bold text-[#5C4A32]">{count}</p>
+                    <p className="text-xs text-gray-600">{role.label}</p>
+                    <p className="text-xl font-bold text-black">{count}</p>
                   </div>
                 </div>
               </Card>
@@ -234,47 +234,47 @@ export default function UserManagementPage() {
           })}
         </div>
 
-        <Card className="mb-6 bg-white border-[#E8E0D5]">
-          <div className="flex items-center gap-2 bg-[#F5EFE6] rounded-lg px-4 py-2">
-            <Search className="h-5 w-5 text-[#8B7355]" />
-            <input type="text" placeholder="ค้นหาผู้ใช้..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="flex-1 bg-transparent border-none outline-none text-[#5C4A32] placeholder-[#8B7355]" />
+        <Card className="mb-6 bg-white border-gray-200">
+          <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-4 py-2">
+            <Search className="h-5 w-5 text-gray-600" />
+            <input type="text" placeholder="ค้นหาผู้ใช้..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="flex-1 bg-transparent border-none outline-none text-black placeholder-gray-400" />
           </div>
         </Card>
 
-        <Card className="bg-white border-[#E8E0D5]">
+        <Card className="bg-white border-gray-200">
           {loading ? (
-            <div className="text-center py-8 text-[#8B7355]">กำลังโหลด...</div>
+            <div className="text-center py-8 text-gray-600">กำลังโหลด...</div>
           ) : filteredUsers.length === 0 ? (
-            <div className="text-center py-8 text-[#8B7355]">
-              <Users className="h-12 w-12 mx-auto mb-4 text-[#C5D5C8]" />
+            <div className="text-center py-8 text-gray-600">
+              <Users className="h-12 w-12 mx-auto mb-4 text-gray-500" />
               <p>ไม่พบผู้ใช้</p>
               <p className="text-sm mt-2">คลิก "เพิ่มผู้ใช้" เพื่อสร้างบัญชีใหม่</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-[#F5EFE6]">
+                <thead className="bg-gray-100">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-[#5C4A32] uppercase">ชื่อผู้ใช้</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-[#5C4A32] uppercase">อีเมล</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-[#5C4A32] uppercase">บทบาท</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-[#5C4A32] uppercase">สถานะ</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-[#5C4A32] uppercase">การดำเนินการ</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">ชื่อผู้ใช้</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">อีเมล</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">บทบาท</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">สถานะ</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-black uppercase">การดำเนินการ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E8E0D5]">
+                <tbody className="divide-y divide-gray-200">
                   {filteredUsers.map(user => (
-                    <tr key={user.id} className="hover:bg-[#F5EFE6]/50">
+                    <tr key={user.id} className="hover:bg-gray-100/50">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 rounded-full bg-[#B8D4E3] flex items-center justify-center text-[#2E5266] font-medium text-sm">{user.full_name.charAt(0)}</div>
                           <div>
-                            <p className="font-medium text-[#5C4A32]">{user.full_name}</p>
-                            {user.username && <p className="text-xs text-[#8B7355]">@{user.username}</p>}
+                            <p className="font-medium text-black">{user.full_name}</p>
+                            {user.username && <p className="text-xs text-gray-600">@{user.username}</p>}
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-[#8B7355]">{user.email}</td>
+                      <td className="px-4 py-3 text-gray-600">{user.email}</td>
                       <td className="px-4 py-3"><span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>{getRoleDisplayName(user.role)}</span></td>
                       <td className="px-4 py-3">
                         <button onClick={() => handleToggleActive(user)} className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
@@ -283,7 +283,7 @@ export default function UserManagementPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-center gap-2">
-                          <button onClick={() => handleOpenModal(user)} className="p-1.5 text-[#8B7355] hover:text-[#5C4A32]"><Edit2 className="h-4 w-4" /></button>
+                          <button onClick={() => handleOpenModal(user)} className="p-1.5 text-gray-600 hover:text-black"><Edit2 className="h-4 w-4" /></button>
                           {user.id !== currentUser?.id && <button onClick={() => handleDelete(user)} className="p-1.5 text-red-500 hover:text-red-700"><Trash2 className="h-4 w-4" /></button>}
                         </div>
                       </td>
@@ -299,16 +299,16 @@ export default function UserManagementPage() {
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-[#E8E0D5]">
-              <h2 className="text-xl font-bold text-[#5C4A32]">{editingUser ? 'แก้ไขผู้ใช้' : 'เพิ่มผู้ใช้ใหม่'}</h2>
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-black">{editingUser ? 'แก้ไขผู้ใช้' : 'เพิ่มผู้ใช้ใหม่'}</h2>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[#5C4A32] mb-1">ชื่อผู้ใช้ (Username) *</label>
+                <label className="block text-sm font-medium text-black mb-1">ชื่อผู้ใช้ (Username) *</label>
                 <Input type="text" value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} placeholder="เช่น Som, Kai, Ing" required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#5C4A32] mb-1">อีเมล (เว้นว่าง = สร้างอัตโนมัติ)</label>
+                <label className="block text-sm font-medium text-black mb-1">อีเมล (เว้นว่าง = สร้างอัตโนมัติ)</label>
                 <Input
                   type="email"
                   value={formData.email}
@@ -317,25 +317,25 @@ export default function UserManagementPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#5C4A32] mb-1">ชื่อเต็ม *</label>
+                <label className="block text-sm font-medium text-black mb-1">ชื่อเต็ม *</label>
                 <Input type="text" value={formData.full_name} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} placeholder="ชื่อ-นามสกุล" required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#5C4A32] mb-1">บทบาท *</label>
-                <select value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })} className="w-full px-3 py-2 border border-[#E8E0D5] rounded-lg bg-white text-[#5C4A32]" required>
+                <label className="block text-sm font-medium text-black mb-1">บทบาท *</label>
+                <select value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })} className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-black" required>
                   {roleOptions.map(role => <option key={role.value} value={role.value}>{role.label}</option>)}
                 </select>
-                <p className="mt-1 text-xs text-[#8B7355]">{getRoleDescription(formData.role)}</p>
+                <p className="mt-1 text-xs text-gray-600">{getRoleDescription(formData.role)}</p>
               </div>
               {!editingUser && (
                 <div>
-                  <label className="block text-sm font-medium text-[#5C4A32] mb-1">รหัสผ่าน (เว้นว่าง = 888888)</label>
+                  <label className="block text-sm font-medium text-black mb-1">รหัสผ่าน (เว้นว่าง = 888888)</label>
                   <Input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="เว้นว่างเพื่อใช้รหัสผ่านเริ่มต้น" />
                 </div>
               )}
               <div className="flex items-center">
                 <input type="checkbox" id="is_active" checked={formData.is_active} onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })} className="h-4 w-4 text-[#2E5266]" />
-                <label htmlFor="is_active" className="ml-2 text-sm text-[#5C4A32]">เปิดใช้งานบัญชีนี้</label>
+                <label htmlFor="is_active" className="ml-2 text-sm text-black">เปิดใช้งานบัญชีนี้</label>
               </div>
               <div className="flex gap-3 pt-4">
                 <Button type="button" variant="secondary" onClick={handleCloseModal} className="flex-1">ยกเลิก</Button>
