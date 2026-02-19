@@ -55,8 +55,15 @@ export default function UserManagementPage() {
   // Check if current user can manage users (owner or admin for backward compatibility)
   const canManageUsers = ['owner', 'admin'].includes(currentUser?.role as string)
 
+  // Debug: Log current user role
+  console.log('Current user:', currentUser)
+  console.log('User role:', currentUser?.role)
+  console.log('Can manage users:', canManageUsers)
+
   useEffect(() => {
+    console.log('UserManagementPage mounted, canManageUsers:', canManageUsers)
     if (!canManageUsers) {
+      console.log('Navigating to dashboard - not authorized')
       navigate('/dashboard')
       return
     }
