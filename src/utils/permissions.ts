@@ -166,35 +166,43 @@ export const ACTION_PERMISSIONS: ActionConfig[] = [
 /**
  * Check if a user role has permission to access a menu section
  */
-export function canAccessMenu(role: UserRole | undefined, menuId: MenuSection): boolean {
+export function canAccessMenu(role: UserRole | string | undefined, menuId: MenuSection): boolean {
   if (!role) return false
+  // Handle backward compatibility: treat 'admin' as 'owner'
+  const normalizedRole = role === 'admin' ? 'owner' : role
   const menu = MENU_PERMISSIONS.find(m => m.id === menuId)
   if (!menu) return false
-  return menu.allowedRoles.includes(role)
+  return menu.allowedRoles.includes(normalizedRole as UserRole)
 }
 
 /**
  * Check if a user role can perform a specific action
  */
-export function canPerformAction(role: UserRole | undefined, action: ActionPermission): boolean {
+export function canPerformAction(role: UserRole | string | undefined, action: ActionPermission): boolean {
   if (!role) return false
+  // Handle backward compatibility: treat 'admin' as 'owner'
+  const normalizedRole = role === 'admin' ? 'owner' : role
   const permission = ACTION_PERMISSIONS.find(p => p.action === action)
   if (!permission) return false
-  return permission.allowedRoles.includes(role)
+  return permission.allowedRoles.includes(normalizedRole as UserRole)
 }
 
 /**
  * Get all allowed menus for a user role
  */
-export function getAllowedMenus(role: UserRole | undefined): MenuPermission[] {
+export function getAllowedMenus(role: UserRole | string | undefined): MenuPermission[] {
   if (!role) return []
-  return MENU_PERMISSIONS.filter(menu => menu.allowedRoles.includes(role))
+  // Handle backward compatibility: treat 'admin' as 'owner'
+  const normalizedRole = role === 'admin' ? 'owner' : role
+  return MENU_PERMISSIONS.filter(menu => menu.allowedRoles.includes(normalizedRole as UserRole))
 }
 
 /**
  * Get role display name in Thai
  */
-export function getRoleDisplayName(role: UserRole): string {
+export function getRoleDisplayName(role: UserRole | string): string {
+  // Handle backward compatibility: treat 'admin' as 'owner'
+  if (role === 'admin') return 'เจ้าของร้าน'
   const displayNames: Record<UserRole, string> = {
     owner: 'เจ้าของร้าน',
     manager: 'ผู้จัดการร้าน',
@@ -202,7 +210,7 @@ export function getRoleDisplayName(role: UserRole): string {
     part_time: 'พนักงานไพรท์ไทม์',
     accountant: 'นักบัญชี'
   }
-  return displayNames[role] || role
+  return displayNames[role as UserRole] || role
 }
 
 /**
@@ -222,15 +230,19 @@ export function getRoleBadgeColor(role: UserRole): string {
 /**
  * Check if user is admin level (owner or manager)
  */
-export function isAdmin(role: UserRole | undefined): boolean {
-  return role === 'owner' || role === 'manager'
+export function isAdmin(role: UserRole | string | undefined): boolean {
+  if (!role) return false
+  // Handle backward compatibility: treat 'admin' as 'owner'
+  return role === 'owner' || role === 'manager' || role === 'admin'
 }
 
 /**
  * Check if user can view sensitive data (cost, profit)
  */
-export function canViewSensitiveData(role: UserRole | undefined): boolean {
-  return role === 'owner' || role === 'manager' || role === 'accountant'
+export function canViewSensitiveData(role: UserRole | string | undefined): boolean {
+  if (!role) return false
+  // Handle backward compatibility: treat 'admin' as 'owner'
+  return role === 'owner' || role === 'manager' || role === 'accountant' || role === 'admin'
 }
 
 /**
@@ -250,13 +262,15 @@ export function getRoleDescription(role: UserRole): string {
 /**
  * Filter navigation items based on user role
  */
-export function filterNavigationByRole(navigation: any[], role: UserRole | undefined): any[] {
+export function filterNavigationByRole(navigation: any[], role: UserRole | string | undefined): any[] {
   if (!role) return []
+  // Handle backward compatibility: treat 'admin' as 'owner'
+  const normalizedRole = role === 'admin' ? 'owner' : role
   
   return navigation.filter(item => {
     // Check if menu section is allowed
     const menuId = item.id as MenuSection
-    if (menuId && !canAccessMenu(role, menuId)) {
+    if (menuId && !canAccessMenu(normalizedRole, menuId)) {
       return false
     }
     
@@ -265,7 +279,7 @@ export function filterNavigationByRole(navigation: any[], role: UserRole | undef
       item.subMenus = item.subMenus.filter((sub: any) => {
         // Check if submenu has specific role restrictions
         if (sub.allowedRoles) {
-          return sub.allowedRoles.includes(role)
+          return sub.allowedRoles.includes(normalizedRole)
         }
         return true
       })
