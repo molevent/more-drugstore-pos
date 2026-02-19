@@ -186,16 +186,6 @@ export default function QuotationsListPage() {
     })
   }
 
-  const formatDateTime = (date: string) => {
-    return new Date(date).toLocaleString('th-TH', { 
-      day: '2-digit', 
-      month: 'short', 
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
-
   const openModal = async (type: ModalType, quotation: Quotation) => {
     setModalLoading(true)
     setSelectedQuotation(quotation)
