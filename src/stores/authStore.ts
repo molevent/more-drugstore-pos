@@ -158,38 +158,50 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
   
   initialize: async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (session?.user) {
-        const { data: userData, error: _userError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
+    let retryCount = 0
+    const maxRetries = 3
+    
+    const tryInitialize = async (): Promise<void> => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
         
-        if (userData && userData.is_active) {
-          set({ user: userData, loading: false, error: null })
+        if (session?.user) {
+          const { data: userData, error: _userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
+          
+          if (userData && userData.is_active) {
+            set({ user: userData, loading: false, error: null })
+          } else {
+            await supabase.auth.signOut()
+            set({ user: null, loading: false, error: null })
+          }
         } else {
-          // User not found or inactive
-          await supabase.auth.signOut()
-          set({ user: null, loading: false, error: null })
+          set({ loading: false, error: null })
         }
-      } else {
-        set({ loading: false, error: null })
+      } catch (err: any) {
+        // Handle Supabase AbortError (lock acquisition issue)
+        if (err?.name === 'AbortError' || err?.message?.includes('aborted')) {
+          retryCount++
+          if (retryCount <= maxRetries) {
+            console.log(`Supabase auth initialization aborted, retrying (${retryCount}/${maxRetries})...`)
+            await new Promise(resolve => setTimeout(resolve, 500))
+            return tryInitialize()
+          } else {
+            console.error('Max retries reached for auth initialization')
+            set({ loading: false, error: null, user: null })
+          }
+          return
+        }
+        console.error('Error during auth initialization:', err)
+        set({ loading: false, error: null, user: null })
       }
-    } catch (err: any) {
-      // Handle Supabase AbortError (lock acquisition issue)
-      if (err?.name === 'AbortError' || err?.message?.includes('aborted')) {
-        console.log('Supabase auth initialization aborted, retrying...')
-        setTimeout(() => {
-          useAuthStore.getState().initialize()
-        }, 500)
-        return
-      }
-      console.error('Error during auth initialization:', err)
-      set({ loading: false, error: null })
     }
+    
+    await tryInitialize()
+    
     // Listen for auth state changes
     supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
       if (session?.user) {
