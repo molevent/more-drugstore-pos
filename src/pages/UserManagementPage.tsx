@@ -90,13 +90,16 @@ export default function UserManagementPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // Auto-generate email from username if not provided
+    const email = formData.email || `${formData.username.toLowerCase()}@moredrug.local`
+    
     try {
       if (editingUser) {
         const { error } = await supabase
           .from('users')
           .update({
             username: formData.username,
-            email: formData.email,
+            email: email,
             full_name: formData.full_name,
             role: formData.role,
             is_active: formData.is_active,
@@ -108,7 +111,7 @@ export default function UserManagementPage() {
         alert('บันทึกสำเร็จ')
       } else {
         const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: formData.email,
+          email: email,
           password: formData.password || '888888',
           options: {
             data: {
@@ -130,7 +133,7 @@ export default function UserManagementPage() {
             .insert({
               id: authData.user.id,
               username: formData.username,
-              email: formData.email,
+              email: email,
               full_name: formData.full_name,
               role: formData.role,
               is_active: formData.is_active
@@ -305,8 +308,13 @@ export default function UserManagementPage() {
                 <Input type="text" value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} placeholder="เช่น Som, Kai, Ing" required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#5C4A32] mb-1">อีเมล *</label>
-                <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="user@moredrug.com" required />
+                <label className="block text-sm font-medium text-[#5C4A32] mb-1">อีเมล (เว้นว่าง = สร้างอัตโนมัติ)</label>
+                <Input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="user@moredrug.com"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-[#5C4A32] mb-1">ชื่อเต็ม *</label>
