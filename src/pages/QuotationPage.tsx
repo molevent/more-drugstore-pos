@@ -915,103 +915,43 @@ export default function QuotationPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="no-print flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <a
-            href="/quotations"
-            className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
-            title="กลับไปหน้ารายการใบเสนอราคา"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </a>
-          <div>
-            <div className="flex items-center gap-2">
-              <FileText className="h-8 w-8 text-[#4A90A4]" />
-              <h1 className="text-xl font-bold text-gray-900">สร้างใบเสนอราคา</h1>
-              {editingQuotationNumber ? (
-                <div className="flex items-center gap-1">
-                  <Input
-                    value={quotation.quotation_number}
-                    onChange={(e) => setQuotation(prev => ({ ...prev, quotation_number: e.target.value }))}
-                    className="w-40 text-sm"
-                    onBlur={() => setEditingQuotationNumber(false)}
-                    onKeyDown={(e) => e.key === 'Enter' && setEditingQuotationNumber(false)}
-                    autoFocus
-                  />
-                  <button onClick={() => setEditingQuotationNumber(false)} className="text-green-600">
-                    <Check className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1">
-                  <span className="text-sm text-gray-500">{quotation.quotation_number}</span>
-                  <button 
-                    onClick={() => setEditingQuotationNumber(true)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <Edit2 className="h-3 w-3" />
-                  </button>
-                </div>
-              )}
-            </div>
+      {/* Header - Compact */}
+      <div className="no-print flex flex-col gap-2 mb-3">
+        {/* Top row: Title and Actions */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <a href="/quotations" className="p-1.5 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all">
+              <ArrowLeft className="h-4 w-4" />
+            </a>
+            <FileText className="h-5 w-5 text-[#4A90A4]" />
+            <h1 className="text-base font-semibold text-gray-900">สร้างใบเสนอราคา</h1>
+            <span className="text-xs text-gray-500">{quotation.quotation_number}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Button variant="secondary" onClick={() => window.history.back()} className="text-xs py-1.5 px-3 h-8">ปิด</Button>
+            <Button onClick={handleSave} disabled={loading} className="bg-[#7cb342] hover:bg-[#6ba32e] text-white text-xs py-1.5 px-3 h-8">
+              {loading ? 'กำลังบันทึก...' : 'บันทึก'}
+            </Button>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" onClick={() => window.history.back()}>
-            ปิดหน้าต่าง
-          </Button>
-          <Button onClick={handleSave} disabled={loading} className="bg-[#7cb342] hover:bg-[#6ba32e] text-white">
-            {loading ? 'กำลังบันทึก...' : 'บันทึกร่าง'}
-          </Button>
-        </div>
-      </div>
 
-      {/* Tabs and Toolbar - Combined in one row */}
-      <div className="no-print flex items-center justify-between mb-4">
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
-          <button
-            onClick={() => setActiveTab('quotation')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-              activeTab === 'quotation'
-                ? 'bg-white text-[#4A90A4] shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <FileText className="h-4 w-4" />
-            ใบเสนอราคา
-          </button>
-          <button
-            onClick={() => setActiveTab('profit')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-              activeTab === 'profit'
-                ? 'bg-white text-[#4A90A4] shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <Calculator className="h-4 w-4" />
-            ต้นทุน/กำไร
-          </button>
-        </div>
-        
-        {/* Toolbar buttons */}
-        <div className="flex items-center gap-1">
-          <button onClick={handleShare} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="แชร์ลิงก์">
-            <Share2 className="h-5 w-5" />
-          </button>
-          <button onClick={handlePrint} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="พิมพ์">
-            <Printer className="h-5 w-5" />
-          </button>
-          <button onClick={handleDownloadPDF} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="ดาวน์โหลด PDF">
-            <Download className="h-5 w-5" />
-          </button>
-          <button onClick={handleSavePDF} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="บันทึก PDF ในระบบ">
-            <Save className="h-5 w-5" />
-          </button>
-          <div className="relative" ref={moreMenuRef}>
-            <button onClick={() => setShowMoreMenu(!showMoreMenu)} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded">
-              <MoreHorizontal className="h-5 w-5" />
+        {/* Second row: Tabs + Toolbar */}
+        <div className="flex items-center justify-between bg-gray-50 p-1 rounded-lg">
+          <div className="flex gap-0.5">
+            <button onClick={() => setActiveTab('quotation')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all ${activeTab === 'quotation' ? 'bg-white text-[#4A90A4] shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
+              <FileText className="h-3.5 w-3.5" /> ใบเสนอราคา
             </button>
+            <button onClick={() => setActiveTab('profit')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all ${activeTab === 'profit' ? 'bg-white text-[#4A90A4] shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
+              <Calculator className="h-3.5 w-3.5" /> ต้นทุน/กำไร
+            </button>
+          </div>
+          <div className="flex items-center gap-0.5">
+            <button onClick={handleShare} className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded" title="แชร์"><Share2 className="h-4 w-4" /></button>
+            <button onClick={handlePrint} className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded" title="พิมพ์"><Printer className="h-4 w-4" /></button>
+            <button onClick={handleDownloadPDF} className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded" title="ดาวน์โหลด PDF"><Download className="h-4 w-4" /></button>
+            <button onClick={handleSavePDF} className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded" title="บันทึก PDF"><Save className="h-4 w-4" /></button>
+            <div className="relative" ref={moreMenuRef}>
+              <button onClick={() => setShowMoreMenu(!showMoreMenu)} className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded"><MoreHorizontal className="h-4 w-4" /></button>
           {showMoreMenu && (
             <div className="absolute right-0 mt-1 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
               <div className="p-2 space-y-1">
@@ -2294,7 +2234,6 @@ export default function QuotationPage() {
           </div>
         </div>
       )}
-    </div>
     </div>
   )
 }
