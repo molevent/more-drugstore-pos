@@ -1241,7 +1241,7 @@ export default function ExpensesPage() {
       {/* Summary Cards - Match Sales Page Style */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
         {/* Combined Count & Amount Card - IVORY LACE */}
-        <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#D4C5B3] hover:border-2 transition-all cursor-pointer col-span-2 sm:col-span-1">
+        <Card className="flex flex-col items-center justify-center text-center py-3 px-3 hover:border-[#D4C5B3] hover:border-2 transition-all cursor-pointer col-span-2 sm:col-span-1">
           <div className="w-12 h-12 rounded-xl bg-[#F5F0E6] flex items-center justify-center mb-2">
             <Receipt className="h-6 w-6 text-[#8B7355]" />
           </div>
@@ -1257,7 +1257,7 @@ export default function ExpensesPage() {
         </Card>
 
         {/* Waiting for Receipt Card - LEMON CHIFFON */}
-        <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#E6D7A8] hover:border-2 transition-all cursor-pointer">
+        <Card className="flex flex-col items-center justify-center text-center py-3 px-3 hover:border-[#E6D7A8] hover:border-2 transition-all cursor-pointer">
           <div className="w-12 h-12 rounded-xl bg-[#F5E6C8] flex items-center justify-center mb-2">
             <Clock className="h-6 w-6 text-[#B8A060]" />
           </div>
@@ -1273,7 +1273,7 @@ export default function ExpensesPage() {
         </Card>
 
         {/* Waiting for Payment Voucher Card - WONDEROUS BLUE */}
-        <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
+        <Card className="flex flex-col items-center justify-center text-center py-3 px-3 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
           <div className="w-12 h-12 rounded-xl bg-[#B8D4E3] flex items-center justify-center mb-2">
             <FileText className="h-6 w-6 text-[#5B7A8B]" />
           </div>
@@ -1289,7 +1289,7 @@ export default function ExpensesPage() {
         </Card>
 
         {/* VAT Expenses Card - RAINWASHED */}
-        <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#A8C4B8] hover:border-2 transition-all cursor-pointer">
+        <Card className="flex flex-col items-center justify-center text-center py-3 px-3 hover:border-[#A8C4B8] hover:border-2 transition-all cursor-pointer">
           <div className="w-12 h-12 rounded-xl bg-[#C5D5C5] flex items-center justify-center mb-2">
             <Percent className="h-6 w-6 text-[#5B7A6B]" />
           </div>
@@ -1305,7 +1305,7 @@ export default function ExpensesPage() {
         </Card>
 
         {/* Non-VAT Expenses Card - AGAPAHNTHUS */}
-        <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#B8B8C8] hover:border-2 transition-all cursor-pointer">
+        <Card className="flex flex-col items-center justify-center text-center py-3 px-3 hover:border-[#B8B8C8] hover:border-2 transition-all cursor-pointer">
           <div className="w-12 h-12 rounded-xl bg-[#C5C9D9] flex items-center justify-center mb-2">
             <Receipt className="h-6 w-6 text-[#6B6B8B]" />
           </div>
