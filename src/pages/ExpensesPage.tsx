@@ -1165,6 +1165,7 @@ export default function ExpensesPage() {
           >
             <BookOpen className="h-5 w-5" />
           </button>
+          {/* Hidden - not used yet
           <Link 
             to="/expenses/add"
             className="px-4 py-2 bg-[#A67B5B] hover:bg-[#8B6B4F] text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
@@ -1172,6 +1173,7 @@ export default function ExpensesPage() {
             <Plus className="h-4 w-4" />
             เพิ่มเอกสาร
           </Link>
+          */}
         </div>
       </div>
 
