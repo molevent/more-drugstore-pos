@@ -354,7 +354,7 @@ export default function TaxInvoicesListPage() {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="w-[140px]">
+        <div className="w-24">
           <div className="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2.5 transition-all">
             <Search className="h-4 w-4 text-gray-500" />
             <input
