@@ -1179,7 +1179,7 @@ export default function ExpensesPage() {
 
       {/* View Mode Tabs */}
       <div className="flex flex-wrap gap-2 mb-6 items-center">
-        {/* Quick Links - Moved here */}
+        {/* Quick Links - Hidden for now
         <Link 
           to="/purchase-orders"
           className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
@@ -1216,6 +1216,7 @@ export default function ExpensesPage() {
           <span className="font-medium text-gray-900 text-sm whitespace-nowrap">เงินสดย่อย</span>
         </Link>
         <div className="flex-grow"></div>
+        */}
         <button
           onClick={() => setViewMode('database')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
