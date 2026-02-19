@@ -53,6 +53,7 @@ import HelpManagementPage from './pages/HelpManagementPage'
 import StorefrontPage from './pages/StorefrontPage'
 import ProductDetailPage from './pages/ProductDetailPage'
 import CheckoutPage from './pages/CheckoutPage'
+import UserManagementPage from './pages/UserManagementPage'
 import AuthGuard from './components/auth/AuthGuard'
 import Layout from './components/common/Layout'
 import { LanguageProvider } from './contexts/LanguageContext'
@@ -126,6 +127,7 @@ function App() {
                     <Route path="/employee-settings" element={<EmployeeSettingsPage />} />
                     <Route path="/zortout-sync" element={<ZortOutSyncPage />} />
                     <Route path="/help-management" element={<HelpManagementPage />} />
+                    <Route path="/users" element={<UserManagementPage />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   </Routes>
                 </Layout>

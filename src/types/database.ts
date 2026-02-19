@@ -1,7 +1,7 @@
 // More Drug Store - Database Types
 // Auto-generated from Supabase schema
 
-export type UserRole = 'admin' | 'pharmacist' | 'cashier'
+export type UserRole = 'owner' | 'manager' | 'pharmacist' | 'part_time' | 'accountant'
 export type PaymentMethod = 'cash' | 'transfer' | 'credit_card' | 'promptpay'
 export type PaymentStatus = 'pending' | 'paid' | 'refunded'
 export type AlertType = 'low' | 'out'
@@ -14,6 +14,7 @@ export interface User {
   id: string
   email: string
   full_name: string
+  username?: string
   role: UserRole
   avatar_url?: string
   language?: string
@@ -298,8 +299,18 @@ export interface StockAlertWithProduct extends StockAlert {
   product?: Product
 }
 
-// ============================================================================
-// REQUEST/RESPONSE TYPES
+export interface ActivityLog {
+  id: string
+  user_id: string
+  user_role: UserRole
+  action: string
+  entity_type?: string
+  entity_id?: string
+  details?: Record<string, any>
+  ip_address?: string
+  user_agent?: string
+  created_at: string
+}
 // ============================================================================
 
 export interface CreateOrderRequest {

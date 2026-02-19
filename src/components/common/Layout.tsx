@@ -18,6 +18,8 @@ import { useState } from 'react'
 import { useLanguage } from '../../contexts/LanguageContext'
 import LanguageSwitcher from './LanguageSwitcher'
 import HelpModal from './HelpModal'
+import { canAccessMenu, getAllowedMenus, getRoleDisplayName } from '../../utils/permissions'
+import { UserRole } from '../../types'
 
 interface LayoutProps {
   children: ReactNode
@@ -59,41 +61,46 @@ export default function Layout({ children }: LayoutProps) {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
+  // Get user role for permission checking
+  const userRole = user?.role as UserRole | undefined
+
+  // Filter navigation based on user role
   const navigationSections = [
     {
       title: 'หลัก',
       items: [
-        { name: t('nav.pos'), href: '/pos', icon: ShoppingCart },
-        { name: t('nav.salesOrders'), href: '/sales-orders', icon: ListOrdered },
-      ]
+        { name: t('nav.pos'), href: '/pos', icon: ShoppingCart, id: 'pos' as const },
+        { name: t('nav.salesOrders'), href: '/sales-orders', icon: ListOrdered, id: 'sales' as const },
+      ].filter(item => canAccessMenu(userRole, item.id))
     },
     {
       title: 'สินค้า',
       items: [
-        { name: t('nav.products'), href: '/products', icon: Boxes },
-        { name: 'เว็บไซต์ร้าน', href: '/store', icon: Globe },
-      ]
+        { name: t('nav.products'), href: '/products', icon: Boxes, id: 'products' as const },
+        { name: 'เว็บไซต์ร้าน', href: '/store', icon: Globe, id: 'website' as const },
+      ].filter(item => canAccessMenu(userRole, item.id))
     },
     {
       title: 'ผู้ติดต่อ',
       items: [
-        { name: t('nav.contacts'), href: '/contacts', icon: Users },
-      ]
+        { name: t('nav.contacts'), href: '/contacts', icon: Users, id: 'contacts' as const },
+      ].filter(item => canAccessMenu(userRole, item.id))
     },
     {
       title: 'เอกสาร',
       items: [
-        { name: t('nav.documents'), href: '/expenses', icon: Wallet },
-        { name: 'ตารางเข้างาน', href: '/work-schedule', icon: Calendar },
-      ]
+        { name: t('nav.documents'), href: '/expenses', icon: Wallet, id: 'documents' as const },
+        { name: 'ตารางเข้างาน', href: '/work-schedule', icon: Calendar, id: 'work_schedule' as const },
+      ].filter(item => canAccessMenu(userRole, item.id))
     },
     {
       title: 'ตั้งค่า',
       items: [
-        { name: t('nav.settings'), href: '/settings', icon: Settings },
-      ]
+        { name: t('nav.settings'), href: '/settings', icon: Settings, id: 'settings' as const },
+        ...(userRole === 'owner' ? [{ name: 'จัดการผู้ใช้', href: '/users', icon: Users, id: 'users' as const }] : []),
+      ].filter(item => canAccessMenu(userRole, item.id))
     }
-  ]
+  ].filter(section => section.items.length > 0)
 
   const handleSignOut = async () => {
     await signOut()
@@ -142,6 +149,11 @@ export default function Layout({ children }: LayoutProps) {
             <nav className="space-y-1">
               {navigationSections.map((section, sectionIndex) => (
                 <div key={sectionIndex} className="mb-2">
+                  {section.title && (
+                    <h3 className="text-xs font-medium text-[#8B7355] uppercase tracking-wider px-3 mb-1">
+                      {section.title}
+                    </h3>
+                  )}
                   <div className="space-y-1">
                     {section.items.map((item) => {
                       const isActive = location.pathname === item.href
@@ -156,11 +168,11 @@ export default function Layout({ children }: LayoutProps) {
                           }}
                           className={`flex items-center gap-3 px-3 py-2.5 text-base font-medium rounded-xl transition-all border-2 ${
                             isActive
-                              ? 'bg-[#F5F0E6] text-gray-900 border-[#7D735F] shadow-md'
-                              : 'text-gray-700 border-transparent hover:border-[#7D735F]'
+                              ? 'bg-[#C5C9E8] text-[#4A5568] border-[#8B9DC3] shadow-md'
+                              : 'text-[#5C4A32] border-transparent hover:border-[#B8D4E3] hover:bg-[#F5EFE6]'
                           }`}
                         >
-                          <item.icon className={`h-5 w-5 ${isActive ? 'text-gray-900' : 'text-gray-500'}`} />
+                          <item.icon className={`h-5 w-5 ${isActive ? 'text-[#4A5568]' : 'text-[#8B7355]'}`} />
                           <span className="flex-1">{item.name}</span>
                         </Link>
                       )
@@ -172,17 +184,17 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           {/* Footer */}
-          <div className="border-t border-gray-200 p-4">
+          <div className="border-t border-[#E8E0D5] p-4 bg-[#F5EFE6]">
             <div className="flex items-center justify-between mb-3">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">{user?.full_name}</p>
-                <p className="text-xs text-gray-500">{user?.role}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-[#5C4A32] truncate">{user?.full_name}</p>
+                <p className="text-xs text-[#8B7355]">{userRole ? getRoleDisplayName(userRole) : ''}</p>
               </div>
               <LanguageSwitcher />
             </div>
             <button
               onClick={handleSignOut}
-              className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              className="flex items-center w-full px-3 py-2 text-sm text-[#5C4A32] hover:bg-[#E8E0D5] rounded-lg transition-colors"
             >
               <LogOut className="h-4 w-4 mr-3" />
               {t('nav.logout')}
