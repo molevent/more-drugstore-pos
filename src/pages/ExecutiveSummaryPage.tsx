@@ -19,7 +19,10 @@ import {
   Store,
   UserPlus,
   LineChart as LineChartIcon,
-  Banknote
+  Banknote,
+  MessageCircle,
+  Copy,
+  Check
 } from 'lucide-react'
 import { 
   LineChart, 
@@ -97,6 +100,8 @@ export default function ExecutiveSummaryPage() {
   })
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
+  const [showTextSummary, setShowTextSummary] = useState(false)
+  const [copied, setCopied] = useState(false)
   
   // 12-month chart data
   const [monthlyChartData, setMonthlyChartData] = useState<any[]>([])
@@ -270,6 +275,68 @@ export default function ExecutiveSummaryPage() {
     return new Intl.NumberFormat('th-TH').format(value)
   }
 
+  // Generate text summary for LINE
+  const generateTextSummary = () => {
+    const now = new Date().toLocaleDateString('th-TH', { 
+      day: '2-digit', 
+      month: 'long', 
+      year: 'numeric' 
+    })
+    
+    return `📊 สรุปภาพรวมธุรกิจ - ${now}
+
+💰 ยอดขายวันนี้: ${formatCurrency(summaryData.todaySales)}
+🧾 จำนวนออเดอร์: ${formatNumber(summaryData.todayOrders)} ออเดอร์
+
+📈 ยอดขายเดือนนี้: ${formatCurrency(summaryData.monthSales)}
+📦 ออเดอร์เดือนนี้: ${formatNumber(summaryData.monthOrders)} ออเดอร์
+
+💸 ค่าใช้จ่ายวันนี้: ${formatCurrency(summaryData.todayExpenses)}
+📉 ค่าใช้จ่ายเดือนนี้: ${formatCurrency(summaryData.monthExpenses)}
+
+💵 ช่องทางการชำระวันนี้:
+• เงินสด: ${formatCurrency(summaryData.todayCash)}
+• บัตรเครดิต: ${formatCurrency(summaryData.todayCredit)}
+• โอนเงิน: ${formatCurrency(summaryData.todayTransfer)}
+• E-Wallet: ${formatCurrency(summaryData.todayEWallet)}
+
+📊 สรุปภาษี VAT เดือนนี้:
+• ภาษีซื้อ: ${formatCurrency(summaryData.inputVat)}
+• ภาษีขาย: ${formatCurrency(summaryData.outputVat)}
+• ส่วนต่าง: ${summaryData.vatBalance >= 0 ? '+' : ''}${formatCurrency(summaryData.vatBalance)}
+
+💹 กระแสเงินสดเดือนนี้:
+• เงินเข้า: ${formatCurrency(summaryData.cashIn)}
+• เงินออก: ${formatCurrency(summaryData.cashOut)}
+• ส่วนต่าง: ${summaryData.cashFlowBalance >= 0 ? '+' : ''}${formatCurrency(summaryData.cashFlowBalance)}
+
+🏪 สต็อกสินค้า:
+• สินค้าทั้งหมด: ${formatNumber(summaryData.totalProducts)} รายการ
+• ใกล้หมด: ${formatNumber(summaryData.lowStock)} รายการ
+• ใกล้หมดอายุ: ${formatNumber(summaryData.nearExpiry)} รายการ
+
+👥 ลูกค้า:
+• ลูกค้าทั้งหมด: ${formatNumber(summaryData.totalCustomers)} คน
+• ลูกค้าใหม่วันนี้: ${formatNumber(summaryData.newCustomersToday)} คน
+
+อัปเดต: ${lastUpdated.toLocaleTimeString('th-TH')}`
+  }
+
+  const handleCopyToClipboard = () => {
+    const text = generateTextSummary()
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  const handleSendToLINE = () => {
+    const text = generateTextSummary()
+    // Open LINE with the text (for mobile/web)
+    const lineUrl = `https://line.me/R/share?text=${encodeURIComponent(text)}`
+    window.open(lineUrl, '_blank')
+  }
+
   // Fetch 12 months of data for chart (Jan 2026 - Dec 2026)
   const fetchMonthlyChartData = async () => {
     try {
@@ -341,6 +408,13 @@ export default function ExecutiveSummaryPage() {
               </p>
             </div>
             <div className="flex gap-2">
+              <button
+                onClick={() => setShowTextSummary(true)}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+              >
+                <MessageCircle className="h-4 w-4" />
+                ส่ง LINE
+              </button>
               <button
                 onClick={fetchSummaryData}
                 disabled={loading}
@@ -885,6 +959,61 @@ export default function ExecutiveSummaryPage() {
           </div>
         </section>
       </div>
+
+      {/* Text Summary Modal for LINE */}
+      {showTextSummary && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[80vh] overflow-hidden">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <MessageCircle className="h-5 w-5 text-green-600" />
+                ส่งสรุปผ่าน LINE
+              </h3>
+              <button
+                onClick={() => setShowTextSummary(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-4">
+              <textarea
+                readOnly
+                value={generateTextSummary()}
+                className="w-full h-64 p-3 border border-gray-300 rounded-lg text-sm font-mono bg-gray-50 resize-none"
+              />
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={handleCopyToClipboard}
+                  className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="h-4 w-4 text-green-600" />
+                      คัดลอกแล้ว
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4" />
+                      คัดลอกข้อความ
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleSendToLINE}
+                  className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  เปิด LINE
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-3 text-center">
+                เมื่อกด "เปิด LINE" จะเปิดแอป LINE พร้อมข้อความสรุป
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
