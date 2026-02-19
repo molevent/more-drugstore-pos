@@ -1209,8 +1209,8 @@ export default function ExpensesPage() {
           onClick={() => setViewMode('database')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
             viewMode === 'database'
-              ? 'bg-[#A8C4D9] text-white'
-              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              ? 'bg-[#A8C4D9] text-white border-black'
+              : 'bg-white text-gray-700 border-black hover:bg-gray-50'
           }`}
         >
           <Database className="h-4 w-4" />
@@ -1225,7 +1225,7 @@ export default function ExpensesPage() {
           }`}
         >
           <Sheet className="h-4 w-4" />
-          Google Sheets
+          ดึงข้อมูล
         </button>
       </div>
 
