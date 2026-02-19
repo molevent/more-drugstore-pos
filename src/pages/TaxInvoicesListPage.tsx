@@ -18,8 +18,7 @@ import {
   CreditCard,
   Wallet,
   ArrowUpRight,
-  Edit,
-  Clock
+  Edit
 } from 'lucide-react'
 import Card from '../components/common/Card'
 import Input from '../components/common/Input'
@@ -355,15 +354,16 @@ export default function TaxInvoicesListPage() {
       {/* Filters */}
       <Card className="mb-6">
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
+          <div className="flex-1 min-w-[200px]">
+            <div className="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2.5 border border-transparent focus-within:border-[#B8D4E3] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#B8D4E3]/30 transition-all">
+              <Search className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700 whitespace-nowrap">ค้นหา</span>
+              <input
                 type="text"
-                placeholder="ค้นหาเลขที่ใบกำกับภาษี, ชื่อลูกค้า..."
+                placeholder="เลขที่ใบกำกับภาษี, ชื่อลูกค้า..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-sm min-w-0"
               />
             </div>
           </div>
