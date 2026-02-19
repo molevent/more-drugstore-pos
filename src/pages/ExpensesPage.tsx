@@ -1767,6 +1767,13 @@ export default function ExpensesPage() {
                               PV
                             </span>
                           )}
+                          <button
+                            onClick={() => handleDelete(expense.id)}
+                            className="ml-2 p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            title="ลบรายการ"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">{expense.vendor || '-'}</td>
@@ -1783,12 +1790,6 @@ export default function ExpensesPage() {
                             className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           >
                             <Edit2 className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(expense.id)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
                       </td>
