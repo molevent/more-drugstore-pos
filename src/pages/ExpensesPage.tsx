@@ -1242,25 +1242,17 @@ export default function ExpensesPage() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
         {/* Combined Count & Amount Card */}
         <Card className="flex flex-col items-center justify-center text-center py-6 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer col-span-2 sm:col-span-1">
-          <div className="flex gap-4 mb-3">
-            <div className="w-12 h-12 rounded-xl bg-[#7D735F]/10 flex items-center justify-center">
-              <Receipt className="h-6 w-6 text-[#7D735F]" />
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-[#A67B5B]/10 flex items-center justify-center">
-              <Wallet className="h-6 w-6 text-[#A67B5B]" />
-            </div>
+          <div className="w-12 h-12 rounded-xl bg-[#7D735F]/10 flex items-center justify-center mb-2">
+            <Receipt className="h-6 w-6 text-[#7D735F]" />
           </div>
-          <div className="space-y-1">
-            <p className="text-sm text-gray-600">จำนวนรายการ</p>
+          <div>
+            <p className="text-sm text-gray-600">ยอดรวมค่าใช้จ่าย</p>
             <p className="text-2xl font-bold text-gray-900">
               {viewMode === 'database' ? filteredExpenses.length : sheetData.length}
             </p>
-            <div className="pt-2 border-t border-gray-200 mt-2">
-              <p className="text-sm text-gray-600">ยอดรวมค่าใช้จ่าย</p>
-              <p className="text-2xl font-bold text-gray-900">
-                ฿{(viewMode === 'database' ? totalAmount : sheetTotalAmount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-              </p>
-            </div>
+            <p className="text-xs text-[#7D735F] mt-1">
+              ฿{(viewMode === 'database' ? totalAmount : sheetTotalAmount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+            </p>
           </div>
         </Card>
 
