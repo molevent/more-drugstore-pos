@@ -21,6 +21,8 @@ interface SalesOrder {
   order_source?: string
   order_items_count: number
   order_items?: OrderItem[]
+  tax_invoice_number?: string
+  document_type?: string
 }
 
 interface OrderItem {
@@ -973,7 +975,14 @@ export default function SalesOrdersPage() {
                 {filteredOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-[#F5EFE6]/50 transition-colors">
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="font-medium text-gray-900">{order.order_number}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900">{order.order_number}</span>
+                        {order.document_type === 'tax_invoice' || order.tax_invoice_number ? (
+                          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full border border-blue-200">
+                            Full Tax INV.
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(order.created_at)}
