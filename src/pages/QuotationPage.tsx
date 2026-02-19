@@ -1440,28 +1440,28 @@ export default function QuotationPage() {
               </div>
             </div>
             
-            {/* Seller Name Input */}
-            <div className="mt-3">
-              <label className="block text-base font-medium text-gray-700 mb-1">ชื่อผู้เสนอราคา (ลงในใบเสนอราคา)</label>
-              <Input 
-                type="text" 
-                value={quotation.seller_name || ''} 
-                onChange={(e) => setQuotation(prev => ({ ...prev, seller_name: e.target.value }))}
-                placeholder="ชื่อผู้เสนอราคา..."
-                className="text-lg"
-              />
-            </div>
-
-            {/* Document Receiver Name Input */}
-            <div className="mt-3">
-              <label className="block text-base font-medium text-gray-700 mb-1">ชื่อผู้รับเอกสาร (ลงในใบเสนอราคา)</label>
-              <Input 
-                type="text" 
-                value={quotation.receiver_name || ''} 
-                onChange={(e) => setQuotation(prev => ({ ...prev, receiver_name: e.target.value }))}
-                placeholder="ชื่อผู้รับเอกสาร..."
-                className="text-lg"
-              />
+            {/* Seller and Receiver Name Inputs - Combined in one row */}
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-base font-medium text-gray-700 mb-1">ชื่อผู้เสนอราคา (ลงในใบเสนอราคา)</label>
+                <Input 
+                  type="text" 
+                  value={quotation.seller_name || ''} 
+                  onChange={(e) => setQuotation(prev => ({ ...prev, seller_name: e.target.value }))}
+                  placeholder="ชื่อผู้เสนอราคา..."
+                  className="text-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-base font-medium text-gray-700 mb-1">ชื่อผู้รับเอกสาร (ลงในใบเสนอราคา)</label>
+                <Input 
+                  type="text" 
+                  value={quotation.receiver_name || ''} 
+                  onChange={(e) => setQuotation(prev => ({ ...prev, receiver_name: e.target.value }))}
+                  placeholder="ชื่อผู้รับเอกสาร..."
+                  className="text-lg"
+                />
+              </div>
             </div>
             
             {/* Notes - Expandable Textarea */}
