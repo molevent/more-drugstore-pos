@@ -919,9 +919,9 @@ export default function QuotationPage() {
       <div className="no-print flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <a
-            href="/expenses"
+            href="/quotations"
             className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
-            title="กลับไปหน้าเอกสาร"
+            title="กลับไปหน้ารายการใบเสนอราคา"
           >
             <ArrowLeft className="h-5 w-5" />
           </a>
