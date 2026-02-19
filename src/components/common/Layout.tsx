@@ -184,7 +184,7 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           {/* Footer */}
-          <div className="border-t border-[#E8E0D5] p-4 bg-[#F5EFE6]">
+          <div className="border-t border-[#E8E0D5] p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-[#5C4A32] truncate">{user?.full_name}</p>

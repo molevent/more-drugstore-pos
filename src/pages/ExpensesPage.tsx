@@ -6,9 +6,9 @@ import Button from '../components/common/Button'
 import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle, Percent, FileText, ShoppingCart, BookOpen, Wallet, Printer } from 'lucide-react'
 
 interface PaymentVoucher {
-  id: string
-  voucher_date: string
+  id?: string
   voucher_number: string
+  voucher_date: string
   payee_name: string
   payee_tax_id?: string
   amount: number
@@ -20,11 +20,14 @@ interface PaymentVoucher {
   check_number?: string
   approved_by?: string
   notes?: string
+  // Extended fields for displaying expense info
+  expense_document_date?: string
 }
 
 interface Expense {
   id: string
   expense_date: string
+  document_date?: string  // วันที่ตามเอกสาร (เก็บค่าเดิมไม่เปลี่ยนเมื่อแก้ไข)
   category: string
   description: string
   amount: number
@@ -218,11 +221,12 @@ export default function ExpensesPage() {
   }
 
   const [formData, setFormData] = useState({
-    expense_date: new Date().toISOString().split('T')[0],
+    expense_date: '',
+    document_date: '',  // วันที่ตามเอกสาร (คงที่ ไม่เปลี่ยนตามวันที่ชำระเงิน)
     category: 'ค่าอื่นๆ',
     description: '',
     amount: '',
-    payment_method: 'เงินสด',
+    payment_method: '',
     receipt_number: '',
     delivery_number: '',
     vendor: '',
@@ -261,13 +265,18 @@ export default function ExpensesPage() {
       const { data, error } = await supabase
         .from('expenses')
         .select('*')
-        .order('expense_date', { ascending: false })
 
       if (error) throw error
-      console.log('Fetched expenses:', data?.length, 'items')
-      console.log('Sample expense data:', data?.[0])
-      console.log('Expenses with payment_voucher_id:', data?.filter(e => e.payment_voucher_id).map(e => ({id: e.id, desc: e.description, pvid: e.payment_voucher_id})))
-      setExpenses(data || [])
+      
+      // Sort by document_date descending (latest first), fallback to expense_date if document_date is null
+      const sortedData = (data || []).sort((a, b) => {
+        const dateA = new Date(a.document_date || a.expense_date || '1970-01-01')
+        const dateB = new Date(b.document_date || b.expense_date || '1970-01-01')
+        return dateB.getTime() - dateA.getTime() // descending order
+      })
+      
+      console.log('Fetched expenses:', sortedData.length, 'items')
+      setExpenses(sortedData)
       
       // Removed pending count - no longer needed
     } catch (error) {
@@ -333,8 +342,14 @@ export default function ExpensesPage() {
     e.preventDefault()
     
     try {
+      // For document_date: use form value when editing, or form value (which should have initial date) for new
+      const finalDocumentDate = editingExpense 
+        ? formData.document_date  // When editing, use exactly what's in the form (don't auto-change)
+        : (formData.document_date || formData.expense_date)  // For new, default to expense_date if not set
+      
       const expenseData: any = {
         expense_date: formData.expense_date,
+        document_date: finalDocumentDate,
         category: formData.category,
         description: formData.description,
         amount: parseFloat(formData.amount) || 0,
@@ -374,7 +389,7 @@ export default function ExpensesPage() {
         
         if (shouldGenerateVoucher) {
           // Generate voucher number
-          const voucherNumber = await generateVoucherNumber(formData.expense_date)
+          const voucherNumber = await generatePaymentVoucherNumber(formData.expense_date)
           
           // Create payment voucher data
           const voucherData = {
@@ -384,7 +399,6 @@ export default function ExpensesPage() {
             amount: parseFloat(formData.amount) || 0,
             payment_method: formData.payment_method,
             payee_name: formData.vendor || null,
-            status: 'pending',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }
@@ -398,10 +412,12 @@ export default function ExpensesPage() {
           
           if (voucherError) {
             console.error('Error creating payment voucher:', voucherError)
+            alert('ไม่สามารถสร้างใบสำคัญจ่าย: ' + voucherError.message)
             // Continue with expense creation even if voucher creation fails
           } else if (voucherResult) {
             // Add payment_voucher_id to expense data
             expenseData.payment_voucher_id = voucherResult.id
+            console.log('Payment voucher created successfully:', voucherResult.id, 'Number:', voucherNumber)
           }
         }
         
@@ -412,7 +428,11 @@ export default function ExpensesPage() {
         
         // Show success message if voucher was created
         if (shouldGenerateVoucher) {
-          alert('บันทึกค่าใช้จ่ายสำเร็จ และสร้างใบสำคัญจ่ายอัตโนมัติเรียบร้อยแล้ว')
+          if (expenseData.payment_voucher_id) {
+            alert('บันทึกค่าใช้จ่ายสำเร็จ และสร้างใบสำคัญจ่ายอัตโนมัติเรียบร้อยแล้ว')
+          } else {
+            alert('บันทึกค่าใช้จ่ายสำเร็จ แต่ไม่สามารถสร้างใบสำคัญจ่ายได้')
+          }
         }
       }
 
@@ -446,6 +466,7 @@ export default function ExpensesPage() {
     setSelectedShortcutCategory(null) // Reset shortcut category when editing
     setFormData({
       expense_date: expense.expense_date,
+      document_date: expense.document_date || '',  // ใช้ค่าเดิมถ้ามี ถ้าไม่มีให้ว่าง (ไม่ใช่ expense_date)
       category: expense.category,
       description: expense.description,
       amount: expense.amount.toString(),
@@ -478,11 +499,12 @@ export default function ExpensesPage() {
 
   const resetForm = () => {
     setFormData({
-      expense_date: new Date().toISOString().split('T')[0],
+      expense_date: '',
+      document_date: '',
       category: 'ค่าอื่นๆ',
       description: '',
       amount: '',
-      payment_method: 'เงินสด',
+      payment_method: '',
       receipt_number: '',
       delivery_number: '',
       vendor: '',
@@ -548,13 +570,23 @@ export default function ExpensesPage() {
   const [shopSettings, setShopSettings] = useState<{ name: string; logo_url: string } | null>(null)
   const printRef = useRef<HTMLDivElement>(null)
 
-  const createExpenseWithCategory = (category: string, description: string = '') => {
+  // Expenses Print Modal state
+  const [showPrintModal, setShowPrintModal] = useState(false)
+
+  const createExpenseWithCategory = async (category: string, description: string = '') => {
     resetForm()
     setSelectedShortcutCategory(category)
+    
+    // Set initial dates for new expense
+    const today = new Date()
+    const dateStr = today.toISOString().split('T')[0]
+    
     setFormData(prev => ({
       ...prev,
       category,
-      description: description || category
+      description: description || category,
+      document_date: dateStr,  // วันที่ตามเอกสาร (คงที่)
+      expense_date: dateStr  // วันที่ชำระเงิน (เปลี่ยนได้)
     }))
     setShowModal(true)
   }
@@ -774,10 +806,10 @@ export default function ExpensesPage() {
       
       if (voucherError) throw voucherError
       
-      // Fetch associated expense to get category
+      // Fetch associated expense to get category and document_date
       const { data: expenseData } = await supabase
         .from('expenses')
-        .select('category')
+        .select('category, document_date')
         .eq('payment_voucher_id', voucherId)
         .single()
       
@@ -788,7 +820,10 @@ export default function ExpensesPage() {
         .single()
       
       if (voucherData) {
-        setViewVoucher(voucherData)
+        setViewVoucher({
+          ...voucherData,
+          expense_document_date: expenseData?.document_date || voucherData.voucher_date
+        })
         setViewVoucherCategory(expenseData?.category || '-')
         setShopSettings(shopData || { name: 'ห้างหุ้นส่วนจำกัด สะอางพาณิชย์', logo_url: '' })
         setShowViewVoucherModal(true)
@@ -1149,6 +1184,25 @@ export default function ExpensesPage() {
 
   return (
     <div>
+      {/* Print Styles - Hide everything except print modal when printing */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #expenses-print-content,
+          #expenses-print-content * {
+            visibility: visible;
+          }
+          #expenses-print-content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+          }
+        }
+      `}</style>
+      
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -1263,13 +1317,59 @@ export default function ExpensesPage() {
           <FileText className="h-5 w-5 text-gray-900" />
           <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบสำคัญจ่าย</span>
         </Link>
-        <Link 
-          to="/withholding-tax"
-          className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
-        >
-          <Percent className="h-5 w-5 text-gray-900" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">หัก ณ ที่จ่าย</span>
-        </Link>
+
+        {/* Tax Menu Dropdown */}
+        <div className="relative group">
+          <button className="flex items-center gap-2 px-3 py-2 bg-[#FEF3C7] rounded-full border border-[#F59E0B] hover:bg-[#FDE68A] hover:shadow-md transition-all">
+            <Percent className="h-5 w-5 text-amber-700" />
+            <span className="font-medium text-amber-800 text-sm whitespace-nowrap">ภาษี</span>
+            <svg className="h-4 w-4 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div className="absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+            <div className="py-1">
+              <Link 
+                to="/withholding-tax"
+                className="flex items-center gap-3 px-4 py-2.5 hover:bg-amber-50 text-gray-700 transition-colors"
+              >
+                <Percent className="h-4 w-4 text-amber-600" />
+                <span className="text-sm font-medium">หัก ณ ที่จ่าย</span>
+              </Link>
+              <Link 
+                to="/tax-pp30"
+                className="flex items-center gap-3 px-4 py-2.5 hover:bg-amber-50 text-gray-700 transition-colors"
+              >
+                <FileText className="h-4 w-4 text-amber-600" />
+                <span className="text-sm font-medium">ภ.พ.30 (VAT Return)</span>
+              </Link>
+              <div className="border-t border-gray-100 my-1"></div>
+              <div className="px-4 py-1.5 text-xs text-gray-400 font-medium">ภ.ง.ด.</div>
+              <Link 
+                to="/tax-pnd1"
+                className="flex items-center gap-3 px-4 py-2.5 hover:bg-amber-50 text-gray-700 transition-colors"
+              >
+                <FileText className="h-4 w-4 text-amber-600" />
+                <span className="text-sm">ภ.ง.ด.1 (เงินเดือน)</span>
+              </Link>
+              <Link 
+                to="/tax-pnd3"
+                className="flex items-center gap-3 px-4 py-2.5 hover:bg-amber-50 text-gray-700 transition-colors"
+              >
+                <FileText className="h-4 w-4 text-amber-600" />
+                <span className="text-sm">ภ.ง.ด.3 (ค่าบริการ)</span>
+              </Link>
+              <Link 
+                to="/tax-pnd53"
+                className="flex items-center gap-3 px-4 py-2.5 hover:bg-amber-50 text-gray-700 transition-colors"
+              >
+                <FileText className="h-4 w-4 text-amber-600" />
+                <span className="text-sm">ภ.ง.ด.53 (ค่าจ้าง)</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+
         <Link 
           to="/petty-cash"
           className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
@@ -1363,8 +1463,16 @@ export default function ExpensesPage() {
               </button>
             ))}
             <button
-              onClick={() => {
+              onClick={async () => {
                 resetForm()
+                // Set initial dates for new expense
+                const today = new Date()
+                const dateStr = today.toISOString().split('T')[0]
+                setFormData(prev => ({
+                  ...prev,
+                  document_date: dateStr,
+                  expense_date: dateStr
+                }))
                 setShowModal(true)
               }}
               className="flex items-center gap-1 bg-[#A67B5B] border-2 border-gray-300 px-3 py-1.5 rounded-lg text-sm font-medium text-white transition-all shadow-sm hover:bg-[#8B6B4F]"
@@ -1471,6 +1579,16 @@ export default function ExpensesPage() {
                 <XCircle className="h-4 w-4" />
               </button>
             )}
+            
+            {/* Print Button */}
+            <button
+              onClick={() => setShowPrintModal(true)}
+              className="flex items-center gap-1 px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors"
+              title="พิมพ์รายงานเอกสาร"
+            >
+              <Printer className="h-4 w-4" />
+              พิมพ์
+            </button>
           </div>
           
           {/* Active Filters Tags */}
@@ -1732,12 +1850,11 @@ export default function ExpensesPage() {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">วันที่</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">วันที่ตามเอกสาร</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">หมวดหมู่</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">รายการ</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">ผู้จำหน่าย</th>
                     <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">จำนวนเงิน</th>
-                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">การชำระเงิน</th>
                     <th className="px-4 py-3 text-center text-sm font-medium text-gray-700"></th>
                   </tr>
                 </thead>
@@ -1745,7 +1862,7 @@ export default function ExpensesPage() {
                   {filteredExpenses.map((expense) => (
                     <tr key={expense.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm text-gray-900">
-                        {new Date(expense.expense_date).toLocaleDateString('en-GB', { year: 'numeric', month: 'numeric', day: 'numeric' })}
+                        {new Date(expense.document_date || expense.expense_date).toLocaleDateString('en-GB', { year: 'numeric', month: 'numeric', day: 'numeric' })}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
                         <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">
@@ -1772,9 +1889,6 @@ export default function ExpensesPage() {
                       <td className="px-4 py-3 text-sm text-gray-600">{expense.vendor || '-'}</td>
                       <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
                         ฿{expense.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 text-center">
-                        {expense.payment_method}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-2">
@@ -1830,12 +1944,11 @@ export default function ExpensesPage() {
                 <table className="w-full">
                   <thead className="bg-yellow-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">วันที่</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">วันที่ตามเอกสาร</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">หมวดหมู่</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">รายการ</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">ผู้ขาย</th>
                       <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">จำนวนเงิน</th>
-                      <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">การชำระเงิน</th>
                       <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">จัดการ</th>
                     </tr>
                   </thead>
@@ -1843,7 +1956,7 @@ export default function ExpensesPage() {
                     {pendingExpenses.map((expense) => (
                       <tr key={expense.id} className="hover:bg-yellow-50/50">
                         <td className="px-4 py-3 text-sm text-gray-900">
-                          {new Date(expense.expense_date).toLocaleDateString('en-GB', { year: 'numeric', month: 'numeric', day: 'numeric' })}
+                          {new Date(expense.document_date || expense.expense_date).toLocaleDateString('en-GB', { year: 'numeric', month: 'numeric', day: 'numeric' })}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">
                           <span className="px-2 py-1 bg-yellow-100 rounded-full text-xs">
@@ -1864,9 +1977,6 @@ export default function ExpensesPage() {
                         <td className="px-4 py-3 text-sm text-gray-600">{expense.vendor || '-'}</td>
                         <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
                           ฿{expense.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 text-center">
-                          {expense.payment_method}
                         </td>
                         <td className="px-4 py-3 text-center">
                           <div className="flex items-center justify-center gap-2">
@@ -1931,12 +2041,11 @@ export default function ExpensesPage() {
                         className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">วันที่</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">วันที่ตามเอกสาร</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">หมวดหมู่</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">รายการ</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">ผู้จำหน่าย</th>
                     <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">จำนวนเงิน</th>
-                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">การชำระเงิน</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -1965,7 +2074,7 @@ export default function ExpensesPage() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
-                          {new Date(item.expense_date).toLocaleDateString('en-GB', { year: 'numeric', month: 'numeric', day: 'numeric' })}
+                          {new Date(item.document_date || item.expense_date).toLocaleDateString('en-GB', { year: 'numeric', month: 'numeric', day: 'numeric' })}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">
                           <span className="px-2 py-1 bg-green-100 rounded-full text-xs">
@@ -1980,9 +2089,6 @@ export default function ExpensesPage() {
                         <td className="px-4 py-3 text-sm text-gray-600">{item.vendor || '-'}</td>
                         <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
                           ฿{item.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 text-center">
-                          {item.payment_method}
                         </td>
                       </tr>
                     );
@@ -2039,76 +2145,72 @@ export default function ExpensesPage() {
 
               {expenseFormTab === 'basic' && (
                 <>
-                  {/* Date - full width */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">วันที่ ตามเอกสาร *</label>
-                <input
-                  type="date"
-                  required
-                  value={formData.expense_date}
-                  onChange={(e) => setFormData({ ...formData, expense_date: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Document Type and Category Dropdown - 2 columns */}
-              {!selectedShortcutCategory && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">ประเภท</label>
-                    <select
-                      value={formData.document_type}
-                      onChange={(e) => setFormData({ 
-                        ...formData, 
-                        document_type: e.target.value,
-                        category: '' // Reset category when document_type changes
-                      })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">--</option>
-                      <option value="ซื้อสินค้า">ซื้อสินค้า</option>
-                      <option value="ค่าใช้จ่ายในการขาย">ค่าใช้จ่ายในการขาย</option>
-                      <option value="ค่าใช้จ่ายในการบริหาร">ค่าใช้จ่ายในการบริหาร</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">หมวดหมู่</label>
-                    <select
-                      value={formData.category}
-                      onChange={(e) => {
-                        const selectedCat = expenseCategories.find(cat => cat.name === e.target.value)
-                        const isGrabCategory = selectedCat?.name.toLowerCase().includes('grab')
-                        setFormData({ 
+                  {/* Date, Document Type and Category - 3 columns */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">วันที่ ตามเอกสาร *</label>
+                      <input
+                        type="date"
+                        required
+                        value={formData.document_date}
+                        onChange={(e) => setFormData({ ...formData, document_date: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">ประเภท</label>
+                      <select
+                        value={formData.document_type}
+                        onChange={(e) => setFormData({ 
                           ...formData, 
-                          category: e.target.value,
-                          payment_method: isGrabCategory ? 'Grab Wallet' : formData.payment_method
-                        })
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">-- เลือกหมวดอื่นๆ --</option>
-                      {expenseCategories
-                        .filter(cat => {
-                          // Filter based on document_type
-                          if (!formData.document_type) return true
-                          const code = cat.chart_of_accounts_code || ''
-                          if (formData.document_type === 'ซื้อสินค้า') {
-                            return code.startsWith('51')
-                          } else if (formData.document_type === 'ค่าใช้จ่ายในการขาย') {
-                            return code.startsWith('52')
-                          } else if (formData.document_type === 'ค่าใช้จ่ายในการบริหาร') {
-                            return code.startsWith('53')
-                          }
-                          return true
-                        })
-                        .map(cat => (
-                          <option key={cat.id} value={cat.name}>{cat.name}</option>
-                        ))
-                      }
-                    </select>
+                          document_type: e.target.value,
+                          category: '' // Reset category when document_type changes
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">--</option>
+                        <option value="ซื้อสินค้า">ซื้อสินค้า</option>
+                        <option value="ค่าใช้จ่ายในการขาย">ค่าใช้จ่ายในการขาย</option>
+                        <option value="ค่าใช้จ่ายในการบริหาร">ค่าใช้จ่ายในการบริหาร</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">หมวดหมู่</label>
+                      <select
+                        value={formData.category}
+                        onChange={(e) => {
+                          const selectedCat = expenseCategories.find(cat => cat.name === e.target.value)
+                          const isGrabCategory = selectedCat?.name.toLowerCase().includes('grab')
+                          setFormData({ 
+                            ...formData, 
+                            category: e.target.value,
+                            payment_method: isGrabCategory ? 'Grab Wallet' : formData.payment_method
+                          })
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">-- เลือกหมวดอื่นๆ --</option>
+                        {expenseCategories
+                          .filter(cat => {
+                            // Filter based on document_type
+                            if (!formData.document_type) return true
+                            const code = cat.chart_of_accounts_code || ''
+                            if (formData.document_type === 'ซื้อสินค้า') {
+                              return code.startsWith('51')
+                            } else if (formData.document_type === 'ค่าใช้จ่ายในการขาย') {
+                              return code.startsWith('52')
+                            } else if (formData.document_type === 'ค่าใช้จ่ายในการบริหาร') {
+                              return code.startsWith('53')
+                            }
+                            return true
+                          })
+                          .map(cat => (
+                            <option key={cat.id} value={cat.name}>{cat.name}</option>
+                          ))
+                        }
+                      </select>
+                    </div>
                   </div>
-                </div>
-              )}
 
               {/* Category buttons - limited to specific categories */}
               <div>
@@ -2262,7 +2364,18 @@ export default function ExpensesPage() {
                       name="has_invoice"
                       value="yes"
                       checked={formData.has_invoice === 'yes'}
-                      onChange={(e) => setFormData({ ...formData, has_invoice: e.target.value })}
+                      onChange={(e) => {
+                        const newFormData = { ...formData, has_invoice: e.target.value }
+                        // Auto-calculate VAT if amount exists
+                        const amount = parseFloat(formData.amount) || 0
+                        if (amount > 0) {
+                          const amountBeforeTax = amount / 1.07
+                          const vatAmount = amount - amountBeforeTax
+                          newFormData.amount_before_tax = amountBeforeTax.toFixed(2)
+                          newFormData.vat_amount = vatAmount.toFixed(2)
+                        }
+                        setFormData(newFormData)
+                      }}
                       className="w-4 h-4 text-blue-600"
                     />
                     <span className="text-sm">Yes</span>
@@ -2315,13 +2428,24 @@ export default function ExpensesPage() {
                     step="0.01"
                     required
                     value={formData.amount}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      amount: e.target.value,
-                      // Reset withholding tax when amount changes
-                      withholding_percent: '',
-                      withholding_tax: ''
-                    })}
+                    onChange={(e) => {
+                      const amount = parseFloat(e.target.value) || 0
+                      const newFormData: any = { 
+                        ...formData, 
+                        amount: e.target.value,
+                        // Reset withholding tax when amount changes
+                        withholding_percent: '',
+                        withholding_tax: ''
+                      }
+                      // Auto-calculate VAT when has_invoice is yes
+                      if (formData.has_invoice === 'yes' && amount > 0) {
+                        const amountBeforeTax = amount / 1.07
+                        const vatAmount = amount - amountBeforeTax
+                        newFormData.amount_before_tax = amountBeforeTax.toFixed(2)
+                        newFormData.vat_amount = vatAmount.toFixed(2)
+                      }
+                      setFormData(newFormData)
+                    }}
                     placeholder="0.00"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
@@ -2344,14 +2468,25 @@ export default function ExpensesPage() {
                     type="number"
                     min="0"
                     step="0.01"
-                    value={formData.vat_amount}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      vat_amount: e.target.value,
-                      // Reset withholding tax when base amount changes
-                      withholding_percent: '',
-                      withholding_tax: ''
-                    })}
+                    value={formData.amount_before_tax}
+                    onChange={(e) => {
+                      const amountBeforeTax = parseFloat(e.target.value) || 0
+                      const newFormData: any = { 
+                        ...formData, 
+                        amount_before_tax: e.target.value,
+                        // Reset withholding tax when base amount changes
+                        withholding_percent: '',
+                        withholding_tax: ''
+                      }
+                      // Auto-calculate amount and VAT when has_invoice is yes
+                      if (formData.has_invoice === 'yes' && amountBeforeTax > 0) {
+                        const totalAmount = amountBeforeTax * 1.07
+                        const vatAmount = totalAmount - amountBeforeTax
+                        newFormData.amount = totalAmount.toFixed(2)
+                        newFormData.vat_amount = vatAmount.toFixed(2)
+                      }
+                      setFormData(newFormData)
+                    }}
                     placeholder="0"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
@@ -2526,24 +2661,14 @@ export default function ExpensesPage() {
                 )}
               </div>
 
-              {/* File Uploads */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Image Update</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">PDF Upload</label>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                  />
-                </div>
+              {/* File Upload - Single field for both images and PDF */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">อัพโหลดไฟล์ (รูปภาพหรือ PDF)</label>
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                />
               </div>
               </>
               )}
@@ -2908,7 +3033,7 @@ export default function ExpensesPage() {
                 </thead>
                 <tbody>
                   <tr className="border-b border-gray-300">
-                    <td className="py-2 px-2">{viewVoucher.voucher_date}</td>
+                    <td className="py-2 px-2">{viewVoucher.expense_document_date}</td>
                     <td className="py-2 px-2">{viewVoucher.description}</td>
                     <td className="py-2 px-2">{viewVoucher.voucher_number}</td>
                     <td className="py-2 px-2 text-right">
@@ -2983,6 +3108,112 @@ export default function ExpensesPage() {
               </button>
               <button
                 onClick={() => setShowViewVoucherModal(false)}
+                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
+              >
+                ปิด
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Expenses Print Modal */}
+      {showPrintModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 print:fixed print:inset-0 print:z-50 print:p-0 print:bg-white">
+          <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto print:max-w-none print:max-h-none print:shadow-none print:rounded-none print:w-full print:h-screen print:overflow-visible">
+            {/* Print Content */}
+            <div className="p-8 print:p-6" id="expenses-print-content">
+              {/* Header */}
+              <div className="text-center mb-6 print:mb-4">
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">รายงานเอกสารค่าใช้จ่าย</h1>
+                <p className="text-sm text-gray-600">
+                  วันที่พิมพ์: {new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
+                </p>
+              </div>
+
+              {/* Summary */}
+              <div className="flex justify-between mb-4 text-sm print:text-xs">
+                <span className="text-gray-600">จำนวนรายการทั้งหมด: {filteredExpenses.length} รายการ</span>
+                <span className="text-gray-600">
+                  ยอดรวม: ฿{filteredExpenses.reduce((sum, e) => sum + e.amount, 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+
+              {/* Table - Sorted by date ascending (oldest first) */}
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="border-b-2 border-gray-800 bg-gray-100">
+                    <th className="py-2 px-2 text-center font-medium w-12">ลำดับ</th>
+                    <th className="py-2 px-2 text-left font-medium">วันที่ตามเอกสาร</th>
+                    <th className="py-2 px-2 text-left font-medium">หมวดหมู่</th>
+                    <th className="py-2 px-2 text-left font-medium">รายการ</th>
+                    <th className="py-2 px-2 text-left font-medium">ผู้จำหน่าย</th>
+                    <th className="py-2 px-2 text-right font-medium">จำนวนเงิน</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...filteredExpenses]
+                    .sort((a, b) => {
+                      const dateA = new Date(a.document_date || a.expense_date || '1970-01-01').getTime()
+                      const dateB = new Date(b.document_date || b.expense_date || '1970-01-01').getTime()
+                      return dateA - dateB // ascending order (oldest first)
+                    })
+                    .map((expense, index) => (
+                      <tr key={expense.id} className="border-b border-gray-300">
+                        <td className="py-2 px-2 text-center">{index + 1}</td>
+                        <td className="py-2 px-2">
+                          {new Date(expense.document_date || expense.expense_date).toLocaleDateString('en-GB', { 
+                            year: 'numeric', 
+                            month: 'numeric', 
+                            day: 'numeric' 
+                          })}
+                        </td>
+                        <td className="py-2 px-2">{expense.category}</td>
+                        <td className="py-2 px-2">{expense.description}</td>
+                        <td className="py-2 px-2">{expense.vendor || '-'}</td>
+                        <td className="py-2 px-2 text-right font-medium">
+                          ฿{expense.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    ))}
+                  {/* Total Row */}
+                  <tr className="border-t-2 border-gray-800 bg-gray-50 font-medium">
+                    <td className="py-2 px-2 text-right" colSpan={5}>รวมทั้งสิ้น</td>
+                    <td className="py-2 px-2 text-right">
+                      ฿{filteredExpenses.reduce((sum, e) => sum + e.amount, 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Signature Section */}
+              <div className="mt-12 flex justify-between text-sm print:mt-8">
+                <div className="text-center">
+                  <div className="border-b border-gray-400 w-32 mb-1"></div>
+                  <span className="text-gray-600">ผู้จัดทำ</span>
+                </div>
+                <div className="text-center">
+                  <div className="border-b border-gray-400 w-32 mb-1"></div>
+                  <span className="text-gray-600">ผู้ตรวจสอบ</span>
+                </div>
+                <div className="text-center">
+                  <div className="border-b border-gray-400 w-32 mb-1"></div>
+                  <span className="text-gray-600">ผู้อนุมัติ</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 p-4 border-t bg-gray-50 print:hidden">
+              <button
+                onClick={() => window.print()}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                <Printer className="h-4 w-4" />
+                พิมพ์
+              </button>
+              <button
+                onClick={() => setShowPrintModal(false)}
                 className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
               >
                 ปิด

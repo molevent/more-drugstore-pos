@@ -49,6 +49,7 @@ import PettyCashPage from './pages/PettyCashPage'
 import EmployeeSettingsPage from './pages/EmployeeSettingsPage'
 import ExpenseCategorySettingsPage from './pages/ExpenseCategorySettingsPage'
 import PaymentMethodSettingsPage from './pages/PaymentMethodSettingsPage'
+import TaxPP30Page from './pages/TaxPP30Page'
 import HelpManagementPage from './pages/HelpManagementPage'
 import StorefrontPage from './pages/StorefrontPage'
 import ProductDetailPage from './pages/ProductDetailPage'
@@ -126,6 +127,7 @@ function App() {
                     <Route path="/petty-cash" element={<PettyCashPage />} />
                     <Route path="/employee-settings" element={<EmployeeSettingsPage />} />
                     <Route path="/zortout-sync" element={<ZortOutSyncPage />} />
+                    <Route path="/tax-pp30" element={<TaxPP30Page />} />
                     <Route path="/help-management" element={<HelpManagementPage />} />
                     <Route path="/settings/users" element={<UserManagementPage />} />
                     <Route path="/users" element={<UserManagementPage />} />
