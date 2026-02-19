@@ -21,6 +21,11 @@ CREATE INDEX IF NOT EXISTS idx_tax_invoices_created_at ON tax_invoices(created_a
 -- Add RLS policies for tax_invoices table
 ALTER TABLE tax_invoices ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist (to avoid conflicts)
+DROP POLICY IF EXISTS "Allow all operations for authenticated users" ON tax_invoices;
+DROP POLICY IF EXISTS "Allow all operations for anon users" ON tax_invoices;
+
+-- Create policies
 CREATE POLICY "Allow all operations for authenticated users" ON tax_invoices
   FOR ALL TO authenticated USING (true) WITH CHECK (true);
 

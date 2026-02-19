@@ -959,13 +959,7 @@ export default function SalesOrdersPage() {
                     ช่องทาง
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ลูกค้า
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     วิธีชำระ
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    จำนวนรายการ
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     ยอดรวม
@@ -989,16 +983,10 @@ export default function SalesOrdersPage() {
                         {getPlatformName(order.platform_id)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                      {order.customer_name || '-'}
-                    </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className="px-2 py-1 bg-[#C5D5C8] text-[#5C4A32] text-xs rounded-full">
                         {getPaymentMethodName(order.payment_method)}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
-                      {order.order_items_count} รายการ
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
                       {formatCurrency(order.total)}
