@@ -9,6 +9,8 @@ import Button from '../components/common/Button'
 import Input from '../components/common/Input'
 import { getRoleDisplayName, getRoleBadgeColor, getRoleDescription } from '../utils/permissions'
 
+import { useLanguage } from '../contexts/LanguageContext'
+
 interface UserFormData {
   username: string
   email: string
@@ -21,6 +23,7 @@ interface UserFormData {
 export default function UserManagementPage() {
   const navigate = useNavigate()
   const { user: currentUser } = useAuthStore()
+  const { t } = useLanguage()
   
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -188,11 +191,11 @@ export default function UserManagementPage() {
   )
 
   const roleOptions = [
-    { value: 'owner', label: 'เจ้าของร้าน' },
-    { value: 'manager', label: 'ผู้จัดการร้าน' },
-    { value: 'pharmacist', label: 'เภสัชกร' },
-    { value: 'part_time', label: 'พาร์ทไทม์' },
-    { value: 'accountant', label: 'นักบัญชี' }
+    { value: 'owner', label: t('role.owner') },
+    { value: 'manager', label: t('role.manager') },
+    { value: 'pharmacist', label: t('role.pharmacist') },
+    { value: 'part_time', label: t('role.partTime') },
+    { value: 'accountant', label: t('role.accountant') }
   ]
 
   return (
@@ -204,11 +207,11 @@ export default function UserManagementPage() {
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-black">การจัดการผู้ใช้</h1>
-              <p className="text-gray-600">จัดการบัญชีผู้ใช้และสิทธิ์การเข้าถึง</p>
+              <h1 className="text-2xl font-bold text-black">{t('userManagement.title')}</h1>
+              <p className="text-gray-600">{t('userManagement.subtitle')}</p>
             </div>
             <Button onClick={() => handleOpenModal()} className="bg-[#2E5266]">
-              <Plus className="h-4 w-4 mr-2" /> เพิ่มผู้ใช้
+              <Plus className="h-4 w-4 mr-2" /> {t('userManagement.addUser')}
             </Button>
           </div>
         </div>
@@ -237,29 +240,29 @@ export default function UserManagementPage() {
         <Card className="mb-6 bg-white border-gray-200">
           <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-4 py-2">
             <Search className="h-5 w-5 text-gray-600" />
-            <input type="text" placeholder="ค้นหาผู้ใช้..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="flex-1 bg-transparent border-none outline-none text-black placeholder-gray-400" />
+            <input type="text" placeholder={t('userManagement.search')} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="flex-1 bg-transparent border-none outline-none text-black placeholder-gray-400" />
           </div>
         </Card>
 
         <Card className="bg-white border-gray-200">
           {loading ? (
-            <div className="text-center py-8 text-gray-600">กำลังโหลด...</div>
+            <div className="text-center py-8 text-gray-600">{t('common.loading')}</div>
           ) : filteredUsers.length === 0 ? (
             <div className="text-center py-8 text-gray-600">
               <Users className="h-12 w-12 mx-auto mb-4 text-gray-500" />
-              <p>ไม่พบผู้ใช้</p>
-              <p className="text-sm mt-2">คลิก "เพิ่มผู้ใช้" เพื่อสร้างบัญชีใหม่</p>
+              <p>{t('userManagement.noUsers')}</p>
+              <p className="text-sm mt-2">{t('userManagement.addUserPrompt')}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">ชื่อผู้ใช้</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">อีเมล</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">บทบาท</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">สถานะ</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-black uppercase">การดำเนินการ</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">{t('userManagement.username')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">{t('userManagement.email')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">{t('userManagement.role')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">{t('userManagement.active')}</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-black uppercase">{t('common.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -278,7 +281,7 @@ export default function UserManagementPage() {
                       <td className="px-4 py-3"><span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>{getRoleDisplayName(user.role)}</span></td>
                       <td className="px-4 py-3">
                         <button onClick={() => handleToggleActive(user)} className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                          {user.is_active ? <><UserCheck className="h-3 w-3" /> ใช้งาน</> : <><UserX className="h-3 w-3" /> ระงับ</>}
+                          {user.is_active ? <><UserCheck className="h-3 w-3" /> {t('userManagement.active')}</> : <><UserX className="h-3 w-3" /> {t('common.inactive')}</>}
                         </button>
                       </td>
                       <td className="px-4 py-3">
@@ -300,15 +303,15 @@ export default function UserManagementPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-black">{editingUser ? 'แก้ไขผู้ใช้' : 'เพิ่มผู้ใช้ใหม่'}</h2>
+              <h2 className="text-xl font-bold text-black">{editingUser ? t('userManagement.editUser') : t('userManagement.addUser')}</h2>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-black mb-1">ชื่อผู้ใช้ (Username) *</label>
-                <Input type="text" value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} placeholder="เช่น Som, Kai, Ing" required />
+                <label className="block text-sm font-medium text-black mb-1">{t('userManagement.username')} *</label>
+                <Input type="text" value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} placeholder="Som, Kai, Ing..." required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-black mb-1">อีเมล (เว้นว่าง = สร้างอัตโนมัติ)</label>
+                <label className="block text-sm font-medium text-black mb-1">{t('userManagement.emailAuto')}</label>
                 <Input
                   type="email"
                   value={formData.email}
@@ -317,11 +320,11 @@ export default function UserManagementPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-black mb-1">ชื่อเต็ม *</label>
-                <Input type="text" value={formData.full_name} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} placeholder="ชื่อ-นามสกุล" required />
+                <label className="block text-sm font-medium text-black mb-1">{t('userManagement.fullName')} *</label>
+                <Input type="text" value={formData.full_name} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} placeholder="Full Name" required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-black mb-1">บทบาท *</label>
+                <label className="block text-sm font-medium text-black mb-1">{t('userManagement.role')} *</label>
                 <select value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })} className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-black" required>
                   {roleOptions.map(role => <option key={role.value} value={role.value}>{role.label}</option>)}
                 </select>
@@ -329,17 +332,17 @@ export default function UserManagementPage() {
               </div>
               {!editingUser && (
                 <div>
-                  <label className="block text-sm font-medium text-black mb-1">รหัสผ่าน (เว้นว่าง = 888888)</label>
-                  <Input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="เว้นว่างเพื่อใช้รหัสผ่านเริ่มต้น" />
+                  <label className="block text-sm font-medium text-black mb-1">{t('userManagement.passwordHint')}</label>
+                  <Input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Leave blank for default" />
                 </div>
               )}
               <div className="flex items-center">
                 <input type="checkbox" id="is_active" checked={formData.is_active} onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })} className="h-4 w-4 text-[#2E5266]" />
-                <label htmlFor="is_active" className="ml-2 text-sm text-black">เปิดใช้งานบัญชีนี้</label>
+                <label htmlFor="is_active" className="ml-2 text-sm text-black">{t('userManagement.activeAccount')}</label>
               </div>
               <div className="flex gap-3 pt-4">
-                <Button type="button" variant="secondary" onClick={handleCloseModal} className="flex-1">ยกเลิก</Button>
-                <Button type="submit" className="flex-1 bg-[#2E5266]">{editingUser ? 'บันทึก' : 'สร้าง'}</Button>
+                <Button type="button" variant="secondary" onClick={handleCloseModal} className="flex-1">{t('common.cancel')}</Button>
+                <Button type="submit" className="flex-1 bg-[#2E5266]">{editingUser ? t('common.save') : t('userManagement.create')}</Button>
               </div>
             </form>
           </div>

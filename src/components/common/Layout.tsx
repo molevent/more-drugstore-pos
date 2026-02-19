@@ -97,7 +97,7 @@ export default function Layout({ children }: LayoutProps) {
       title: 'ตั้งค่า',
       items: [
         { name: t('nav.settings'), href: '/settings', icon: Settings, id: 'settings' as const },
-        ...(userRole === 'owner' ? [{ name: 'จัดการผู้ใช้', href: '/users', icon: Users, id: 'users' as const }] : []),
+        ...(userRole === 'owner' ? [{ name: t('settings.userManagement'), href: '/users', icon: Users, id: 'users' as const }] : []),
       ].filter(item => canAccessMenu(userRole, item.id))
     }
   ].filter(section => section.items.length > 0)

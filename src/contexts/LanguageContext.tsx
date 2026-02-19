@@ -172,12 +172,40 @@ const translations: Record<Language, Record<string, string>> = {
     'ai.seeDoctor': 'แนะนำให้พบแพทย์',
     'ai.reset': 'เริ่มใหม่',
     
+    // User Management
+    'userManagement.title': 'การจัดการผู้ใช้',
+    'userManagement.subtitle': 'จัดการบัญชีผู้ใช้และสิทธิ์การเข้าถึง',
+    'userManagement.addUser': 'เพิ่มผู้ใช้',
+    'userManagement.editUser': 'แก้ไขผู้ใช้',
+    'userManagement.username': 'ชื่อผู้ใช้ (Username)',
+    'userManagement.email': 'อีเมล',
+    'userManagement.fullName': 'ชื่อเต็ม',
+    'userManagement.role': 'บทบาท',
+    'userManagement.password': 'รหัสผ่าน',
+    'userManagement.active': 'เปิดใช้งาน',
+    'userManagement.search': 'ค้นหาผู้ใช้...',
+    'userManagement.noUsers': 'ไม่พบผู้ใช้',
+    'userManagement.addUserPrompt': 'คลิก "เพิ่มผู้ใช้" เพื่อสร้างบัญชีใหม่',
+    'userManagement.cancel': 'ยกเลิก',
+    'userManagement.save': 'บันทึก',
+    'userManagement.create': 'สร้าง',
+    'userManagement.emailAuto': 'อีเมล (เว้นว่าง = สร้างอัตโนมัติ)',
+    'userManagement.passwordHint': 'รหัสผ่าน (เว้นว่าง = 888888)',
+    'userManagement.activeAccount': 'เปิดใช้งานบัญชีนี้',
+    
+    // Roles
+    'role.owner': 'เจ้าของร้าน',
+    'role.manager': 'ผู้จัดการร้าน',
+    'role.pharmacist': 'เภสัชกร',
+    'role.partTime': 'พาร์ทไทม์',
+    'role.accountant': 'นักบัญชี',
+    
     // Settings
-    'settings.title': 'ตั้งค่า',
-    'settings.comingSoon': 'เร็วๆ นี้',
+    'settings.userManagement': 'การจัดการผู้ใช้',
     
     // Common
     'common.loading': 'กำลังโหลด...',
+    'common.inactive': 'ระงับ',
     'common.save': 'บันทึก',
     'common.cancel': 'ยกเลิก',
     'common.edit': 'แก้ไข',
@@ -349,12 +377,44 @@ const translations: Record<Language, Record<string, string>> = {
     'ai.seeDoctor': 'Recommend seeing a doctor',
     'ai.reset': 'Reset',
     
+    // User Management
+    'userManagement.title': 'User Management',
+    'userManagement.subtitle': 'Manage user accounts and access permissions',
+    'userManagement.addUser': 'Add User',
+    'userManagement.editUser': 'Edit User',
+    'userManagement.username': 'Username',
+    'userManagement.email': 'Email',
+    'userManagement.fullName': 'Full Name',
+    'userManagement.role': 'Role',
+    'userManagement.password': 'Password',
+    'userManagement.active': 'Active',
+    'userManagement.search': 'Search users...',
+    'userManagement.noUsers': 'No users found',
+    'userManagement.addUserPrompt': 'Click "Add User" to create a new account',
+    'userManagement.cancel': 'Cancel',
+    'userManagement.save': 'Save',
+    'userManagement.create': 'Create',
+    'userManagement.emailAuto': 'Email (leave blank = auto-generate)',
+    'userManagement.passwordHint': 'Password (leave blank = 888888)',
+    'userManagement.activeAccount': 'Activate this account',
+    
+    // Roles
+    'role.owner': 'Owner',
+    'role.manager': 'Manager',
+    'role.pharmacist': 'Pharmacist',
+    'role.partTime': 'Part-time',
+    'role.accountant': 'Accountant',
+    
+    // Settings
+    'settings.userManagement': 'User Management',
+    
     // Settings
     'settings.title': 'Settings',
     'settings.comingSoon': 'Coming Soon',
     
     // Common
     'common.loading': 'Loading...',
+    'common.inactive': 'Inactive',
     'common.save': 'Save',
     'common.cancel': 'Cancel',
     'common.edit': 'Edit',
