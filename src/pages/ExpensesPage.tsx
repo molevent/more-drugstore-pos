@@ -296,36 +296,6 @@ export default function ExpensesPage() {
     if (data) setContacts(data)
   }
 
-  // Helper function to generate payment voucher number
-  const generateVoucherNumber = async (date: string): Promise<string> => {
-    const dateObj = new Date(date)
-    const yy = String(dateObj.getFullYear()).slice(-2)
-    const mm = String(dateObj.getMonth() + 1).padStart(2, '0')
-    const dd = String(dateObj.getDate()).padStart(2, '0')
-    const datePrefix = `PV-${yy}${mm}${dd}`
-    
-    // Count existing vouchers with same date prefix
-    const { data, error } = await supabase
-      .from('payment_vouchers')
-      .select('voucher_number')
-      .ilike('voucher_number', `${datePrefix}-%`)
-      .order('voucher_number', { ascending: false })
-      .limit(1)
-    
-    if (error) {
-      console.error('Error fetching existing vouchers:', error)
-    }
-    
-    let sequence = 1
-    if (data && data.length > 0) {
-      const lastNumber = data[0].voucher_number
-      const lastSequence = parseInt(lastNumber.split('-')[2]) || 0
-      sequence = lastSequence + 1
-    }
-    
-    return `${datePrefix}-${String(sequence).padStart(3, '0')}`
-  }
-
   // Helper function to check if expense has complete data for auto-generating payment voucher
   const shouldAutoGenerateVoucher = (): boolean => {
     return !!(
