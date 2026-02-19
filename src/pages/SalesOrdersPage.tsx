@@ -530,29 +530,29 @@ export default function SalesOrdersPage() {
         customerAddress = prompt('กรุณากรอกที่อยู่ลูกค้า (สำหรับใบกำกับภาษี):') || ''
       }
 
-      // Generate tax invoice number (TI-YYYYMMDD-XXX format)
+      // Generate tax invoice number (IVYYYYMMDDXXXX format)
       const today = new Date()
-      const yy = String(today.getFullYear()).slice(-2)
+      const yyyy = String(today.getFullYear())
       const mm = String(today.getMonth() + 1).padStart(2, '0')
       const dd = String(today.getDate()).padStart(2, '0')
-      const datePrefix = `TI${yy}${mm}${dd}`
+      const datePrefix = `IV${yyyy}${mm}${dd}`
       
       // Check existing tax invoice numbers for today
       const { data: existingTi } = await supabase
         .from('tax_invoices')
         .select('tax_invoice_number')
-        .ilike('tax_invoice_number', `${datePrefix}-%`)
+        .ilike('tax_invoice_number', `${datePrefix}%`)
         .order('tax_invoice_number', { ascending: false })
         .limit(1)
       
       let sequence = 1
       if (existingTi && existingTi.length > 0) {
         const lastNumber = existingTi[0].tax_invoice_number
-        const lastSequence = parseInt(lastNumber.split('-')[1]) || 0
+        const lastSequence = parseInt(lastNumber.slice(-4)) || 0
         sequence = lastSequence + 1
       }
       
-      const taxInvoiceNumber = `${datePrefix}-${String(sequence).padStart(3, '0')}`
+      const taxInvoiceNumber = `${datePrefix}${String(sequence).padStart(4, '0')}`
 
       // Save tax invoice record
       const { error: tiError } = await supabase
