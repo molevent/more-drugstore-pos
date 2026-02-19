@@ -193,7 +193,7 @@ export default function UserManagementPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#F5EFE6]">
+    <div className="min-h-screen bg-white">
       <div className="bg-white border-b border-[#E8E0D5] px-4 py-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
