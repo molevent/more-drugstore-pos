@@ -472,10 +472,9 @@ export default function TaxInvoicesListPage() {
                       </span>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500">{formatDate(invoice.created_at)}</span>
-                        <Clock className="h-3 w-3 text-gray-400" />
-                        <span className="text-sm text-gray-500">{formatTime(invoice.created_at)}</span>
+                      <div className="flex flex-col">
+                        <span className="text-sm text-gray-900 font-medium">{formatDate(invoice.created_at)}</span>
+                        <span className="text-xs text-gray-500">{formatTime(invoice.created_at)}</span>
                       </div>
                     </td>
                     <td className="px-4 py-4">
