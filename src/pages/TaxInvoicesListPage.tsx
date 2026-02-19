@@ -240,7 +240,7 @@ export default function TaxInvoicesListPage() {
             </tbody>
           </table>
           <div style="text-align: right; font-size: 11px; margin-top: 10px; border-top: 1px dashed #000; padding-top: 10px;">
-            <p><strong>ยอดรวม: ${formatCurrency(selectedOrder.total)} บาท</strong></p>
+            <p><strong>ยอดรวม: ${formatCurrency(selectedOrder.total)}</strong></p>
           </div>
           <div style="margin-top: 20px; text-align: center; font-size: 10px; color: #666;">
             <p>ขอบคุณที่ใช้บริการ</p>
@@ -301,9 +301,9 @@ export default function TaxInvoicesListPage() {
             <tr>
               <td style="width: 50%;"></td>
               <td style="width: 50%; text-align: right;">
-                <strong>รวมเป็นเงิน:</strong> ${formatCurrency(selectedOrder.total * 0.93)} บาท<br>
-                <strong>ภาษีมูลค่าเพิ่ม 7%:</strong> ${formatCurrency(selectedOrder.total * 0.07)} บาท<br>
-                <strong style="font-size: 14px;">จำนวนเงินรวมทั้งสิ้น:</strong> <strong style="font-size: 14px;">${formatCurrency(selectedOrder.total)} บาท</strong>
+                <strong>รวมเป็นเงิน:</strong> ${formatCurrency(selectedOrder.total * 0.93)}<br>
+                <strong>ภาษีมูลค่าเพิ่ม 7%:</strong> ${formatCurrency(selectedOrder.total * 0.07)}<br>
+                <strong style="font-size: 14px;">จำนวนเงินรวมทั้งสิ้น:</strong> <strong style="font-size: 14px;">${formatCurrency(selectedOrder.total)}</strong>
               </td>
             </tr>
           </table>
@@ -495,11 +495,9 @@ export default function TaxInvoicesListPage() {
                     </div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
-                    {formatCurrency(invoice.total_amount)} บาท
-                  </td>
+                    {formatCurrency(invoice.total_amount)}                  </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                    {formatCurrency(invoice.vat_amount)} บาท
-                  </td>
+                    {formatCurrency(invoice.vat_amount)}                  </td>
                   <td className="px-4 py-4 whitespace-nowrap text-center">
                     <div className="flex items-center gap-2 justify-center">
                       <button
@@ -618,7 +616,7 @@ export default function TaxInvoicesListPage() {
                     </Card>
                     <Card className="text-right">
                       <p className="text-sm text-gray-500">ยอดรวมทั้งสิ้น</p>
-                      <p className="text-2xl font-bold text-[#7D735F]">{formatCurrency(selectedOrder.total)} บาท</p>
+                      <p className="text-2xl font-bold text-[#7D735F]">{formatCurrency(selectedOrder.total)}</p>
                     </Card>
                   </div>
                 </div>
@@ -781,11 +779,10 @@ export default function TaxInvoicesListPage() {
                       </tbody>
                     </table>
                     <div className="mt-6 text-right text-sm">
-                      <p><strong>รวมเป็นเงิน:</strong> {formatCurrency(selectedOrder.total * 0.93)} บาท</p>
-                      <p><strong>ภาษีมูลค่าเพิ่ม 7%:</strong> {formatCurrency(selectedOrder.total * 0.07)} บาท</p>
+                      <p><strong>รวมเป็นเงิน:</strong> {formatCurrency(selectedOrder.total * 0.93)}</p>
+                      <p><strong>ภาษีมูลค่าเพิ่ม 7%:</strong> {formatCurrency(selectedOrder.total * 0.07)}</p>
                       <p className="text-lg font-bold mt-2">
-                        จำนวนเงินรวมทั้งสิ้น: {formatCurrency(selectedOrder.total)} บาท
-                      </p>
+                        จำนวนเงินรวมทั้งสิ้น: {formatCurrency(selectedOrder.total)}                      </p>
                     </div>
                     <div className="mt-8 text-center text-sm text-gray-500">
                       <p>ขอบคุณที่ใช้บริการ</p>
