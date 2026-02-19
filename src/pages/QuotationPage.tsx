@@ -1409,16 +1409,16 @@ export default function QuotationPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Customer Selection - Compact */}
               <div className="md:col-span-1">
-                <label className="block text-xs font-medium text-gray-700 mb-1">ลูกค้า</label>
-                <button onClick={() => setShowContactModal(true)} className="w-full flex items-center justify-between px-3 py-1.5 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 text-left text-sm">
+                <label className="block text-sm font-medium text-gray-700 mb-1">ลูกค้า</label>
+                <button onClick={() => setShowContactModal(true)} className="w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 text-left text-base">
                   <span className={quotation.contact_name ? 'text-gray-900' : 'text-gray-400'}>
                     {quotation.contact_name || 'เลือกลูกค้า...'}
                   </span>
-                  <ChevronDown className="h-4 w-4 text-gray-400" />
+                  <ChevronDown className="h-5 w-5 text-gray-400" />
                 </button>
                 
                 {quotation.contact_name && (
-                  <div className="mt-1 text-xs text-gray-600 space-y-0.5">
+                  <div className="mt-1 text-sm text-gray-600 space-y-0.5">
                     {quotation.contact_company && <p className="font-medium">{quotation.contact_company}</p>}
                     {quotation.contact_tax_id && <p>เลขประจำตัวผู้เสียภาษี: {quotation.contact_tax_id}</p>}
                     {quotation.contact_address && <p className="truncate">{quotation.contact_address}</p>}
@@ -1429,38 +1429,38 @@ export default function QuotationPage() {
 
               {/* Dates - Compact */}
               <div className="md:col-span-2 flex gap-3">
-                <div className="w-36">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">วันที่</label>
-                  <Input type="date" value={quotation.issue_date} onChange={(e) => setQuotation(prev => ({ ...prev, issue_date: e.target.value }))} className="text-sm py-1.5 w-full" />
+                <div className="w-40">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">วันที่</label>
+                  <Input type="date" value={quotation.issue_date} onChange={(e) => setQuotation(prev => ({ ...prev, issue_date: e.target.value }))} className="text-base py-2 w-full" />
                 </div>
-                <div className="w-36">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">ครบกำหนด</label>
-                  <Input type="date" value={quotation.expiry_date} onChange={(e) => setQuotation(prev => ({ ...prev, expiry_date: e.target.value }))} className="text-sm py-1.5 w-full" />
+                <div className="w-40">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ครบกำหนด</label>
+                  <Input type="date" value={quotation.expiry_date} onChange={(e) => setQuotation(prev => ({ ...prev, expiry_date: e.target.value }))} className="text-base py-2 w-full" />
                 </div>
               </div>
             </div>
             
             {/* Seller Name Input */}
             <div className="mt-3">
-              <label className="block text-xs font-medium text-gray-700 mb-1">ชื่อผู้เสนอราคา (ลงในใบเสนอราคา)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อผู้เสนอราคา (ลงในใบเสนอราคา)</label>
               <Input 
                 type="text" 
                 value={quotation.seller_name || ''} 
                 onChange={(e) => setQuotation(prev => ({ ...prev, seller_name: e.target.value }))}
                 placeholder="ชื่อผู้เสนอราคา..."
-                className="text-sm"
+                className="text-base"
               />
             </div>
 
             {/* Document Receiver Name Input */}
             <div className="mt-3">
-              <label className="block text-xs font-medium text-gray-700 mb-1">ชื่อผู้รับเอกสาร (ลงในใบเสนอราคา)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อผู้รับเอกสาร (ลงในใบเสนอราคา)</label>
               <Input 
                 type="text" 
                 value={quotation.receiver_name || ''} 
                 onChange={(e) => setQuotation(prev => ({ ...prev, receiver_name: e.target.value }))}
                 placeholder="ชื่อผู้รับเอกสาร..."
-                className="text-sm"
+                className="text-base"
               />
             </div>
             
@@ -1471,7 +1471,7 @@ export default function QuotationPage() {
                 value={quotation.notes} 
                 onChange={(e) => setQuotation(prev => ({ ...prev, notes: e.target.value }))}
                 rows={2}
-                className="w-full text-sm px-3 py-1.5 border border-gray-300 rounded-lg resize-y min-h-[60px]"
+                className="w-full text-base px-3 py-2 border border-gray-300 rounded-lg resize-y min-h-[60px]"
                 style={{ resize: 'both' }}
               />
             </div>
@@ -1483,15 +1483,15 @@ export default function QuotationPage() {
           <table className="w-full">
             <thead className="bg-[#4A90A4] text-white">
               <tr>
-                <th className="px-2 py-2 text-left text-xs font-medium w-8">#</th>
-                {quotation.show_product_images && <th className="px-2 py-2 text-center text-xs font-medium w-14">รูป</th>}
-                <th className="px-2 py-2 text-left text-xs font-medium min-w-[200px]">รายการ</th>
-                <th className="px-2 py-2 text-center text-xs font-medium w-16">จำนวน</th>
-                <th className="px-2 py-2 text-center text-xs font-medium w-14">หน่วย</th>
-                <th className="px-2 py-2 text-right text-xs font-medium w-24">ราคา/หน่วย</th>
-                {quotation.show_discount && <th className="px-2 py-2 text-right text-xs font-medium w-16">ส่วนลด</th>}
-                <th className="px-2 py-2 text-right text-xs font-medium w-24">รวม</th>
-                <th className="px-2 py-2 text-center text-xs font-medium w-8"></th>
+                <th className="px-2 py-3 text-left text-sm font-medium w-8">#</th>
+                {quotation.show_product_images && <th className="px-2 py-3 text-center text-sm font-medium w-14">รูป</th>}
+                <th className="px-2 py-3 text-left text-sm font-medium min-w-[200px]">รายการ</th>
+                <th className="px-2 py-3 text-center text-sm font-medium w-16">จำนวน</th>
+                <th className="px-2 py-3 text-center text-sm font-medium w-14">หน่วย</th>
+                <th className="px-2 py-3 text-right text-sm font-medium w-24">ราคา/หน่วย</th>
+                {quotation.show_discount && <th className="px-2 py-3 text-right text-sm font-medium w-16">ส่วนลด</th>}
+                <th className="px-2 py-3 text-right text-sm font-medium w-24">รวม</th>
+                <th className="px-2 py-3 text-center text-sm font-medium w-8"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -1499,12 +1499,12 @@ export default function QuotationPage() {
                 const currentImage = item.use_custom_image ? item.custom_image_url : item.product_image
                 return (
                 <tr key={item.id} className="hover:bg-gray-50">
-                  <td className="px-2 py-2 text-xs text-gray-500">{index + 1}</td>
+                  <td className="px-2 py-3 text-sm text-gray-500">{index + 1}</td>
                   {quotation.show_product_images && (
-                    <td className="px-2 py-2 text-center">
+                    <td className="px-2 py-3 text-center">
                       <div className="relative">
                         {currentImage ? (
-                          <img src={currentImage} alt={item.product_name} className="h-10 w-10 object-cover rounded mx-auto cursor-pointer" onClick={() => {
+                          <img src={currentImage} alt={item.product_name} className="h-12 w-12 object-cover rounded mx-auto cursor-pointer" onClick={() => {
                             const input = document.createElement('input')
                             input.type = 'file'
                             input.accept = 'image/*'
@@ -1524,8 +1524,8 @@ export default function QuotationPage() {
                               if (file) handleItemImageUpload(file, index)
                             }
                             input.click()
-                          }} className="h-10 w-10 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center mx-auto">
-                            <ImageIcon className="h-4 w-4 text-gray-400" />
+                          }} className="h-12 w-12 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center mx-auto">
+                            <ImageIcon className="h-5 w-5 text-gray-400" />
                           </button>
                         )}
                         {(item.product_image || item.custom_image_url) && (
@@ -1535,7 +1535,7 @@ export default function QuotationPage() {
                                 ...prev,
                                 items: prev.items.map((it, i) => i === index ? { ...it, use_custom_image: !it.use_custom_image, custom_image_url: it.use_custom_image ? undefined : it.custom_image_url } : it)
                               }))
-                            }} className="h-4 w-4 bg-blue-500 text-white rounded-full flex items-center justify-center text-[8px]" title={item.use_custom_image ? "ใช้รูปสินค้า" : "ใช้รูปกำหนดเอง"}>
+                            }} className="h-5 w-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-[10px]" title={item.use_custom_image ? "ใช้รูปสินค้า" : "ใช้รูปกำหนดเอง"}>
                               {item.use_custom_image ? 'P' : 'C'}
                             </button>
                           </div>
@@ -1547,45 +1547,45 @@ export default function QuotationPage() {
                             ...prev,
                             items: prev.items.map((it, i) => i === index ? { ...it, custom_image_url: undefined, product_image: undefined, use_custom_image: false } : it)
                           }))
-                        }} className="text-[10px] text-red-500 hover:text-red-700 mt-1">
+                        }} className="text-xs text-red-500 hover:text-red-700 mt-1">
                           ลบรูป
                         </button>
                       )}
                     </td>
                   )}
-                  <td className="px-2 py-2">
+                  <td className="px-2 py-3">
                     <button onClick={() => { setActiveItemIndex(index); setShowProductModal(true); }} className="w-full text-left">
-                      <input type="text" placeholder="เลือกสินค้า..." value={item.product_name} readOnly className="w-full text-sm px-2 py-1 border border-gray-300 rounded cursor-pointer bg-gray-50 hover:bg-white mb-1" />
+                      <input type="text" placeholder="เลือกสินค้า..." value={item.product_name} readOnly className="w-full text-base px-2 py-1.5 border border-gray-300 rounded cursor-pointer bg-gray-50 hover:bg-white mb-1" />
                     </button>
-                    <input type="text" placeholder="รายละเอียด" value={item.details} onChange={(e) => updateItem(index, 'details', e.target.value)} className="w-full text-xs px-2 py-0.5 border border-gray-300 rounded mb-0.5" />
+                    <input type="text" placeholder="รายละเอียด" value={item.details} onChange={(e) => updateItem(index, 'details', e.target.value)} className="w-full text-sm px-2 py-1 border border-gray-300 rounded mb-0.5" />
                   </td>
-                  <td className="px-2 py-2">
-                    <input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)} className="w-full text-center text-xs px-1 py-1 border border-gray-300 rounded" />
+                  <td className="px-2 py-3">
+                    <input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)} className="w-full text-center text-base px-1 py-1.5 border border-gray-300 rounded" />
                   </td>
-                  <td className="px-2 py-2">
-                    <input type="text" value={item.unit} onChange={(e) => updateItem(index, 'unit', e.target.value)} className="w-full text-center text-xs px-1 py-1 border border-gray-300 rounded" />
+                  <td className="px-2 py-3">
+                    <input type="text" value={item.unit} onChange={(e) => updateItem(index, 'unit', e.target.value)} className="w-full text-center text-base px-1 py-1.5 border border-gray-300 rounded" />
                   </td>
-                  <td className="px-2 py-2">
+                  <td className="px-2 py-3">
                     <input 
                       type="number" 
                       step="0.01"
                       value={Number(item.unit_price).toFixed(2)} 
                       onChange={(e) => updateItem(index, 'unit_price', parseFloat(e.target.value) || 0)} 
-                      className="w-full text-right text-xs px-1 py-1 border border-gray-300 rounded" 
+                      className="w-full text-right text-base px-1 py-1.5 border border-gray-300 rounded" 
                     />
                   </td>
                   {quotation.show_discount && (
-                    <td className="px-2 py-2">
+                    <td className="px-2 py-3">
                       <div className="flex items-center gap-1">
-                        <input type="number" value={item.discount_percent} onChange={(e) => updateItem(index, 'discount_percent', parseFloat(e.target.value) || 0)} className="w-12 text-right text-xs px-1 py-1 border border-gray-300 rounded" />
-                        <span className="text-xs text-gray-500">%</span>
+                        <input type="number" value={item.discount_percent} onChange={(e) => updateItem(index, 'discount_percent', parseFloat(e.target.value) || 0)} className="w-12 text-right text-base px-1 py-1.5 border border-gray-300 rounded" />
+                        <span className="text-sm text-gray-500">%</span>
                       </div>
                     </td>
                   )}
-                  <td className="px-2 py-2 text-right text-xs font-medium">{formatNumber(item.total)}</td>
-                  <td className="px-2 py-2 text-center">
+                  <td className="px-2 py-3 text-right text-base font-medium">{formatNumber(item.total)}</td>
+                  <td className="px-2 py-3 text-center">
                     <button onClick={() => removeItem(index)} className="text-gray-400 hover:text-red-500 p-1" disabled={quotation.items.length === 1}>
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </td>
                 </tr>
@@ -1594,8 +1594,8 @@ export default function QuotationPage() {
           </table>
         </div>
         <div className="p-3 border-t">
-          <Button variant="secondary" onClick={addItem} className="flex items-center gap-2 text-sm">
-            <Plus className="h-4 w-4" />
+          <Button variant="secondary" onClick={addItem} className="flex items-center gap-2 text-base">
+            <Plus className="h-5 w-5" />
             เพิ่มรายการ
           </Button>
         </div>
