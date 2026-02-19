@@ -191,7 +191,7 @@ export default function UserManagementPage() {
     { value: 'owner', label: 'เจ้าของร้าน' },
     { value: 'manager', label: 'ผู้จัดการร้าน' },
     { value: 'pharmacist', label: 'เภสัชกร' },
-    { value: 'part_time', label: 'พนักงานไพรท์ไทม์' },
+    { value: 'part_time', label: 'พาร์ทไทม์' },
     { value: 'accountant', label: 'นักบัญชี' }
   ]
 
@@ -219,7 +219,7 @@ export default function UserManagementPage() {
           {roleOptions.map(role => {
             const count = users.filter(u => u.role === role.value).length
             return (
-              <Card key={role.value} className="bg-white border-gray-200">
+              <Card key={role.value} className="bg-white border-gray-200 hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-3">
                   <div className={`p-2 rounded-lg ${getRoleBadgeColor(role.value as UserRole).split(' ')[0]}`}>
                     <Shield className="h-4 w-4" />

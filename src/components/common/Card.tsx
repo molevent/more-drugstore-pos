@@ -11,7 +11,7 @@ export default function Card({ children, className = '', title, onClick }: CardP
   // Check if className contains overflow-visible or overflow-auto, if so, don't apply overflow-hidden
   const hasOverflowOverride = className.includes('overflow-')
   const hasPaddingOverride = className.includes('p-') || className.includes('padding')
-  const baseClasses = `bg-white rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 ${hasOverflowOverride ? '' : 'overflow-hidden'} ${className}`
+  const baseClasses = `bg-white rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 outline-none ${hasOverflowOverride ? '' : 'overflow-hidden'} ${className}`
   
   return (
     <div 
