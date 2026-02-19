@@ -208,7 +208,7 @@ export default function SalesReportPage() {
       </div>
 
       {/* Filters */}
-      <Card className="mb-6">
+      <Card className="bg-[#F5EFE6] border-[#E8E0D5]">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-gray-500" />
@@ -220,8 +220,8 @@ export default function SalesReportPage() {
                   onClick={() => setPeriod(p)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                     period === p
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-[#2E5266] text-white'
+                      : 'bg-[#F5EFE6] text-[#5C4A32] hover:bg-[#E8E0D5]'
                   }`}
                 >
                   {getPeriodLabel(p)}
@@ -239,8 +239,8 @@ export default function SalesReportPage() {
                 onClick={() => setTopLimit(50)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   topLimit === 50
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-[#2E5266] text-white'
+                    : 'bg-[#F5EFE6] text-[#5C4A32] hover:bg-[#E8E0D5]'
                 }`}
               >
                 Top 50
@@ -249,8 +249,8 @@ export default function SalesReportPage() {
                 onClick={() => setTopLimit(100)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   topLimit === 100
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-[#2E5266] text-white'
+                    : 'bg-[#F5EFE6] text-[#5C4A32] hover:bg-[#E8E0D5]'
                 }`}
               >
                 Top 100
@@ -279,51 +279,51 @@ export default function SalesReportPage() {
       {/* Summary Cards */}
       {summary && (
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-          <Card className="bg-green-50 border-green-200">
+          <Card className="bg-[#F5E6C8]/30 border-[#F5E6C8]">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <DollarSign className="h-5 w-5 text-green-600" />
+              <div className="p-2 bg-[#F5E6C8] rounded-lg">
+                <DollarSign className="h-5 w-5 text-[#8B7355]" />
               </div>
               <div>
-                <p className="text-sm text-green-600">รายได้รวม</p>
-                <p className="text-2xl font-bold text-green-700">
+                <p className="text-sm text-[#8B7355]">รายได้รวม</p>
+                <p className="text-2xl font-bold text-[#5C4A32]">
                   ฿{summary.total_revenue.toLocaleString('th-TH', { maximumFractionDigits: 0 })}
                 </p>
               </div>
             </div>
           </Card>
-          <Card className="bg-blue-50 border-blue-200">
+          <Card className="bg-[#B8D4E3]/30 border-[#B8D4E3]">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Package className="h-5 w-5 text-blue-600" />
+              <div className="p-2 bg-[#B8D4E3] rounded-lg">
+                <Package className="h-5 w-5 text-[#2E5266]" />
               </div>
               <div>
-                <p className="text-sm text-blue-600">จำนวนรายการ</p>
-                <p className="text-2xl font-bold text-blue-700">{summary.total_transactions}</p>
+                <p className="text-sm text-[#2E5266]">จำนวนรายการ</p>
+                <p className="text-2xl font-bold text-[#2E5266]">{summary.total_transactions}</p>
               </div>
             </div>
           </Card>
-          <Card className="bg-purple-50 border-purple-200">
+          <Card className="bg-[#C5C9E8]/30 border-[#C5C9E8]">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-purple-600" />
+              <div className="p-2 bg-[#C5C9E8] rounded-lg">
+                <TrendingUp className="h-5 w-5 text-[#4A5568]" />
               </div>
               <div>
-                <p className="text-sm text-purple-600">กำไรรวม</p>
-                <p className="text-2xl font-bold text-purple-700">
+                <p className="text-sm text-[#4A5568]">กำไรรวม</p>
+                <p className="text-2xl font-bold text-[#4A5568]">
                   ฿{summary.total_profit.toLocaleString('th-TH', { maximumFractionDigits: 0 })}
                 </p>
               </div>
             </div>
           </Card>
-          <Card className="bg-orange-50 border-orange-200">
+          <Card className="bg-[#C5D5C8]/30 border-[#C5D5C8]">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <BarChart3 className="h-5 w-5 text-orange-600" />
+              <div className="p-2 bg-[#C5D5C8] rounded-lg">
+                <BarChart3 className="h-5 w-5 text-[#5C4A32]" />
               </div>
               <div>
-                <p className="text-sm text-orange-600">% กำไร</p>
-                <p className="text-2xl font-bold text-orange-700">
+                <p className="text-sm text-[#5C4A32]">% กำไร</p>
+                <p className="text-2xl font-bold text-[#5C4A32]">
                   {summary.total_revenue > 0 
                     ? ((summary.total_profit / summary.total_revenue) * 100).toFixed(1) 
                     : 0}%
@@ -335,7 +335,7 @@ export default function SalesReportPage() {
       )}
 
       {/* Report Table */}
-      <Card>
+      <Card className="bg-white border-[#E8E0D5]">
         {loading ? (
           <div className="text-center py-12">
             <p className="text-gray-600">กำลังโหลด...</p>
@@ -348,7 +348,7 @@ export default function SalesReportPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-[#F5EFE6]">
                 <tr>
                   <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 w-16">อันดับ</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">สินค้า</th>
@@ -359,18 +359,18 @@ export default function SalesReportPage() {
                   <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">% กำไร</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-[#E8E0D5]">
                 {reportData.map((item, index) => {
                   const rank = index + 1
                   const isTop3 = rank <= 3
                   return (
-                    <tr key={item.product_id} className={isTop3 ? 'bg-yellow-50' : ''}>
+                    <tr key={item.product_id} className={isTop3 ? 'bg-[#F5E6C8]/30' : 'hover:bg-[#F5EFE6]'}>
                       <td className="px-4 py-3 text-center">
                         <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
-                          rank === 1 ? 'bg-yellow-400 text-yellow-900' :
-                          rank === 2 ? 'bg-gray-300 text-gray-700' :
-                          rank === 3 ? 'bg-orange-300 text-orange-800' :
-                          'bg-gray-100 text-gray-600'
+                          rank === 1 ? 'bg-[#C5C9E8] text-[#4A5568]' :
+                          rank === 2 ? 'bg-[#B8D4E3] text-[#2E5266]' :
+                          rank === 3 ? 'bg-[#C5D5C8] text-[#5C4A32]' :
+                          'bg-[#F5EFE6] text-[#8B7355]'
                         }`}>
                           {rank}
                         </span>
@@ -382,7 +382,7 @@ export default function SalesReportPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className="font-medium text-blue-600">{item.total_quantity}</span>
+                        <span className="font-medium text-[#2E5266]">{item.total_quantity}</span>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <span className="font-medium text-gray-900">
@@ -395,16 +395,16 @@ export default function SalesReportPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <span className={`font-medium ${item.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        <span className={`font-medium ${item.profit >= 0 ? 'text-[#2E5266]' : 'text-red-600'}`}>
                           {item.profit >= 0 ? '+' : ''}
                           ฿{item.profit.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          item.profit_margin >= 20 ? 'bg-green-100 text-green-800' :
-                          item.profit_margin >= 10 ? 'bg-blue-100 text-blue-800' :
-                          item.profit_margin >= 0 ? 'bg-yellow-100 text-yellow-800' :
+                          item.profit_margin >= 20 ? 'bg-[#C5D5C8] text-[#5C4A32]' :
+                          item.profit_margin >= 10 ? 'bg-[#B8D4E3] text-[#2E5266]' :
+                          item.profit_margin >= 0 ? 'bg-[#F5E6C8] text-[#8B7355]' :
                           'bg-red-100 text-red-800'
                         }`}>
                           {item.profit_margin >= 0 ? (

@@ -2295,5 +2295,6 @@ export default function QuotationPage() {
         </div>
       )}
     </div>
+    </div>
   )
 }
