@@ -80,7 +80,16 @@ export default function TaxInvoicesListPage() {
   // Modal states
   const [activeModal, setActiveModal] = useState<ModalType>(null)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [selectedTaxInvoice, setSelectedTaxInvoice] = useState<TaxInvoice | null>(null)
   const [modalLoading, setModalLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+  
+  // Edit form state
+  const [editForm, setEditForm] = useState({
+    customer_name: '',
+    customer_tax_id: '',
+    customer_address: ''
+  })
 
   const fetchTaxInvoices = async () => {
     try {
@@ -178,14 +187,52 @@ export default function TaxInvoicesListPage() {
     }
   }
 
-  const openModal = async (type: ModalType, orderId: string, orderSource: string) => {
+  const openModal = async (type: ModalType, orderId: string, orderSource: string, taxInvoice?: TaxInvoice) => {
     await fetchOrderDetails(orderId, orderSource)
+    if (taxInvoice) {
+      setSelectedTaxInvoice(taxInvoice)
+      setEditForm({
+        customer_name: taxInvoice.customer_name || '',
+        customer_tax_id: taxInvoice.customer_tax_id || '',
+        customer_address: taxInvoice.customer_address || ''
+      })
+    }
     setActiveModal(type)
   }
 
   const closeModal = () => {
     setActiveModal(null)
     setSelectedOrder(null)
+    setSelectedTaxInvoice(null)
+    setEditForm({ customer_name: '', customer_tax_id: '', customer_address: '' })
+  }
+
+  const handleSaveTaxInvoice = async () => {
+    if (!selectedTaxInvoice) return
+    
+    try {
+      setSaving(true)
+      const { error } = await supabase
+        .from('tax_invoices')
+        .update({
+          customer_name: editForm.customer_name,
+          customer_tax_id: editForm.customer_tax_id,
+          customer_address: editForm.customer_address,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedTaxInvoice.id)
+      
+      if (error) throw error
+      
+      // Refresh the list
+      await fetchTaxInvoices()
+      closeModal()
+    } catch (error) {
+      console.error('Error updating tax invoice:', error)
+      alert('เกิดข้อผิดพลาดในการบันทึก')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const formatDate = (date: string) => {
@@ -512,7 +559,7 @@ export default function TaxInvoicesListPage() {
                         <Eye className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => openModal('edit', invoice.order_id, invoice.order_source)}
+                        onClick={() => openModal('edit', invoice.order_id, invoice.order_source, invoice)}
                         className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all"
                         title="แก้ไข"
                       >
@@ -631,7 +678,7 @@ export default function TaxInvoicesListPage() {
       )}
 
       {/* Edit Modal */}
-      {activeModal === 'edit' && selectedOrder && (
+      {activeModal === 'edit' && selectedOrder && selectedTaxInvoice && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-blue-50">
@@ -651,26 +698,54 @@ export default function TaxInvoicesListPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <p className="text-sm text-yellow-800">
-                      <strong>หมายเหตุ:</strong> การแก้ไขใบกำกับภาษีจะเปิดหน้าออเดอร์เดิมในแท็บใหม่ กรุณาแก้ไขข้อมูลออเดอร์จากหน้านั้น
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm text-blue-800">
+                      <strong>เลขที่ใบกำกับภาษี:</strong> {selectedTaxInvoice.tax_invoice_number}
+                    </p>
+                    <p className="text-sm text-blue-800">
+                      <strong>เลขที่ออเดอร์:</strong> {selectedOrder.order_number}
                     </p>
                   </div>
+                  
                   <Card>
                     <h4 className="font-medium mb-4 flex items-center gap-2">
                       <User className="h-4 w-4" />
                       ข้อมูลลูกค้า
                     </h4>
-                    <div className="space-y-2">
-                      <p><span className="text-gray-500">ชื่อ:</span> {selectedOrder.customer_name}</p>
-                      {selectedOrder.customer_tax_id && (
-                        <p><span className="text-gray-500">เลขผู้เสียภาษี:</span> {selectedOrder.customer_tax_id}</p>
-                      )}
-                      {selectedOrder.customer_address && (
-                        <p><span className="text-gray-500">ที่อยู่:</span> {selectedOrder.customer_address}</p>
-                      )}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm text-gray-500 mb-1">ชื่อลูกค้า</label>
+                        <input
+                          type="text"
+                          value={editForm.customer_name}
+                          onChange={(e) => setEditForm({ ...editForm, customer_name: e.target.value })}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="ชื่อลูกค้า"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-gray-500 mb-1">เลขผู้เสียภาษี</label>
+                        <input
+                          type="text"
+                          value={editForm.customer_tax_id}
+                          onChange={(e) => setEditForm({ ...editForm, customer_tax_id: e.target.value })}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="เลขผู้เสียภาษี (ถ้ามี)"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-gray-500 mb-1">ที่อยู่</label>
+                        <textarea
+                          value={editForm.customer_address}
+                          onChange={(e) => setEditForm({ ...editForm, customer_address: e.target.value })}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="ที่อยู่ (ถ้ามี)"
+                          rows={3}
+                        />
+                      </div>
                     </div>
                   </Card>
+
                   <Card>
                     <h4 className="font-medium mb-4 flex items-center gap-2">
                       <ShoppingCart className="h-4 w-4" />
@@ -699,20 +774,27 @@ export default function TaxInvoicesListPage() {
                       </tbody>
                     </table>
                   </Card>
+
                   <div className="flex justify-end gap-4 pt-4">
-                    <Button variant="secondary" onClick={closeModal}>
-                      ปิด
+                    <Button variant="secondary" onClick={closeModal} disabled={saving}>
+                      ยกเลิก
                     </Button>
                     <Button 
-                      onClick={() => {
-                        const orderType = selectedOrder.platform_id === 'website' ? 'website' : 'pos'
-                        window.open(`/sales?edit=${selectedOrder.id}&source=${orderType}`, '_blank')
-                        closeModal()
-                      }}
+                      onClick={handleSaveTaxInvoice}
+                      disabled={saving}
                       className="flex items-center gap-2"
                     >
-                      <Edit className="h-4 w-4" />
-                      เปิดหน้าแก้ไข
+                      {saving ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          กำลังบันทึก...
+                        </>
+                      ) : (
+                        <>
+                          <Edit className="h-4 w-4" />
+                          บันทึกการแก้ไข
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
