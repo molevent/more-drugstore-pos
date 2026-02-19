@@ -551,17 +551,15 @@ export default function SalesOrdersPage() {
       <Card className="mb-6 px-4 sm:px-0 bg-[#F5EFE6] border-[#E8E0D5]">
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              <Search className="h-4 w-4 inline mr-1" />
-              ค้นหา
-            </label>
-            <div className="flex items-center gap-2 bg-[#F5EFE6] rounded-full px-4 py-2.5 border border-transparent focus-within:border-[#B8D4E3] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#B8D4E3]/30 transition-all">
+            <div className="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2.5 border border-transparent focus-within:border-[#B8D4E3] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#B8D4E3]/30 transition-all">
+              <Search className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700 whitespace-nowrap">ค้นหา</span>
               <input
                 type="text"
                 placeholder="เลขที่ออเดอร์, ชื่อลูกค้า..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-sm"
+                className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-sm min-w-0"
               />
             </div>
           </div>
