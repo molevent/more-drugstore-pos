@@ -191,54 +191,54 @@ export default function TaxPP30Page() {
         </div>
       </div>
       
-      {/* Summary Cards */}
+      {/* Summary Cards - Bridgerton Theme */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* Input VAT */}
-        <Card className="bg-red-50 border-red-200">
+        <Card className="bg-[#E8E0E8] border-[#C4B8D4]">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-red-100 rounded-full">
-              <TrendingDown className="h-6 w-6 text-red-600" />
+            <div className="p-3 bg-[#C4B8D4] rounded-full">
+              <TrendingDown className="h-6 w-6 text-white" />
             </div>
             <div>
-              <p className="text-sm text-red-600 font-medium">ภาษีซื้อ (Input VAT)</p>
-              <p className="text-2xl font-bold text-red-700">
+              <p className="text-sm text-[#6B5B7A] font-medium">ภาษีซื้อ (Input VAT)</p>
+              <p className="text-2xl font-bold text-[#5A4A6A]">
                 ฿{totalInputVat.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
               </p>
-              <p className="text-xs text-red-500">{filteredInputItems.length} รายการ</p>
+              <p className="text-xs text-[#8A7A9A]">{filteredInputItems.length} รายการ</p>
             </div>
           </div>
         </Card>
         
         {/* Output VAT */}
-        <Card className="bg-green-50 border-green-200">
+        <Card className="bg-[#F5F0E8] border-[#D4A5A5]">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-green-100 rounded-full">
-              <TrendingUp className="h-6 w-6 text-green-600" />
+            <div className="p-3 bg-[#D4A5A5] rounded-full">
+              <TrendingUp className="h-6 w-6 text-white" />
             </div>
             <div>
-              <p className="text-sm text-green-600 font-medium">ภาษีขาย (Output VAT)</p>
-              <p className="text-2xl font-bold text-green-700">
+              <p className="text-sm text-[#8A5A5A] font-medium">ภาษีขาย (Output VAT)</p>
+              <p className="text-2xl font-bold text-[#7A4A4A]">
                 ฿{totalOutputVat.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
               </p>
-              <p className="text-xs text-green-500">{filteredOutputItems.length} รายการ</p>
+              <p className="text-xs text-[#9A6A6A]">{filteredOutputItems.length} รายการ</p>
             </div>
           </div>
         </Card>
         
         {/* VAT Difference */}
-        <Card className={`${vatDifference >= 0 ? 'bg-blue-50 border-blue-200' : 'bg-orange-50 border-orange-200'}`}>
+        <Card className={`${vatDifference >= 0 ? 'bg-[#E8F0E8] border-[#B8C9B8]' : 'bg-[#E8D8C4] border-[#C9A961]'}`}>
           <div className="flex items-center gap-3">
-            <div className={`p-3 rounded-full ${vatDifference >= 0 ? 'bg-blue-100' : 'bg-orange-100'}`}>
-              <Calculator className={`h-6 w-6 ${vatDifference >= 0 ? 'text-blue-600' : 'text-orange-600'}`} />
+            <div className={`p-3 rounded-full ${vatDifference >= 0 ? 'bg-[#B8C9B8]' : 'bg-[#C9A961]'}`}>
+              <Calculator className={`h-6 w-6 text-white`} />
             </div>
             <div>
-              <p className={`text-sm font-medium ${vatDifference >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
+              <p className={`text-sm font-medium ${vatDifference >= 0 ? 'text-[#5A7A5A]' : 'text-[#8A6A3A]'}`}>
                 {vatDifference >= 0 ? 'ต้องนำส่งภาษี' : 'ภาษีเกินสามารถขอคืน'}
               </p>
-              <p className={`text-2xl font-bold ${vatDifference >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
+              <p className={`text-2xl font-bold ${vatDifference >= 0 ? 'text-[#4A6A4A]' : 'text-[#7A5A2A]'}`}>
                 ฿{Math.abs(vatDifference).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
               </p>
-              <p className={`text-xs ${vatDifference >= 0 ? 'text-blue-500' : 'text-orange-500'}`}>
+              <p className={`text-xs ${vatDifference >= 0 ? 'text-[#6A8A6A]' : 'text-[#9A7A4A]'}`}>
                 {vatDifference >= 0 ? 'ภาษีขาย > ภาษีซื้อ' : 'ภาษีซื้อ > ภาษีขาย'}
               </p>
             </div>
@@ -249,13 +249,13 @@ export default function TaxPP30Page() {
       {/* VAT Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Input VAT Table */}
-        <Card>
+        <Card className="border-[#C4B8D4]">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Receipt className="h-5 w-5 text-red-500" />
+            <h2 className="text-lg font-semibold text-[#5A4A6A] flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-[#8A7A9A]" />
               ภาษีซื้อ (Input VAT)
             </h2>
-            <span className="text-sm text-gray-500">{filteredInputItems.length} รายการ</span>
+            <span className="text-sm text-[#8A7A9A]">{filteredInputItems.length} รายการ</span>
           </div>
           
           {loading ? (
@@ -296,12 +296,12 @@ export default function TaxPP30Page() {
                     </tr>
                   ))}
                 </tbody>
-                <tfoot className="bg-red-50">
+                <tfoot className="bg-[#E8E0E8]">
                   <tr>
-                    <td colSpan={5} className="px-3 py-2 text-right font-medium text-red-700">
+                    <td colSpan={5} className="px-3 py-2 text-right font-medium text-[#5A4A6A]">
                       รวมภาษีซื้อ
                     </td>
-                    <td className="px-3 py-2 text-right font-bold text-red-700">
+                    <td className="px-3 py-2 text-right font-bold text-[#5A4A6A]">
                       {totalInputVat.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
@@ -312,13 +312,13 @@ export default function TaxPP30Page() {
         </Card>
         
         {/* Output VAT Table */}
-        <Card>
+        <Card className="border-[#D4A5A5]">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Receipt className="h-5 w-5 text-green-500" />
+            <h2 className="text-lg font-semibold text-[#7A4A4A] flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-[#9A6A6A]" />
               ภาษีขาย (Output VAT)
             </h2>
-            <span className="text-sm text-gray-500">{filteredOutputItems.length} รายการ</span>
+            <span className="text-sm text-[#9A6A6A]">{filteredOutputItems.length} รายการ</span>
           </div>
           
           {loading ? (
@@ -359,12 +359,12 @@ export default function TaxPP30Page() {
                     </tr>
                   ))}
                 </tbody>
-                <tfoot className="bg-green-50">
+                <tfoot className="bg-[#F5F0E8]">
                   <tr>
-                    <td colSpan={5} className="px-3 py-2 text-right font-medium text-green-700">
+                    <td colSpan={5} className="px-3 py-2 text-right font-medium text-[#7A4A4A]">
                       รวมภาษีขาย
                     </td>
-                    <td className="px-3 py-2 text-right font-bold text-green-700">
+                    <td className="px-3 py-2 text-right font-bold text-[#7A4A4A]">
                       {totalOutputVat.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
@@ -375,48 +375,48 @@ export default function TaxPP30Page() {
         </Card>
       </div>
       
-      {/* Summary Report Card */}
-      <Card className="mt-6 bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
+      {/* Summary Report Card - Bridgerton Theme */}
+      <Card className="mt-6 bg-gradient-to-r from-[#F5F0E8] via-[#E8E0E8] to-[#E8F0E8] border-[#D4A5A5]">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-amber-100 rounded-full">
-            <FileText className="h-6 w-6 text-amber-600" />
+          <div className="p-2 bg-[#D4A5A5] rounded-full">
+            <FileText className="h-6 w-6 text-white" />
           </div>
-          <h2 className="text-lg font-semibold text-gray-900">สรุปยอดภาษีมูลค่าเพิ่ม</h2>
+          <h2 className="text-lg font-semibold text-[#4A4A4A]">สรุปยอดภาษีมูลค่าเพิ่ม</h2>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg p-4 shadow-sm">
-            <p className="text-sm text-gray-600">ภาษีขาย (Output)</p>
-            <p className="text-xl font-bold text-green-600">
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-[#D4A5A5]">
+            <p className="text-sm text-[#8A6A6A]">ภาษีขาย (Output)</p>
+            <p className="text-xl font-bold text-[#7A4A4A]">
               ฿{totalOutputVat.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </p>
           </div>
           
-          <div className="bg-white rounded-lg p-4 shadow-sm">
-            <p className="text-sm text-gray-600">ภาษีซื้อ (Input)</p>
-            <p className="text-xl font-bold text-red-600">
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-[#C4B8D4]">
+            <p className="text-sm text-[#6B5B7A]">ภาษีซื้อ (Input)</p>
+            <p className="text-xl font-bold text-[#5A4A6A]">
               ฿{totalInputVat.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </p>
           </div>
           
-          <div className="bg-white rounded-lg p-4 shadow-sm">
-            <p className="text-sm text-gray-600">ส่วนต่าง</p>
-            <p className={`text-xl font-bold ${vatDifference >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-[#B8C9B8]">
+            <p className="text-sm text-[#5A7A5A]">ส่วนต่าง</p>
+            <p className={`text-xl font-bold ${vatDifference >= 0 ? 'text-[#4A6A4A]' : 'text-[#8A6A3A]'}`}>
               ฿{Math.abs(vatDifference).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </p>
           </div>
           
-          <div className={`rounded-lg p-4 shadow-sm ${vatDifference >= 0 ? 'bg-blue-100' : 'bg-orange-100'}`}>
-            <p className="text-sm text-gray-600">ผลลัพธ์</p>
-            <p className={`text-lg font-bold ${vatDifference >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
+          <div className={`rounded-lg p-4 shadow-sm border ${vatDifference >= 0 ? 'bg-[#E8F0E8] border-[#B8C9B8]' : 'bg-[#E8D8C4] border-[#C9A961]'}`}>
+            <p className="text-sm text-[#4A4A4A]">ผลลัพธ์</p>
+            <p className={`text-lg font-bold ${vatDifference >= 0 ? 'text-[#4A6A4A]' : 'text-[#7A5A2A]'}`}>
               {vatDifference >= 0 ? 'ต้องนำส่ง' : 'ขอคืนได้'}
             </p>
           </div>
         </div>
         
-        <div className="mt-4 p-3 bg-white rounded-lg text-sm text-gray-600">
-          <p className="font-medium mb-1">หมายเหตุ:</p>
-          <ul className="list-disc list-inside space-y-1">
+        <div className="mt-4 p-3 bg-white rounded-lg text-sm text-[#4A4A4A] border border-[#C9A961]">
+          <p className="font-medium mb-1 text-[#7A5A4A]">หมายเหตุ:</p>
+          <ul className="list-disc list-inside space-y-1 text-[#5A5A5A]">
             <li>ภาษีขาย (Output VAT): ภาษีที่เก็บจากลูกค้าเมื่อขายสินค้า/บริการ</li>
             <li>ภาษีซื้อ (Input VAT): ภาษีที่จ่ายให้ผู้ขายเมื่อซื้อสินค้า/บริการ</li>
             <li>หากภาษีขาย {'>'} ภาษีซื้อ = ต้องนำส่งสรรพากร</li>
