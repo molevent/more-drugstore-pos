@@ -1166,45 +1166,54 @@ export default function ExpensesPage() {
             <BookOpen className="h-5 w-5" />
           </button>
           <Link 
-            to="/purchase-orders"
-            className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
+            to="/expenses/add"
+            className="px-4 py-2 bg-[#A67B5B] hover:bg-[#8B6B4F] text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
           >
-            <ShoppingCart className="h-5 w-5 text-gray-900" />
-            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบสั่งซื้อ</span>
-          </Link>
-          <Link 
-            to="/quotations"
-            className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
-          >
-            <FileText className="h-5 w-5 text-gray-900" />
-            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบเสนอราคา</span>
-          </Link>
-          <Link 
-            to="/payment-vouchers"
-            className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
-          >
-            <FileText className="h-5 w-5 text-gray-900" />
-            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบสำคัญจ่าย</span>
-          </Link>
-          <Link 
-            to="/withholding-tax"
-            className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
-          >
-            <Percent className="h-5 w-5 text-gray-900" />
-            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">หัก ณ ที่จ่าย</span>
-          </Link>
-          <Link 
-            to="/petty-cash"
-            className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
-          >
-            <Wallet className="h-5 w-5 text-gray-900" />
-            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">เงินสดย่อย</span>
+            <Plus className="h-4 w-4" />
+            เพิ่มเอกสาร
           </Link>
         </div>
       </div>
 
       {/* View Mode Tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6 items-center">
+        {/* Quick Links - Moved here */}
+        <Link 
+          to="/purchase-orders"
+          className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
+        >
+          <ShoppingCart className="h-5 w-5 text-gray-900" />
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบสั่งซื้อ</span>
+        </Link>
+        <Link 
+          to="/quotations"
+          className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
+        >
+          <FileText className="h-5 w-5 text-gray-900" />
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบเสนอราคา</span>
+        </Link>
+        <Link 
+          to="/payment-vouchers"
+          className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
+        >
+          <FileText className="h-5 w-5 text-gray-900" />
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบสำคัญจ่าย</span>
+        </Link>
+        <Link 
+          to="/withholding-tax"
+          className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
+        >
+          <Percent className="h-5 w-5 text-gray-900" />
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">หัก ณ ที่จ่าย</span>
+        </Link>
+        <Link 
+          to="/petty-cash"
+          className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
+        >
+          <Wallet className="h-5 w-5 text-gray-900" />
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">เงินสดย่อย</span>
+        </Link>
+        <div className="flex-grow"></div>
         <button
           onClick={() => setViewMode('database')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
