@@ -428,7 +428,7 @@ export default function TaxInvoicesListPage() {
       </div>
 
       {/* Tax Invoices Table */}
-      <Card>
+      <div className="overflow-x-auto">
         {loading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#7D735F] mx-auto"></div>
@@ -443,92 +443,90 @@ export default function TaxInvoicesListPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-[#F5EFE6]">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    เลขที่ใบกำกับภาษี
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    วันที่/เวลา
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ลูกค้า
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ยอดรวม
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    VAT
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    จัดการ
-                  </th>
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-[#F5EFE6]">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  เลขที่ใบกำกับภาษี
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  วันที่/เวลา
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  ลูกค้า
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  ยอดรวม
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  VAT
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  จัดการ
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredTaxInvoices.map((invoice) => (
+                <tr key={invoice.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-[#7D735F]" />
+                      <span className="font-medium text-gray-900">{invoice.tax_invoice_number}</span>
+                    </div>
+                    <span className="text-xs text-gray-500 ml-6">
+                      {invoice.order_source === 'web' ? '(Web Order)' : '(POS)'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-900 font-medium">{formatDate(invoice.created_at)}</span>
+                      <span className="text-xs text-gray-500">{formatTime(invoice.created_at)}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-gray-400" />
+                      <span className="font-medium text-gray-900">{invoice.customer_name}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                    {formatCurrency(invoice.total_amount)} บาท
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                    {formatCurrency(invoice.vat_amount)} บาท
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-center">
+                    <div className="flex items-center gap-2 justify-center">
+                      <button
+                        onClick={() => openModal('view', invoice.order_id, invoice.order_source)}
+                        className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+                        title="ดูรายละเอียด"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => openModal('edit', invoice.order_id, invoice.order_source)}
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all"
+                        title="แก้ไข"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => openModal('print', invoice.order_id, invoice.order_source)}
+                        className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+                        title="พิมพ์"
+                      >
+                        <Printer className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredTaxInvoices.map((invoice) => (
-                  <tr key={invoice.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-[#7D735F]" />
-                        <span className="font-medium text-gray-900">{invoice.tax_invoice_number}</span>
-                      </div>
-                      <span className="text-xs text-gray-500 ml-6">
-                        {invoice.order_source === 'web' ? '(Web Order)' : '(POS)'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex flex-col">
-                        <span className="text-sm text-gray-900 font-medium">{formatDate(invoice.created_at)}</span>
-                        <span className="text-xs text-gray-500">{formatTime(invoice.created_at)}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-gray-400" />
-                        <span className="font-medium text-gray-900">{invoice.customer_name}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
-                      {formatCurrency(invoice.total_amount)} บาท
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                      {formatCurrency(invoice.vat_amount)} บาท
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-center">
-                      <div className="flex items-center gap-2 justify-center">
-                        <button
-                          onClick={() => openModal('view', invoice.order_id, invoice.order_source)}
-                          className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
-                          title="ดูรายละเอียด"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => openModal('edit', invoice.order_id, invoice.order_source)}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all"
-                          title="แก้ไข"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => openModal('print', invoice.order_id, invoice.order_source)}
-                          className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
-                          title="พิมพ์"
-                        >
-                          <Printer className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         )}
-      </Card>
+      </div>
 
       {/* View Modal */}
       {activeModal === 'view' && selectedOrder && (
