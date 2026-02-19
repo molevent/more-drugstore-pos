@@ -1767,13 +1767,6 @@ export default function ExpensesPage() {
                               PV
                             </span>
                           )}
-                          <button
-                            onClick={() => handleDelete(expense.id)}
-                            className="ml-2 p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                            title="ลบรายการ"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">{expense.vendor || '-'}</td>
@@ -2606,6 +2599,21 @@ export default function ExpensesPage() {
                 <button type="submit" className="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg transition-colors">
                   Save
                 </button>
+                {editingExpense && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm('ต้องการลบรายการนี้?')) {
+                        handleDelete(editingExpense.id)
+                        setShowModal(false)
+                      }
+                    }}
+                    className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 font-medium rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    ลบ
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
