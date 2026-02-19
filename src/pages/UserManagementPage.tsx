@@ -52,8 +52,8 @@ export default function UserManagementPage() {
     is_active: true
   })
 
-  // Check if current user can manage users
-  const canManageUsers = currentUser?.role === 'owner'
+  // Check if current user can manage users (owner or admin for backward compatibility)
+  const canManageUsers = ['owner', 'admin'].includes(currentUser?.role as string)
 
   useEffect(() => {
     if (!canManageUsers) {
