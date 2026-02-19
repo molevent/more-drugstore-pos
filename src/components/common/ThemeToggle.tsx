@@ -1,8 +1,8 @@
 import { Sun, Moon, Monitor } from 'lucide-react'
-import { useTheme } from '../contexts/ThemeContext'
+import { useTheme } from '../../contexts/ThemeContext'
 
 export function ThemeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme()
+  const { theme, setTheme } = useTheme()
 
   const options = [
     { value: 'light', label: 'สว่าง', icon: Sun },
