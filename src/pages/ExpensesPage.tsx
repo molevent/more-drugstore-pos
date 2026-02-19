@@ -1241,80 +1241,80 @@ export default function ExpensesPage() {
       {/* Summary Cards - Match Sales Page Style */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
         {/* Combined Count & Amount Card - IVORY LACE */}
-        <Card className="flex flex-col items-center justify-center text-center py-1.5 px-2 hover:border-[#D4C5B3] hover:border-2 transition-all cursor-pointer col-span-2 sm:col-span-1">
-          <div className="w-10 h-10 rounded-xl bg-[#F5F0E6] flex items-center justify-center mb-1">
-            <Receipt className="h-5 w-5 text-[#8B7355]" />
+        <Card className="flex flex-col items-center justify-center text-center py-1 px-1.5 hover:border-[#D4C5B3] hover:border-2 transition-all cursor-pointer col-span-2 sm:col-span-1">
+          <div className="w-9 h-9 rounded-lg bg-[#F5F0E6] flex items-center justify-center mb-0.5">
+            <Receipt className="h-4 w-4 text-[#8B7355]" />
           </div>
           <div className="leading-tight">
-            <p className="text-sm text-gray-600">ยอดรวมค่าใช้จ่าย</p>
-            <p className="text-2xl font-bold text-gray-900 leading-none mt-0.5">
+            <p className="text-sm text-gray-600 leading-none">ยอดรวมค่าใช้จ่าย</p>
+            <p className="text-2xl font-bold text-gray-900 leading-none">
               {viewMode === 'database' ? filteredExpenses.length : sheetData.length}
             </p>
-            <p className="text-xs text-[#8B7355] leading-none mt-0.5">
+            <p className="text-xs text-[#8B7355] leading-none">
               ฿{(viewMode === 'database' ? totalAmount : sheetTotalAmount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </p>
           </div>
         </Card>
 
         {/* Waiting for Receipt Card - LEMON CHIFFON */}
-        <Card className="flex flex-col items-center justify-center text-center py-1.5 px-2 hover:border-[#E6D7A8] hover:border-2 transition-all cursor-pointer">
-          <div className="w-10 h-10 rounded-xl bg-[#F5E6C8] flex items-center justify-center mb-1">
-            <Clock className="h-5 w-5 text-[#B8A060]" />
+        <Card className="flex flex-col items-center justify-center text-center py-1 px-1.5 hover:border-[#E6D7A8] hover:border-2 transition-all cursor-pointer">
+          <div className="w-9 h-9 rounded-lg bg-[#F5E6C8] flex items-center justify-center mb-0.5">
+            <Clock className="h-4 w-4 text-[#B8A060]" />
           </div>
           <div className="leading-tight">
-            <p className="text-sm text-gray-600">รอรับใบเสร็จ</p>
-            <p className="text-2xl font-bold text-gray-900 leading-none mt-0.5">
+            <p className="text-sm text-gray-600 leading-none">รอรับใบเสร็จ</p>
+            <p className="text-2xl font-bold text-gray-900 leading-none">
               {waitingReceiptCount}
             </p>
-            <p className="text-xs text-[#B8A060] leading-none mt-0.5">
+            <p className="text-xs text-[#B8A060] leading-none">
               ฿{waitingReceiptAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </p>
           </div>
         </Card>
 
         {/* Waiting for Payment Voucher Card - WONDEROUS BLUE */}
-        <Card className="flex flex-col items-center justify-center text-center py-1.5 px-2 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
-          <div className="w-10 h-10 rounded-xl bg-[#B8D4E3] flex items-center justify-center mb-1">
-            <FileText className="h-5 w-5 text-[#5B7A8B]" />
+        <Card className="flex flex-col items-center justify-center text-center py-1 px-1.5 hover:border-[#A8C4D9] hover:border-2 transition-all cursor-pointer">
+          <div className="w-9 h-9 rounded-lg bg-[#B8D4E3] flex items-center justify-center mb-0.5">
+            <FileText className="h-4 w-4 text-[#5B7A8B]" />
           </div>
           <div className="leading-tight">
-            <p className="text-sm text-gray-600">รอทำใบสำคัญจ่าย</p>
-            <p className="text-2xl font-bold text-gray-900 leading-none mt-0.5">
+            <p className="text-sm text-gray-600 leading-none">รอทำใบสำคัณจ่าย</p>
+            <p className="text-2xl font-bold text-gray-900 leading-none">
               {waitingPaymentCount}
             </p>
-            <p className="text-xs text-[#5B7A8B] leading-none mt-0.5">
+            <p className="text-xs text-[#5B7A8B] leading-none">
               ฿{waitingPaymentAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </p>
           </div>
         </Card>
 
         {/* VAT Expenses Card - RAINWASHED */}
-        <Card className="flex flex-col items-center justify-center text-center py-1.5 px-2 hover:border-[#A8C4B8] hover:border-2 transition-all cursor-pointer">
-          <div className="w-10 h-10 rounded-xl bg-[#C5D5C5] flex items-center justify-center mb-1">
-            <Percent className="h-5 w-5 text-[#5B7A6B]" />
+        <Card className="flex flex-col items-center justify-center text-center py-1 px-1.5 hover:border-[#A8C4B8] hover:border-2 transition-all cursor-pointer">
+          <div className="w-9 h-9 rounded-lg bg-[#C5D5C5] flex items-center justify-center mb-0.5">
+            <Percent className="h-4 w-4 text-[#5B7A6B]" />
           </div>
           <div className="leading-tight">
-            <p className="text-sm text-gray-600">ค่าใช้จ่ายมี VAT</p>
-            <p className="text-2xl font-bold text-gray-900 leading-none mt-0.5">
+            <p className="text-sm text-gray-600 leading-none">ค่าใช้จ่ายมี VAT</p>
+            <p className="text-2xl font-bold text-gray-900 leading-none">
               {vatExpenses.length}
             </p>
-            <p className="text-xs text-[#5B7A6B] leading-none mt-0.5">
+            <p className="text-xs text-[#5B7A6B] leading-none">
               ฿{vatTotalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </p>
           </div>
         </Card>
 
         {/* Non-VAT Expenses Card - AGAPAHNTHUS */}
-        <Card className="flex flex-col items-center justify-center text-center py-1.5 px-2 hover:border-[#B8B8C8] hover:border-2 transition-all cursor-pointer">
-          <div className="w-10 h-10 rounded-xl bg-[#C5C9D9] flex items-center justify-center mb-1">
-            <Receipt className="h-5 w-5 text-[#6B6B8B]" />
+        <Card className="flex flex-col items-center justify-center text-center py-1 px-1.5 hover:border-[#B8B8C8] hover:border-2 transition-all cursor-pointer">
+          <div className="w-9 h-9 rounded-lg bg-[#C5C9D9] flex items-center justify-center mb-0.5">
+            <Receipt className="h-4 w-4 text-[#6B6B8B]" />
           </div>
           <div className="leading-tight">
-            <p className="text-sm text-gray-600">ค่าใช้จ่ายไม่มี VAT</p>
-            <p className="text-2xl font-bold text-gray-900 leading-none mt-0.5">
+            <p className="text-sm text-gray-600 leading-none">ค่าใช้จ่ายไม่มี VAT</p>
+            <p className="text-2xl font-bold text-gray-900 leading-none">
               {nonVatExpenses.length}
             </p>
-            <p className="text-xs text-[#6B6B8B] leading-none mt-0.5">
+            <p className="text-xs text-[#6B6B8B] leading-none">
               ฿{nonVatTotalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </p>
           </div>
