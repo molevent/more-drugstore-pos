@@ -353,7 +353,7 @@ export default function TaxInvoicesListPage() {
 
       {/* Filters */}
       <div className="flex items-center gap-2 mb-6">
-        <div className="flex-1 max-w-[800px]">
+        <div className="flex-1 max-w-[960px]">
           <div className="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-2">
             <Search className="h-4 w-4 text-gray-500 flex-shrink-0" />
             <input
@@ -370,14 +370,14 @@ export default function TaxInvoicesListPage() {
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="bg-gray-100 border-none rounded-lg text-xs py-2 px-2 w-24 outline-none"
+            className="bg-gray-100 border-none rounded-lg text-xs py-2 px-2 w-48 outline-none"
           />
           <span className="text-gray-400 text-xs">-</span>
           <input
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="bg-gray-100 border-none rounded-lg text-xs py-2 px-2 w-24 outline-none"
+            className="bg-gray-100 border-none rounded-lg text-xs py-2 px-2 w-48 outline-none"
           />
         </div>
       </div>
