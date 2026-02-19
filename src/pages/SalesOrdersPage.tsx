@@ -523,39 +523,39 @@ export default function SalesOrdersPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 px-4 sm:px-0">
-        <Card className="bg-white border-[#B8C9B8] shadow-sm">
+        <Card className="bg-[#F5E6C8]/30 border-[#F5E6C8]">
           <div className="flex items-center">
-            <div className="h-10 w-10 rounded-xl bg-[#7D735F] flex items-center justify-center shadow-sm">
+            <div className="h-10 w-10 rounded-xl bg-[#8B7355] flex items-center justify-center shadow-sm">
               <ListOrdered className="h-5 w-5 text-white" />
             </div>
             <div className="ml-4">
-              <p className="text-sm text-gray-600">จำนวนรายการขาย</p>
-              <p className="text-2xl font-bold text-gray-900">{totalOrders.toLocaleString()}</p>
+              <p className="text-sm text-[#8B7355]">จำนวนรายการขาย</p>
+              <p className="text-2xl font-bold text-[#5C4A32]">{totalOrders.toLocaleString()}</p>
             </div>
           </div>
         </Card>
-        <Card className="bg-white border-[#B8C9B8] shadow-sm">
+        <Card className="bg-[#B8D4E3]/30 border-[#B8D4E3]">
           <div className="flex items-center">
-            <div className="h-10 w-10 rounded-xl bg-[#A67B5B] flex items-center justify-center shadow-sm">
+            <div className="h-10 w-10 rounded-xl bg-[#2E5266] flex items-center justify-center shadow-sm">
               <ListOrdered className="h-5 w-5 text-white" />
             </div>
             <div className="ml-4">
-              <p className="text-sm text-gray-600">ยอดขายรวม</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalSales)}</p>
+              <p className="text-sm text-[#2E5266]">ยอดขายรวม</p>
+              <p className="text-2xl font-bold text-[#2E5266]">{formatCurrency(totalSales)}</p>
             </div>
           </div>
         </Card>
       </div>
 
       {/* Filters */}
-      <Card className="mb-6 px-4 sm:px-0 bg-white border-gray-200">
+      <Card className="mb-6 px-4 sm:px-0 bg-[#F5EFE6] border-[#E8E0D5]">
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               <Search className="h-4 w-4 inline mr-1" />
               ค้นหา
             </label>
-            <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-2.5 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+            <div className="flex items-center gap-2 bg-[#F5EFE6] rounded-full px-4 py-2.5 border border-transparent focus-within:border-[#B8D4E3] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#B8D4E3]/30 transition-all">
               <input
                 type="text"
                 placeholder="เลขที่ออเดอร์, ชื่อลูกค้า..."
@@ -599,7 +599,7 @@ export default function SalesOrdersPage() {
       </Card>
 
       {/* Orders Table */}
-      <Card className="px-4 sm:px-0 bg-white border-gray-200">
+      <Card className="px-4 sm:px-0 bg-white border-[#E8E0D5]">
         {loading ? (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600 mx-auto"></div>
@@ -613,7 +613,7 @@ export default function SalesOrdersPage() {
         ) : (
           <div className="min-w-full">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-[#F5EFE6]">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     เลขที่ออเดอร์
@@ -641,9 +641,9 @@ export default function SalesOrdersPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-[#E8E0D5]">
                 {filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={order.id} className="hover:bg-[#F5EFE6]/50 transition-colors">
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className="font-medium text-gray-900">{order.order_number}</span>
                     </td>
@@ -651,7 +651,7 @@ export default function SalesOrdersPage() {
                       {formatDate(order.created_at)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                      <span className="px-2 py-1 bg-[#C5C9E8] text-[#4A5568] text-xs rounded-full">
                         {getPlatformName(order.platform_id)}
                       </span>
                     </td>
@@ -659,7 +659,7 @@ export default function SalesOrdersPage() {
                       {order.customer_name || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                      <span className="px-2 py-1 bg-[#C5D5C8] text-[#5C4A32] text-xs rounded-full">
                         {getPaymentMethodName(order.payment_method)}
                       </span>
                     </td>
