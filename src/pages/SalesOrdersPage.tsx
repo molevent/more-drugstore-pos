@@ -615,96 +615,185 @@ export default function SalesOrdersPage() {
       const shopTaxId = shopData?.tax_id || ''
       const shopPhone = shopData?.phone || ''
 
-      // Generate tax invoice content (A4 size, full tax invoice format)
+      // Generate professional tax invoice content matching the example format
       const taxInvoiceContent = `
-        <div style="font-family: 'TH Sarabun New', 'Angsana New', sans-serif; width: 210mm; padding: 20px; font-size: 14px;">
-          <div style="border: 2px solid #000; padding: 20px;">
-            <!-- Header -->
-            <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 15px;">
-              <h1 style="margin: 0; font-size: 24px; font-weight: bold;">${shopName}</h1>
-              <p style="margin: 5px 0; font-size: 12px;">${shopAddress}</p>
-              <p style="margin: 5px 0; font-size: 12px;">โทร: ${shopPhone} | เลขประจำตัวผู้เสียภาษี: ${shopTaxId}</p>
-              <h2 style="margin: 10px 0 0 0; font-size: 20px; font-weight: bold;">ใบกำกับภาษี/ใบเสร็จรับเงิน</h2>
-              <p style="margin: 5px 0; font-size: 12px;">Tax Invoice / Receipt</p>
-            </div>
-            
-            <!-- Invoice Info -->
-            <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-              <div style="width: 50%;">
-                <p style="margin: 3px 0;"><strong>ลูกค้า:</strong> ${order.customer_name || 'ลูกค้าทั่วไป'}</p>
-                <p style="margin: 3px 0;"><strong>ที่อยู่:</strong> ${customerAddress || '-'}</p>
-                <p style="margin: 3px 0;"><strong>เลขประจำตัวผู้เสียภาษี:</strong> ${customerTaxId}</p>
-              </div>
-              <div style="width: 40%; text-align: right;">
-                <p style="margin: 3px 0;"><strong>เลขที่:</strong> ${taxInvoiceNumber}</p>
-                <p style="margin: 3px 0;"><strong>วันที่:</strong> ${new Date().toLocaleDateString('th-TH')}</p>
-                <p style="margin: 3px 0;"><strong>อ้างอิงออเดอร์:</strong> ${order.order_number}</p>
-              </div>
-            </div>
-            
-            <!-- Items Table -->
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;" border="1">
-              <thead>
-                <tr style="background-color: #f0f0f0;">
-                  <th style="padding: 8px; text-align: center; width: 5%;">ลำดับ</th>
-                  <th style="padding: 8px; text-align: left; width: 40%;">รายการ</th>
-                  <th style="padding: 8px; text-align: right; width: 10%;">จำนวน</th>
-                  <th style="padding: 8px; text-align: right; width: 15%;">ราคาต่อหน่วย</th>
-                  <th style="padding: 8px; text-align: right; width: 15%;">จำนวนเงิน</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${items?.map((item: any, index: number) => {
-                  const unitPrice = (item.total_price || 0) / (item.quantity || 1) / 1.07
-                  const itemTotal = (item.total_price || 0) / 1.07
-                  return `
-                    <tr>
-                      <td style="padding: 6px; text-align: center;">${index + 1}</td>
-                      <td style="padding: 6px;">${item.product?.name_th || item.product_name || 'สินค้า'}</td>
-                      <td style="padding: 6px; text-align: right;">${item.quantity}</td>
-                      <td style="padding: 6px; text-align: right;">${unitPrice.toFixed(2)}</td>
-                      <td style="padding: 6px; text-align: right;">${itemTotal.toFixed(2)}</td>
-                    </tr>
-                  `
-                }).join('')}
-              </tbody>
-            </table>
-            
-            <!-- Totals -->
-            <div style="display: flex; justify-content: flex-end;">
-              <div style="width: 40%;">
-                <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #ccc;">
-                  <span>รวมมูลค่าสินค้า/บริการ:</span>
-                  <span>${baseAmount.toFixed(2)}</span>
+        <div style="font-family: 'TH Sarabun New', 'Angsana New', sans-serif; width: 210mm; min-height: 297mm; padding: 15px; font-size: 14px; box-sizing: border-box;">
+          <!-- Header Section -->
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+            <tr>
+              <!-- Logo/Company Info -->
+              <td style="width: 60%; vertical-align: top;">
+                <div style="border: 2px solid #333; border-radius: 50%; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+                  <span style="font-size: 12px; text-align: center; color: #666;">Logo</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #ccc;">
-                  <span>ภาษีมูลค่าเพิ่ม 7%:</span>
-                  <span>${vatAmount.toFixed(2)}</span>
+                <p style="margin: 3px 0; font-size: 13px; font-weight: bold;">${shopName}</p>
+                <p style="margin: 3px 0; font-size: 12px;">${shopAddress}</p>
+                <p style="margin: 3px 0; font-size: 12px;">เลขประจำตัวผู้เสียภาษี: ${shopTaxId}</p>
+                <p style="margin: 3px 0; font-size: 12px;">โทร: ${shopPhone}</p>
+              </td>
+              <!-- Invoice Details -->
+              <td style="width: 40%; vertical-align: top; text-align: right;">
+                <h2 style="margin: 0 0 10px 0; font-size: 20px; font-weight: bold;">ใบกำกับภาษี/ใบเสร็จรับเงิน</h2>
+                <p style="margin: 3px 0; font-size: 11px; color: #666;">ต้นฉบับ (เอกสารออกเป็นคู่ฉบับ)</p>
+                <table style="width: 100%; margin-top: 10px; font-size: 12px;">
+                  <tr>
+                    <td style="text-align: left; padding: 2px 0;">เลขที่</td>
+                    <td style="text-align: right; padding: 2px 0;">${taxInvoiceNumber}</td>
+                  </tr>
+                  <tr>
+                    <td style="text-align: left; padding: 2px 0;">วันที่</td>
+                    <td style="text-align: right; padding: 2px 0;">${new Date().toLocaleDateString('th-TH')}</td>
+                  </tr>
+                  <tr>
+                    <td style="text-align: left; padding: 2px 0;">ครบกำหนด</td>
+                    <td style="text-align: right; padding: 2px 0;">${new Date().toLocaleDateString('th-TH')}</td>
+                  </tr>
+                  <tr>
+                    <td style="text-align: left; padding: 2px 0;">อ้างอิง</td>
+                    <td style="text-align: right; padding: 2px 0;">${order.order_number}</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Customer Section -->
+          <table style="width: 100%; border: 1px solid #333; border-collapse: collapse; margin-bottom: 15px;">
+            <tr>
+              <td style="padding: 10px; vertical-align: top; width: 50%; border-right: 1px solid #333;">
+                <p style="margin: 3px 0; font-size: 12px; color: #666;">ลูกค้า</p>
+                <p style="margin: 5px 0; font-size: 13px; font-weight: bold;">${order.customer_name || 'ลูกค้าทั่วไป'}</p>
+                <p style="margin: 3px 0; font-size: 12px;">${customerAddress || '-'}</p>
+                <p style="margin: 3px 0; font-size: 12px;">เลขประจำตัวผู้เสียภาษี: ${customerTaxId}</p>
+              </td>
+              <td style="padding: 10px; vertical-align: top; width: 50%;">
+                <p style="margin: 3px 0; font-size: 12px; color: #666;">เรื่อง</p>
+                <p style="margin: 5px 0; font-size: 13px;">ขายสินค้า</p>
+                <p style="margin: 10px 0 3px 0; font-size: 12px; color: #666;">เรื่อง</p>
+                <p style="margin: 3px 0; font-size: 12px;">-</p>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Items Table -->
+          <table style="width: 100%; border: 1px solid #333; border-collapse: collapse; margin-bottom: 0;">
+            <thead>
+              <tr style="background-color: #f5f5f5;">
+                <th style="border: 1px solid #333; padding: 8px; text-align: center; width: 5%; font-size: 12px;">#</th>
+                <th style="border: 1px solid #333; padding: 8px; text-align: left; width: 35%; font-size: 12px;">รายละเอียด</th>
+                <th style="border: 1px solid #333; padding: 8px; text-align: center; width: 10%; font-size: 12px;">จำนวน</th>
+                <th style="border: 1px solid #333; padding: 8px; text-align: center; width: 10%; font-size: 12px;">หน่วย</th>
+                <th style="border: 1px solid #333; padding: 8px; text-align: right; width: 15%; font-size: 12px;">ราคาต่อหน่วย</th>
+                <th style="border: 1px solid #333; padding: 8px; text-align: right; width: 12%; font-size: 12px;">ส่วนลด</th>
+                <th style="border: 1px solid #333; padding: 8px; text-align: right; width: 13%; font-size: 12px;">มูลค่า</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items?.map((item: any, index: number) => {
+                const itemTotal = item.total_price || 0
+                const unitPrice = item.quantity > 0 ? itemTotal / item.quantity : 0
+                return `
+                  <tr>
+                    <td style="border: 1px solid #333; padding: 6px; text-align: center; font-size: 12px;">${index + 1}</td>
+                    <td style="border: 1px solid #333; padding: 6px; font-size: 12px;">${item.product?.name_th || item.product_name || 'สินค้า'}</td>
+                    <td style="border: 1px solid #333; padding: 6px; text-align: center; font-size: 12px;">${item.quantity}</td>
+                    <td style="border: 1px solid #333; padding: 6px; text-align: center; font-size: 12px;">ชิ้น</td>
+                    <td style="border: 1px solid #333; padding: 6px; text-align: right; font-size: 12px;">${unitPrice.toFixed(2)}</td>
+                    <td style="border: 1px solid #333; padding: 6px; text-align: right; font-size: 12px;">-</td>
+                    <td style="border: 1px solid #333; padding: 6px; text-align: right; font-size: 12px;">${itemTotal.toFixed(2)}</td>
+                  </tr>
+                `
+              }).join('')}
+            </tbody>
+          </table>
+
+          <!-- Totals Section -->
+          <table style="width: 100%; border: 1px solid #333; border-collapse: collapse; border-top: none;">
+            <tr>
+              <td style="width: 50%; border-right: 1px solid #333; padding: 10px; vertical-align: top; font-size: 11px;">
+                <p style="margin: 3px 0;">(หนึ่งหมื่นห้าพันสองร้อยห้าสิบบาทถ้วน)</p>
+                <p style="margin: 10px 0 3px 0; font-weight: bold;">หมายเหตุ</p>
+                <p style="margin: 3px 0;">1. กรุณาตรวจสอบสินค้าและจำนวนให้ถูกต้องก่อนรับสินค้า</p>
+                <p style="margin: 3px 0;">2. สินค้าที่ขายแล้วไม่รับคืน</p>
+              </td>
+              <td style="width: 50%; padding: 0; vertical-align: top;">
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #ddd;">รวมเป็นเงิน</td>
+                    <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #ddd; width: 120px;">${totalAmount.toFixed(2)} บาท</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #ddd;">ภาษีมูลค่าเพิ่ม 7%</td>
+                    <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #ddd;">${vatAmount.toFixed(2)} บาท</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #ddd;">ราคาไม่รวมภาษีมูลค่าเพิ่ม</td>
+                    <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #ddd;">${baseAmount.toFixed(2)} บาท</td>
+                  </tr>
+                  <tr style="background-color: #f5f5f5;">
+                    <td style="padding: 8px 10px; text-align: right; font-size: 13px; font-weight: bold; border-top: 2px solid #333;">จำนวนเงินรวมทั้งสิ้น</td>
+                    <td style="padding: 8px 10px; text-align: right; font-size: 13px; font-weight: bold; border-top: 2px solid #333;">${totalAmount.toFixed(2)} บาท</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Payment Section -->
+          <table style="width: 100%; border: 1px solid #333; border-collapse: collapse; margin-top: 15px;">
+            <tr>
+              <td style="padding: 10px; vertical-align: top; width: 60%;">
+                <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: bold;">ชำระเงินโดย:</p>
+                <div style="font-size: 12px;">
+                  <span style="margin-right: 15px;"><span style="border: 1px solid #333; display: inline-block; width: 12px; height: 12px; margin-right: 3px; vertical-align: middle;"></span> เงินสด</span>
+                  <span style="margin-right: 15px;"><span style="border: 1px solid #333; display: inline-block; width: 12px; height: 12px; margin-right: 3px; vertical-align: middle;"></span> เช็ค</span>
+                  <span style="margin-right: 15px;"><span style="border: 1px solid #333; display: inline-block; width: 12px; height: 12px; margin-right: 3px; vertical-align: middle;"></span> โอนเงิน</span>
+                  <span><span style="border: 1px solid #333; display: inline-block; width: 12px; height: 12px; margin-right: 3px; vertical-align: middle;"></span> บัตรเครดิต</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0; font-weight: bold; font-size: 16px;">
-                  <span>จำนวนเงินรวมทั้งสิ้น:</span>
-                  <span>${totalAmount.toFixed(2)}</span>
+                <table style="width: 100%; margin-top: 10px; font-size: 11px; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 4px; border: 1px solid #ddd; width: 30%;">ธนาคาร</td>
+                    <td style="padding: 4px; border: 1px solid #ddd;">เลขที่</td>
+                    <td style="padding: 4px; border: 1px solid #ddd; width: 25%;">วันที่</td>
+                    <td style="padding: 4px; border: 1px solid #ddd; width: 25%;">จำนวนเงิน</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 4px; border: 1px solid #ddd;">&nbsp;</td>
+                    <td style="padding: 4px; border: 1px solid #ddd;">&nbsp;</td>
+                    <td style="padding: 4px; border: 1px solid #ddd;">&nbsp;</td>
+                    <td style="padding: 4px; border: 1px solid #ddd;">&nbsp;</td>
+                  </tr>
+                </table>
+              </td>
+              <td style="padding: 10px; vertical-align: top; width: 40%; text-align: center;">
+                <p style="margin: 0 0 5px 0; font-size: 11px; color: #666;">ขอแสดงความนับถือ</p>
+                <div style="margin-top: 40px;">
+                  <p style="margin: 0; font-size: 12px;">_____________________</p>
+                  <p style="margin: 5px 0 0 0; font-size: 12px;">ผู้จ่ายเงิน</p>
                 </div>
-              </div>
-            </div>
-            
-            <!-- Footer -->
-            <div style="margin-top: 30px; display: flex; justify-content: space-between;">
-              <div style="text-align: center; width: 30%;">
-                <p style="margin: 0;">_________________</p>
-                <p style="margin: 5px 0; font-size: 12px;">ผู้รับเงิน</p>
-              </div>
-              <div style="text-align: center; width: 30%;">
-                <p style="margin: 0;">_________________</p>
-                <p style="margin: 5px 0; font-size: 12px;">ผู้จัดทำ</p>
-              </div>
-              <div style="width: 35%; font-size: 11px; border: 1px solid #ccc; padding: 10px;">
-                <p style="margin: 3px 0;"><strong>หมายเหตุ:</strong></p>
-                <p style="margin: 3px 0;">1. ใบกำกับภาษีฉบับนี้เป็นหลักฐานการซื้อขายที่ถูกต้องตามกฎหมาย</p>
-                <p style="margin: 3px 0;">2. สินค้าที่จำหน่ายไม่สามารถคืนเงินได้</p>
-              </div>
-            </div>
-          </div>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Footer Section -->
+          <table style="width: 100%; margin-top: 20px; border-collapse: collapse;">
+            <tr>
+              <td style="width: 35%; text-align: center; vertical-align: top; padding: 10px;">
+                <p style="margin: 0; font-size: 12px;">_____________________</p>
+                <p style="margin: 5px 0 0 0; font-size: 12px;">ผู้จ่ายเงิน</p>
+              </td>
+              <td style="width: 30%; text-align: center; vertical-align: middle; padding: 10px;">
+                <div style="border: 2px solid #0066cc; border-radius: 50%; width: 100px; height: 100px; margin: 0 auto; display: flex; align-items: center; justify-content: center; color: #0066cc; font-weight: bold;">
+                  <span style="font-size: 11px; text-align: center;">ตราบริษัท<br/>Saang</span>
+                </div>
+              </td>
+              <td style="width: 35%; text-align: center; vertical-align: top; padding: 10px;">
+                <p style="margin: 0; font-size: 12px;">_____________________</p>
+                <p style="margin: 5px 0 0 0; font-size: 12px;">ผู้รับเงิน</p>
+                <p style="margin: 3px 0 0 0; font-size: 11px; color: #666;">${new Date().toLocaleDateString('th-TH')}</p>
+              </td>
+            </tr>
+          </table>
         </div>
       `
       
