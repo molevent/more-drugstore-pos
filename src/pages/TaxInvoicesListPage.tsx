@@ -372,15 +372,15 @@ export default function TaxInvoicesListPage() {
             placeholder="จากวันที่"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="w-14"
+            className="w-32 text-xs py-1 px-2"
           />
-          <span className="text-gray-500">-</span>
+          <span className="text-gray-500 text-xs">-</span>
           <Input
             type="date"
             placeholder="ถึงวันที่"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="w-14"
+            className="w-32 text-xs py-1 px-2"
           />
         </div>
       </div>
