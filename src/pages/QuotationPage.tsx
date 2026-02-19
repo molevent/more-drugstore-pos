@@ -967,50 +967,51 @@ export default function QuotationPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="no-print flex gap-1 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
-        <button
-          onClick={() => setActiveTab('quotation')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-            activeTab === 'quotation'
-              ? 'bg-white text-[#4A90A4] shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <FileText className="h-4 w-4" />
-          ใบเสนอราคา
-        </button>
-        <button
-          onClick={() => setActiveTab('profit')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-            activeTab === 'profit'
-              ? 'bg-white text-[#4A90A4] shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <Calculator className="h-4 w-4" />
-          ต้นทุน/กำไร
-        </button>
-      </div>
-
-      {/* Toolbar */}
-      <div className="no-print flex justify-end gap-2 mb-4">
-        <button onClick={handleShare} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="แชร์ลิงก์">
-          <Share2 className="h-5 w-5" />
-        </button>
-        <button onClick={handlePrint} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="พิมพ์">
-          <Printer className="h-5 w-5" />
-        </button>
-        <button onClick={handleDownloadPDF} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="ดาวน์โหลด PDF">
-          <Download className="h-5 w-5" />
-        </button>
-        <button onClick={handleSavePDF} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="บันทึก PDF ในระบบ">
-          <Save className="h-5 w-5" />
-        </button>
-        <div className="relative" ref={moreMenuRef}>
-          <button onClick={() => setShowMoreMenu(!showMoreMenu)} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded">
-            <MoreHorizontal className="h-5 w-5" />
+      {/* Tabs and Toolbar - Combined in one row */}
+      <div className="no-print flex items-center justify-between mb-4">
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+          <button
+            onClick={() => setActiveTab('quotation')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              activeTab === 'quotation'
+                ? 'bg-white text-[#4A90A4] shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <FileText className="h-4 w-4" />
+            ใบเสนอราคา
           </button>
+          <button
+            onClick={() => setActiveTab('profit')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              activeTab === 'profit'
+                ? 'bg-white text-[#4A90A4] shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <Calculator className="h-4 w-4" />
+            ต้นทุน/กำไร
+          </button>
+        </div>
+        
+        {/* Toolbar buttons */}
+        <div className="flex items-center gap-1">
+          <button onClick={handleShare} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="แชร์ลิงก์">
+            <Share2 className="h-5 w-5" />
+          </button>
+          <button onClick={handlePrint} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="พิมพ์">
+            <Printer className="h-5 w-5" />
+          </button>
+          <button onClick={handleDownloadPDF} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="ดาวน์โหลด PDF">
+            <Download className="h-5 w-5" />
+          </button>
+          <button onClick={handleSavePDF} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="บันทึก PDF ในระบบ">
+            <Save className="h-5 w-5" />
+          </button>
+          <div className="relative" ref={moreMenuRef}>
+            <button onClick={() => setShowMoreMenu(!showMoreMenu)} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded">
+              <MoreHorizontal className="h-5 w-5" />
+            </button>
           {showMoreMenu && (
             <div className="absolute right-0 mt-1 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
               <div className="p-2 space-y-1">
