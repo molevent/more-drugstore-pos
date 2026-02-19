@@ -353,40 +353,38 @@ export default function TaxInvoicesListPage() {
       </div>
 
       {/* Filters */}
-      <Card className="mb-6">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 min-w-[200px]">
-            <div className="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2.5 transition-all">
-              <Search className="h-4 w-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700 whitespace-nowrap">ค้นหา</span>
-              <input
-                type="text"
-                placeholder="เลขที่ใบกำกับภาษี, ชื่อลูกค้า..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-sm min-w-0"
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Input
-              type="date"
-              placeholder="จากวันที่"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="w-32"
-            />
-            <span className="text-gray-500">-</span>
-            <Input
-              type="date"
-              placeholder="ถึงวันที่"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="w-32"
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex-1 min-w-[200px]">
+          <div className="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2.5 transition-all">
+            <Search className="h-4 w-4 text-gray-500" />
+            <span className="text-sm font-medium text-gray-700 whitespace-nowrap">ค้นหา</span>
+            <input
+              type="text"
+              placeholder="เลขที่ใบกำกับภาษี, ชื่อลูกค้า..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-sm min-w-0"
             />
           </div>
         </div>
-      </Card>
+        <div className="flex items-center gap-2">
+          <Input
+            type="date"
+            placeholder="จากวันที่"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="w-32"
+          />
+          <span className="text-gray-500">-</span>
+          <Input
+            type="date"
+            placeholder="ถึงวันที่"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="w-32"
+          />
+        </div>
+      </div>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
