@@ -113,38 +113,33 @@ export default function UserManagementPage() {
         if (error) throw error
         alert('บันทึกสำเร็จ')
       } else {
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: email,
-          password: formData.password || '888888',
-          options: {
-            data: {
-              full_name: formData.full_name,
-              username: formData.username,
-              role: formData.role
-            }
-          }
-        })
-        
-        if (authError) {
-          alert('เกิดข้อผิดพลาด: ' + authError.message)
-          return
-        }
-        
-        if (authData.user) {
-          const { error } = await supabase
-            .from('users')
-            .insert({
-              id: authData.user.id,
+        // Use Edge Function to create user (no rate limit)
+        const { data: session } = await supabase.auth.getSession()
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.session?.access_token}`,
+            },
+            body: JSON.stringify({
               username: formData.username,
               email: email,
+              password: formData.password || '888888',
               full_name: formData.full_name,
               role: formData.role,
-              is_active: formData.is_active
-            })
-          
-          if (error) throw error
-          alert('สร้างผู้ใช้สำเร็จ')
+            }),
+          }
+        )
+
+        if (!response.ok) {
+          const error = await response.json()
+          alert('เกิดข้อผิดพลาด: ' + (error.error || 'Unknown error'))
+          return
         }
+
+        alert('สร้างผู้ใช้สำเร็จ')
       }
       
       handleCloseModal()
