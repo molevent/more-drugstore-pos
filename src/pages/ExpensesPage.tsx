@@ -1153,9 +1153,9 @@ export default function ExpensesPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Receipt className="h-7 w-7 text-[#7D735F]" />
-            ค่าใช้จ่าย
+            เอกสาร
           </h1>
-          <p className="text-gray-600 mt-1">บันทึกและติดตามค่าใช้จ่ายต่างๆ ของร้าน</p>
+          <p className="text-gray-600 mt-1">บันทึกและติดตามเอกสารต่างๆ ของร้าน</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -1214,7 +1214,7 @@ export default function ExpensesPage() {
           }`}
         >
           <Database className="h-4 w-4" />
-          ฐานข้อมูล
+          ค่าใช้จ่าย
         </button>
         <button
           onClick={() => setViewMode('sheets')}
