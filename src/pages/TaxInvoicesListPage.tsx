@@ -62,11 +62,19 @@ interface Order {
 type ModalType = 'view' | 'edit' | 'print' | null
 
 export default function TaxInvoicesListPage() {
+  // Get default date range: 1st of current month to today
+  const today = new Date()
+  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+  
+  const formatDateForInput = (date: Date) => {
+    return date.toISOString().split('T')[0]
+  }
+
   const [taxInvoices, setTaxInvoices] = useState<TaxInvoice[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
+  const [dateFrom, setDateFrom] = useState(formatDateForInput(firstDayOfMonth))
+  const [dateTo, setDateTo] = useState(formatDateForInput(today))
   
   // Modal states
   const [activeModal, setActiveModal] = useState<ModalType>(null)
