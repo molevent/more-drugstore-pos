@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { FileText, Plus, Search, Trash2, Edit2, BookOpen, Printer, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
+import { FileText, Plus, Search, Trash2, Edit2, BookOpen, Printer, Calendar as CalendarIcon, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react'
 
 interface PaymentVoucher {
   id: string
@@ -196,12 +196,21 @@ export default function PaymentVoucherPage() {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <FileText className="h-7 w-7 text-blue-600" />
-            ใบสำคัญจ่าย
-          </h1>
-          <p className="text-gray-600 mt-1">บันทึกและจัดการใบสำคัญจ่าย</p>
+        <div className="flex items-center gap-3">
+          <a
+            href="/expenses"
+            className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+            title="กลับไปหน้าเอกสาร"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </a>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <FileText className="h-7 w-7 text-blue-600" />
+              ใบสำคัญจ่าย
+            </h1>
+            <p className="text-gray-600 mt-1">บันทึกและจัดการใบสำคัญจ่าย</p>
+          </div>
         </div>
         <div className="flex gap-2">
           <button

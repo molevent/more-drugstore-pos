@@ -17,7 +17,8 @@ import {
   Trash2,
   Edit3,
   Printer,
-  FileDown
+  FileDown,
+  ArrowLeft
 } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -737,10 +738,19 @@ export default function PettyCashPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <Banknote className="h-8 w-8 text-[#A67B5B] mt-1" />
-          <div>
-            <h1 className="text-2xl font-bold text-[#5C4A32]">เงินสดย่อย</h1>
-            <p className="text-[#8B7355]">จัดการเงินสดย่อย</p>
+          <a
+            href="/expenses"
+            className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+            title="กลับไปหน้าเอกสาร"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </a>
+          <div className="flex items-center gap-3">
+            <Banknote className="h-8 w-8 text-[#A67B5B] mt-1" />
+            <div>
+              <h1 className="text-2xl font-bold text-[#5C4A32]">เงินสดย่อย</h1>
+              <p className="text-[#8B7355]">จัดการเงินสดย่อย</p>
+            </div>
           </div>
         </div>
         <div className="flex gap-2">

@@ -30,7 +30,8 @@ import {
   TrendingUp,
   TrendingDown,
   Boxes,
-  ShoppingCart
+  ShoppingCart,
+  ArrowLeft
 } from 'lucide-react'
 
 interface QuotationItem {
@@ -917,9 +918,16 @@ export default function QuotationPage() {
       {/* Header */}
       <div className="no-print flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
-          <FileText className="h-8 w-8 text-[#4A90A4]" />
+          <a
+            href="/expenses"
+            className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+            title="กลับไปหน้าเอกสาร"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </a>
           <div>
             <div className="flex items-center gap-2">
+              <FileText className="h-8 w-8 text-[#4A90A4]" />
               <h1 className="text-xl font-bold text-gray-900">สร้างใบเสนอราคา</h1>
               {editingQuotationNumber ? (
                 <div className="flex items-center gap-1">

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Percent, Plus, Search, Trash2, Edit2, BookOpen } from 'lucide-react'
+import { Percent, Plus, Search, Trash2, Edit2, BookOpen, ArrowLeft } from 'lucide-react'
 
 interface WithholdingTax {
   id: string
@@ -219,12 +219,21 @@ export default function WithholdingTaxPage() {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Percent className="h-7 w-7 text-blue-600" />
-            หัก ณ ที่จ่าย
-          </h1>
-          <p className="text-gray-600 mt-1">บันทึกและจัดการภาษีหัก ณ ที่จ่าย (50 ทวิ)</p>
+        <div className="flex items-center gap-3">
+          <a
+            href="/expenses"
+            className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+            title="กลับไปหน้าเอกสาร"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </a>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <Percent className="h-7 w-7 text-blue-600" />
+              หัก ณ ที่จ่าย
+            </h1>
+            <p className="text-gray-600 mt-1">บันทึกและจัดการภาษีหัก ณ ที่จ่าย (50 ทวิ)</p>
+          </div>
         </div>
         <div className="flex gap-2">
           <button
