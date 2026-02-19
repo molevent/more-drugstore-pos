@@ -3,7 +3,6 @@ import { supabase } from '../services/supabase'
 import { 
   FileText, 
   Search, 
-  Filter,
   Eye,
   User,
   DollarSign,
@@ -353,26 +352,26 @@ export default function TaxInvoicesListPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="w-24">
-          <div className="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2.5 transition-all">
-            <Search className="h-4 w-4 text-gray-500" />
+      <div className="flex flex-col md:flex-row gap-3 mb-6">
+        <div className="w-full md:w-40">
+          <div className="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2 transition-all">
+            <Search className="h-4 w-4 text-gray-500 flex-shrink-0" />
             <input
               type="text"
-              placeholder="เลขที่ใบกำกับภาษี, ชื่อลูกค้า..."
+              placeholder="ค้นหา..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-sm min-w-0"
             />
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-1">
           <Input
             type="date"
             placeholder="จากวันที่"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="w-32 text-xs py-1 px-2"
+            className="w-28 md:w-32 text-xs py-1.5 px-2"
           />
           <span className="text-gray-500 text-xs">-</span>
           <Input
@@ -380,7 +379,7 @@ export default function TaxInvoicesListPage() {
             placeholder="ถึงวันที่"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="w-32 text-xs py-1 px-2"
+            className="w-28 md:w-32 text-xs py-1.5 px-2"
           />
         </div>
       </div>
