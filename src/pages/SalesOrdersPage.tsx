@@ -723,7 +723,7 @@ export default function SalesOrdersPage() {
                 <table style="width: 100%; border-collapse: collapse;">
                   <tr>
                     <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #ddd;">รวมเป็นเงิน</td>
-                    <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #ddd; width: 120px;">${totalAmount.toFixed(2)} บาท</td>
+                    <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #ddd; width: 120px;">${baseAmount.toFixed(2)} บาท</td>
                   </tr>
                   <tr>
                     <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #ddd;">ภาษีมูลค่าเพิ่ม 7%</td>

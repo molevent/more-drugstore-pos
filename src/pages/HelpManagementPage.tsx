@@ -41,6 +41,7 @@ const AVAILABLE_PAGES = [
   { route: '/categories-management', name_th: 'จัดการหมวดหมู่', name_en: 'Categories' },
   { route: '/warehouse-management', name_th: 'จัดการคลังสินค้า', name_en: 'Warehouse Management' },
   { route: '/payment-methods', name_th: 'ช่องทางการชำระเงิน', name_en: 'Payment Methods' },
+  { route: '/tax-invoices', name_th: 'รายการใบกำกับภาษี', name_en: 'Tax Invoices' },
   { route: '/dashboard', name_th: 'แดชบอร์ด', name_en: 'Dashboard' },
   { route: '/users', name_th: 'จัดการผู้ใช้', name_en: 'User Management' },
 ]

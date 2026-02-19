@@ -1313,6 +1313,13 @@ export default function ExpensesPage() {
                 <FileText className="h-4 w-4 text-amber-600" />
                 <span className="text-sm font-medium">ภ.พ.30 (VAT Return)</span>
               </Link>
+              <Link 
+                to="/tax-invoices"
+                className="flex items-center gap-3 px-4 py-2.5 hover:bg-amber-50 text-gray-700 transition-colors"
+              >
+                <Receipt className="h-4 w-4 text-amber-600" />
+                <span className="text-sm font-medium">ใบกำกับภาษี</span>
+              </Link>
               <div className="border-t border-gray-100 my-1"></div>
               <div className="px-4 py-1.5 text-xs text-gray-400 font-medium">ภ.ง.ด.</div>
               <Link 

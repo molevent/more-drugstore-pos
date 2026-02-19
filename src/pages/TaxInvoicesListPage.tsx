@@ -181,22 +181,28 @@ export default function TaxInvoicesListPage() {
       setSelectedOrder({ ...order, order_items: items || [] })
     } catch (error) {
       console.error('Error fetching order details:', error)
+      throw error
     } finally {
       setModalLoading(false)
     }
   }
 
   const openModal = async (type: ModalType, orderId: string, orderSource: string, taxInvoice?: TaxInvoice) => {
-    await fetchOrderDetails(orderId, orderSource)
-    if (taxInvoice) {
-      setSelectedTaxInvoice(taxInvoice)
-      setEditForm({
-        customer_name: taxInvoice.customer_name || '',
-        customer_tax_id: taxInvoice.customer_tax_id || '',
-        customer_address: taxInvoice.customer_address || ''
-      })
+    try {
+      await fetchOrderDetails(orderId, orderSource)
+      if (taxInvoice) {
+        setSelectedTaxInvoice(taxInvoice)
+        setEditForm({
+          customer_name: taxInvoice.customer_name || '',
+          customer_tax_id: taxInvoice.customer_tax_id || '',
+          customer_address: taxInvoice.customer_address || ''
+        })
+      }
+      setActiveModal(type)
+    } catch (error) {
+      console.error('Error opening modal:', error)
+      alert('ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง')
     }
-    setActiveModal(type)
   }
 
   const closeModal = () => {
@@ -300,8 +306,8 @@ export default function TaxInvoicesListPage() {
           </table>
           
           <div style="text-align: right; font-size: 10px; margin-top: 8px; border-top: 1px dashed #000; padding-top: 8px;">
-            <p>รวมเป็นเงิน: ${formatCurrency(selectedOrder.total / 1.07)}</p>
-            <p>VAT 7%: ${formatCurrency(selectedOrder.total - (selectedOrder.total / 1.07))}</p>
+            <p>รวมเป็นเงิน: ${formatCurrency(selectedOrder.total - (selectedOrder.total * 0.07 / 1.07))}</p>
+            <p>VAT 7%: ${formatCurrency(selectedOrder.total * 0.07 / 1.07)}</p>
             <p style="font-weight: bold; font-size: 11px; margin-top: 4px;">ยอดรวม: ${formatCurrency(selectedOrder.total)}</p>
           </div>
           
@@ -446,7 +452,7 @@ export default function TaxInvoicesListPage() {
                   <table style="width: 100%; border-collapse: collapse;">
                     <tr>
                       <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #ddd;">รวมเป็นเงิน</td>
-                      <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #ddd; width: 120px;">${totalAmount.toFixed(2)} บาท</td>
+                      <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #ddd; width: 120px;">${baseAmount.toFixed(2)} บาท</td>
                     </tr>
                     <tr>
                       <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #ddd;">ภาษีมูลค่าเพิ่ม 7%</td>
@@ -704,6 +710,15 @@ export default function TaxInvoicesListPage() {
                     <div className="flex items-center gap-2">
                       <FileText className="h-4 w-4 text-[#7D735F]" />
                       <span className="font-medium text-gray-900">{invoice.tax_invoice_number}</span>
+                      {invoice.customer_tax_id ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                          เต็มรูป
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                          อย่างย่อ
+                        </span>
+                      )}
                     </div>
                     <span className="text-xs text-gray-500 ml-6">
                       {invoice.order_source === 'web' ? '(Web Order)' : '(POS)'}
@@ -1041,8 +1056,8 @@ export default function TaxInvoicesListPage() {
                       </tbody>
                     </table>
                     <div className="mt-6 text-right text-sm">
-                      <p><strong>รวมเป็นเงิน:</strong> {formatCurrency(selectedOrder.total / 1.07)}</p>
-                      <p><strong>ภาษีมูลค่าเพิ่ม 7%:</strong> {formatCurrency(selectedOrder.total - (selectedOrder.total / 1.07))}</p>
+                      <p><strong>รวมเป็นเงิน:</strong> {formatCurrency(selectedOrder.total - (selectedOrder.total * 0.07 / 1.07))}</p>
+                      <p><strong>ภาษีมูลค่าเพิ่ม 7%:</strong> {formatCurrency(selectedOrder.total * 0.07 / 1.07)}</p>
                       <p className="text-lg font-bold mt-2">
                         จำนวนเงินรวมทั้งสิ้น: {formatCurrency(selectedOrder.total)}                      </p>
                     </div>
