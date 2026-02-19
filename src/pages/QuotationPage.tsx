@@ -1728,7 +1728,7 @@ export default function QuotationPage() {
           </div>
         </Card>
       </div>
-      </div>
+    </div>
       )}
 
       {/* Profit/Loss Tab */}
