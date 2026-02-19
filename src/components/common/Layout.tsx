@@ -18,7 +18,7 @@ import { useState } from 'react'
 import { useLanguage } from '../../contexts/LanguageContext'
 import LanguageSwitcher from './LanguageSwitcher'
 import HelpModal from './HelpModal'
-import { canAccessMenu, getAllowedMenus, getRoleDisplayName } from '../../utils/permissions'
+import { canAccessMenu, getRoleDisplayName } from '../../utils/permissions'
 import { UserRole } from '../../types'
 
 interface LayoutProps {

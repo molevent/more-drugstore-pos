@@ -104,7 +104,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       
       if (data.user) {
         // Fetch user profile
-        const { data: userData, error: userError } = await supabase
+        const { data: userData, error: _userError } = await supabase
           .from('users')
           .select('*')
           .eq('id', data.user.id)
@@ -162,7 +162,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { data: { session } } = await supabase.auth.getSession()
       
       if (session?.user) {
-        const { data: userData, error: userError } = await supabase
+        const { data: userData, error: _userError } = await supabase
           .from('users')
           .select('*')
           .eq('id', session.user.id)
