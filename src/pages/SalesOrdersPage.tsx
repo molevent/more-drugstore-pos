@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ListOrdered, Search, Calendar, Eye, Edit, Trash2, Receipt, BookOpen } from 'lucide-react'
+import { ListOrdered, Search, Calendar, Eye, Edit, Trash2, Receipt, BookOpen, FileText } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
@@ -389,11 +389,15 @@ export default function SalesOrdersPage() {
   }
 
   // Print receipt for an order
-  const handlePrintReceipt = async (orderId: string) => {
+  const handlePrintReceipt = async (orderId: string, orderSource?: string) => {
     try {
+      const isWebOrder = orderSource === 'website'
+      const tableName = isWebOrder ? 'web_orders' : 'orders'
+      const itemsTableName = isWebOrder ? 'web_order_items' : 'order_items'
+      
       // Fetch order details
       const { data: order, error: orderError } = await supabase
-        .from('orders')
+        .from(tableName)
         .select('*')
         .eq('id', orderId)
         .single()
@@ -405,12 +409,12 @@ export default function SalesOrdersPage() {
 
       // Fetch order items with product details
       const { data: items, error: itemsError } = await supabase
-        .from('order_items')
+        .from(itemsTableName)
         .select(`
           *,
           product:products(name_th)
         `)
-        .eq('order_id', orderId)
+        .eq(isWebOrder ? 'web_order_id' : 'order_id', orderId)
 
       if (itemsError) {
         console.error('Error fetching order items:', itemsError)
@@ -421,7 +425,7 @@ export default function SalesOrdersPage() {
       // Calculate totals
       const subtotal = items?.reduce((sum: number, item: any) => sum + (item.total_price || 0), 0) || 0
       const discount = order.discount || 0
-      const total = order.total || subtotal - discount
+      const total = order.total || order.total_amount || subtotal - discount
 
       // Generate receipt content
       const receiptContent = `
@@ -486,6 +490,250 @@ export default function SalesOrdersPage() {
     } catch (err: any) {
       console.error('Error printing receipt:', err)
       alert('เกิดข้อผิดพลาดในการพิมพ์ใบเสร็จ')
+    }
+  }
+
+  // Convert receipt to tax invoice and print
+  const handleConvertToTaxInvoice = async (orderId: string, orderSource?: string) => {
+    try {
+      const isWebOrder = orderSource === 'website'
+      const tableName = isWebOrder ? 'web_orders' : 'orders'
+      const itemsTableName = isWebOrder ? 'web_order_items' : 'order_items'
+      
+      // Fetch order details
+      const { data: order, error: orderError } = await supabase
+        .from(tableName)
+        .select('*')
+        .eq('id', orderId)
+        .single()
+      
+      if (orderError || !order) {
+        alert('ไม่พบข้อมูลออเดอร์')
+        return
+      }
+
+      // Prompt for customer tax information if not already present
+      let customerTaxId = order.customer_tax_id || ''
+      let customerAddress = order.customer_address || ''
+      
+      if (!customerTaxId) {
+        customerTaxId = prompt('กรุณากรอกเลขประจำตัวผู้เสียภาษีของลูกค้า:') || ''
+        if (!customerTaxId) {
+          alert('กรุณากรอกเลขประจำตัวผู้เสียภาษีเพื่อออกใบกำกับภาษี')
+          return
+        }
+      }
+      
+      if (!customerAddress && order.customer_name) {
+        customerAddress = prompt('กรุณากรอกที่อยู่ลูกค้า (สำหรับใบกำกับภาษี):') || ''
+      }
+
+      // Generate tax invoice number (TI-YYYYMMDD-XXX format)
+      const today = new Date()
+      const yy = String(today.getFullYear()).slice(-2)
+      const mm = String(today.getMonth() + 1).padStart(2, '0')
+      const dd = String(today.getDate()).padStart(2, '0')
+      const datePrefix = `TI${yy}${mm}${dd}`
+      
+      // Check existing tax invoice numbers for today
+      const { data: existingTi } = await supabase
+        .from('tax_invoices')
+        .select('tax_invoice_number')
+        .ilike('tax_invoice_number', `${datePrefix}-%`)
+        .order('tax_invoice_number', { ascending: false })
+        .limit(1)
+      
+      let sequence = 1
+      if (existingTi && existingTi.length > 0) {
+        const lastNumber = existingTi[0].tax_invoice_number
+        const lastSequence = parseInt(lastNumber.split('-')[1]) || 0
+        sequence = lastSequence + 1
+      }
+      
+      const taxInvoiceNumber = `${datePrefix}-${String(sequence).padStart(3, '0')}`
+
+      // Save tax invoice record
+      const { error: tiError } = await supabase
+        .from('tax_invoices')
+        .insert([{
+          order_id: orderId,
+          order_source: isWebOrder ? 'web' : 'pos',
+          tax_invoice_number: taxInvoiceNumber,
+          customer_name: order.customer_name || 'ลูกค้าทั่วไป',
+          customer_tax_id: customerTaxId,
+          customer_address: customerAddress,
+          total_amount: order.total || order.total_amount,
+          vat_amount: (order.total || order.total_amount) * 0.07 / 1.07,
+          created_at: new Date().toISOString()
+        }])
+
+      if (tiError) {
+        console.error('Error saving tax invoice:', tiError)
+      }
+
+      // Update order with tax information
+      const { error: updateError } = await supabase
+        .from(tableName)
+        .update({
+          customer_tax_id: customerTaxId,
+          customer_address: customerAddress,
+          tax_invoice_number: taxInvoiceNumber,
+          document_type: 'tax_invoice'
+        })
+        .eq('id', orderId)
+
+      if (updateError) {
+        console.error('Error updating order:', updateError)
+      }
+
+      // Fetch order items
+      const { data: items, error: itemsError } = await supabase
+        .from(itemsTableName)
+        .select(`
+          *,
+          product:products(name_th)
+        `)
+        .eq(isWebOrder ? 'web_order_id' : 'order_id', orderId)
+
+      if (itemsError) {
+        console.error('Error fetching order items:', itemsError)
+      }
+
+      // Calculate VAT
+      const totalAmount = order.total || order.total_amount || 0
+      const vatAmount = totalAmount * 0.07 / 1.07
+      const baseAmount = totalAmount - vatAmount
+
+      // Fetch shop settings
+      const { data: shopData } = await supabase
+        .from('shop_settings')
+        .select('name, address, tax_id, phone')
+        .single()
+
+      const shopName = shopData?.name || 'ห้างหุ้นส่วนจำกัด สะอางพาณิชย์'
+      const shopAddress = shopData?.address || ''
+      const shopTaxId = shopData?.tax_id || ''
+      const shopPhone = shopData?.phone || ''
+
+      // Generate tax invoice content (A4 size, full tax invoice format)
+      const taxInvoiceContent = `
+        <div style="font-family: 'TH Sarabun New', 'Angsana New', sans-serif; width: 210mm; padding: 20px; font-size: 14px;">
+          <div style="border: 2px solid #000; padding: 20px;">
+            <!-- Header -->
+            <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 15px;">
+              <h1 style="margin: 0; font-size: 24px; font-weight: bold;">${shopName}</h1>
+              <p style="margin: 5px 0; font-size: 12px;">${shopAddress}</p>
+              <p style="margin: 5px 0; font-size: 12px;">โทร: ${shopPhone} | เลขประจำตัวผู้เสียภาษี: ${shopTaxId}</p>
+              <h2 style="margin: 10px 0 0 0; font-size: 20px; font-weight: bold;">ใบกำกับภาษี/ใบเสร็จรับเงิน</h2>
+              <p style="margin: 5px 0; font-size: 12px;">Tax Invoice / Receipt</p>
+            </div>
+            
+            <!-- Invoice Info -->
+            <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+              <div style="width: 50%;">
+                <p style="margin: 3px 0;"><strong>ลูกค้า:</strong> ${order.customer_name || 'ลูกค้าทั่วไป'}</p>
+                <p style="margin: 3px 0;"><strong>ที่อยู่:</strong> ${customerAddress || '-'}</p>
+                <p style="margin: 3px 0;"><strong>เลขประจำตัวผู้เสียภาษี:</strong> ${customerTaxId}</p>
+              </div>
+              <div style="width: 40%; text-align: right;">
+                <p style="margin: 3px 0;"><strong>เลขที่:</strong> ${taxInvoiceNumber}</p>
+                <p style="margin: 3px 0;"><strong>วันที่:</strong> ${new Date().toLocaleDateString('th-TH')}</p>
+                <p style="margin: 3px 0;"><strong>อ้างอิงออเดอร์:</strong> ${order.order_number}</p>
+              </div>
+            </div>
+            
+            <!-- Items Table -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;" border="1">
+              <thead>
+                <tr style="background-color: #f0f0f0;">
+                  <th style="padding: 8px; text-align: center; width: 5%;">ลำดับ</th>
+                  <th style="padding: 8px; text-align: left; width: 40%;">รายการ</th>
+                  <th style="padding: 8px; text-align: right; width: 10%;">จำนวน</th>
+                  <th style="padding: 8px; text-align: right; width: 15%;">ราคาต่อหน่วย</th>
+                  <th style="padding: 8px; text-align: right; width: 15%;">จำนวนเงิน</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${items?.map((item: any, index: number) => {
+                  const unitPrice = (item.total_price || 0) / (item.quantity || 1) / 1.07
+                  const itemTotal = (item.total_price || 0) / 1.07
+                  return `
+                    <tr>
+                      <td style="padding: 6px; text-align: center;">${index + 1}</td>
+                      <td style="padding: 6px;">${item.product?.name_th || item.product_name || 'สินค้า'}</td>
+                      <td style="padding: 6px; text-align: right;">${item.quantity}</td>
+                      <td style="padding: 6px; text-align: right;">${unitPrice.toFixed(2)}</td>
+                      <td style="padding: 6px; text-align: right;">${itemTotal.toFixed(2)}</td>
+                    </tr>
+                  `
+                }).join('')}
+              </tbody>
+            </table>
+            
+            <!-- Totals -->
+            <div style="display: flex; justify-content: flex-end;">
+              <div style="width: 40%;">
+                <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #ccc;">
+                  <span>รวมมูลค่าสินค้า/บริการ:</span>
+                  <span>${baseAmount.toFixed(2)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #ccc;">
+                  <span>ภาษีมูลค่าเพิ่ม 7%:</span>
+                  <span>${vatAmount.toFixed(2)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0; font-weight: bold; font-size: 16px;">
+                  <span>จำนวนเงินรวมทั้งสิ้น:</span>
+                  <span>${totalAmount.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Footer -->
+            <div style="margin-top: 30px; display: flex; justify-content: space-between;">
+              <div style="text-align: center; width: 30%;">
+                <p style="margin: 0;">_________________</p>
+                <p style="margin: 5px 0; font-size: 12px;">ผู้รับเงิน</p>
+              </div>
+              <div style="text-align: center; width: 30%;">
+                <p style="margin: 0;">_________________</p>
+                <p style="margin: 5px 0; font-size: 12px;">ผู้จัดทำ</p>
+              </div>
+              <div style="width: 35%; font-size: 11px; border: 1px solid #ccc; padding: 10px;">
+                <p style="margin: 3px 0;"><strong>หมายเหตุ:</strong></p>
+                <p style="margin: 3px 0;">1. ใบกำกับภาษีฉบับนี้เป็นหลักฐานการซื้อขายที่ถูกต้องตามกฎหมาย</p>
+                <p style="margin: 3px 0;">2. สินค้าที่จำหน่ายไม่สามารถคืนเงินได้</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `
+      
+      // Open print window
+      const printWindow = window.open('', '_blank')
+      if (printWindow) {
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>ใบกำกับภาษี - ${taxInvoiceNumber}</title>
+              <style>
+                @media print {
+                  body { margin: 0; }
+                  * { -webkit-print-color-adjust: exact !important; }
+                }
+              </style>
+            </head>
+            <body>${taxInvoiceContent}</body>
+          </html>
+        `)
+        printWindow.document.close()
+        printWindow.print()
+      }
+      
+      alert('ออกใบกำกับภาษีเรียบร้อยแล้ว: ' + taxInvoiceNumber)
+      fetchOrders() // Refresh to show updated status
+    } catch (err: any) {
+      console.error('Error converting to tax invoice:', err)
+      alert('เกิดข้อผิดพลาดในการออกใบกำกับภาษี')
     }
   }
 
@@ -686,10 +934,20 @@ export default function SalesOrdersPage() {
                         <Button 
                           variant="secondary" 
                           size="sm" 
-                          onClick={() => handlePrintReceipt(order.id)}
+                          onClick={() => handlePrintReceipt(order.id, order.order_source)}
                           title="พิมพ์ใบเสร็จ"
                         >
                           <Receipt className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="primary" 
+                          size="sm" 
+                          onClick={() => handleConvertToTaxInvoice(order.id, order.order_source)}
+                          title="ออกใบกำกับภาษี"
+                          className="bg-[#7D735F] hover:bg-[#6B6351]"
+                        >
+                          <FileText className="h-4 w-4 mr-1" />
+                          ใบกำกับภาษี
                         </Button>
                         <Button 
                           variant="danger" 
