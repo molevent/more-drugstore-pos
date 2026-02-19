@@ -257,41 +257,59 @@ export default function TaxInvoicesListPage() {
       // Abbreviated tax invoice (ใบกำกับภาษีอย่างย่อ)
       const printContent = `
         <div style="font-family: 'TH Sarabun New', sans-serif; width: 80mm; min-height: 100mm; padding: 10px; font-size: 12px; box-sizing: border-box;">
-          <div style="text-align: center; margin-bottom: 15px; border-bottom: 1px dashed #000; padding-bottom: 10px;">
-            <h2 style="margin: 0; font-size: 14px;">ใบกำกับภาษีอย่างย่อ/ใบเสร็จรับเงิน</h2>
-            <p style="margin: 3px 0; font-size: 10px;">Abbreviated Tax Invoice/Receipt</p>
+          <!-- Logo & Business Info -->
+          <div style="text-align: center; margin-bottom: 10px;">
+            <img src="/logo.png" alt="Logo" style="width: 50px; height: 50px; margin-bottom: 8px;" />
+            <h3 style="margin: 0; font-size: 13px; font-weight: bold;">More Drugstore</h3>
+            <p style="margin: 2px 0; font-size: 9px; color: #555;">123 ถนนสุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพมหานคร 10110</p>
+            <p style="margin: 2px 0; font-size: 9px; color: #555;">เลขผู้เสียภาษี: 0123456789012</p>
+            <p style="margin: 2px 0; font-size: 9px; color: #555;">โทร: 02-123-4567</p>
           </div>
-          <div style="margin-bottom: 10px; font-size: 11px;">
+          
+          <div style="text-align: center; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 8px;">
+            <h2 style="margin: 0; font-size: 13px;">ใบกำกับภาษีอย่างย่อ/ใบเสร็จรับเงิน</h2>
+            <p style="margin: 2px 0; font-size: 9px;">Abbreviated Tax Invoice/Receipt</p>
+          </div>
+          
+          <div style="margin-bottom: 8px; font-size: 10px;">
             <p><strong>เลขที่:</strong> ${selectedOrder.order_number}</p>
             <p><strong>วันที่:</strong> ${formatDate(selectedOrder.created_at)}</p>
             <p><strong>เวลา:</strong> ${formatTime(selectedOrder.created_at)}</p>
           </div>
-          <div style="margin-bottom: 10px; font-size: 11px;">
+          
+          <div style="margin-bottom: 8px; font-size: 10px;">
             <p><strong>ลูกค้า:</strong> ${selectedOrder.customer_name}</p>
           </div>
-          <table style="width: 100%; font-size: 10px; border-collapse: collapse; margin-bottom: 10px;">
+          
+          <table style="width: 100%; font-size: 10px; border-collapse: collapse; margin-bottom: 8px;">
             <thead>
               <tr style="border-top: 1px solid #000; border-bottom: 1px solid #000;">
-                <th style="padding: 4px; text-align: left;">รายการ</th>
-                <th style="padding: 4px; text-align: center;">จำนวน</th>
-                <th style="padding: 4px; text-align: right;">รวม</th>
+                <th style="padding: 3px; text-align: left;">รายการ</th>
+                <th style="padding: 3px; text-align: center;">จำนวน</th>
+                <th style="padding: 3px; text-align: right;">รวม</th>
               </tr>
             </thead>
             <tbody>
               ${selectedOrder.order_items?.map((item) => `
                 <tr style="border-bottom: 1px dashed #ccc;">
-                  <td style="padding: 4px;">${item.product_name}</td>
-                  <td style="padding: 4px; text-align: center;">${item.quantity}</td>
-                  <td style="padding: 4px; text-align: right;">${formatCurrency(item.total_price)}</td>
+                  <td style="padding: 3px;">${item.product_name}</td>
+                  <td style="padding: 3px; text-align: center;">${item.quantity}</td>
+                  <td style="padding: 3px; text-align: right;">${formatCurrency(item.total_price)}</td>
                 </tr>
               `).join('') || ''}
             </tbody>
           </table>
-          <div style="text-align: right; font-size: 11px; margin-top: 10px; border-top: 1px dashed #000; padding-top: 10px;">
-            <p><strong>ยอดรวม: ${formatCurrency(selectedOrder.total)}</strong></p>
+          
+          <div style="text-align: right; font-size: 10px; margin-top: 8px; border-top: 1px dashed #000; padding-top: 8px;">
+            <p>รวมเป็นเงิน: ${formatCurrency(selectedOrder.total * 0.93)}</p>
+            <p>VAT 7%: ${formatCurrency(selectedOrder.total * 0.07)}</p>
+            <p style="font-weight: bold; font-size: 11px; margin-top: 4px;">ยอดรวม: ${formatCurrency(selectedOrder.total)}</p>
           </div>
-          <div style="margin-top: 20px; text-align: center; font-size: 10px; color: #666;">
+          
+          <div style="margin-top: 15px; text-align: center; font-size: 9px; color: #666;">
+            <p style="font-weight: bold; color: #000;">*** VAT INCLUDED ***</p>
             <p>ขอบคุณที่ใช้บริการ</p>
+            <p>Thank you for your business</p>
           </div>
         </div>
       `
