@@ -90,9 +90,6 @@ export default function TaxInvoicesListPage() {
     customer_address: ''
   })
 
-  // Print type state for selected invoices
-  const [selectedPrintTypes, setSelectedPrintTypes] = useState<Record<string, 'abbreviated' | 'full'>>({})
-
   const fetchTaxInvoices = async () => {
     try {
       setLoading(true)
@@ -258,11 +255,15 @@ export default function TaxInvoicesListPage() {
     })
   }
 
-  const handlePrintTaxInvoice = async (type: 'abbreviated' | 'full') => {
+  const handlePrintTaxInvoice = async (type: 'abbreviated' | 'full' | 'copy_abbreviated' | 'copy_full') => {
     if (!selectedOrder) return
     
-    if (type === 'abbreviated') {
+    const isCopy = type === 'copy_abbreviated' || type === 'copy_full'
+    const actualType = type === 'copy_abbreviated' ? 'abbreviated' : type === 'copy_full' ? 'full' : type
+    
+    if (actualType === 'abbreviated') {
       // Abbreviated tax invoice (ใบกำกับภาษีอย่างย่อ)
+      const copyText = isCopy ? '<div style="text-align: center; margin-bottom: 5px; font-size: 11px; color: #999; border: 1px dashed #999; padding: 2px;">สำเนา</div>' : ''
       const printContent = `
         <div style="font-family: 'TH Sarabun New', sans-serif; width: 80mm; min-height: 100mm; padding: 10px; font-size: 12px; box-sizing: border-box;">
           <!-- Logo & Business Info -->
@@ -275,6 +276,7 @@ export default function TaxInvoicesListPage() {
           </div>
           
           <div style="text-align: center; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 8px;">
+            ${copyText}
             <h2 style="margin: 0; font-size: 13px;">ใบกำกับภาษีอย่างย่อ/ใบเสร็จรับเงิน</h2>
             <p style="margin: 2px 0; font-size: 9px;">Abbreviated Tax Invoice/Receipt</p>
           </div>
@@ -353,6 +355,9 @@ export default function TaxInvoicesListPage() {
         const vatAmount = totalAmount * 0.07 / 1.07
         const baseAmount = totalAmount - vatAmount
 
+        const copyText = isCopy ? '<div style="text-align: center; margin-bottom: 8px; font-size: 14px; color: #999; border: 2px dashed #999; padding: 4px; font-weight: bold;">สำเนา</div>' : ''
+        const copyLabel = isCopy ? 'สำเนา' : 'ต้นฉบับ'
+
         const printContent = `
           <div style="font-family: 'TH Sarabun New', 'Angsana New', sans-serif; width: 210mm; min-height: 297mm; padding: 15px; font-size: 14px; box-sizing: border-box;">
             <!-- Header Section -->
@@ -368,8 +373,9 @@ export default function TaxInvoicesListPage() {
                 </td>
                 <!-- Invoice Details -->
                 <td style="width: 40%; vertical-align: top; text-align: right;">
+                  ${copyText}
                   <h2 style="margin: 0 0 10px 0; font-size: 20px; font-weight: bold;">ใบกำกับภาษี/ใบเสร็จรับเงิน</h2>
-                  <p style="margin: 3px 0; font-size: 11px; color: #666;">ต้นฉบับ (เอกสารออกเป็นคู่ฉบับ)</p>
+                  <p style="margin: 3px 0; font-size: 11px; color: #666;">${copyLabel} (เอกสารออกเป็นคู่ฉบับ)</p>
                   <table style="width: 100%; margin-top: 10px; font-size: 12px;">
                     <tr>
                       <td style="text-align: left; padding: 2px 0;">เลขที่</td>
@@ -761,27 +767,13 @@ export default function TaxInvoicesListPage() {
                       >
                         <Edit className="h-4 w-4" />
                       </button>
-                      <div className="flex items-center gap-1">
-                        <select
-                          value={selectedPrintTypes[invoice.id] || 'abbreviated'}
-                          onChange={(e) => setSelectedPrintTypes(prev => ({ ...prev, [invoice.id]: e.target.value as 'abbreviated' | 'full' }))}
-                          className="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#7D735F]"
-                        >
-                          <option value="abbreviated">สำเนาอย่างย่อ</option>
-                          <option value="full">สำเนาเต็มรูป</option>
-                        </select>
-                        <button
-                          onClick={() => {
-                            const printType = selectedPrintTypes[invoice.id] || 'abbreviated'
-                            openModal('print', invoice.order_id, invoice.order_source)
-                            setTimeout(() => handlePrintTaxInvoice(printType), 100)
-                          }}
-                          className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
-                          title="พิมพ์"
-                        >
-                          <Printer className="h-4 w-4" />
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => openModal('print', invoice.order_id, invoice.order_source)}
+                        className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+                        title="พิมพ์"
+                      >
+                        <Printer className="h-4 w-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -1085,21 +1077,38 @@ export default function TaxInvoicesListPage() {
                       <p>Thank you for your business</p>
                     </div>
                   </div>
-                  <div className="flex justify-center gap-4">
+                  
+                  {/* Print Type Selection */}
+                  <div className="grid grid-cols-2 gap-4 mb-6 max-w-lg mx-auto">
                     <Button 
                       onClick={() => handlePrintTaxInvoice('abbreviated')} 
                       variant="secondary"
-                      className="flex items-center gap-2"
+                      className="flex items-center justify-center gap-2"
                     >
                       <Printer className="h-4 w-4" />
-                      พิมพ์อย่างย่อ
+                      ใบกำกับภาษีอย่างย่อ
                     </Button>
                     <Button 
                       onClick={() => handlePrintTaxInvoice('full')} 
-                      className="flex items-center gap-2"
+                      variant="secondary"
+                      className="flex items-center justify-center gap-2"
                     >
                       <Printer className="h-4 w-4" />
-                      พิมพ์เต็มรูป
+                      ใบกำกับภาษีเต็มรูป
+                    </Button>
+                    <Button 
+                      onClick={() => handlePrintTaxInvoice('copy_abbreviated')} 
+                      className="flex items-center justify-center gap-2"
+                    >
+                      <Printer className="h-4 w-4" />
+                      สำเนาใบกำกับภาษีอย่างย่อ
+                    </Button>
+                    <Button 
+                      onClick={() => handlePrintTaxInvoice('copy_full')} 
+                      className="flex items-center justify-center gap-2"
+                    >
+                      <Printer className="h-4 w-4" />
+                      สำเนาใบกำกับภาษีเต็มรูป
                     </Button>
                   </div>
                 </>
