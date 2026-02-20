@@ -137,6 +137,9 @@ export interface Product {
   label_custom_line2?: string
   label_custom_line3?: string
   
+  // 10. Import tracking
+  is_newly_imported?: boolean
+  
   created_at: string
   updated_at: string
 }

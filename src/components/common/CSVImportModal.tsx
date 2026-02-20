@@ -382,7 +382,8 @@ export default function CSVImportModal({ isOpen, onClose, onSuccess }: CSVImport
           description_th: product.description_th,
           is_active: true,
           product_type: 'finished_goods',
-          stock_tracking_type: 'tracked'
+          stock_tracking_type: 'tracked',
+          is_newly_imported: true
         }
 
         // Add category_id if found

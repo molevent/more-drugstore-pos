@@ -322,6 +322,20 @@ export default function ProductsPage() {
   })
 
   const handleEdit = (product: Product) => {
+    // Clear the newly imported flag when user views the product
+    if (product.is_newly_imported && product.id) {
+      supabase
+        .from('products')
+        .update({ is_newly_imported: false })
+        .eq('id', product.id)
+        .then(() => {
+          // Update local state to remove the badge immediately
+          setProducts(prev => prev.map(p => 
+            p.id === product.id ? { ...p, is_newly_imported: false } : p
+          ))
+        })
+    }
+    
     setEditingProduct(product)
     setProductWarehouseStocks({})
     setFormData({
@@ -1114,7 +1128,14 @@ export default function ProductsPage() {
                             </td>
                             <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 max-w-28 truncate">{product.barcode}</td>
                             <td className="px-3 py-3 whitespace-nowrap max-w-96">
-                              <div className="text-sm font-medium text-gray-900 truncate">{product.name_th}</div>
+                              <div className="flex items-center gap-2">
+                                <div className="text-sm font-medium text-gray-900 truncate">{product.name_th}</div>
+                                {product.is_newly_imported && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                    NEW
+                                  </span>
+                                )}
+                              </div>
                               {product.name_en && <div className="text-xs text-gray-500 truncate">{product.name_en}</div>}
                             </td>
                             <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">฿{product.base_price.toFixed(2)}</td>
@@ -1215,7 +1236,14 @@ export default function ProductsPage() {
                                     </td>
                                     <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">{product.barcode}</td>
                                     <td className="px-3 py-3 whitespace-nowrap max-w-96">
-                                      <div className="text-sm font-medium text-gray-900 truncate">{product.name_th}</div>
+                                      <div className="flex items-center gap-2">
+                                        <div className="text-sm font-medium text-gray-900 truncate">{product.name_th}</div>
+                                        {product.is_newly_imported && (
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                            NEW
+                                          </span>
+                                        )}
+                                      </div>
                                       {product.name_en && <div className="text-xs text-gray-500 truncate">{product.name_en}</div>}
                                     </td>
                                     <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">฿{product.base_price.toFixed(2)}</td>
