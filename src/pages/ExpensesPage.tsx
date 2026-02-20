@@ -2111,6 +2111,9 @@ export default function ExpensesPage() {
                         <td className="px-4 py-3 text-sm text-gray-900">
                           {new Date(item.document_date || item.expense_date).toLocaleDateString('en-GB', { year: 'numeric', month: 'numeric', day: 'numeric' })}
                         </td>
+                        <td className="px-4 py-3 text-sm text-gray-900 font-mono text-xs">
+                          {item.tax_invoice_number || '-'}
+                        </td>
                         <td className="px-4 py-3 text-sm text-gray-600">
                           <span className="px-2 py-1 bg-green-100 rounded-full text-xs">
                             {item.category}
