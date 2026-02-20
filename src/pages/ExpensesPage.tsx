@@ -330,6 +330,7 @@ export default function ExpensesPage() {
         delivery_number: formData.delivery_number || null,
         vendor: formData.vendor || null,
         notes: formData.notes || null,
+        status: 'approved', // Manual entries are approved by default
         // Google Sheets extended fields
         sheet_id: formData.sheet_id || null,
         tax_invoice_number: formData.tax_invoice_number || null,
@@ -821,6 +822,9 @@ export default function ExpensesPage() {
   }
 
   const filteredExpenses = expenses.filter(expense => {
+    // Only show approved expenses in main list (exclude pending)
+    if (expense.status === 'pending') return false
+    
     // Text search
     const matchesSearch = !searchTerm || 
       expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1074,6 +1078,7 @@ export default function ExpensesPage() {
         requester: item.requester || null,
         evidence_url: item.evidence_url || null,
         // Import tracking fields
+        status: 'pending',
         is_newly_imported: true,
         import_batch_id: importBatchId,
         imported_at: new Date().toISOString(),
@@ -1090,7 +1095,7 @@ export default function ExpensesPage() {
       alert(message)
       setSelectedSheetItems(new Set()) // Clear selection after import
       fetchExpenses()
-      setViewMode('database')
+      setViewMode('pending') // Go to pending view after import
     } catch (error) {
       console.error('Error importing:', error)
       alert('เกิดข้อผิดพลาดในการ import')
@@ -1268,6 +1273,17 @@ export default function ExpensesPage() {
         >
           <Database className="h-4 w-4" />
           ค่าใช้จ่าย
+        </button>
+        <button
+          onClick={() => setViewMode('pending')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+            viewMode === 'pending'
+              ? 'bg-amber-500 text-white'
+              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+          }`}
+        >
+          <Clock className="h-4 w-4" />
+          รออนุมัติ
         </button>
         <button
           onClick={() => setViewMode('sheets')}
@@ -1979,6 +1995,7 @@ export default function ExpensesPage() {
                               PV
                             </span>
                           )}
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">{expense.vendor || '-'}</td>
                         <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
@@ -1986,6 +2003,13 @@ export default function ExpensesPage() {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => handleEdit(expense)}
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="ดู/แก้ไข"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
                             <button
                               onClick={() => handleApprove(expense.id)}
                               className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"

@@ -329,10 +329,8 @@ export default function ProductsPage() {
         .update({ is_newly_imported: false })
         .eq('id', product.id)
         .then(() => {
-          // Update local state to remove the badge immediately
-          setProducts(prev => prev.map(p => 
-            p.id === product.id ? { ...p, is_newly_imported: false } : p
-          ))
+          // State will refresh on next fetch
+          console.log('Cleared is_newly_imported flag for product', product.id)
         })
     }
     
