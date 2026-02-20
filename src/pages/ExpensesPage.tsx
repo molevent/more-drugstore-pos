@@ -2077,6 +2077,7 @@ export default function ExpensesPage() {
                       />
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">วันที่ตามเอกสาร</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">เลขที่ใบกำกับภาษี</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">หมวดหมู่</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">รายการ</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">ผู้จำหน่าย</th>
