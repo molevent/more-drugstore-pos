@@ -263,7 +263,7 @@ export default function TaxInvoicesListPage() {
     
     if (actualType === 'abbreviated') {
       // Abbreviated tax invoice (ใบกำกับภาษีอย่างย่อ)
-      const copyText = isCopy ? '<div style="text-align: center; margin-bottom: 5px; font-size: 11px; color: #999; border: 1px dashed #999; padding: 2px;">สำเนา</div>' : ''
+      const copyText = isCopy ? '<div style="display: inline-block; text-align: center; font-size: 10px; color: #666; border: 1px solid #666; padding: 1px 4px; margin-bottom: 5px;">สำเนา</div>' : ''
       const printContent = `
         <div style="font-family: 'TH Sarabun New', sans-serif; width: 80mm; min-height: 100mm; padding: 10px; font-size: 12px; box-sizing: border-box;">
           <!-- Logo & Business Info -->
@@ -355,7 +355,7 @@ export default function TaxInvoicesListPage() {
         const vatAmount = totalAmount * 0.07 / 1.07
         const baseAmount = totalAmount - vatAmount
 
-        const copyText = isCopy ? '<div style="text-align: center; margin-bottom: 8px; font-size: 14px; color: #999; border: 2px dashed #999; padding: 4px; font-weight: bold;">สำเนา</div>' : ''
+        const copyText = isCopy ? '<div style="display: inline-block; text-align: center; font-size: 12px; color: #666; border: 1px solid #666; padding: 2px 6px; margin-bottom: 8px; font-weight: bold;">สำเนา</div>' : ''
         const copyLabel = isCopy ? 'สำเนา' : 'ต้นฉบับ'
 
         const printContent = `
