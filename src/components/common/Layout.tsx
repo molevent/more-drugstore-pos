@@ -91,7 +91,7 @@ export default function Layout({ children }: LayoutProps) {
       title: 'เอกสาร',
       items: [
         { name: t('nav.documents'), href: '/expenses', icon: Wallet, id: 'documents' as const },
-        { name: 'ใบกำกับภาษี', href: '/tax-invoices', icon: Receipt, id: 'tax_invoices' as const },
+        { name: 'ใบกำกับภาษีฝั่งขาย', href: '/tax-invoices', icon: Receipt, id: 'tax_invoices' as const },
         { name: 'ตารางเข้างาน', href: '/work-schedule', icon: Calendar, id: 'work_schedule' as const },
       ].filter(item => canAccessMenu(userRole, item.id))
     },
@@ -99,7 +99,6 @@ export default function Layout({ children }: LayoutProps) {
       title: 'ตั้งค่า',
       items: [
         { name: t('nav.settings'), href: '/settings', icon: Settings, id: 'settings' as const },
-        ...(userRole === 'owner' ? [{ name: t('settings.userManagement'), href: '/users', icon: Users, id: 'users' as const }] : []),
       ].filter(item => canAccessMenu(userRole, item.id))
     }
   ].filter(section => section.items.length > 0)

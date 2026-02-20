@@ -90,13 +90,16 @@ export default function TaxInvoicesListPage() {
     customer_address: ''
   })
 
+  // Print type state for selected invoices
+  const [selectedPrintTypes, setSelectedPrintTypes] = useState<Record<string, 'abbreviated' | 'full'>>({})
+
   const fetchTaxInvoices = async () => {
     try {
       setLoading(true)
       let query = supabase
         .from('tax_invoices')
         .select('*')
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: true })
 
       if (dateFrom) {
         const startOfDay = new Date(dateFrom)
@@ -567,7 +570,7 @@ export default function TaxInvoicesListPage() {
           </a>
           <Receipt className="h-8 w-8 text-[#7D735F] mt-1" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">รายการใบกำกับภาษีเต็มรูป</h1>
+            <h1 className="text-2xl font-bold text-gray-900">รายการใบกำกับภาษี</h1>
             <p className="text-gray-600">ดูและจัดการใบกำกับภาษีทั้งหมด</p>
           </div>
         </div>
@@ -710,6 +713,11 @@ export default function TaxInvoicesListPage() {
                     <div className="flex items-center gap-2">
                       <FileText className="h-4 w-4 text-[#7D735F]" />
                       <span className="font-medium text-gray-900">{invoice.tax_invoice_number}</span>
+                    </div>
+                    <div className="flex items-center gap-2 ml-6 mt-1">
+                      <span className="text-xs text-gray-500">
+                        {invoice.order_source === 'web' ? '(Web Order)' : '(POS)'}
+                      </span>
                       {invoice.customer_tax_id ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
                           เต็มรูป
@@ -720,9 +728,6 @@ export default function TaxInvoicesListPage() {
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-gray-500 ml-6">
-                      {invoice.order_source === 'web' ? '(Web Order)' : '(POS)'}
-                    </span>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
                     <div className="flex flex-col">
@@ -756,13 +761,27 @@ export default function TaxInvoicesListPage() {
                       >
                         <Edit className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => openModal('print', invoice.order_id, invoice.order_source)}
-                        className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
-                        title="พิมพ์"
-                      >
-                        <Printer className="h-4 w-4" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <select
+                          value={selectedPrintTypes[invoice.id] || 'abbreviated'}
+                          onChange={(e) => setSelectedPrintTypes(prev => ({ ...prev, [invoice.id]: e.target.value as 'abbreviated' | 'full' }))}
+                          className="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#7D735F]"
+                        >
+                          <option value="abbreviated">สำเนาอย่างย่อ</option>
+                          <option value="full">สำเนาเต็มรูป</option>
+                        </select>
+                        <button
+                          onClick={() => {
+                            const printType = selectedPrintTypes[invoice.id] || 'abbreviated'
+                            openModal('print', invoice.order_id, invoice.order_source)
+                            setTimeout(() => handlePrintTaxInvoice(printType), 100)
+                          }}
+                          className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+                          title="พิมพ์"
+                        >
+                          <Printer className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                   </td>
                 </tr>
