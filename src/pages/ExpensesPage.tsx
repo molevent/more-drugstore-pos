@@ -1646,7 +1646,7 @@ export default function ExpensesPage() {
                 <h4 className="font-medium text-gray-700">ตั้งค่าคอลัมน์ Google Sheets (เริ่มจาก 0)</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   <div>
-                    <label className="text-xs text-gray-600">A: วันที่</label>
+                    <label className="text-xs text-gray-600">A: วันที่ตามเอกสาร</label>
                     <input type="number" value={sheetConfig.dateCol} onChange={(e) => setSheetConfig({...sheetConfig, dateCol: parseInt(e.target.value)})} className="w-full px-2 py-1 border rounded text-sm" />
                   </div>
                   <div>
