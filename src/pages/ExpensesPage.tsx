@@ -941,12 +941,17 @@ export default function ExpensesPage() {
         const description = row[sheetConfig.descriptionCol] || ''
         const matchedCategory = findCategoryByKeywords(sheetCategory, sheetSubcategory, description)
         
+        // Debug: Log tax invoice number for first few rows
+        if (index < 3) {
+          console.log(`Row ${index}: taxInvoiceCol=${sheetConfig.taxInvoiceCol}, raw value="${row[sheetConfig.taxInvoiceCol]}", trimmed="${(row[sheetConfig.taxInvoiceCol] || '').trim()}"`)
+        }
+        
         return {
           id: `sheet-${index}`,
           expense_date: formatDate(row[sheetConfig.dateCol] || ''),
           sheet_id: row[sheetConfig.sheetIdCol] || '',
-          tax_invoice_number: row[sheetConfig.taxInvoiceCol] || '',
-          document_type: row[sheetConfig.docTypeCol] || '',
+          tax_invoice_number: (row[sheetConfig.taxInvoiceCol] || '').trim(),
+          document_type: (row[sheetConfig.docTypeCol] || '').trim(),
           description: description,
           quantity: parseFloat(row[sheetConfig.quantityCol]) || 0,
           unit_price: parseFloat(row[sheetConfig.unitPriceCol]) || 0,
