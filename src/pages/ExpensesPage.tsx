@@ -57,6 +57,8 @@ interface Expense {
   withholding_mode?: string
   withholding_percent?: string
   evidence_url?: string
+  // Import tracking
+  is_newly_imported?: boolean
 }
 
 interface Contact {
@@ -432,6 +434,20 @@ export default function ExpensesPage() {
   }
 
   const handleEdit = (expense: Expense) => {
+    // Clear the newly imported flag when user views the expense
+    if (expense.is_newly_imported && expense.id) {
+      supabase
+        .from('expenses')
+        .update({ is_newly_imported: false })
+        .eq('id', expense.id)
+        .then(() => {
+          // Update local state to remove the badge immediately
+          setExpenses(prev => prev.map(e => 
+            e.id === expense.id ? { ...e, is_newly_imported: false } : e
+          ))
+        })
+    }
+    
     setEditingExpense(expense)
     setSelectedShortcutCategory(null) // Reset shortcut category when editing
     setFormData({
@@ -1058,6 +1074,7 @@ export default function ExpensesPage() {
         requester: item.requester || null,
         evidence_url: item.evidence_url || null,
         // Import tracking fields
+        is_newly_imported: true,
         import_batch_id: importBatchId,
         imported_at: new Date().toISOString(),
         import_source: 'google_sheets'
@@ -1848,7 +1865,12 @@ export default function ExpensesPage() {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
                         <div className="flex items-center gap-2 flex-wrap">
-                          {expense.description}
+                          <span>{expense.description}</span>
+                          {expense.is_newly_imported && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                              NEW
+                            </span>
+                          )}
                           {(expense.vat_amount ?? 0) > 0 && (
                             <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded font-medium">VAT</span>
                           )}
@@ -1940,10 +1962,17 @@ export default function ExpensesPage() {
                             {expense.category}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">{expense.description}
-                          {!expense.receipt_number && expense.delivery_number && (
-                            <span className="ml-2 px-1.5 py-0.5 bg-orange-100 text-orange-700 text-xs rounded font-medium" title="รอใบเสร็จ">รอบิล</span>
-                          )}
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span>{expense.description}</span>
+                            {expense.is_newly_imported && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                NEW
+                              </span>
+                            )}
+                            {!expense.receipt_number && expense.delivery_number && (
+                              <span className="ml-2 px-1.5 py-0.5 bg-orange-100 text-orange-700 text-xs rounded font-medium" title="รอใบเสร็จ">รอบิล</span>
+                            )}
                           {expense.payment_voucher_id && (
                             <span className="ml-2 px-2 py-1 bg-blue-200 text-blue-800 text-xs rounded font-medium flex items-center gap-1 shadow-sm inline-flex" title="มีใบสำคัญจ่ายแล้ว">
                               <FileText className="h-3 w-3" />
