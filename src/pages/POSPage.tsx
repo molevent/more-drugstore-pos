@@ -905,6 +905,70 @@ export default function POSPage() {
             console.error('Exception during ZortOut sync:', syncError)
           }
 
+          // Auto-generate simplified tax invoice for Grab and Lazada channels
+          const AUTO_TAX_INVOICE_CHANNELS = ['grab', 'lazada']
+          if (AUTO_TAX_INVOICE_CHANNELS.includes(salesChannel)) {
+            try {
+              // Generate tax invoice number (simplified format: CAYYYYMMDDXXXXX)
+              const today = new Date()
+              const year = today.getFullYear()
+              const month = String(today.getMonth() + 1).padStart(2, '0')
+              const day = String(today.getDate()).padStart(2, '0')
+              const dateStr = `${year}${month}${day}`
+              
+              // Get next running number for today
+              const { data: lastInvoice } = await supabase
+                .from('tax_invoices')
+                .select('invoice_number')
+                .like('invoice_number', `CA${dateStr}%`)
+                .order('invoice_number', { ascending: false })
+                .limit(1)
+                .single()
+              
+              let runningNumber = 1
+              if (lastInvoice?.invoice_number) {
+                const lastNumber = parseInt(lastInvoice.invoice_number.slice(-5))
+                if (!isNaN(lastNumber)) {
+                  runningNumber = lastNumber + 1
+                }
+              }
+              const runningNumberStr = String(runningNumber).padStart(5, '0')
+              const taxInvoiceNumber = `CA${dateStr}${runningNumberStr}`
+              
+              // Calculate VAT (7% of total)
+              const vatAmount = (orderData.total * 0.07)
+              const amountBeforeVat = orderData.total - vatAmount
+              
+              // Create simplified tax invoice
+              const { error: taxInvoiceError } = await supabase
+                .from('tax_invoices')
+                .insert({
+                  invoice_number: taxInvoiceNumber,
+                  order_id: orderData.id,
+                  customer_name: selectedCustomer?.name || 'ลูกค้าทั่วไป',
+                  customer_tax_id: null, // Simplified invoice doesn't require tax ID
+                  issue_date: today.toISOString(),
+                  amount_before_vat: amountBeforeVat,
+                  vat_amount: vatAmount,
+                  total_amount: orderData.total,
+                  invoice_type: 'simplified', // ใบกำกับภาษีอย่างย่อ
+                  status: 'issued',
+                  channel: salesChannel,
+                  created_at: today.toISOString(),
+                  updated_at: today.toISOString()
+                })
+              
+              if (taxInvoiceError) {
+                console.error('Error creating tax invoice:', taxInvoiceError)
+              } else {
+                console.log(`Simplified tax invoice ${taxInvoiceNumber} created for ${salesChannel} order`)
+              }
+            } catch (taxError) {
+              console.error('Exception creating tax invoice:', taxError)
+              // Don't block the sale if tax invoice creation fails
+            }
+          }
+
           alert(`ขายสำเร็จ! เลขออเดอร์: ${orderNumber}`)
         }
         

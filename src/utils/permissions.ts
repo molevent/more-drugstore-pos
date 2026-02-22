@@ -115,6 +115,13 @@ export const MENU_PERMISSIONS: MenuPermission[] = [
     icon: 'Users',
     path: '/users',
     allowedRoles: ['owner', 'manager']  // Owner and manager can manage users
+  },
+  {
+    id: 'contacts',
+    label: 'ผู้ติดต่อ',
+    icon: 'AddressBook',
+    path: '/contacts',
+    allowedRoles: ['owner', 'manager', 'pharmacist', 'part_time']  // All roles that use POS
   }
 ]
 

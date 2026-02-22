@@ -31,7 +31,8 @@ import {
   TrendingDown,
   Boxes,
   ShoppingCart,
-  ArrowLeft
+  ArrowLeft,
+  ExternalLink
 } from 'lucide-react'
 
 interface QuotationItem {
@@ -202,11 +203,24 @@ export default function QuotationPage() {
     shippingCost: number
     channel: string
     status: 'not_ordered' | 'ordered' | 'received'
+    purchaseLink?: string
   }[]>([])
+  
+  // Purchase order form state
+  const [selectedPurchaseProduct, setSelectedPurchaseProduct] = useState<{
+    itemIndex: number
+    productId: string
+    productName: string
+  } | null>(null)
+  const [purchaseFormData, setPurchaseFormData] = useState({
+    quantity: 1,
+    unitPrice: 0,
+    purchaseLink: ''
+  })
   
   const [newContact, setNewContact] = useState({
     name: '',
-    company: '',
+    company_name: '',
     phone: '',
     email: '',
     address: '',
@@ -727,7 +741,7 @@ export default function QuotationPage() {
         .from('contacts')
         .insert([{
           name: newContact.name,
-          company: newContact.company,
+          company_name: newContact.company_name,
           phone: newContact.phone,
           email: newContact.email,
           address: newContact.address,
@@ -743,7 +757,7 @@ export default function QuotationPage() {
         setContacts(prev => [...prev, contactData])
         selectContact(contactData)
         setShowNewContactModal(false)
-        setNewContact({ name: '', company: '', phone: '', email: '', address: '', tax_id: '' })
+        setNewContact({ name: '', company_name: '', phone: '', email: '', address: '', tax_id: '' })
       }
     } catch (error) {
       console.error('Error creating contact:', error)
@@ -1745,28 +1759,28 @@ export default function QuotationPage() {
               }
             }, { totalCost: 0, totalRevenue: 0, totalProfit: 0 })
             
-            const totalExpenses = expenses.shipping + expenses.fees + expenses.other
-            const netProfit = totals.totalProfit - totalExpenses
-            const overallProfitPercent = totals.totalCost > 0 ? ((netProfit / totals.totalCost) * 100) : 0
+            // Calculate total purchase orders cost (only those NOT linked to quotation items to avoid double counting)
+            const quotationProductIds = new Set(quotation.items.map(item => item.product_id).filter(Boolean))
+            const totalAdditionalPurchaseCost = purchaseOrders
+              .filter(po => !quotationProductIds.has(po.productId))
+              .reduce((sum, po) => sum + (po.quantity * po.unitPrice) + po.shippingCost, 0)
+            
+            const totalCostWithPurchases = totals.totalCost + totalAdditionalPurchaseCost
+            const netProfit = totals.totalRevenue - totalCostWithPurchases
+            const overallProfitPercent = totalCostWithPurchases > 0 ? ((netProfit / totalCostWithPurchases) * 100) : 0
             
             return (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 <Card className="bg-white border-[#d4c9b8] rounded-xl shadow-sm">
                   <div className="p-2 text-center">
                     <p className="text-[10px] text-[#8b7355] mb-0.5">ต้นทุนรวม</p>
-                    <p className="text-base font-bold text-[#5c4a32]">{formatNumber(totals.totalCost)}</p>
+                    <p className="text-base font-bold text-[#5c4a32]">{formatNumber(totalCostWithPurchases)}</p>
                   </div>
                 </Card>
                 <Card className="bg-white border-[#d4c9b8] rounded-xl shadow-sm">
                   <div className="p-2 text-center">
                     <p className="text-[10px] text-[#8b7355] mb-0.5">รายได้รวม</p>
                     <p className="text-base font-bold text-[#5c4a32]">{formatNumber(totals.totalRevenue)}</p>
-                  </div>
-                </Card>
-                <Card className="bg-white border-[#d4c9b8] rounded-xl shadow-sm">
-                  <div className="p-2 text-center">
-                    <p className="text-[10px] text-[#8b7355] mb-0.5">ค่าใช้จ่ายเพิ่มเติม</p>
-                    <p className="text-base font-bold text-[#a67c52]">{formatNumber(totalExpenses)}</p>
                   </div>
                 </Card>
                 <Card className={`${netProfit >= 0 ? 'bg-[#e8f5e9] border-[#c8e6c9]' : 'bg-[#ffebee] border-[#ffcdd2]'} rounded-xl shadow-sm`}>
@@ -1810,8 +1824,9 @@ export default function QuotationPage() {
                 <tbody className="divide-y divide-gray-200">
                   {quotation.items.map((item, index) => {
                     const product = products.find(p => p.id === item.product_id)
-                    // Check if there's a purchase order for this item
-                    const po = purchaseOrders.find(o => o.productId === item.product_id)
+                    // Check if there's a purchase order for this item (match by product_id or custom index)
+                    const itemKey = item.product_id || `custom-${index}`
+                    const po = purchaseOrders.find(o => o.productId === itemKey)
                     // Use purchase order price if available, otherwise use product base_price
                     const costPrice = po ? ((po.quantity * po.unitPrice + po.shippingCost) / po.quantity) : (product?.base_price || 0)
                     const sellingPrice = item.unit_price
@@ -1907,51 +1922,6 @@ export default function QuotationPage() {
             </div>
           </Card>
 
-          {/* Expenses Section */}
-          <Card className="border-[#e8e0d5]">
-            <div className="p-4 border-b border-[#e8e0d5] bg-[#faf8f5]">
-              <h2 className="text-base font-bold text-[#5c4a32] flex items-center gap-2">
-                <Calculator className="h-4 w-4 text-[#a67c52]" />
-                ค่าใช้จ่ายเพิ่มเติม
-              </h2>
-            </div>
-            <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ค่าขนส่ง</label>
-                <Input 
-                  type="number" 
-                  value={expenses.shipping} 
-                  onChange={(e) => setExpenses(prev => ({ ...prev, shipping: parseFloat(e.target.value) || 0 }))}
-                  className="text-right"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ค่าธรรมเนียม</label>
-                <Input 
-                  type="number" 
-                  value={expenses.fees} 
-                  onChange={(e) => setExpenses(prev => ({ ...prev, fees: parseFloat(e.target.value) || 0 }))}
-                  className="text-right"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ค่าใช้จ่ายอื่นๆ</label>
-                <Input 
-                  type="number" 
-                  value={expenses.other} 
-                  onChange={(e) => setExpenses(prev => ({ ...prev, other: parseFloat(e.target.value) || 0 }))}
-                  className="text-right"
-                />
-              </div>
-            </div>
-            <div className="px-4 pb-4">
-              <div className="bg-[#faf8f5] rounded-lg p-3 flex justify-between items-center border border-[#e8e0d5]">
-                <span className="text-sm font-medium text-[#5c4a32]">รวมค่าใช้จ่ายเพิ่มเติม</span>
-                <span className="text-lg font-bold text-[#a67c52]">{formatNumber(expenses.shipping + expenses.fees + expenses.other)}</span>
-              </div>
-            </div>
-          </Card>
-
           {/* Purchase Orders Section */}
           <Card className="border-[#e8e0d5]">
             <div className="p-4 border-b border-[#e8e0d5] bg-[#faf8f5]">
@@ -1963,39 +1933,110 @@ export default function QuotationPage() {
             
             {/* Add Purchase Order Form */}
             <div className="p-4 bg-[#faf8f5] border-b border-[#e8e0d5]">
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              <div className="space-y-3">
                 <select 
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm md:col-span-5"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  value={selectedPurchaseProduct?.itemIndex ?? ''}
                   onChange={(e) => {
-                    const selectedProduct = products.find(p => p.id === e.target.value)
-                    if (selectedProduct) {
-                      const existingOrder = purchaseOrders.find(o => o.productId === selectedProduct.id)
-                      if (!existingOrder) {
-                        const stockQty = stockData[selectedProduct.id] || 0
-                        const quotationItem = quotation.items.find(i => i.product_id === selectedProduct.id)
-                        const neededQty = quotationItem ? (quotationItem.quantity - stockQty) : 0
-                        setPurchaseOrders(prev => [...prev, {
-                          productId: selectedProduct.id,
-                          productName: selectedProduct.name_th,
-                          quantity: Math.max(0, neededQty),
-                          unitPrice: selectedProduct.base_price,
-                          shippingCost: 0,
-                          channel: 'ตัวแทนจำหน่าย',
-                          status: 'not_ordered'
-                        }])
-                      }
+                    const itemIndex = parseInt(e.target.value)
+                    if (!isNaN(itemIndex) && quotation.items[itemIndex]) {
+                      const selectedProduct = quotation.items[itemIndex]
+                      const productName = selectedProduct.product_name || selectedProduct.description || selectedProduct.details || 'ไม่มีชื่อ'
+                      setSelectedPurchaseProduct({
+                        itemIndex: itemIndex,
+                        productId: selectedProduct.product_id || `custom-${itemIndex}`,
+                        productName: productName
+                      })
+                      setPurchaseFormData({
+                        quantity: selectedProduct.quantity || 1,
+                        unitPrice: 0,
+                        purchaseLink: ''
+                      })
                     }
                   }}
                 >
                   <option value="">เลือกสินค้า...</option>
-                  {quotation.items.filter(item => {
-                    const stockQty = item.product_id ? (stockData[item.product_id] || 0) : 0
-                    const missing = item.quantity - stockQty
-                    return missing > 0 && !purchaseOrders.find(o => o.productId === item.product_id)
-                  }).map(item => (
-                    <option key={item.product_id} value={item.product_id}>{item.product_name}</option>
-                  ))}
+                  {quotation.items.map((item, originalIdx) => {
+                    const itemKey = item.product_id || `custom-${originalIdx}`
+                    const isAlreadyAdded = purchaseOrders.find(o => o.productId === itemKey)
+                    if (isAlreadyAdded) return null
+                    const displayName = item.product_name || item.description || item.details || 'ไม่มีชื่อ'
+                    return (
+                      <option key={itemKey} value={originalIdx}>
+                        {displayName}
+                      </option>
+                    )
+                  }).filter(Boolean)}
                 </select>
+                
+                {selectedPurchaseProduct && (
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-3 bg-white rounded-lg border border-[#e8e0d5]">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">จำนวนที่สั่ง *</label>
+                      <Input 
+                        type="number" 
+                        value={purchaseFormData.quantity}
+                        onChange={(e) => setPurchaseFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))}
+                        className="text-center"
+                        min={1}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">ราคาทุน/ชิ้น (บาท) *</label>
+                      <Input 
+                        type="number" 
+                        value={purchaseFormData.unitPrice}
+                        onChange={(e) => setPurchaseFormData(prev => ({ ...prev, unitPrice: parseFloat(e.target.value) || 0 }))}
+                        className="text-right"
+                        min={0}
+                        step="0.01"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">ลิงก์สั่งซื้อ</label>
+                      <Input 
+                        type="text" 
+                        value={purchaseFormData.purchaseLink}
+                        onChange={(e) => setPurchaseFormData(prev => ({ ...prev, purchaseLink: e.target.value }))}
+                        placeholder="https://..."
+                      />
+                    </div>
+                    <div className="md:col-span-4 flex gap-2">
+                      <Button 
+                        variant="secondary"
+                        onClick={() => {
+                          setSelectedPurchaseProduct(null)
+                          setPurchaseFormData({ quantity: 1, unitPrice: 0, purchaseLink: '' })
+                        }}
+                        className="flex-1"
+                      >
+                        ยกเลิก
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          if (selectedPurchaseProduct && purchaseFormData.quantity > 0 && purchaseFormData.unitPrice >= 0) {
+                            setPurchaseOrders(prev => [...prev, {
+                              productId: selectedPurchaseProduct.productId,
+                              productName: selectedPurchaseProduct.productName,
+                              quantity: purchaseFormData.quantity,
+                              unitPrice: purchaseFormData.unitPrice,
+                              shippingCost: 0,
+                              channel: '',
+                              status: 'not_ordered',
+                              purchaseLink: purchaseFormData.purchaseLink
+                            }])
+                            setSelectedPurchaseProduct(null)
+                            setPurchaseFormData({ quantity: 1, unitPrice: 0, purchaseLink: '' })
+                          }
+                        }}
+                        disabled={!purchaseFormData.quantity || purchaseFormData.unitPrice < 0}
+                        className="flex-1 bg-[#4A90A4] hover:bg-[#3d7a8a] text-white"
+                      >
+                        เพิ่มรายการสั่งซื้อ
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -2053,13 +2094,25 @@ export default function QuotationPage() {
                           />
                         </td>
                         <td className="px-4 py-3">
-                          <Input 
-                            type="text" 
-                            value={order.channel} 
-                            onChange={(e) => setPurchaseOrders(prev => prev.map((o, i) => i === index ? { ...o, channel: e.target.value } : o))}
-                            className="text-sm"
-                            placeholder="ช่องทางสั่งซื้อ"
-                          />
+                          {order.purchaseLink ? (
+                            <a 
+                              href={order.purchaseLink} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-800 transition-colors"
+                              title={order.channel || 'คลิกดูลิงก์สั่งซื้อ'}
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          ) : (
+                            <Input 
+                              type="text" 
+                              value={order.channel} 
+                              onChange={(e) => setPurchaseOrders(prev => prev.map((o, i) => i === index ? { ...o, channel: e.target.value } : o))}
+                              className="text-sm"
+                              placeholder="ช่องทางสั่งซื้อ"
+                            />
+                          )}
                         </td>
                         <td className="px-4 py-3 text-center">
                           <select 
@@ -2153,7 +2206,7 @@ export default function QuotationPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">บริษัท</label>
-                <Input value={newContact.company} onChange={(e) => setNewContact(prev => ({ ...prev, company: e.target.value }))} placeholder="ชื่อบริษัท" />
+                <Input value={newContact.company_name} onChange={(e) => setNewContact(prev => ({ ...prev, company_name: e.target.value }))} placeholder="ชื่อบริษัท" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">โทรศัพท์</label>
