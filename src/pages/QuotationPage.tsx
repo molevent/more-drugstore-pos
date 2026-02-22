@@ -184,13 +184,6 @@ export default function QuotationPage() {
   const [productImageSize, setProductImageSize] = useState<'small' | 'medium' | 'large'>('small')
   const [activeTab, setActiveTab] = useState<'quotation' | 'profit'>('quotation')
   
-  // Expenses and additional costs for profit calculation
-  const [expenses, setExpenses] = useState({
-    shipping: 0,
-    fees: 0,
-    other: 0
-  })
-  
   // Stock data for inventory checking
   const [stockData, setStockData] = useState<Record<string, number>>({})
   
