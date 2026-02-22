@@ -1279,7 +1279,20 @@ export default function QuotationPage() {
                   </td>
                 )}
                 <td>
-                  <strong>{item.product_name}</strong>
+                  {item.product_id ? (
+                    <a 
+                      href={`/products?id=${item.product_id}`}
+                      className="font-bold text-[#4A90A4] hover:underline"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        window.open(`/products?id=${item.product_id}`, '_blank')
+                      }}
+                    >
+                      {item.product_name}
+                    </a>
+                  ) : (
+                    <strong>{item.product_name}</strong>
+                  )}
                   {item.details && <br />}
                   {item.details && <span style={{ fontSize: '10px', color: '#666' }}>{item.details}</span>}
                 </td>
