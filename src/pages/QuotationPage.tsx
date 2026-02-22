@@ -1568,9 +1568,23 @@ export default function QuotationPage() {
                     </td>
                   )}
                   <td className="px-3 py-4">
-                    <button onClick={() => { setActiveItemIndex(index); setShowProductModal(true); }} className="w-full text-left">
-                      <input type="text" placeholder="เลือกสินค้า..." value={item.product_name} readOnly className="w-full text-lg px-3 py-2 border border-gray-300 rounded cursor-pointer bg-gray-50 hover:bg-white mb-1" />
-                    </button>
+                    <div className="flex items-start gap-2">
+                      <button onClick={() => { setActiveItemIndex(index); setShowProductModal(true); }} className="flex-1 text-left">
+                        <input type="text" placeholder="เลือกสินค้า..." value={item.product_name} readOnly className="w-full text-lg px-3 py-2 border border-gray-300 rounded cursor-pointer bg-gray-50 hover:bg-white mb-1" />
+                      </button>
+                      {item.product_id && (
+                        <a 
+                          href={`/products?id=${item.product_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center w-10 h-10 mt-1 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-800 transition-colors"
+                          title="ดูข้อมูลสินค้า"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ExternalLink className="h-5 w-5" />
+                        </a>
+                      )}
+                    </div>
                     <input type="text" placeholder="รายละเอียด" value={item.details} onChange={(e) => updateItem(index, 'details', e.target.value)} className="w-full text-base px-3 py-1.5 border border-gray-300 rounded mb-0.5" />
                   </td>
                   <td className="px-3 py-4">
