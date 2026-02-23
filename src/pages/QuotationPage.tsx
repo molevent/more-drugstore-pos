@@ -32,7 +32,9 @@ import {
   Boxes,
   ShoppingCart,
   ArrowLeft,
-  ExternalLink
+  ExternalLink,
+  RefreshCw,
+  Package
 } from 'lucide-react'
 
 interface QuotationItem {
@@ -69,11 +71,15 @@ interface Product {
   id: string
   name_th: string
   name_en?: string
+  description_th?: string
+  description_en?: string
   barcode?: string
+  sku?: string
   base_price: number
   selling_price_incl_vat?: number
   image_url?: string
   unit?: string
+  stock_quantity?: number
   is_active: boolean
 }
 
@@ -183,6 +189,13 @@ export default function QuotationPage() {
   const [previewAttachment, setPreviewAttachment] = useState<{name: string, url: string} | null>(null)
   const [productImageSize, setProductImageSize] = useState<'small' | 'medium' | 'large'>('small')
   const [activeTab, setActiveTab] = useState<'quotation' | 'profit'>('quotation')
+  
+  // Product detail modal state
+  const [showProductDetailModal, setShowProductDetailModal] = useState(false)
+  const [viewingProduct, setViewingProduct] = useState<Product | null>(null)
+  const [productDetailTab, setProductDetailTab] = useState<'overview' | 'movement'>('movement')
+  const [movementHistory, setMovementHistory] = useState<any[]>([])
+  const [movementLoading, setMovementLoading] = useState(false)
   
   // Stock data for inventory checking
   const [stockData, setStockData] = useState<Record<string, number>>({})
@@ -320,7 +333,7 @@ export default function QuotationPage() {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name_th, name_en, barcode, base_price, image_url, unit, is_active')
+        .select('id, name_th, name_en, description_th, description_en, barcode, sku, base_price, selling_price_incl_vat, image_url, unit, stock_quantity, is_active')
         .eq('is_active', true)
         .order('name_th')
       
@@ -346,6 +359,31 @@ export default function QuotationPage() {
       setStockData(stockMap)
     } catch (error) {
       console.error('Error fetching stock data:', error)
+    }
+  }
+
+  const fetchProductMovementHistory = async (productId: string) => {
+    setMovementLoading(true)
+    try {
+      // Fetch inventory movements for this product
+      const { data, error } = await supabase
+        .from('inventory_movements')
+        .select('*')
+        .eq('product_id', productId)
+        .order('created_at', { ascending: false })
+        .limit(50)
+      
+      if (error) {
+        console.error('Error fetching movement history:', error)
+        setMovementHistory([])
+      } else {
+        setMovementHistory(data || [])
+      }
+    } catch (error) {
+      console.error('Error fetching movement history:', error)
+      setMovementHistory([])
+    } finally {
+      setMovementLoading(false)
     }
   }
 
@@ -1569,20 +1607,57 @@ export default function QuotationPage() {
                   )}
                   <td className="px-3 py-4">
                     <div className="flex items-start gap-2">
-                      <button onClick={() => { setActiveItemIndex(index); setShowProductModal(true); }} className="flex-1 text-left">
-                        <input type="text" placeholder="เลือกสินค้า..." value={item.product_name} readOnly className="w-full text-lg px-3 py-2 border border-gray-300 rounded cursor-pointer bg-gray-50 hover:bg-white mb-1" />
-                      </button>
-                      {item.product_id && (
-                        <a 
-                          href={`/products?id=${item.product_id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center w-10 h-10 mt-1 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-800 transition-colors"
-                          title="ดูข้อมูลสินค้า"
-                          onClick={(e) => e.stopPropagation()}
+                      {item.product_id ? (
+                        <button 
+                          onClick={async () => {
+                            let product = products.find(p => p.id === item.product_id)
+                            
+                            // If not found in local array, try to fetch from database
+                            if (!product) {
+                              try {
+                                const { data, error } = await supabase
+                                  .from('products')
+                                  .select('id, name_th, name_en, description_th, description_en, barcode, sku, base_price, selling_price_incl_vat, image_url, unit, stock_quantity, is_active')
+                                  .eq('id', item.product_id)
+                                  .single()
+                                
+                                if (!error && data) {
+                                  product = data
+                                }
+                              } catch (err) {
+                                console.error('Error fetching product:', err)
+                              }
+                            }
+                            
+                            if (product) {
+                              setViewingProduct(product)
+                              setProductDetailTab('movement') // Set Movement History as default tab
+                              fetchProductMovementHistory(product.id)
+                              setShowProductDetailModal(true)
+                            } else {
+                              // Fallback: open product page directly at /products/:id
+                              window.open(`/products/${item.product_id}`, '_blank')
+                            }
+                          }}
+                          className="flex-1 text-left group"
                         >
-                          <ExternalLink className="h-5 w-5" />
-                        </a>
+                          <div className="w-full text-lg px-3 py-2 border border-gray-300 rounded cursor-pointer bg-gray-50 hover:bg-blue-50 hover:border-blue-300 mb-1 transition-colors">
+                            <span className="text-blue-600 hover:text-blue-800 font-medium">{item.product_name}</span>
+                          </div>
+                        </button>
+                      ) : (
+                        <button onClick={() => { setActiveItemIndex(index); setShowProductModal(true); }} className="flex-1 text-left">
+                          <input type="text" placeholder="เลือกสินค้า..." value={item.product_name} readOnly className="w-full text-lg px-3 py-2 border border-gray-300 rounded cursor-pointer bg-gray-50 hover:bg-white mb-1" />
+                        </button>
+                      )}
+                      {item.product_id && (
+                        <button
+                          onClick={() => { setActiveItemIndex(index); setShowProductModal(true); }}
+                          className="inline-flex items-center justify-center w-10 h-10 mt-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800 transition-colors"
+                          title="เปลี่ยนสินค้า"
+                        >
+                          <RefreshCw className="h-5 w-5" />
+                        </button>
                       )}
                     </div>
                     <input type="text" placeholder="รายละเอียด" value={item.details} onChange={(e) => updateItem(index, 'details', e.target.value)} className="w-full text-base px-3 py-1.5 border border-gray-300 rounded mb-0.5" />
@@ -2337,6 +2412,209 @@ export default function QuotationPage() {
                   </button>
                 </div>
               </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Product Detail Modal */}
+      {showProductDetailModal && viewingProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col bg-white">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-bold text-gray-900">{viewingProduct.name_th}</h3>
+              <button 
+                type="button"
+                onClick={() => { setShowProductDetailModal(false); setViewingProduct(null); }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            {/* Tabs */}
+            <div className="flex border-b bg-gray-50">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setProductDetailTab('overview');
+                }}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  productDetailTab === 'overview'
+                    ? 'bg-white text-[#4A90A4] border-b-2 border-[#4A90A4]'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                ภาพรวม
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setProductDetailTab('movement');
+                }}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  productDetailTab === 'movement'
+                    ? 'bg-white text-[#4A90A4] border-b-2 border-[#4A90A4]'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                รายการเคลื่อนไหว
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6">
+              {productDetailTab === 'overview' && (
+                <div className="flex gap-6">
+                  {/* Product Image */}
+                  <div className="flex-shrink-0">
+                    {viewingProduct.image_url ? (
+                      <img 
+                        src={viewingProduct.image_url} 
+                        alt={viewingProduct.name_th}
+                        className="w-32 h-32 object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div className="w-32 h-32 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <Package className="h-12 w-12 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Product Info */}
+                  <div className="flex-1 space-y-3">
+                    <div>
+                      <p className="text-sm text-gray-500">ชื่อสินค้า (ไทย)</p>
+                      <p className="font-medium text-gray-900">{viewingProduct.name_th}</p>
+                    </div>
+                    {viewingProduct.name_en && (
+                      <div>
+                        <p className="text-sm text-gray-500">ชื่อสินค้า (อังกฤษ)</p>
+                        <p className="font-medium text-gray-900">{viewingProduct.name_en}</p>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-500">ราคาขาย</p>
+                        <p className="font-medium text-[#4A90A4]">{formatNumber(viewingProduct.base_price)} บาท</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">หน่วย</p>
+                        <p className="font-medium text-gray-900">{viewingProduct.unit || 'ชิ้น'}</p>
+                      </div>
+                    </div>
+                    {viewingProduct.barcode && (
+                      <div>
+                        <p className="text-sm text-gray-500">บาร์โค้ด</p>
+                        <p className="font-medium text-gray-900">{viewingProduct.barcode}</p>
+                      </div>
+                    )}
+                    {viewingProduct.sku && (
+                      <div>
+                        <p className="text-sm text-gray-500">SKU</p>
+                        <p className="font-medium text-gray-900">{viewingProduct.sku}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm text-gray-500">จำนวนในสต็อก</p>
+                      <p className="font-medium text-gray-900">{viewingProduct.stock_quantity || 0} {viewingProduct.unit || 'ชิ้น'}</p>
+                    </div>
+                    {(viewingProduct.description_th || viewingProduct.description_en) && (
+                      <div>
+                        <p className="text-sm text-gray-500">รายละเอียด</p>
+                        <p className="font-medium text-gray-900">{viewingProduct.description_th || viewingProduct.description_en}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {productDetailTab === 'movement' && (
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">รายการเคลื่อนไหว (Movement History)</h4>
+                  {movementLoading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#4A90A4]"></div>
+                    </div>
+                  ) : movementHistory.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>ไม่มีประวัติการเคลื่อนไหว</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full border-collapse">
+                        <thead>
+                          <tr className="bg-gray-100 border-b">
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">วันที่</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">ประเภท</th>
+                            <th className="px-3 py-2 text-right text-xs font-medium text-gray-600">จำนวน</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">ต้นทาง</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">ปลายทาง</th>
+                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">หมายเหตุ</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {movementHistory.map((movement, idx) => (
+                            <tr key={idx} className="hover:bg-gray-50">
+                              <td className="px-3 py-2 text-sm text-gray-900">
+                                {new Date(movement.created_at).toLocaleDateString('th-TH')}
+                              </td>
+                              <td className="px-3 py-2 text-sm">
+                                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                                  movement.movement_type === 'in' ? 'bg-green-100 text-green-800' :
+                                  movement.movement_type === 'out' ? 'bg-red-100 text-red-800' :
+                                  'bg-blue-100 text-blue-800'
+                                }`}>
+                                  {movement.movement_type === 'in' ? 'ซื้อเข้า' :
+                                   movement.movement_type === 'out' ? 'ขายออก' :
+                                   movement.movement_type === 'adjustment' ? 'ปรับยอด' :
+                                   'โอนย้าย'}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2 text-sm text-right font-medium">
+                                {movement.quantity > 0 ? `+${movement.quantity}` : movement.quantity}
+                              </td>
+                              <td className="px-3 py-2 text-sm text-gray-600">
+                                {movement.source_location || '-'}
+                              </td>
+                              <td className="px-3 py-2 text-sm text-gray-600">
+                                {movement.destination_location || '-'}
+                              </td>
+                              <td className="px-3 py-2 text-sm text-gray-600">
+                                {movement.notes || '-'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4 border-t bg-gray-50 flex justify-end gap-2">
+              <button 
+                type="button"
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                onClick={() => { setShowProductDetailModal(false); setViewingProduct(null); }}
+              >
+                ปิด
+              </button>
+              <button 
+                type="button"
+                className="px-4 py-2 bg-[#4A90A4] text-white rounded hover:bg-[#3A8094] transition-colors"
+                onClick={() => {
+                  setShowProductDetailModal(false)
+                  setViewingProduct(null)
+                  window.open(`/products/${viewingProduct.id}`, '_blank')
+                }}
+              >
+                ไปหน้าสินค้า
+              </button>
             </div>
           </Card>
         </div>
