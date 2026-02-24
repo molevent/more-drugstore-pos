@@ -89,6 +89,7 @@ export interface FlowAccountCompany {
 
 // Use Supabase Edge Function as proxy to avoid CORS
 const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/flowaccount-proxy`;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 /**
  * Make authenticated API request to FlowAccount via Edge Function proxy
@@ -105,6 +106,7 @@ const apiRequest = async <T>(
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       ...options.headers
     }
   });
