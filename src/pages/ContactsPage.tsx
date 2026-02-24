@@ -212,7 +212,7 @@ export default function ContactsPage() {
         
         // Sync to FlowAccount
         try {
-          await updateFlowContact(editingContact.id, contactData)
+          await updateFlowContact(editingContact.id, contactData as any)
         } catch (flowError) {
           console.warn('FlowAccount sync failed:', flowError)
         }
@@ -228,7 +228,7 @@ export default function ContactsPage() {
         // Sync to FlowAccount
         try {
           if (newContact) {
-            await createFlowContact(contactData)
+            await createFlowContact(contactData as any)
           }
         } catch (flowError) {
           console.warn('FlowAccount sync failed:', flowError)

@@ -25,8 +25,16 @@ import {
   Building2,
   Phone,
   Mail,
-  MapPin
+  MapPin,
+  RefreshCw,
+  Upload,
+  Download,
+  CheckCircle2,
+  CloudOff,
+  CheckSquare,
+  Square
 } from 'lucide-react'
+import { createQuotation, getQuotations, convertQuotationToFlowAccount } from '../services/flowaccount'
 import Card from '../components/common/Card'
 import Input from '../components/common/Input'
 
@@ -66,6 +74,8 @@ interface Quotation {
   withholding_tax: boolean
   withholding_tax_percent: number
   withholding_tax_amount: number
+  flowaccount_id?: number
+  flowaccount_synced_at?: string
 }
 
 interface QuotationItem {
@@ -106,6 +116,11 @@ export default function QuotationsListPage() {
   const [activeModal, setActiveModal] = useState<ModalType>(null)
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null)
   const [modalLoading, setModalLoading] = useState(false)
+  const [syncingId, setSyncingId] = useState<string | null>(null)
+  const [isBatchSyncing, setIsBatchSyncing] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [isImporting, setIsImporting] = useState(false)
+  const [syncFilter, setSyncFilter] = useState<'all' | 'synced' | 'not_synced'>('all')
 
   const fetchQuotations = async () => {
     try {
@@ -172,11 +187,242 @@ export default function QuotationsListPage() {
     }
   }
 
-  const filteredQuotations = quotations.filter(q => 
-    q.quotation_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    q.contact_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    q.contact_company.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  // Sync single quotation to FlowAccount
+  const handleSyncToFlowAccount = async (quotation: Quotation) => {
+    setSyncingId(quotation.id)
+    try {
+      const flowData = convertQuotationToFlowAccount(quotation)
+      const result = await createQuotation(flowData) as any
+      const d = result?.data || result
+      const flowId = d?.recordId || d?.documentId || d?.id || d?.list?.[0]?.recordId || d?.list?.[0]?.documentId || d?.list?.[0]?.id
+      const now = new Date().toISOString()
+      console.log('Sync result:', JSON.stringify(result).substring(0, 500), 'flowId:', flowId)
+      
+      try {
+        await supabase
+          .from('quotations')
+          .update({ flowaccount_id: flowId || null, flowaccount_synced_at: now })
+          .eq('id', quotation.id)
+      } catch (dbErr) {
+        console.warn('DB update failed:', dbErr)
+      }
+      
+      setQuotations(prev => prev.map(q =>
+        q.id === quotation.id ? { ...q, flowaccount_id: flowId, flowaccount_synced_at: now } : q
+      ))
+      alert(`Sync สำเร็จ! ${flowId ? 'FlowAccount ID: ' + flowId : ''}`)
+    } catch (error) {
+      console.error('Sync quotation error:', error)
+      alert('Sync ไป FlowAccount ล้มเหลว: ' + (error as Error).message)
+    } finally {
+      setSyncingId(null)
+    }
+  }
+
+  // Batch sync selected quotations
+  const handleBatchSync = async () => {
+    const toSync = quotations.filter(q => selectedIds.has(q.id) && !q.flowaccount_id)
+    if (toSync.length === 0) {
+      alert('ไม่มีใบเสนอราคาที่ต้อง sync (อาจ sync ไปแล้วทั้งหมด)')
+      return
+    }
+    if (!confirm(`ต้องการ sync ${toSync.length} ใบเสนอราคาไปยัง FlowAccount?`)) return
+    
+    setIsBatchSyncing(true)
+    let success = 0, fail = 0
+    const failedNames: string[] = []
+    
+    for (let i = 0; i < toSync.length; i++) {
+      const q = toSync[i]
+      setSyncingId(q.id)
+      try {
+        const flowData = convertQuotationToFlowAccount(q)
+        const result = await createQuotation(flowData) as any
+        const d = result?.data || result
+        const flowId = d?.recordId || d?.documentId || d?.id || d?.list?.[0]?.recordId || d?.list?.[0]?.documentId || d?.list?.[0]?.id
+        const now = new Date().toISOString()
+        
+        try {
+          await supabase.from('quotations')
+            .update({ flowaccount_id: flowId || null, flowaccount_synced_at: now })
+            .eq('id', q.id)
+        } catch (dbErr) { console.warn('DB update failed:', dbErr) }
+        
+        setQuotations(prev => prev.map(x =>
+          x.id === q.id ? { ...x, flowaccount_id: flowId, flowaccount_synced_at: now } : x
+        ))
+        success++
+      } catch (error) {
+        console.error(`Sync failed for ${q.quotation_number}:`, error)
+        failedNames.push(q.quotation_number)
+        fail++
+      }
+      if (i < toSync.length - 1) await new Promise(r => setTimeout(r, 500))
+    }
+    
+    setSyncingId(null)
+    setIsBatchSyncing(false)
+    setSelectedIds(new Set())
+    let msg = `Sync เสร็จสิ้น: สำเร็จ ${success} รายการ`
+    if (fail > 0) msg += `\nล้มเหลว ${fail}: ${failedNames.join(', ')}`
+    alert(msg)
+  }
+
+  // Import quotations from FlowAccount
+  const handleImportFromFlowAccount = async () => {
+    if (!confirm('ดึงใบเสนอราคาจาก FlowAccount มายังเว็บ?')) return
+    
+    setIsImporting(true)
+    try {
+      const result = await getQuotations(1, 100) as any
+      const flowQuotations = result?.data?.list || result?.data || result?.list || []
+      
+      if (!Array.isArray(flowQuotations) || flowQuotations.length === 0) {
+        alert('ไม่พบใบเสนอราคาใน FlowAccount')
+        return
+      }
+      
+      let imported = 0, skipped = 0
+      
+      for (const fq of flowQuotations) {
+        const faId = fq.recordId || fq.documentId || fq.id
+        
+        // Check if already imported (wrap in try-catch in case column doesn't exist)
+        try {
+          if (faId) {
+            const { data: existing } = await supabase
+              .from('quotations')
+              .select('id')
+              .eq('flowaccount_id', faId)
+              .maybeSingle()
+            if (existing) { skipped++; continue }
+          }
+        } catch (checkErr) {
+          console.warn('Duplicate check skipped (column may not exist):', checkErr)
+          // Also check by documentSerial to avoid duplicates
+          const serial = fq.documentSerial || ''
+          if (serial) {
+            const { data: existing2 } = await supabase
+              .from('quotations')
+              .select('id')
+              .eq('quotation_number', serial)
+              .maybeSingle()
+            if (existing2) { skipped++; continue }
+          }
+        }
+        
+        // Parse date from publishedOn (format: "2026-02-24T00:00:00")
+        const parseDate = (d: string | undefined) => {
+          if (!d) return new Date().toISOString().split('T')[0]
+          return d.split('T')[0]
+        }
+        
+        // Map FlowAccount quotation to our format
+        const items = (fq.items || []).map((item: any, idx: number) => ({
+          id: String(idx + 1),
+          product_name: item.name || item.description || 'สินค้า',
+          details: item.description || '',
+          description: item.description || '',
+          quantity: parseFloat(item.quantity) || 1,
+          unit: item.unitName || 'ชิ้น',
+          unit_price: parseFloat(item.pricePerUnit) || 0,
+          discount_percent: 0,
+          discount_amount: parseFloat(item.discountAmount) || 0,
+          total: parseFloat(item.total) || 0,
+          use_custom_image: false
+        }))
+        
+        // Build insert data — conditionally include flowaccount fields
+        const quotationData: any = {
+          quotation_number: fq.documentSerial || `FA-${faId}`,
+          contact_name: fq.contactName || '',
+          contact_company: '',
+          contact_address: fq.contactAddress || '',
+          contact_tax_id: fq.contactTaxId || '',
+          contact_phone: fq.contactNumber || '',
+          contact_email: fq.contactEmail || '',
+          issue_date: parseDate(fq.publishedOn),
+          expiry_date: parseDate(fq.dueDate),
+          items,
+          subtotal: parseFloat(fq.subTotal) || parseFloat(fq.totalAfterDiscount) || 0,
+          discount_amount: parseFloat(fq.discountAmount) || 0,
+          discount_percent: parseFloat(fq.discountPercentage) || 0,
+          tax_amount: parseFloat(fq.vatAmount) || 0,
+          tax_rate: fq.isVat === true || fq.isVat === 'true' ? 7 : 0,
+          tax_type: 'exclusive' as const,
+          total_amount: parseFloat(fq.grandTotal) || 0,
+          notes: fq.remarks || '',
+          terms: fq.internalNotes || '',
+          status: 'draft' as const,
+          show_product_images: false,
+          show_discount: true,
+          show_receiver: true,
+          withholding_tax: false,
+          withholding_tax_percent: 0,
+          withholding_tax_amount: 0,
+        }
+        
+        // Try adding flowaccount fields (may fail if columns don't exist)
+        if (faId) quotationData.flowaccount_id = faId
+        quotationData.flowaccount_synced_at = new Date().toISOString()
+        
+        let { error } = await supabase.from('quotations').insert([quotationData])
+        
+        // If insert fails due to flowaccount columns, retry without them
+        if (error && (error.message?.includes('flowaccount_id') || error.message?.includes('flowaccount_synced_at'))) {
+          console.warn('Retrying insert without flowaccount fields')
+          delete quotationData.flowaccount_id
+          delete quotationData.flowaccount_synced_at
+          const retry = await supabase.from('quotations').insert([quotationData])
+          error = retry.error
+        }
+        
+        if (error) {
+          console.error('Insert error:', error)
+        } else {
+          imported++
+        }
+      }
+      
+      fetchQuotations()
+      alert(`นำเข้าสำเร็จ: ${imported} รายการ${skipped > 0 ? `, ข้าม ${skipped} รายการ (นำเข้าแล้ว)` : ''}`)
+    } catch (error) {
+      console.error('Import error:', error)
+      alert('นำเข้าจาก FlowAccount ล้มเหลว: ' + (error as Error).message)
+    } finally {
+      setIsImporting(false)
+    }
+  }
+
+  const toggleSelectQuotation = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredQuotations.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filteredQuotations.map(q => q.id)))
+    }
+  }
+
+  const notSyncedCount = quotations.filter(q => !q.flowaccount_id).length
+  const syncedCount = quotations.filter(q => !!q.flowaccount_id).length
+
+  const filteredQuotations = quotations.filter(q => {
+    const matchesSearch = q.quotation_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      q.contact_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      q.contact_company.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSync = syncFilter === 'all'
+      || (syncFilter === 'synced' && !!q.flowaccount_id)
+      || (syncFilter === 'not_synced' && !q.flowaccount_id)
+    return matchesSearch && matchesSync
+  })
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('th-TH', { 
@@ -525,6 +771,15 @@ export default function QuotationsListPage() {
           >
             <BookOpen className="h-5 w-5" />
           </button>
+          <button
+            onClick={handleImportFromFlowAccount}
+            disabled={isImporting}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-blue-500 bg-white text-blue-600 text-sm whitespace-nowrap hover:bg-blue-50 transition-all shadow-sm disabled:opacity-50"
+            title="นำเข้าจาก FlowAccount"
+          >
+            {isImporting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            นำเข้าจาก FA
+          </button>
           <Link 
             to="/quotation"
             className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#A67B5B] bg-white text-[#A67B5B] text-sm whitespace-nowrap hover:bg-[#A67B5B]/10 transition-all shadow-sm"
@@ -572,6 +827,67 @@ export default function QuotationsListPage() {
           </div>
         </div>
       </Card>
+
+      {/* Sync Filter + Batch Actions */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+        <div className="flex gap-2 flex-wrap items-center">
+          <span className="text-xs text-gray-500 mr-1">FlowAccount:</span>
+          {[
+            { key: 'all', label: 'ทั้งหมด', icon: FileText },
+            { key: 'not_synced', label: `ยังไม่ sync (${notSyncedCount})`, icon: CloudOff },
+            { key: 'synced', label: `Synced (${syncedCount})`, icon: CheckCircle2 }
+          ].map((f) => (
+            <button
+              key={f.key}
+              onClick={() => { setSyncFilter(f.key as any); setSelectedIds(new Set()) }}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                syncFilter === f.key
+                  ? f.key === 'not_synced' ? 'bg-orange-500 text-white' : f.key === 'synced' ? 'bg-green-600 text-white' : 'bg-[#7D735F] text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              <f.icon className="h-3 w-3" />
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleSelectAll}
+            className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#7D735F] transition-colors"
+          >
+            {selectedIds.size === filteredQuotations.length && filteredQuotations.length > 0 ? (
+              <CheckSquare className="h-5 w-5 text-[#7D735F]" />
+            ) : (
+              <Square className="h-5 w-5" />
+            )}
+            {selectedIds.size > 0 ? `เลือก ${selectedIds.size} รายการ` : 'เลือกทั้งหมด'}
+          </button>
+          {selectedIds.size > 0 && (
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="text-xs text-gray-500 hover:text-gray-700 underline"
+            >
+              ยกเลิก
+            </button>
+          )}
+          <button
+            onClick={handleBatchSync}
+            disabled={selectedIds.size === 0 || isBatchSyncing}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              selectedIds.size > 0 && !isBatchSyncing
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            {isBatchSyncing ? (
+              <><RefreshCw className="h-4 w-4 animate-spin" /> กำลัง Sync...</>
+            ) : (
+              <><Upload className="h-4 w-4" /> Sync ที่เลือก ({selectedIds.size})</>
+            )}
+          </button>
+        </div>
+      </div>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -633,12 +949,21 @@ export default function QuotationsListPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-2 py-3 text-center w-10">
+                    <button onClick={toggleSelectAll}>
+                      {selectedIds.size === filteredQuotations.length && filteredQuotations.length > 0 ? (
+                        <CheckSquare className="h-4 w-4 text-[#7D735F]" />
+                      ) : (
+                        <Square className="h-4 w-4 text-gray-400" />
+                      )}
+                    </button>
+                  </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">เลขที่</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">ลูกค้า</th>
                   <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">วันที่</th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">ครบกำหนด</th>
                   <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">ยอดรวม</th>
                   <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">สถานะ</th>
+                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">FA Sync</th>
                   <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">จัดการ</th>
                 </tr>
               </thead>
@@ -646,7 +971,16 @@ export default function QuotationsListPage() {
                 {filteredQuotations.map((quotation) => {
                   const status = statusConfig[quotation.status]
                   return (
-                    <tr key={quotation.id} className="hover:bg-gray-50">
+                    <tr key={quotation.id} className={`hover:bg-gray-50 ${selectedIds.has(quotation.id) ? 'bg-blue-50/50' : ''}`}>
+                      <td className="px-2 py-3 text-center">
+                        <button onClick={() => toggleSelectQuotation(quotation.id)}>
+                          {selectedIds.has(quotation.id) ? (
+                            <CheckSquare className="h-4 w-4 text-blue-600" />
+                          ) : (
+                            <Square className="h-4 w-4 text-gray-300 hover:text-gray-500" />
+                          )}
+                        </button>
+                      </td>
                       <td className="px-4 py-3">
                         <Link 
                           to={`/quotation?id=${quotation.id}`}
@@ -667,9 +1001,6 @@ export default function QuotationsListPage() {
                       <td className="px-4 py-3 text-center text-sm text-gray-600">
                         {formatDate(quotation.issue_date)}
                       </td>
-                      <td className="px-4 py-3 text-center text-sm text-gray-600">
-                        {formatDate(quotation.expiry_date)}
-                      </td>
                       <td className="px-4 py-3 text-right font-medium text-gray-900">
                         {formatNumber((quotation.subtotal || 0) + (quotation.tax_amount || 0))}
                       </td>
@@ -685,6 +1016,28 @@ export default function QuotationsListPage() {
                           <option value="rejected">ปฏิเสธ</option>
                           <option value="expired">หมดอายุ</option>
                         </select>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {quotation.flowaccount_id ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-green-600" title={quotation.flowaccount_synced_at ? `Synced: ${new Date(quotation.flowaccount_synced_at).toLocaleString('th-TH')}` : ''}>
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline">ID: {quotation.flowaccount_id}</span>
+                          </span>
+                        ) : syncingId === quotation.id ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-blue-600">
+                            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                            <span className="hidden sm:inline">Syncing...</span>
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleSyncToFlowAccount(quotation)}
+                            className="inline-flex items-center gap-1 text-xs text-orange-500 hover:text-blue-600 transition-colors"
+                            title="Sync ไป FlowAccount"
+                          >
+                            <Upload className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline">Sync</span>
+                          </button>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-1">

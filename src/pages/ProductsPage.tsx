@@ -7,7 +7,8 @@ import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import { LabelWithTooltip } from '../components/common/Tooltip'
 import CSVImportModal from '../components/common/CSVImportModal'
-import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft, Printer, ExternalLink, ArrowLeft, Bell, LayoutDashboard, Fingerprint, FolderTree, DollarSign, Boxes, Image, Radio, AlertTriangle, BookOpen } from 'lucide-react'
+import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft, Printer, ExternalLink, ArrowLeft, Bell, LayoutDashboard, Fingerprint, FolderTree, DollarSign, Boxes, Image, Radio, AlertTriangle, BookOpen, RefreshCw } from 'lucide-react'
+import { syncProductsToFlowAccount } from '../services/flowaccount'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import type { Product, Category } from '../types/database'
 
@@ -243,6 +244,8 @@ export default function ProductsPage() {
   })
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState<{type: 'success' | 'error', text: string} | null>(null)
+  const [isSyncingFA, setIsSyncingFA] = useState(false)
+  const [syncProgress, setSyncProgress] = useState('')
 
   useEffect(() => {
     fetchProducts()
@@ -666,6 +669,40 @@ export default function ProductsPage() {
     }
   }
 
+  // Sync all active products to FlowAccount
+  const handleSyncProductsToFA = async () => {
+    if (isSyncingFA) return
+    const activeProducts = products.filter(p => p.is_active)
+    if (activeProducts.length === 0) {
+      alert('ไม่มีสินค้าที่ active สำหรับ sync')
+      return
+    }
+    if (!confirm(`ต้องการ sync สินค้า ${activeProducts.length} รายการไปยัง FlowAccount?\n\n- สินค้าที่มี SKU/Barcode/ชื่อ ซ้ำจะถูกอัพเดท\n- สินค้าใหม่จะถูกสร้างเพิ่ม`)) return
+    
+    setIsSyncingFA(true)
+    setSyncProgress(`กำลัง sync ${activeProducts.length} รายการ...`)
+    try {
+      const result = await syncProductsToFlowAccount(activeProducts)
+      setSyncProgress('')
+      alert(
+        `Sync สินค้าไป FlowAccount เสร็จสิ้น!\n\n` +
+        `✓ สร้างใหม่: ${result.created}\n` +
+        `↻ อัพเดท: ${result.updated}\n` +
+        `⊘ ข้าม: ${result.skipped}\n` +
+        `✕ ล้มเหลว: ${result.failed}`
+      )
+      if (result.failed > 0) {
+        console.log('FA sync failed items:', result.results.filter(r => r.action === 'failed'))
+      }
+    } catch (err: any) {
+      console.error('FA product sync error:', err)
+      alert('Sync ล้มเหลว: ' + err.message)
+    } finally {
+      setIsSyncingFA(false)
+      setSyncProgress('')
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const startTime = performance.now()
@@ -922,6 +959,17 @@ export default function ProductsPage() {
             <BookOpen className="h-6 w-6 text-[#5A7A5A]" />
             <span className="font-medium text-gray-800 text-sm">แคตตาล็อกสินค้า</span>
           </Link>
+
+          {/* Sync to FlowAccount Button */}
+          <button
+            onClick={handleSyncProductsToFA}
+            disabled={isSyncingFA}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-blue-500 bg-white text-blue-600 text-sm whitespace-nowrap hover:bg-blue-50 disabled:opacity-50 transition-all shadow-sm"
+            title="Sync สินค้าไป FlowAccount"
+          >
+            <RefreshCw className={`h-4 w-4 ${isSyncingFA ? 'animate-spin' : ''}`} />
+            <span className="font-medium">{isSyncingFA ? syncProgress || 'Syncing...' : 'Sync FA'}</span>
+          </button>
 
           {/* Add Product Pill Button */}
           <button

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { ListOrdered, Search, Calendar, Eye, Edit, Trash2, Receipt, BookOpen, FileText } from 'lucide-react'
+import { ListOrdered, Search, Calendar, Eye, Edit, Trash2, Receipt, BookOpen, FileText, Upload, RefreshCw, Download, X, Check } from 'lucide-react'
+import { createCashInvoice, convertOrderToCashInvoice, getCashInvoicesByDateRange } from '../services/flowaccount'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
@@ -23,6 +24,8 @@ interface SalesOrder {
   order_items?: OrderItem[]
   tax_invoice_number?: string
   document_type?: string
+  flowaccount_id?: number
+  flowaccount_synced_at?: string
 }
 
 interface OrderItem {
@@ -75,6 +78,21 @@ export default function SalesOrdersPage() {
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null)
   const [editingOrderSource, setEditingOrderSource] = useState<'pos' | 'website'>('pos')
   const [platformsMap, setPlatformsMap] = useState<Record<string, string>>({})
+  const [channelFilter, setChannelFilter] = useState<string>('all')
+  const [syncFilter, setSyncFilter] = useState<'all' | 'synced' | 'not_synced'>('all')
+  const [syncingOrderId, setSyncingOrderId] = useState<string | null>(null)
+  
+  // Import from FlowAccount modal states
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [importDateFrom, setImportDateFrom] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() - 30)
+    return d.toISOString().split('T')[0]
+  })
+  const [importDateTo, setImportDateTo] = useState(() => new Date().toISOString().split('T')[0])
+  const [faInvoices, setFaInvoices] = useState<any[]>([])
+  const [selectedFaIds, setSelectedFaIds] = useState<Set<string>>(new Set())
+  const [loadingFa, setLoadingFa] = useState(false)
+  const [importingFa, setImportingFa] = useState(false)
 
   // Fetch platforms for mapping UUID to name
   const fetchPlatforms = async () => {
@@ -827,6 +845,240 @@ export default function SalesOrdersPage() {
     }
   }
 
+  // Sync order to FlowAccount as cash invoice (ขายเงินสด)
+  const handleSyncToFlowAccount = async (order: SalesOrder) => {
+    // Guard: warn if already synced
+    if (order.flowaccount_id) {
+      if (!confirm(`ออเดอร์นี้ส่งไป FlowAccount แล้ว (ID: ${order.flowaccount_id})\nต้องการส่งซ้ำอีกครั้งหรือไม่? (จะสร้างรายการใหม่ใน FlowAccount)`)) {
+        return
+      }
+    }
+    
+    setSyncingOrderId(order.id)
+    try {
+      // Fetch order items
+      const isWebOrder = order.order_source === 'website'
+      const itemsTable = isWebOrder ? 'web_order_items' : 'order_items'
+      const orderIdCol = isWebOrder ? 'web_order_id' : 'order_id'
+      
+      const { data: items } = await supabase
+        .from(itemsTable)
+        .select('*')
+        .eq(orderIdCol, order.id)
+      
+      const orderItems = (items || []).map((item: any) => ({
+        product_name: item.product_name || 'สินค้า',
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        discount: item.discount || 0,
+        total_price: item.total_price
+      }))
+      
+      const platformName = getPlatformName(order.platform_id)
+      
+      const cashInvoiceData = convertOrderToCashInvoice({
+        order_number: order.order_number,
+        customer_name: order.customer_name,
+        total: order.total,
+        subtotal: order.subtotal,
+        discount: order.discount,
+        payment_method: order.payment_method,
+        created_at: order.created_at,
+        platform_name: platformName,
+        items: orderItems
+      })
+      
+      console.log('Sending cash invoice:', JSON.stringify(cashInvoiceData).substring(0, 500))
+      const result = await createCashInvoice(cashInvoiceData) as any
+      const d = result?.data || result
+      const flowId = d?.recordId || d?.documentId || d?.id || d?.list?.[0]?.recordId || d?.list?.[0]?.documentId
+      console.log('Cash invoice result:', JSON.stringify(result).substring(0, 500), 'flowId:', flowId)
+      
+      const now = new Date().toISOString()
+      
+      // Save sync status to DB
+      try {
+        await supabase
+          .from('orders')
+          .update({ flowaccount_id: flowId || null, flowaccount_synced_at: now })
+          .eq('id', order.id)
+      } catch (dbErr) {
+        console.warn('DB update failed (columns may not exist yet):', dbErr)
+      }
+      
+      // Update local state
+      setOrders(prev => prev.map(o =>
+        o.id === order.id ? { ...o, flowaccount_id: flowId, flowaccount_synced_at: now } : o
+      ))
+      
+      alert(`ส่งขายเงินสดไป FlowAccount สำเร็จ! ${flowId ? 'ID: ' + flowId : ''}`)
+    } catch (error) {
+      console.error('Sync to FlowAccount error:', error)
+      alert('ส่งไป FlowAccount ล้มเหลว: ' + (error as Error).message)
+    } finally {
+      setSyncingOrderId(null)
+    }
+  }
+
+  // Fetch cash invoices from FlowAccount by date range
+  const handleFetchFaInvoices = async () => {
+    setLoadingFa(true)
+    setFaInvoices([])
+    setSelectedFaIds(new Set())
+    try {
+      const invoices = await getCashInvoicesByDateRange(importDateFrom, importDateTo, 1, 100) as any[]
+      console.log('FA cash invoices fetched:', invoices.length, JSON.stringify(invoices[0] || {}).substring(0, 300))
+      setFaInvoices(invoices)
+      if (invoices.length === 0) {
+        alert('ไม่พบรายการขายเงินสดในช่วงวันที่ที่เลือก')
+      }
+    } catch (err) {
+      console.error('Fetch FA invoices error:', err)
+      alert('ดึงข้อมูลจาก FlowAccount ล้มเหลว: ' + (err as Error).message)
+    } finally {
+      setLoadingFa(false)
+    }
+  }
+
+  const toggleFaSelect = (id: string) => {
+    setSelectedFaIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedFaIds.size === faInvoices.length) {
+      setSelectedFaIds(new Set())
+    } else {
+      setSelectedFaIds(new Set(faInvoices.map(inv => String(inv.recordId || inv.documentId || inv.id))))
+    }
+  }
+
+  // Import selected FA cash invoices into local orders table
+  const handleImportSelected = async () => {
+    if (selectedFaIds.size === 0) { alert('กรุณาเลือกรายการที่ต้องการ import'); return }
+    setImportingFa(true)
+    let imported = 0, skipped = 0, failed = 0
+    
+    for (const inv of faInvoices) {
+      const faId = String(inv.recordId || inv.documentId || inv.id)
+      if (!selectedFaIds.has(faId)) continue
+      
+      try {
+        // Check duplicate by flowaccount_id
+        let isDuplicate = false
+        try {
+          const { data: existing } = await supabase
+            .from('orders')
+            .select('id')
+            .eq('flowaccount_id', parseInt(faId))
+            .limit(1)
+          if (existing && existing.length > 0) { isDuplicate = true }
+        } catch { /* column may not exist yet */ }
+        
+        if (isDuplicate) { skipped++; continue }
+        
+        // Parse FA invoice data
+        const docSerial = inv.documentSerial || `FA-${faId}`
+        const docDate = inv.publishedOn || inv.documentDate || new Date().toISOString()
+        const contactName = inv.contactName || 'ลูกค้าทั่วไป'
+        const grandTotal = parseFloat(inv.grandTotal || inv.totalValue || 0)
+        const subTotal = parseFloat(inv.subTotal || inv.totalBeforeDiscount || grandTotal)
+        const discount = parseFloat(inv.discountAmount || inv.totalDiscount || 0)
+        const remarks = inv.remarks || ''
+        
+        // Determine platform (check remarks for hints)
+        let platformId: string | null = null
+        const remarksUpper = remarks.toUpperCase()
+        const grabId = Object.entries(platformsMap).find(([_, n]) => n.toUpperCase().includes('GRAB'))?.[0]
+        const lazadaId = Object.entries(platformsMap).find(([_, n]) => n.toUpperCase().includes('LAZADA'))?.[0]
+        if (remarksUpper.includes('GRAB') && grabId) platformId = grabId
+        else if (remarksUpper.includes('LAZADA') && lazadaId) platformId = lazadaId
+        
+        // Insert order
+        const { data: newOrder, error: orderErr } = await supabase
+          .from('orders')
+          .insert({
+            order_number: docSerial,
+            customer_name: contactName,
+            subtotal: subTotal,
+            discount: discount,
+            total: grandTotal,
+            payment_method: 'cash',
+            payment_status: 'paid',
+            platform_id: platformId,
+            notes: remarks,
+            flowaccount_id: parseInt(faId),
+            flowaccount_synced_at: new Date().toISOString(),
+            created_at: docDate,
+            updated_at: new Date().toISOString()
+          })
+          .select('id')
+          .single()
+        
+        if (orderErr) {
+          console.error('Insert order error:', orderErr)
+          // Retry without flowaccount columns
+          const { error: retryErr } = await supabase
+            .from('orders')
+            .insert({
+              order_number: docSerial,
+              customer_name: contactName,
+              subtotal: subTotal,
+              discount: discount,
+              total: grandTotal,
+              payment_method: 'cash',
+              payment_status: 'paid',
+              platform_id: platformId,
+              notes: remarks,
+              created_at: docDate,
+              updated_at: new Date().toISOString()
+            })
+          if (retryErr) { console.error('Retry insert error:', retryErr); failed++; continue }
+        }
+        
+        // Insert order items
+        const orderId = newOrder?.id
+        const faItems = inv.items || inv.documentItems || []
+        if (orderId && faItems.length > 0) {
+          const orderItems = faItems.map((item: any) => ({
+            order_id: orderId,
+            product_name: item.name || item.description || 'สินค้า',
+            quantity: parseFloat(item.quantity || 1),
+            unit_price: parseFloat(item.pricePerUnit || 0),
+            discount: parseFloat(item.discount || 0),
+            total_price: parseFloat(item.total || item.netAmount || 0)
+          }))
+          await supabase.from('order_items').insert(orderItems)
+        }
+        
+        imported++
+      } catch (err) {
+        console.error('Import invoice error:', err)
+        failed++
+      }
+    }
+    
+    setImportingFa(false)
+    alert(`Import เสร็จสิ้น!\n✓ สำเร็จ: ${imported}\n⊘ ซ้ำ (ข้าม): ${skipped}\n✕ ล้มเหลว: ${failed}`)
+    if (imported > 0) {
+      fetchOrders()
+      setShowImportModal(false)
+    }
+  }
+
+  // Find platform UUIDs for GRAB and Lazada (ใบกำกับภาษีอย่างย่อ channels)
+  const grabPlatformId = Object.entries(platformsMap).find(([_, name]) => 
+    name.toUpperCase().includes('GRAB')
+  )?.[0]
+  const lazadaPlatformId = Object.entries(platformsMap).find(([_, name]) => 
+    name.toUpperCase().includes('LAZADA')
+  )?.[0]
+  const simplifiedTaxPlatformIds = [grabPlatformId, lazadaPlatformId].filter(Boolean) as string[]
+
   const filteredOrders = orders.filter(order => {
     const matchesOrderNumber = order.order_number.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCustomerName = order.customer_name && order.customer_name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -834,7 +1086,20 @@ export default function SalesOrdersPage() {
     const matchesProductName = order.order_items?.some((item: OrderItem) => 
       item.product_name?.toLowerCase().includes(searchTerm.toLowerCase())
     )
-    return matchesOrderNumber || matchesCustomerName || matchesProductName
+    const matchesSearch = matchesOrderNumber || matchesCustomerName || matchesProductName
+    
+    // Channel filter
+    let matchesChannel = true
+    if (channelFilter === 'simplified_tax') matchesChannel = simplifiedTaxPlatformIds.includes(order.platform_id)
+    else if (channelFilter === 'grab') matchesChannel = order.platform_id === grabPlatformId
+    else if (channelFilter !== 'all') matchesChannel = order.platform_id === channelFilter
+    
+    // Sync filter
+    let matchesSync = true
+    if (syncFilter === 'synced') matchesSync = !!order.flowaccount_id
+    else if (syncFilter === 'not_synced') matchesSync = !order.flowaccount_id
+    
+    return matchesSearch && matchesChannel && matchesSync
   })
 
   const totalSales = filteredOrders.reduce((sum, order) => sum + order.total, 0)
@@ -850,13 +1115,23 @@ export default function SalesOrdersPage() {
           </h1>
           <p className="text-gray-600 mt-1">รายการขายและยอดขายรวม</p>
         </div>
-        <button
-          onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
-          className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
-          title="คู่มือการใช้งาน"
-        >
-          <BookOpen className="h-5 w-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+            title="ดึงรายการขายเงินสดจาก FlowAccount"
+          >
+            <Download className="h-4 w-4" />
+            ดึงจาก FA
+          </button>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
+            className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+            title="คู่มือการใช้งาน"
+          >
+            <BookOpen className="h-5 w-5" />
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -934,6 +1209,52 @@ export default function SalesOrdersPage() {
         </div>
       </Card>
 
+      {/* Channel Filter */}
+      <div className="flex items-center gap-2 mb-4 px-4 sm:px-0">
+        <span className="text-sm text-gray-500">ช่องทาง:</span>
+        {[
+          { key: 'all', label: 'ทั้งหมด' },
+          { key: 'simplified_tax', label: '📋 ใบกำกับภาษีอย่างย่อ' },
+          { key: 'grab', label: 'GRAB' },
+        ].map(f => (
+          <button
+            key={f.key}
+            onClick={() => setChannelFilter(f.key)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              channelFilter === f.key
+                ? 'bg-[#7D735F] text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+        <span className="text-sm text-gray-300 mx-1">|</span>
+        <span className="text-sm text-gray-500">FA:</span>
+        {([
+          { key: 'all', label: 'ทั้งหมด' },
+          { key: 'not_synced', label: 'ยังไม่ sync' },
+          { key: 'synced', label: 'Synced' },
+        ] as { key: 'all' | 'synced' | 'not_synced'; label: string }[]).map(f => (
+          <button
+            key={f.key}
+            onClick={() => setSyncFilter(f.key)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              syncFilter === f.key
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+        {filteredOrders.length > 0 && (channelFilter !== 'all' || syncFilter !== 'all') && (
+          <span className="text-xs text-gray-400 ml-2">
+            พบ {filteredOrders.length} รายการ
+          </span>
+        )}
+      </div>
+
       {/* Orders Table */}
       <Card className="px-4 sm:px-0 bg-white border-[#E8E0D5]">
         {loading ? (
@@ -967,7 +1288,10 @@ export default function SalesOrdersPage() {
                     ยอดรวม
                   </th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ดูรายละเอียด
+                    FA Sync
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    จัดการ
                   </th>
                 </tr>
               </thead>
@@ -999,6 +1323,24 @@ export default function SalesOrdersPage() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
                       {formatCurrency(order.total)}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-center">
+                      {order.flowaccount_id ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full border border-green-200">
+                          ✓ ID: {order.flowaccount_id}
+                        </span>
+                      ) : syncingOrderId === order.id ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-gray-400">
+                          <RefreshCw className="h-3 w-3 animate-spin" /> syncing...
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleSyncToFlowAccount(order)}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-full border border-blue-200 hover:bg-blue-100 transition-colors"
+                        >
+                          <Upload className="h-3 w-3" /> ส่ง FA
+                        </button>
+                      )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center">
                       <div className="flex items-center gap-2 justify-center">
@@ -1179,6 +1521,142 @@ export default function SalesOrdersPage() {
             }
           }}
         />
+      )}
+
+      {/* Import from FlowAccount Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
+            <div className="p-4 border-b flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Download className="h-5 w-5 text-blue-600" />
+                ดึงขายเงินสดจาก FlowAccount
+              </h2>
+              <button onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="p-4 border-b bg-gray-50">
+              <div className="flex flex-wrap items-end gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">จากวันที่</label>
+                  <input
+                    type="date"
+                    value={importDateFrom}
+                    onChange={e => setImportDateFrom(e.target.value)}
+                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">ถึงวันที่</label>
+                  <input
+                    type="date"
+                    value={importDateTo}
+                    onChange={e => setImportDateTo(e.target.value)}
+                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+                  />
+                </div>
+                <button
+                  onClick={handleFetchFaInvoices}
+                  disabled={loadingFa}
+                  className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                >
+                  {loadingFa ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                  {loadingFa ? 'กำลังดึง...' : 'ค้นหา'}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              {faInvoices.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">
+                  <Download className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                  <p>เลือกช่วงวันที่แล้วกด "ค้นหา" เพื่อดึงรายการ</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedFaIds.size === faInvoices.length && faInvoices.length > 0}
+                        onChange={toggleSelectAll}
+                        className="rounded border-gray-300"
+                      />
+                      เลือกทั้งหมด ({faInvoices.length} รายการ)
+                    </label>
+                    <span className="text-sm text-blue-600 font-medium">
+                      เลือก {selectedFaIds.size} รายการ
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {faInvoices.map((inv: any) => {
+                      const faId = String(inv.recordId || inv.documentId || inv.id)
+                      const docSerial = inv.documentSerial || `FA-${faId}`
+                      const docDate = (inv.publishedOn || inv.documentDate || '').split('T')[0]
+                      const contactName = inv.contactName || '-'
+                      const grandTotal = parseFloat(inv.grandTotal || inv.totalValue || 0)
+                      const remarks = inv.remarks || ''
+                      const isSelected = selectedFaIds.has(faId)
+                      
+                      return (
+                        <div
+                          key={faId}
+                          onClick={() => toggleFaSelect(faId)}
+                          className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                            isSelected ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-200 hover:bg-gray-50'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleFaSelect(faId)}
+                            className="rounded border-gray-300 flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-900 text-sm">{docSerial}</span>
+                              <span className="text-xs text-gray-400">{docDate}</span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-xs text-gray-500">{contactName}</span>
+                              {remarks && <span className="text-xs text-gray-400 truncate max-w-[200px]">{remarks}</span>}
+                            </div>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <span className="font-semibold text-gray-900 text-sm">
+                              ฿{grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {faInvoices.length > 0 && (
+              <div className="p-4 border-t bg-gray-50 flex items-center justify-between">
+                <span className="text-sm text-gray-500">
+                  ยอดรวมที่เลือก: ฿{faInvoices
+                    .filter((inv: any) => selectedFaIds.has(String(inv.recordId || inv.documentId || inv.id)))
+                    .reduce((sum: number, inv: any) => sum + parseFloat(inv.grandTotal || inv.totalValue || 0), 0)
+                    .toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </span>
+                <button
+                  onClick={handleImportSelected}
+                  disabled={importingFa || selectedFaIds.size === 0}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+                >
+                  {importingFa ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                  {importingFa ? 'กำลัง import...' : `Import ${selectedFaIds.size} รายการ`}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   )
