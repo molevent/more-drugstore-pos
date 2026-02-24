@@ -21,7 +21,7 @@ import {
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import { supabase } from '../services/supabase'
-import { createContact as createFlowContact, updateContact as updateFlowContact } from '../services/flowaccount'
+import { createContact as createFlowContact, updateContact as updateFlowContact, convertContactToFlowAccount } from '../services/flowaccount'
 
 interface Contact {
   id: string
@@ -257,22 +257,9 @@ export default function ContactsPage() {
     setSyncStatus(prev => ({ ...prev, [contact.id]: { status: 'pending' } }))
     
     try {
-      const contactData = {
-        name: contact.name,
-        nameLocal: contact.name,
-        email: contact.email,
-        phone: contact.phone,
-        mobile: contact.mobile,
-        address: contact.address,
-        taxId: contact.tax_id,
-        personType: contact.person_type === 'individual' ? 1 : 2,
-        companyName: contact.company_name,
-        branch: contact.branch_code,
-        website: undefined,
-        remark: contact.notes
-      }
+      const flowContactData = convertContactToFlowAccount(contact)
       
-      await updateFlowContact(contact.id, contactData)
+      await createFlowContact(flowContactData)
       
       setSyncStatus(prev => ({ 
         ...prev, 

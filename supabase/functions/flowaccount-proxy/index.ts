@@ -1,5 +1,4 @@
 // Supabase Edge Function for FlowAccount API Proxy
-// Detailed diagnostics version
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,9 +6,64 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 };
 
-// Hardcoded credentials for testing
-const CLIENT_ID = 'somsaang-sandbox-client';
-const CLIENT_SECRET = 'c29tc2FhZ2ctc2FuZGJveC1jbGllbnQ=';
+const SANDBOX_CLIENT_ID = Deno.env.get('FLOWACCOUNT_CLIENT_ID') || 'somsaang-sandbox-client';
+const SANDBOX_CLIENT_SECRET = Deno.env.get('FLOWACCOUNT_CLIENT_SECRET') || 'c29tc2FhZ2ctc2FuZGJveC1jbGllbnQ=';
+const PROD_CLIENT_ID = Deno.env.get('FLOWACCOUNT_PROD_CLIENT_ID') || '';
+const PROD_CLIENT_SECRET = Deno.env.get('FLOWACCOUNT_PROD_CLIENT_SECRET') || '';
+
+let cachedToken: { token: string; expiresAt: number; env: string } | null = null;
+
+async function getAccessToken(isSandbox: boolean): Promise<string> {
+  const envKey = isSandbox ? 'sandbox' : 'production';
+  
+  if (cachedToken && cachedToken.env === envKey && cachedToken.expiresAt > Date.now() + 5 * 60 * 1000) {
+    console.log('Using cached token');
+    return cachedToken.token;
+  }
+
+  const clientId = isSandbox ? SANDBOX_CLIENT_ID : PROD_CLIENT_ID;
+  const clientSecret = isSandbox ? SANDBOX_CLIENT_SECRET : PROD_CLIENT_SECRET;
+  const authUrl = isSandbox
+    ? 'https://openapi.flowaccount.com/test/token'
+    : 'https://openapi.flowaccount.com/v1/token';
+
+  console.log('Getting token from:', authUrl, 'client:', clientId.substring(0, 10) + '...');
+
+  const res = await fetch(authUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Accept': 'application/json'
+    },
+    body: new URLSearchParams({
+      grant_type: 'client_credentials',
+      client_id: clientId,
+      client_secret: clientSecret,
+      scope: 'flowaccount-api'
+    }).toString()
+  });
+
+  const text = await res.text();
+  console.log('Auth status:', res.status);
+
+  if (!res.ok) {
+    throw new Error(`Auth failed: ${res.status} - ${text}`);
+  }
+
+  const data = JSON.parse(text);
+  if (!data.access_token) {
+    throw new Error('No access_token in auth response');
+  }
+
+  cachedToken = {
+    token: data.access_token,
+    expiresAt: Date.now() + (data.expires_in * 1000),
+    env: envKey
+  };
+
+  console.log('Token obtained, expires in:', data.expires_in, 'seconds');
+  return data.access_token;
+}
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -17,184 +71,71 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  const report: any = {
-    timestamp: new Date().toISOString(),
-    request: {
-      method: req.method,
-      url: req.url
-    },
-    phase1_auth: null,
-    phase2_token: null,
-    phase3_api_call: null,
-    phase4_response: null,
-    error: null
-  };
-
   try {
-    // Phase 1: Get access token from FlowAccount
-    console.log('=== PHASE 1: AUTHENTICATION ===');
-    
-    const authUrl = 'https://openapi.flowaccount.com/test/token';
-    console.log('Auth URL:', authUrl);
-    console.log('Client ID:', CLIENT_ID);
-
-    const authBody = new URLSearchParams({
-      grant_type: 'client_credentials',
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      scope: 'flowaccount-api'
-    });
-
-    const authRes = await fetch(authUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Accept': 'application/json'
-      },
-      body: authBody.toString()
-    });
-
-    const authText = await authRes.text();
-    report.phase1_auth = {
-      status: authRes.status,
-      statusText: authRes.statusText,
-      responseBody: authText.substring(0, 500),
-      headers: Object.fromEntries(authRes.headers)
-    };
-
-    console.log('Auth response status:', authRes.status);
-    console.log('Auth response body:', authText.substring(0, 200));
-
-    if (!authRes.ok) {
-      throw new Error(`FlowAccount auth failed with status ${authRes.status}: ${authText}`);
-    }
-
-    // Phase 2: Parse token
-    console.log('=== PHASE 2: TOKEN EXTRACTION ===');
-    
-    let token: string | null = null;
-    let authData: any;
-    
-    try {
-      authData = JSON.parse(authText);
-      token = authData.access_token;
-      
-      report.phase2_token = {
-        parsedSuccessfully: true,
-        tokenExists: !!token,
-        tokenLength: token?.length || 0,
-        tokenPrefix: token ? token.substring(0, 20) + '...' : null,
-        expiresIn: authData.expires_in,
-        tokenType: authData.token_type,
-        fullAuthResponse: authData
-      };
-      
-      console.log('Token extracted successfully');
-      console.log('Token length:', token?.length);
-      console.log('Token prefix:', token?.substring(0, 20));
-    } catch (e: any) {
-      report.phase2_token = {
-        parsedSuccessfully: false,
-        parseError: e.message,
-        rawResponse: authText
-      };
-      throw new Error(`Failed to parse auth response as JSON: ${e.message}. Raw: ${authText.substring(0, 200)}`);
-    }
-
-    if (!token) {
-      throw new Error('No access_token field in auth response');
-    }
-
-    // Phase 3: Make API call
-    console.log('=== PHASE 3: API CALL ===');
-    
     const url = new URL(req.url);
-    const path = url.pathname.replace('/flowaccount-proxy/', '') || 'company/profile';
-    const apiUrl = `https://openapi.flowaccount.com/test/${path}${url.search}`;
-    
-    console.log('API URL:', apiUrl);
-    console.log('Request method:', req.method);
+    const path = url.pathname.replace('/flowaccount-proxy/', '').replace(/^\/+/, '');
+    const isSandbox = url.searchParams.get('env') !== 'production';
+    const baseUrl = isSandbox
+      ? 'https://openapi.flowaccount.com/test'
+      : 'https://openapi.flowaccount.com/v1';
 
-    // Get request body if not GET/HEAD
-    let body = undefined;
+    // Remove env param from search before forwarding
+    const forwardParams = new URLSearchParams(url.search);
+    forwardParams.delete('env');
+    const queryString = forwardParams.toString() ? `?${forwardParams.toString()}` : '';
+
+    const targetUrl = `${baseUrl}/${path}${queryString}`;
+    console.log('Proxy:', req.method, targetUrl);
+
+    // Get access token
+    const token = await getAccessToken(isSandbox);
+
+    // Read request body for non-GET/HEAD
+    let body: string | undefined;
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       try {
         body = await req.text();
-        console.log('Request body:', body.substring(0, 200));
-      } catch (e) {
-        console.log('No request body');
+        console.log('Body:', body.substring(0, 200));
+      } catch {
+        // no body
       }
     }
 
-    const requestHeaders: Record<string, string> = {
+    // Forward request to FlowAccount
+    const headers: Record<string, string> = {
       'Authorization': `Bearer ${token}`,
       'Accept': 'application/json'
     };
-    
     if (body) {
-      requestHeaders['Content-Type'] = 'application/json';
+      headers['Content-Type'] = 'application/json';
     }
 
-    report.phase3_api_call = {
-      url: apiUrl,
+    const apiRes = await fetch(targetUrl, {
       method: req.method,
-      headersSent: requestHeaders,
-      bodyLength: body?.length || 0
-    };
-
-    console.log('Headers sent:', JSON.stringify(requestHeaders, null, 2));
-
-    const apiRes = await fetch(apiUrl, {
-      method: req.method,
-      headers: requestHeaders,
+      headers,
       body: body || undefined
     });
 
-    const apiText = await apiRes.text();
-    
-    report.phase4_response = {
+    const responseText = await apiRes.text();
+    console.log('Response:', apiRes.status, responseText.substring(0, 200));
+
+    return new Response(responseText, {
       status: apiRes.status,
-      statusText: apiRes.statusText,
-      responseHeaders: Object.fromEntries(apiRes.headers),
-      responseBody: apiText.substring(0, 500)
-    };
-
-    console.log('API response status:', apiRes.status);
-    console.log('API response body:', apiText.substring(0, 200));
-
-    // Try to parse as JSON for pretty output
-    let responseData;
-    try {
-      responseData = JSON.parse(apiText);
-    } catch {
-      responseData = { rawText: apiText };
-    }
-
-    return new Response(JSON.stringify({
-      success: apiRes.ok,
-      diagnostics: report,
-      data: responseData
-    }, null, 2), {
-      status: apiRes.ok ? 200 : apiRes.status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: {
+        ...corsHeaders,
+        'Content-Type': apiRes.headers.get('Content-Type') || 'application/json'
+      }
     });
 
   } catch (error: any) {
-    console.error('=== ERROR ===');
-    console.error(error);
-    
-    report.error = {
-      message: error.message,
-      stack: error.stack
-    };
+    console.error('Proxy error:', error);
 
-    return new Response(JSON.stringify({
-      success: false,
-      error: 'Proxy error occurred',
-      diagnostics: report
-    }, null, 2), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    return new Response(
+      JSON.stringify({ error: 'Proxy error', message: error.message }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
   }
 });
