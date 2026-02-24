@@ -2,27 +2,29 @@ import { isSandboxMode } from './config';
 
 // Common types for FlowAccount API
 export interface FlowAccountContact {
-  id?: string;
-  nameLocal?: string;
-  name?: string;
-  email?: string;
-  telephone?: string;
-  mobile?: string;
-  fax?: string;
-  address?: string;
-  addressLocal?: string;
-  district?: string;
-  amphure?: string;
-  province?: string;
-  zipCode?: string;
-  country?: string;
-  taxId?: string;
-  branch?: string;
-  branchCode?: string;
-  contactType?: number; // 1 = Individual, 2 = Company
-  creditType?: number; // 0 = Cash, 1 = Credit
-  creditDays?: number;
-  creditLimit?: number;
+  id?: number;
+  contactName?: string;
+  contactAddress?: string;
+  contactZipCode?: string;
+  contactTaxId?: string;
+  contactBranchCode?: string;
+  contactBranch?: string;
+  contactPerson?: string;
+  contactEmail?: string;
+  contactMobile?: string;
+  contactBankId?: string;
+  contactBankAccountNumber?: string;
+  contactBankBranch?: string;
+  contactBankAccountType?: string;
+  contactCreditDays?: string;
+  contactOffice?: string;
+  contactFax?: string;
+  contactWebsite?: string;
+  contactShippingAddress?: string;
+  contactNote?: string;
+  contactType?: number; // 3 = Customer, 5 = Supplier, 7 = Customer&Supplier
+  contactGroup?: number;
+  contactCode?: string;
 }
 
 export interface FlowAccountInvoiceItem {
@@ -197,6 +199,7 @@ export const convertContactToFlowAccount = (
   contact: {
     id: string;
     name: string;
+    type?: 'buyer' | 'seller' | 'both';
     person_type?: 'individual' | 'company';
     email?: string;
     phone?: string;
@@ -206,20 +209,27 @@ export const convertContactToFlowAccount = (
     office_type?: 'headquarters' | 'branch';
     branch_code?: string;
     postal_code?: string;
+    company_name?: string;
+    notes?: string;
   }
 ): FlowAccountContact => {
+  // contactType: 3=Customer, 5=Supplier, 7=Customer&Supplier
+  let contactType = 3;
+  if (contact.type === 'seller') contactType = 5;
+  else if (contact.type === 'both') contactType = 7;
+
   return {
-    nameLocal: contact.name,
-    email: contact.email,
-    telephone: contact.phone,
-    mobile: contact.mobile,
-    addressLocal: contact.address,
-    taxId: contact.tax_id,
-    branch: contact.office_type === 'branch' ? 'สาขา' : 'สำนักงานใหญ่',
-    branchCode: contact.branch_code,
-    zipCode: contact.postal_code,
-    contactType: contact.person_type === 'individual' ? 1 : 2,
-    country: 'TH'
+    contactName: contact.name,
+    contactEmail: contact.email || '',
+    contactOffice: contact.phone || '',
+    contactMobile: contact.mobile || '',
+    contactAddress: contact.address || '',
+    contactTaxId: contact.tax_id || '',
+    contactBranch: contact.office_type === 'branch' ? 'สาขา' : 'สำนักงานใหญ่',
+    contactBranchCode: contact.branch_code || '',
+    contactZipCode: contact.postal_code || '',
+    contactNote: contact.notes || '',
+    contactType,
   };
 };
 
