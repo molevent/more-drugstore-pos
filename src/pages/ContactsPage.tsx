@@ -52,6 +52,8 @@ interface Contact {
   bank_branch_name?: string
   bank_account_type?: 'savings' | 'current'
   bank_qr_code_url?: string
+  flowaccount_id?: number
+  flowaccount_synced_at?: string
   created_at: string
 }
 
@@ -63,7 +65,6 @@ export default function ContactsPage() {
   const [showModal, setShowModal] = useState(false)
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
   const [syncingContact, setSyncingContact] = useState<string | null>(null)
-  const [syncStatus, setSyncStatus] = useState<Record<string, { status: 'synced' | 'pending' | 'failed', lastSync?: string }>>({})
   const [formData, setFormData] = useState({
     name: '',
     type: 'buyer' as 'buyer' | 'seller' | 'both',
@@ -254,24 +255,33 @@ export default function ContactsPage() {
 
   const handleSyncToFlowAccount = async (contact: Contact) => {
     setSyncingContact(contact.id)
-    setSyncStatus(prev => ({ ...prev, [contact.id]: { status: 'pending' } }))
     
     try {
       const flowContactData = convertContactToFlowAccount(contact)
+      const result = await createFlowContact(flowContactData) as any
       
-      await createFlowContact(flowContactData)
+      // Extract FlowAccount ID from response
+      const flowId = result?.data?.list?.[0]?.id || result?.id
+      const now = new Date().toISOString()
       
-      setSyncStatus(prev => ({ 
-        ...prev, 
-        [contact.id]: { status: 'synced', lastSync: new Date().toISOString() }
-      }))
+      // Save sync status to database
+      await supabase
+        .from('contacts')
+        .update({ 
+          flowaccount_id: flowId || null,
+          flowaccount_synced_at: now
+        })
+        .eq('id', contact.id)
+      
+      // Update local state
+      setContacts(prev => prev.map(c => 
+        c.id === contact.id 
+          ? { ...c, flowaccount_id: flowId, flowaccount_synced_at: now }
+          : c
+      ))
     } catch (error) {
       console.error('FlowAccount sync error:', error)
-      setSyncStatus(prev => ({ 
-        ...prev, 
-        [contact.id]: { status: 'failed', lastSync: new Date().toISOString() }
-      }))
-      alert('Sync to FlowAccount failed')
+      alert('Sync to FlowAccount failed: ' + (error as Error).message)
     } finally {
       setSyncingContact(null)
     }
@@ -495,16 +505,16 @@ export default function ContactsPage() {
               {/* Sync Status & Actions */}
               <div className="mt-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {syncStatus[contact.id]?.status === 'synced' && (
-                    <span className="flex items-center gap-1 text-xs text-green-600">
+                  {contact.flowaccount_id && (
+                    <span className="flex items-center gap-1 text-xs text-green-600" title={contact.flowaccount_synced_at ? `Synced: ${new Date(contact.flowaccount_synced_at).toLocaleString('th-TH')}` : ''}>
                       <CheckCircle2 className="h-3 w-3" />
-                      Synced
+                      Synced (ID: {contact.flowaccount_id})
                     </span>
                   )}
-                  {syncStatus[contact.id]?.status === 'failed' && (
-                    <span className="flex items-center gap-1 text-xs text-red-600">
+                  {!contact.flowaccount_id && !syncingContact && (
+                    <span className="flex items-center gap-1 text-xs text-gray-400">
                       <AlertCircle className="h-3 w-3" />
-                      Failed
+                      Not synced
                     </span>
                   )}
                   {syncingContact === contact.id && (
