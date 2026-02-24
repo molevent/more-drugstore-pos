@@ -52,6 +52,7 @@ import ExpenseCategorySettingsPage from './pages/ExpenseCategorySettingsPage'
 import PaymentMethodSettingsPage from './pages/PaymentMethodSettingsPage'
 import TaxPP30Page from './pages/TaxPP30Page'
 import HelpManagementPage from './pages/HelpManagementPage'
+import FlowAccountSettingsPage from './pages/FlowAccountSettingsPage'
 import StorefrontPage from './pages/StorefrontPage'
 import ProductDetailPage from './pages/ProductDetailPage'
 import CheckoutPage from './pages/CheckoutPage'
@@ -132,6 +133,7 @@ function App() {
                     <Route path="/zortout-sync" element={<ZortOutSyncPage />} />
                     <Route path="/tax-pp30" element={<TaxPP30Page />} />
                     <Route path="/help-management" element={<HelpManagementPage />} />
+                    <Route path="/settings/flowaccount" element={<FlowAccountSettingsPage />} />
                     <Route path="/settings/users" element={<UserManagementPage />} />
                     <Route path="/users" element={<UserManagementPage />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />

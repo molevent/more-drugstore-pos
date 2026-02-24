@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import html2pdf from 'html2pdf.js'
 import { supabase } from '../services/supabase'
+import { createInvoice, convertQuotationToInvoice } from '../services/flowaccount'
 import { useSearchParams, useParams } from 'react-router-dom'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -575,6 +576,15 @@ export default function QuotationPage() {
       }
       
       if (result.error) throw result.error
+      
+      // Sync to FlowAccount as Invoice
+      try {
+        if (result.data) {
+          await createInvoice(convertQuotationToInvoice(result.data))
+        }
+      } catch (flowError) {
+        console.warn('FlowAccount sync failed:', flowError)
+      }
       
       if (result.data) {
         setQuotation(prev => ({ ...prev, id: result.data.id }))
