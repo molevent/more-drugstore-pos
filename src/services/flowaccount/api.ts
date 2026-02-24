@@ -1,5 +1,4 @@
-import { getAccessToken } from './auth';
-import { getFlowAccountConfig } from './config';
+import { isSandboxMode } from './config';
 
 // Common types for FlowAccount API
 export interface FlowAccountContact {
@@ -88,22 +87,22 @@ export interface FlowAccountCompany {
   website?: string;
 }
 
+// Use Supabase Edge Function as proxy to avoid CORS
+const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/flowaccount-proxy`;
+
 /**
- * Make authenticated API request to FlowAccount
+ * Make authenticated API request to FlowAccount via Edge Function proxy
  */
 const apiRequest = async <T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> => {
-  const token = await getAccessToken();
-  const config = getFlowAccountConfig();
-
-  const url = `${config.baseUrl}${endpoint}`;
+  const env = isSandboxMode() ? 'sandbox' : 'production';
+  const url = `${EDGE_FUNCTION_URL}/${endpoint}?env=${env}`;
 
   const response = await fetch(url, {
     ...options,
     headers: {
-      'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
       'Accept': 'application/json',
       ...options.headers
