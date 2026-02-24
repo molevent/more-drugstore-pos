@@ -272,13 +272,17 @@ export default function ContactsPage() {
       const now = new Date().toISOString()
       
       // Save sync status to database
-      await supabase
-        .from('contacts')
-        .update({ 
-          flowaccount_id: flowId || null,
-          flowaccount_synced_at: now
-        })
-        .eq('id', contact.id)
+      try {
+        await supabase
+          .from('contacts')
+          .update({ 
+            flowaccount_id: flowId || null,
+            flowaccount_synced_at: now
+          })
+          .eq('id', contact.id)
+      } catch (dbErr) {
+        console.warn('DB update failed (columns may not exist yet):', dbErr)
+      }
       
       // Update local state
       setContacts(prev => prev.map(c => 
@@ -403,8 +407,10 @@ export default function ContactsPage() {
     setIsBatchSyncing(true)
     let successCount = 0
     let failCount = 0
+    const failedNames: string[] = []
     
-    for (const contact of toSync) {
+    for (let i = 0; i < toSync.length; i++) {
+      const contact = toSync[i]
       setSyncingContact(contact.id)
       try {
         const flowContactData = convertContactToFlowAccount(contact)
@@ -412,10 +418,15 @@ export default function ContactsPage() {
         const flowId = result?.data?.list?.[0]?.id || result?.id
         const now = new Date().toISOString()
         
-        await supabase
-          .from('contacts')
-          .update({ flowaccount_id: flowId || null, flowaccount_synced_at: now })
-          .eq('id', contact.id)
+        // Try to save to DB (may fail if columns don't exist yet)
+        try {
+          await supabase
+            .from('contacts')
+            .update({ flowaccount_id: flowId || null, flowaccount_synced_at: now })
+            .eq('id', contact.id)
+        } catch (dbErr) {
+          console.warn('DB update failed (columns may not exist yet):', dbErr)
+        }
         
         setContacts(prev => prev.map(c => 
           c.id === contact.id ? { ...c, flowaccount_id: flowId, flowaccount_synced_at: now } : c
@@ -423,14 +434,23 @@ export default function ContactsPage() {
         successCount++
       } catch (error) {
         console.error(`Sync failed for ${contact.name}:`, error)
+        failedNames.push(contact.name)
         failCount++
+      }
+      
+      // Small delay between requests to avoid rate limiting
+      if (i < toSync.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500))
       }
     }
     
     setSyncingContact(null)
     setIsBatchSyncing(false)
     setSelectedContacts(new Set())
-    alert(`Sync เสร็จสิ้น: สำเร็จ ${successCount} รายการ${failCount > 0 ? `, ล้มเหลว ${failCount} รายการ` : ''}`)
+    
+    let msg = `Sync เสร็จสิ้น: สำเร็จ ${successCount} รายการ`
+    if (failCount > 0) msg += `\nล้มเหลว ${failCount} รายการ: ${failedNames.join(', ')}`
+    alert(msg)
   }
 
   const getTypeLabel = (type: string) => {
