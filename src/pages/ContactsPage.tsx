@@ -16,7 +16,11 @@ import {
   CreditCard,
   RefreshCw,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  CheckSquare,
+  Square,
+  Upload,
+  CloudOff
 } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -65,6 +69,9 @@ export default function ContactsPage() {
   const [showModal, setShowModal] = useState(false)
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
   const [syncingContact, setSyncingContact] = useState<string | null>(null)
+  const [syncFilter, setSyncFilter] = useState<'all' | 'synced' | 'not_synced'>('all')
+  const [selectedContacts, setSelectedContacts] = useState<Set<string>>(new Set())
+  const [isBatchSyncing, setIsBatchSyncing] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     type: 'buyer' as 'buyer' | 'seller' | 'both',
@@ -358,8 +365,73 @@ export default function ContactsPage() {
                          contact.phone?.includes(searchTerm) ||
                          contact.email?.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesType = filterType === 'all' || contact.type === filterType
-    return matchesSearch && matchesType
+    const matchesSync = syncFilter === 'all' 
+      || (syncFilter === 'synced' && !!contact.flowaccount_id)
+      || (syncFilter === 'not_synced' && !contact.flowaccount_id)
+    return matchesSearch && matchesType && matchesSync
   })
+
+  const notSyncedCount = contacts.filter(c => !c.flowaccount_id).length
+  const syncedCount = contacts.filter(c => !!c.flowaccount_id).length
+
+  const toggleSelectContact = (id: string) => {
+    setSelectedContacts(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedContacts.size === filteredContacts.length) {
+      setSelectedContacts(new Set())
+    } else {
+      setSelectedContacts(new Set(filteredContacts.map(c => c.id)))
+    }
+  }
+
+  const handleBatchSync = async () => {
+    const toSync = contacts.filter(c => selectedContacts.has(c.id) && !c.flowaccount_id)
+    if (toSync.length === 0) {
+      alert('ไม่มีผู้ติดต่อที่ต้อง sync (อาจ sync ไปแล้วทั้งหมด)')
+      return
+    }
+    
+    if (!confirm(`ต้องการ sync ${toSync.length} ผู้ติดต่อไปยัง FlowAccount?`)) return
+    
+    setIsBatchSyncing(true)
+    let successCount = 0
+    let failCount = 0
+    
+    for (const contact of toSync) {
+      setSyncingContact(contact.id)
+      try {
+        const flowContactData = convertContactToFlowAccount(contact)
+        const result = await createFlowContact(flowContactData) as any
+        const flowId = result?.data?.list?.[0]?.id || result?.id
+        const now = new Date().toISOString()
+        
+        await supabase
+          .from('contacts')
+          .update({ flowaccount_id: flowId || null, flowaccount_synced_at: now })
+          .eq('id', contact.id)
+        
+        setContacts(prev => prev.map(c => 
+          c.id === contact.id ? { ...c, flowaccount_id: flowId, flowaccount_synced_at: now } : c
+        ))
+        successCount++
+      } catch (error) {
+        console.error(`Sync failed for ${contact.name}:`, error)
+        failCount++
+      }
+    }
+    
+    setSyncingContact(null)
+    setIsBatchSyncing(false)
+    setSelectedContacts(new Set())
+    alert(`Sync เสร็จสิ้น: สำเร็จ ${successCount} รายการ${failCount > 0 ? `, ล้มเหลว ${failCount} รายการ` : ''}`)
+  }
 
   const getTypeLabel = (type: string) => {
     switch (type) {
@@ -438,8 +510,72 @@ export default function ContactsPage() {
               </button>
             ))}
           </div>
+          {/* Sync Filter */}
+          <div className="flex gap-2 flex-wrap items-center">
+            <span className="text-xs text-gray-500 mr-1">Sync:</span>
+            {[
+              { key: 'all', label: 'ทั้งหมด', icon: Users },
+              { key: 'not_synced', label: `ยังไม่ sync (${notSyncedCount})`, icon: CloudOff },
+              { key: 'synced', label: `Synced (${syncedCount})`, icon: CheckCircle2 }
+            ].map((f) => (
+              <button
+                key={f.key}
+                onClick={() => { setSyncFilter(f.key as any); setSelectedContacts(new Set()) }}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  syncFilter === f.key
+                    ? f.key === 'not_synced' ? 'bg-orange-500 text-white' : f.key === 'synced' ? 'bg-green-600 text-white' : 'bg-[#7D735F] text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <f.icon className="h-3 w-3" />
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
       </Card>
+
+      {/* Batch Actions Bar */}
+      {filteredContacts.length > 0 && (
+        <div className="flex items-center justify-between bg-white border border-[#B8C9B8] rounded-xl px-4 py-3 shadow-sm">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleSelectAll}
+              className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#7D735F] transition-colors"
+            >
+              {selectedContacts.size === filteredContacts.length && filteredContacts.length > 0 ? (
+                <CheckSquare className="h-5 w-5 text-[#7D735F]" />
+              ) : (
+                <Square className="h-5 w-5" />
+              )}
+              {selectedContacts.size > 0 ? `เลือก ${selectedContacts.size} รายการ` : 'เลือกทั้งหมด'}
+            </button>
+            {selectedContacts.size > 0 && (
+              <button
+                onClick={() => setSelectedContacts(new Set())}
+                className="text-xs text-gray-500 hover:text-gray-700 underline"
+              >
+                ยกเลิกทั้งหมด
+              </button>
+            )}
+          </div>
+          <button
+            onClick={handleBatchSync}
+            disabled={selectedContacts.size === 0 || isBatchSyncing}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              selectedContacts.size > 0 && !isBatchSyncing
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            {isBatchSyncing ? (
+              <><RefreshCw className="h-4 w-4 animate-spin" /> กำลัง Sync...</>
+            ) : (
+              <><Upload className="h-4 w-4" /> Sync ที่เลือก ({selectedContacts.size})</>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Contacts List */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -450,11 +586,21 @@ export default function ContactsPage() {
           return (
             <Card 
               key={contact.id} 
-              className="p-4 hover:shadow-md transition-shadow cursor-pointer"
+              className={`p-4 hover:shadow-md transition-shadow cursor-pointer ${selectedContacts.has(contact.id) ? 'ring-2 ring-blue-500 bg-blue-50/30' : ''}`}
               onClick={() => openEditModal(contact)}
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleSelectContact(contact.id) }}
+                    className="flex-shrink-0"
+                  >
+                    {selectedContacts.has(contact.id) ? (
+                      <CheckSquare className="h-5 w-5 text-blue-600" />
+                    ) : (
+                      <Square className="h-5 w-5 text-gray-300 hover:text-gray-500" />
+                    )}
+                  </button>
                   <div className={`w-10 h-10 rounded-lg ${typeInfo.color} flex items-center justify-center`}>
                     <TypeIcon className="h-5 w-5" />
                   </div>
