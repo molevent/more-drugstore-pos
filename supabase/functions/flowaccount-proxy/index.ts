@@ -1,5 +1,5 @@
 // Supabase Edge Function for FlowAccount API Proxy
-// Test version with detailed logging
+// Detailed diagnostics version
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,18 +17,27 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  const results = {
-    step1_auth: null as any,
-    step2_token: null as any,
-    step3_api_tests: [] as any[],
-    error: null as string | null
+  const report: any = {
+    timestamp: new Date().toISOString(),
+    request: {
+      method: req.method,
+      url: req.url
+    },
+    phase1_auth: null,
+    phase2_token: null,
+    phase3_api_call: null,
+    phase4_response: null,
+    error: null
   };
 
   try {
-    // Step 1: Authenticate with FlowAccount
-    console.log('STEP 1: Authenticating...');
+    // Phase 1: Get access token from FlowAccount
+    console.log('=== PHASE 1: AUTHENTICATION ===');
     
     const authUrl = 'https://openapi.flowaccount.com/test/token';
+    console.log('Auth URL:', authUrl);
+    console.log('Client ID:', CLIENT_ID);
+
     const authBody = new URLSearchParams({
       grant_type: 'client_credentials',
       client_id: CLIENT_ID,
@@ -46,91 +55,144 @@ Deno.serve(async (req) => {
     });
 
     const authText = await authRes.text();
-    results.step1_auth = {
+    report.phase1_auth = {
       status: authRes.status,
-      response_preview: authText.substring(0, 200)
+      statusText: authRes.statusText,
+      responseBody: authText.substring(0, 500),
+      headers: Object.fromEntries(authRes.headers)
     };
-    console.log('Auth status:', authRes.status);
+
+    console.log('Auth response status:', authRes.status);
+    console.log('Auth response body:', authText.substring(0, 200));
 
     if (!authRes.ok) {
-      throw new Error(`Auth failed: ${authRes.status} - ${authText}`);
+      throw new Error(`FlowAccount auth failed with status ${authRes.status}: ${authText}`);
     }
 
-    // Step 2: Parse token
-    let token: string;
+    // Phase 2: Parse token
+    console.log('=== PHASE 2: TOKEN EXTRACTION ===');
+    
+    let token: string | null = null;
+    let authData: any;
+    
     try {
-      const authData = JSON.parse(authText);
+      authData = JSON.parse(authText);
       token = authData.access_token;
-      results.step2_token = {
-        obtained: !!token,
-        length: token?.length || 0,
-        preview: token ? token.substring(0, 20) + '...' : null,
-        expires_in: authData.expires_in
+      
+      report.phase2_token = {
+        parsedSuccessfully: true,
+        tokenExists: !!token,
+        tokenLength: token?.length || 0,
+        tokenPrefix: token ? token.substring(0, 20) + '...' : null,
+        expiresIn: authData.expires_in,
+        tokenType: authData.token_type,
+        fullAuthResponse: authData
       };
-      console.log('Token obtained:', !!token);
-    } catch (e) {
-      throw new Error(`Failed to parse auth response: ${authText}`);
+      
+      console.log('Token extracted successfully');
+      console.log('Token length:', token?.length);
+      console.log('Token prefix:', token?.substring(0, 20));
+    } catch (e: any) {
+      report.phase2_token = {
+        parsedSuccessfully: false,
+        parseError: e.message,
+        rawResponse: authText
+      };
+      throw new Error(`Failed to parse auth response as JSON: ${e.message}. Raw: ${authText.substring(0, 200)}`);
     }
 
     if (!token) {
-      throw new Error('No access_token in response');
+      throw new Error('No access_token field in auth response');
     }
 
-    // Step 3: Test API with different auth methods
-    const testUrl = 'https://openapi.flowaccount.com/test/company/profile';
+    // Phase 3: Make API call
+    console.log('=== PHASE 3: API CALL ===');
     
-    // Test 1: Bearer token
-    console.log('Testing Bearer token...');
-    const r1 = await fetch(testUrl, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json'
+    const url = new URL(req.url);
+    const path = url.pathname.replace('/flowaccount-proxy/', '') || 'company/profile';
+    const apiUrl = `https://openapi.flowaccount.com/test/${path}${url.search}`;
+    
+    console.log('API URL:', apiUrl);
+    console.log('Request method:', req.method);
+
+    // Get request body if not GET/HEAD
+    let body = undefined;
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      try {
+        body = await req.text();
+        console.log('Request body:', body.substring(0, 200));
+      } catch (e) {
+        console.log('No request body');
       }
-    });
-    const b1 = await r1.text();
-    results.step3_api_tests.push({
-      method: 'Bearer',
-      status: r1.status,
-      body: b1.substring(0, 100)
-    });
-    console.log('Bearer status:', r1.status);
+    }
 
-    // Test 2: Access token as query param
-    console.log('Testing query param...');
-    const r2 = await fetch(`${testUrl}?access_token=${token}`);
-    const b2 = await r2.text();
-    results.step3_api_tests.push({
-      method: 'Query param',
-      status: r2.status,
-      body: b2.substring(0, 100)
-    });
-    console.log('Query param status:', r2.status);
+    const requestHeaders: Record<string, string> = {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/json'
+    };
+    
+    if (body) {
+      requestHeaders['Content-Type'] = 'application/json';
+    }
 
-    // Test 3: X-Access-Token header
-    console.log('Testing X-Access-Token...');
-    const r3 = await fetch(testUrl, {
-      headers: {
-        'X-Access-Token': token,
-        'Accept': 'application/json'
-      }
-    });
-    const b3 = await r3.text();
-    results.step3_api_tests.push({
-      method: 'X-Access-Token',
-      status: r3.status,
-      body: b3.substring(0, 100)
-    });
-    console.log('X-Access-Token status:', r3.status);
+    report.phase3_api_call = {
+      url: apiUrl,
+      method: req.method,
+      headersSent: requestHeaders,
+      bodyLength: body?.length || 0
+    };
 
-    return new Response(JSON.stringify(results, null, 2), {
+    console.log('Headers sent:', JSON.stringify(requestHeaders, null, 2));
+
+    const apiRes = await fetch(apiUrl, {
+      method: req.method,
+      headers: requestHeaders,
+      body: body || undefined
+    });
+
+    const apiText = await apiRes.text();
+    
+    report.phase4_response = {
+      status: apiRes.status,
+      statusText: apiRes.statusText,
+      responseHeaders: Object.fromEntries(apiRes.headers),
+      responseBody: apiText.substring(0, 500)
+    };
+
+    console.log('API response status:', apiRes.status);
+    console.log('API response body:', apiText.substring(0, 200));
+
+    // Try to parse as JSON for pretty output
+    let responseData;
+    try {
+      responseData = JSON.parse(apiText);
+    } catch {
+      responseData = { rawText: apiText };
+    }
+
+    return new Response(JSON.stringify({
+      success: apiRes.ok,
+      diagnostics: report,
+      data: responseData
+    }, null, 2), {
+      status: apiRes.ok ? 200 : apiRes.status,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error: any) {
-    results.error = error.message;
-    console.error('Error:', error);
+    console.error('=== ERROR ===');
+    console.error(error);
     
-    return new Response(JSON.stringify(results, null, 2), {
+    report.error = {
+      message: error.message,
+      stack: error.stack
+    };
+
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Proxy error occurred',
+      diagnostics: report
+    }, null, 2), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
