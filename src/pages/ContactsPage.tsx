@@ -21,7 +21,7 @@ import {
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import { supabase } from '../services/supabase'
-import { syncContactToFlowAccount, convertContactToFlowAccount } from '../services/flowaccount'
+import { createContact as createFlowContact, updateContact as updateFlowContact, convertContactToFlowAccount } from '../services/flowaccount'
 
 interface Contact {
   id: string
@@ -204,8 +204,7 @@ export default function ContactsPage() {
         
         // Sync to FlowAccount
         try {
-          const flowData = convertContactToFlowAccount({ ...contactData, id: editingContact.id, name: contactData.name || editingContact.name })
-          await syncContactToFlowAccount(flowData)
+          await updateFlowContact(editingContact.id, contactData)
         } catch (flowError) {
           console.warn('FlowAccount sync failed:', flowError)
         }
@@ -221,8 +220,7 @@ export default function ContactsPage() {
         // Sync to FlowAccount
         try {
           if (newContact) {
-            const flowData = convertContactToFlowAccount(newContact)
-            await syncContactToFlowAccount(flowData)
+            await createFlowContact(contactData)
           }
         } catch (flowError) {
           console.warn('FlowAccount sync failed:', flowError)
@@ -261,8 +259,7 @@ export default function ContactsPage() {
     try {
       const flowContactData = convertContactToFlowAccount(contact)
       
-      const result = await syncContactToFlowAccount(flowContactData)
-      console.log(`FlowAccount sync: ${result.action}`, result.contact)
+      await createFlowContact(flowContactData)
       
       setSyncStatus(prev => ({ 
         ...prev, 

@@ -22,8 +22,6 @@ export {
   getContactById,
   createContact,
   updateContact,
-  searchContactByName,
-  syncContactToFlowAccount,
   getInvoices,
   getInvoiceById,
   createInvoice,

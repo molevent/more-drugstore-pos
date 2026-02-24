@@ -96,24 +96,14 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 /**
  * Make authenticated API request to FlowAccount via Edge Function proxy
  */
-interface FlowAccountResponse<T> {
-  status: boolean;
-  message: string;
-  code: number;
-  data: {
-    total: string;
-    currentPage: string;
-    list: T[];
-    isDB: string;
-  };
-}
-
 const apiRequest = async <T>(
   endpoint: string,
   options: RequestInit = {}
-): Promise<FlowAccountResponse<T>> => {
+): Promise<T> => {
   const env = isSandboxMode() ? 'sandbox' : 'production';
-  const url = `${EDGE_FUNCTION_URL}/${endpoint}?env=${env}`;
+  const cleanEndpoint = endpoint.replace(/^\/+/, '');
+  const separator = cleanEndpoint.includes('?') ? '&' : '?';
+  const url = `${EDGE_FUNCTION_URL}/${cleanEndpoint}${separator}env=${env}`;
 
   const response = await fetch(url, {
     ...options,
@@ -130,18 +120,13 @@ const apiRequest = async <T>(
     throw new Error(`API Error ${response.status}: ${errorText}`);
   }
 
-  const result = await response.json();
-  if (result.status === false) {
-    throw new Error(`FlowAccount Error ${result.code}: ${result.message}`);
-  }
-
-  return result;
+  return response.json();
 };
 
 /**
  * Company/Profile API
  */
-export const getCompanyProfile = async (): Promise<FlowAccountResponse<FlowAccountCompany>> => {
+export const getCompanyProfile = async (): Promise<FlowAccountCompany> => {
   return apiRequest<FlowAccountCompany>('/companies/profile');
 };
 
@@ -149,52 +134,25 @@ export const getCompanyProfile = async (): Promise<FlowAccountResponse<FlowAccou
  * Contacts API
  */
 export const getContacts = async (page: number = 1, limit: number = 50): Promise<FlowAccountContact[]> => {
-  const result = await apiRequest<FlowAccountContact>(`/contacts?page=${page}&pageSize=${limit}`);
-  return result.data.list;
+  return apiRequest<FlowAccountContact[]>(`/contacts?page=${page}&limit=${limit}`);
 };
 
-export const getContactById = async (id: number): Promise<FlowAccountContact | null> => {
-  const result = await apiRequest<FlowAccountContact>(`/contacts/${id}`);
-  return result.data.list[0] || null;
+export const getContactById = async (id: string): Promise<FlowAccountContact> => {
+  return apiRequest<FlowAccountContact>(`/contacts/${id}`);
 };
 
 export const createContact = async (contact: FlowAccountContact): Promise<FlowAccountContact> => {
-  const result = await apiRequest<FlowAccountContact>('/contacts', {
+  return apiRequest<FlowAccountContact>('/contacts', {
     method: 'POST',
     body: JSON.stringify(contact)
   });
-  return result.data.list[0];
 };
 
-export const updateContact = async (id: number, contact: Partial<FlowAccountContact>): Promise<FlowAccountContact> => {
-  const result = await apiRequest<FlowAccountContact>(`/contacts/${id}`, {
+export const updateContact = async (id: string, contact: Partial<FlowAccountContact>): Promise<FlowAccountContact> => {
+  return apiRequest<FlowAccountContact>(`/contacts/${id}`, {
     method: 'PUT',
     body: JSON.stringify(contact)
   });
-  return result.data.list[0];
-};
-
-/**
- * Search contacts by name in FlowAccount
- */
-export const searchContactByName = async (name: string): Promise<FlowAccountContact | null> => {
-  const contacts = await getContacts(1, 100);
-  return contacts.find(c => c.contactName === name) || null;
-};
-
-/**
- * Sync contact to FlowAccount (upsert: create if not exists, update if exists)
- */
-export const syncContactToFlowAccount = async (contactData: FlowAccountContact): Promise<{ action: 'created' | 'updated'; contact: FlowAccountContact }> => {
-  const existing = await searchContactByName(contactData.contactName || '');
-  
-  if (existing && existing.id) {
-    const updated = await updateContact(existing.id, contactData);
-    return { action: 'updated', contact: updated };
-  } else {
-    const created = await createContact(contactData);
-    return { action: 'created', contact: created };
-  }
 };
 
 /**
@@ -205,27 +163,24 @@ export const getInvoices = async (
   page: number = 1,
   limit: number = 50
 ): Promise<FlowAccountInvoice[]> => {
-  const result = await apiRequest<FlowAccountInvoice>(`/documents/${type}?page=${page}&pageSize=${limit}`);
-  return result.data.list;
+  return apiRequest<FlowAccountInvoice[]>(`/documents/${type}?page=${page}&limit=${limit}`);
 };
 
 export const getInvoiceById = async (
   id: number,
   type: 'cash-invoice' | 'invoice' = 'invoice'
-): Promise<FlowAccountInvoice | null> => {
-  const result = await apiRequest<FlowAccountInvoice>(`/documents/${type}/${id}`);
-  return result.data.list[0] || null;
+): Promise<FlowAccountInvoice> => {
+  return apiRequest<FlowAccountInvoice>(`/documents/${type}/${id}`);
 };
 
 export const createInvoice = async (
   invoice: FlowAccountInvoice,
   type: 'cash-invoice' | 'invoice' = 'invoice'
 ): Promise<FlowAccountInvoice> => {
-  const result = await apiRequest<FlowAccountInvoice>(`/documents/${type}`, {
+  return apiRequest<FlowAccountInvoice>(`/documents/${type}`, {
     method: 'POST',
     body: JSON.stringify(invoice)
   });
-  return result.data.list[0];
 };
 
 export const updateInvoice = async (
@@ -233,11 +188,10 @@ export const updateInvoice = async (
   invoice: Partial<FlowAccountInvoice>,
   type: 'cash-invoice' | 'invoice' = 'invoice'
 ): Promise<FlowAccountInvoice> => {
-  const result = await apiRequest<FlowAccountInvoice>(`/documents/${type}/${id}`, {
+  return apiRequest<FlowAccountInvoice>(`/documents/${type}/${id}`, {
     method: 'PUT',
     body: JSON.stringify(invoice)
   });
-  return result.data.list[0];
 };
 
 /**
