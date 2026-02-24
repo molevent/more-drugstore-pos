@@ -1,141 +1,138 @@
 // Supabase Edge Function for FlowAccount API Proxy
-// This function acts as a proxy to handle CORS issues
+// Test version with detailed logging
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { corsHeaders } from '../_shared/cors.ts'
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+};
 
-interface FlowAccountConfig {
-  baseUrl: string;
-  authUrl: string;
-  clientId: string;
-  clientSecret: string;
-  scope: string;
-  grantType: string;
-}
+// Hardcoded credentials for testing
+const CLIENT_ID = 'somsaang-sandbox-client';
+const CLIENT_SECRET = 'c29tc2FhZ2ctc2FuZGJveC1jbGllbnQ=';
 
-// Sandbox configuration
-const SANDBOX_CONFIG: FlowAccountConfig = {
-  baseUrl: 'https://openapi.flowaccount.com/test',
-  authUrl: 'https://openapi.flowaccount.com/test/token',
-  clientId: Deno.env.get('FLOWACCOUNT_CLIENT_ID') || 'somsaang-sandbox-client',
-  clientSecret: Deno.env.get('FLOWACCOUNT_CLIENT_SECRET') || 'c29tc2FhZ2ctc2FuZGJveC1jbGllbnQ=',
-  scope: 'flowaccount-api',
-  grantType: 'client_credentials'
-}
-
-// Production configuration
-const PROD_CONFIG: FlowAccountConfig = {
-  baseUrl: 'https://openapi.flowaccount.com/v1',
-  authUrl: 'https://openapi.flowaccount.com/v1/token',
-  clientId: Deno.env.get('FLOWACCOUNT_PROD_CLIENT_ID') || '',
-  clientSecret: Deno.env.get('FLOWACCOUNT_PROD_CLIENT_SECRET') || '',
-  scope: 'flowaccount-api',
-  grantType: 'client_credentials'
-}
-
-let cachedToken: { accessToken: string; expiresAt: number } | null = null
-
-async function getAccessToken(isSandbox: boolean = true): Promise<string> {
-  // Return cached token if still valid (with 5 minute buffer)
-  if (cachedToken && cachedToken.expiresAt > Date.now() + 5 * 60 * 1000) {
-    return cachedToken.accessToken
+Deno.serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
   }
 
-  const config = isSandbox ? SANDBOX_CONFIG : PROD_CONFIG
+  const results = {
+    step1_auth: null as any,
+    step2_token: null as any,
+    step3_api_tests: [] as any[],
+    error: null as string | null
+  };
 
   try {
-    const response = await fetch(config.authUrl, {
+    // Step 1: Authenticate with FlowAccount
+    console.log('STEP 1: Authenticating...');
+    
+    const authUrl = 'https://openapi.flowaccount.com/test/token';
+    const authBody = new URLSearchParams({
+      grant_type: 'client_credentials',
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET,
+      scope: 'flowaccount-api'
+    });
+
+    const authRes = await fetch(authUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         'Accept': 'application/json'
       },
-      body: new URLSearchParams({
-        grant_type: config.grantType,
-        client_id: config.clientId,
-        client_secret: config.clientSecret,
-        scope: config.scope
-      })
-    })
+      body: authBody.toString()
+    });
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Authentication failed: ${response.status} - ${errorText}`)
+    const authText = await authRes.text();
+    results.step1_auth = {
+      status: authRes.status,
+      response_preview: authText.substring(0, 200)
+    };
+    console.log('Auth status:', authRes.status);
+
+    if (!authRes.ok) {
+      throw new Error(`Auth failed: ${authRes.status} - ${authText}`);
     }
 
-    const data = await response.json()
-
-    // Cache the token
-    cachedToken = {
-      accessToken: data.access_token,
-      expiresAt: Date.now() + (data.expires_in * 1000)
+    // Step 2: Parse token
+    let token: string;
+    try {
+      const authData = JSON.parse(authText);
+      token = authData.access_token;
+      results.step2_token = {
+        obtained: !!token,
+        length: token?.length || 0,
+        preview: token ? token.substring(0, 20) + '...' : null,
+        expires_in: authData.expires_in
+      };
+      console.log('Token obtained:', !!token);
+    } catch (e) {
+      throw new Error(`Failed to parse auth response: ${authText}`);
     }
 
-    return data.access_token
-  } catch (error) {
-    console.error('Failed to get FlowAccount access token:', error)
-    throw error
-  }
-}
+    if (!token) {
+      throw new Error('No access_token in response');
+    }
 
-serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
-
-  try {
-    const url = new URL(req.url)
-    const path = url.pathname.replace('/flowaccount-proxy/', '')
+    // Step 3: Test API with different auth methods
+    const testUrl = 'https://openapi.flowaccount.com/test/company/profile';
     
-    // Get environment from query param or default to sandbox
-    const isSandbox = url.searchParams.get('env') !== 'production'
-    const config = isSandbox ? SANDBOX_CONFIG : PROD_CONFIG
-    
-    // Get access token
-    const accessToken = await getAccessToken(isSandbox)
-    
-    // Construct target URL
-    const targetUrl = `${config.baseUrl}/${path}${url.search}`
-    
-    // Forward the request
-    const body = req.method !== 'GET' && req.method !== 'HEAD' ? await req.text() : undefined
-    
-    const response = await fetch(targetUrl, {
-      method: req.method,
+    // Test 1: Bearer token
+    console.log('Testing Bearer token...');
+    const r1 = await fetch(testUrl, {
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
         'Accept': 'application/json'
-      },
-      body: body || undefined
-    })
+      }
+    });
+    const b1 = await r1.text();
+    results.step3_api_tests.push({
+      method: 'Bearer',
+      status: r1.status,
+      body: b1.substring(0, 100)
+    });
+    console.log('Bearer status:', r1.status);
 
-    const responseData = await response.text()
-    
-    return new Response(responseData, {
-      status: response.status,
+    // Test 2: Access token as query param
+    console.log('Testing query param...');
+    const r2 = await fetch(`${testUrl}?access_token=${token}`);
+    const b2 = await r2.text();
+    results.step3_api_tests.push({
+      method: 'Query param',
+      status: r2.status,
+      body: b2.substring(0, 100)
+    });
+    console.log('Query param status:', r2.status);
+
+    // Test 3: X-Access-Token header
+    console.log('Testing X-Access-Token...');
+    const r3 = await fetch(testUrl, {
       headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json'
+        'X-Access-Token': token,
+        'Accept': 'application/json'
       }
-    })
+    });
+    const b3 = await r3.text();
+    results.step3_api_tests.push({
+      method: 'X-Access-Token',
+      status: r3.status,
+      body: b3.substring(0, 100)
+    });
+    console.log('X-Access-Token status:', r3.status);
+
+    return new Response(JSON.stringify(results, null, 2), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error: any) {
+    results.error = error.message;
+    console.error('Error:', error);
     
-  } catch (error) {
-    console.error('FlowAccount proxy error:', error)
-    
-    return new Response(
-      JSON.stringify({ 
-        error: 'Proxy request failed', 
-        message: error.message 
-      }),
-      {
-        status: 500,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
+    return new Response(JSON.stringify(results, null, 2), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
-})
+});
