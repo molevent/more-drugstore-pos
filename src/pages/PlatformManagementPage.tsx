@@ -407,7 +407,7 @@ export default function PlatformManagementPage() {
           selling_price_excl_vat: Math.round((sellingPrice / 1.07) * 100) / 100,
           cost_price: 0,
           unit: 'ชิ้น',
-          stock_quantity: item.quantity || 0,
+          stock_quantity: 0,
           min_stock_level: 0,
           sell_on_pos: true,
           sell_on_grab: false,
