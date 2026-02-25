@@ -87,14 +87,26 @@ export default function PlatformManagementPage() {
   const fetchProducts = async () => {
     setLoading(true)
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .order('name_th')
-      
-      if (error) throw error
-      setProducts(data || [])
+      // Supabase default limit is 1000 — fetch all pages
+      let allProducts: Product[] = []
+      let from = 0
+      const pageSize = 1000
+      while (true) {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('is_active', true)
+          .order('name_th')
+          .range(from, from + pageSize - 1)
+        
+        if (error) throw error
+        if (!data || data.length === 0) break
+        allProducts = allProducts.concat(data)
+        if (data.length < pageSize) break
+        from += pageSize
+      }
+      console.log('Fetched', allProducts.length, 'products')
+      setProducts(allProducts)
     } catch (err) {
       console.error('Error fetching products:', err)
     } finally {
