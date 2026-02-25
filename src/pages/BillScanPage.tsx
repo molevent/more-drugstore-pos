@@ -223,12 +223,14 @@ export default function BillScanPage() {
     setQuickAddSaving(true)
     try {
       // 1. Create new product
+      // barcode/sku must be unique - use entered value or generate a temp one
+      const barcodeVal = quickAddBarcode.trim() || `SCAN-${Date.now()}`
       const { data: newProduct, error } = await supabase
         .from('products')
         .insert([{
           name_th: quickAddName.trim(),
-          barcode: quickAddBarcode.trim() || '',
-          sku: quickAddBarcode.trim() || '',
+          barcode: barcodeVal,
+          sku: barcodeVal,
           product_type: 'finished_goods',
           is_active: true,
           stock_tracking_type: 'tracked',
@@ -250,18 +252,25 @@ export default function BillScanPage() {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Product insert error:', error)
+        throw new Error(error.message || 'ไม่สามารถเพิ่มสินค้าได้')
+      }
 
-      // 2. Auto-save supplier mapping
+      // 2. Auto-save supplier mapping (non-blocking)
       if (scanResult && item.supplier_product_id) {
-        await supabase
-          .from('supplier_product_mappings')
-          .upsert({
-            supplier_name: scanResult.supplier_name,
-            supplier_product_id: item.supplier_product_id,
-            supplier_product_name: item.product_name,
-            product_id: newProduct.id
-          }, { onConflict: 'supplier_name,supplier_product_id' })
+        try {
+          await supabase
+            .from('supplier_product_mappings')
+            .upsert({
+              supplier_name: scanResult.supplier_name,
+              supplier_product_id: item.supplier_product_id,
+              supplier_product_name: item.product_name,
+              product_id: newProduct.id
+            }, { onConflict: 'supplier_name,supplier_product_id' })
+        } catch (mappingErr) {
+          console.warn('Mapping save failed (non-critical):', mappingErr)
+        }
       }
 
       // 3. Add to local products list

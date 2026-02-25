@@ -79,6 +79,7 @@ export default function ContactsPage() {
   const [importingContacts, setImportingContacts] = useState(false)
   const [selectedFaContacts, setSelectedFaContacts] = useState<Set<number>>(new Set())
   const [importProgress, setImportProgress] = useState('')
+  const [faSearchTerm, setFaSearchTerm] = useState('')
   const [formData, setFormData] = useState({
     name: '',
     type: 'buyer' as 'buyer' | 'seller' | 'both',
@@ -588,11 +589,25 @@ export default function ContactsPage() {
     })
   }
 
+  const filteredFaContacts = faSearchTerm.trim()
+    ? faContacts.filter(c => {
+        const term = faSearchTerm.toLowerCase()
+        return (
+          (c.contactName || '').toLowerCase().includes(term) ||
+          (c.contactEmail || '').toLowerCase().includes(term) ||
+          (c.contactMobile || '').toLowerCase().includes(term) ||
+          (c.contactTaxId || '').toLowerCase().includes(term) ||
+          (c.contactCode || '').toLowerCase().includes(term) ||
+          String(c.id).includes(term)
+        )
+      })
+    : faContacts
+
   const toggleSelectAllFa = () => {
-    if (selectedFaContacts.size === faContacts.length) {
+    if (selectedFaContacts.size === filteredFaContacts.length) {
       setSelectedFaContacts(new Set())
     } else {
-      setSelectedFaContacts(new Set(faContacts.map(c => c.id)))
+      setSelectedFaContacts(new Set(filteredFaContacts.map(c => c.id)))
     }
   }
 
@@ -1408,22 +1423,34 @@ export default function ContactsPage() {
                 <div className="text-center py-12 text-gray-500">ไม่พบผู้ติดต่อใน FlowAccount</div>
               ) : (
                 <>
-                  <div className="flex items-center justify-between mb-3">
-                    <button
-                      onClick={toggleSelectAllFa}
-                      className="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600"
-                    >
-                      {selectedFaContacts.size === faContacts.length ? (
-                        <CheckSquare className="h-4 w-4 text-blue-600" />
-                      ) : (
-                        <Square className="h-4 w-4" />
-                      )}
-                      เลือกทั้งหมด ({faContacts.length})
-                    </button>
-                    <span className="text-sm text-gray-500">เลือกแล้ว {selectedFaContacts.size} รายการ</span>
+                  <div className="mb-3">
+                    <div className="relative mb-2">
+                      <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        value={faSearchTerm}
+                        onChange={e => setFaSearchTerm(e.target.value)}
+                        placeholder="ค้นหาชื่อ, อีเมล, เบอร์โทร, Tax ID..."
+                        className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <button
+                        onClick={toggleSelectAllFa}
+                        className="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600"
+                      >
+                        {selectedFaContacts.size === filteredFaContacts.length && filteredFaContacts.length > 0 ? (
+                          <CheckSquare className="h-4 w-4 text-blue-600" />
+                        ) : (
+                          <Square className="h-4 w-4" />
+                        )}
+                        เลือกทั้งหมด ({filteredFaContacts.length})
+                      </button>
+                      <span className="text-sm text-gray-500">เลือกแล้ว {selectedFaContacts.size} รายการ</span>
+                    </div>
                   </div>
                   <div className="space-y-1">
-                    {faContacts.map((fa) => {
+                    {filteredFaContacts.map((fa) => {
                       const faType = String(fa.contactType)
                       const typeLabel = faType === '5' ? 'ผู้ขาย' : faType === '7' ? 'ซื้อ/ขาย' : 'ผู้ซื้อ'
                       const typeColor = faType === '5' ? 'text-green-600' : faType === '7' ? 'text-orange-600' : 'text-blue-600'
