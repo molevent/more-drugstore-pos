@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
-import { Search, ExternalLink, Package, ShoppingCart, Edit, X, Save, Filter, ArrowLeft } from 'lucide-react'
+import { Search, ExternalLink, Package, ShoppingCart, Edit, X, Save, Filter, ArrowLeft, Upload, FileSpreadsheet, CheckCircle, AlertCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { Product } from '../types/database'
+import * as XLSX from 'xlsx'
 
 interface PlatformConfig {
   id: string
@@ -50,6 +51,20 @@ interface EditingProduct {
   seller_sku: string
 }
 
+interface ImportedItem {
+  platform_product_id: string
+  product_name: string
+  status: string
+  shop_sku: string
+  seller_sku: string
+  quantity: number
+  price: number
+  special_price: number
+  variations: string
+  matched_product?: Product | null
+  match_type: 'barcode' | 'sku' | 'name' | 'none'
+}
+
 export default function PlatformManagementPage() {
   const navigate = useNavigate()
   const [products, setProducts] = useState<Product[]>([])
@@ -59,6 +74,11 @@ export default function PlatformManagementPage() {
   const [filterMode, setFilterMode] = useState<'listed' | 'unlisted' | 'all'>('listed')
   const [editingProduct, setEditingProduct] = useState<EditingProduct | null>(null)
   const [saving, setSaving] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [importedItems, setImportedItems] = useState<ImportedItem[]>([])
+  const [importing, setImporting] = useState(false)
+  const [importProgress, setImportProgress] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetchProducts()
@@ -155,6 +175,204 @@ export default function PlatformManagementPage() {
     }
   }
 
+  // === Excel Upload ===
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      const data = await file.arrayBuffer()
+      const workbook = XLSX.read(data, { type: 'array' })
+      const sheetName = workbook.SheetNames[0]
+      const sheet = workbook.Sheets[sheetName]
+      const rows: any[] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' })
+
+      if (rows.length < 5) {
+        alert('ไฟล์มีข้อมูลน้อยเกินไป')
+        return
+      }
+
+      // Detect platform file format by headers
+      const headerRow = rows.find((row, i) => {
+        if (i > 5) return false
+        const joined = row.join(' ').toLowerCase()
+        return joined.includes('product id') || joined.includes('seller') || joined.includes('sku') || joined.includes('ชื่อสินค้า')
+      })
+
+      if (!headerRow) {
+        alert('ไม่พบ header ในไฟล์ กรุณาตรวจสอบรูปแบบไฟล์')
+        return
+      }
+
+      const headerIndex = rows.indexOf(headerRow)
+      const headers = headerRow.map((h: any) => String(h).trim().toLowerCase())
+
+      // Map column indices
+      const colMap = detectColumns(headers)
+      console.log('[Import] Headers:', headers)
+      console.log('[Import] Column map:', colMap)
+
+      // Parse data rows (skip header + any description rows)
+      const dataStartIndex = headerIndex + 1
+      // Skip rows that look like descriptions (long text in cells)
+      let actualStart = dataStartIndex
+      for (let i = dataStartIndex; i < Math.min(dataStartIndex + 3, rows.length); i++) {
+        const row = rows[i]
+        const firstCell = String(row[0] || '').trim()
+        // If first cell is not a number/product ID, it's likely a description row
+        if (firstCell.length > 30 || firstCell === '' || /^[ก-๙a-z]/i.test(firstCell)) {
+          actualStart = i + 1
+        } else {
+          break
+        }
+      }
+
+      const items: ImportedItem[] = []
+      for (let i = actualStart; i < rows.length; i++) {
+        const row = rows[i]
+        const productId = String(row[colMap.productId] ?? '').trim()
+        const productName = String(row[colMap.productName] ?? '').trim()
+
+        if (!productId && !productName) continue
+
+        const sellerSku = String(row[colMap.sellerSku] ?? '').trim()
+        const shopSku = String(row[colMap.shopSku] ?? '').trim()
+        const status = String(row[colMap.status] ?? '').trim()
+        const quantity = Number(row[colMap.quantity] ?? 0) || 0
+        const price = Number(row[colMap.price] ?? 0) || 0
+        const specialPrice = Number(row[colMap.specialPrice] ?? 0) || 0
+        const variations = String(row[colMap.variations] ?? '').trim()
+
+        // Match to local product
+        const { matched, matchType } = matchToLocalProduct(sellerSku, shopSku, productName)
+
+        items.push({
+          platform_product_id: productId,
+          product_name: productName,
+          status,
+          shop_sku: shopSku,
+          seller_sku: sellerSku,
+          quantity,
+          price,
+          special_price: specialPrice,
+          variations,
+          matched_product: matched,
+          match_type: matchType
+        })
+      }
+
+      console.log(`[Import] Parsed ${items.length} items from Excel`)
+      setImportedItems(items)
+      setShowImportModal(true)
+    } catch (err) {
+      console.error('Error reading Excel file:', err)
+      alert('อ่านไฟล์ไม่สำเร็จ: ' + (err as Error).message)
+    }
+
+    // Reset file input
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const detectColumns = (headers: string[]): Record<string, number> => {
+    const find = (keywords: string[]) => {
+      for (const kw of keywords) {
+        const idx = headers.findIndex(h => h.includes(kw))
+        if (idx >= 0) return idx
+      }
+      return 0
+    }
+
+    return {
+      productId: find(['product id', 'productid', 'product_id']),
+      productName: find(['ชื่อสินค้า', 'product name', 'name', 'ชื่อ']),
+      status: find(['status', 'สถานะ']),
+      shopSku: find(['shop sku', 'shopsku', 'ร้าน sku']),
+      sellerSku: find(['sellersku', 'seller sku', 'seller_sku']),
+      quantity: find(['จำนวน', 'quantity', 'stock', 'qty']),
+      price: find(['ราคา', 'price']),
+      specialPrice: find(['specialprice', 'special price', 'ราคาพิเศษ']),
+      variations: find(['variations', 'variation', 'combo'])
+    }
+  }
+
+  const matchToLocalProduct = (sellerSku: string, shopSku: string, name: string): { matched: Product | null, matchType: 'barcode' | 'sku' | 'name' | 'none' } => {
+    if (!products.length) return { matched: null, matchType: 'none' }
+
+    // 1. Match by SellerSKU → barcode
+    if (sellerSku) {
+      const byBarcode = products.find(p => p.barcode && p.barcode === sellerSku)
+      if (byBarcode) return { matched: byBarcode, matchType: 'barcode' }
+      const bySku = products.find(p => p.sku && p.sku === sellerSku)
+      if (bySku) return { matched: bySku, matchType: 'sku' }
+    }
+
+    // 2. Match by ShopSKU
+    if (shopSku) {
+      const byBarcode = products.find(p => p.barcode && shopSku.includes(p.barcode))
+      if (byBarcode) return { matched: byBarcode, matchType: 'barcode' }
+    }
+
+    // 3. Fuzzy name match
+    if (name) {
+      const nameLower = name.toLowerCase()
+      const byName = products.find(p => {
+        const pName = (p.name_th || '').toLowerCase()
+        const pNameEn = (p.name_en || '').toLowerCase()
+        return (pName && nameLower.includes(pName)) || (pNameEn && nameLower.includes(pNameEn)) ||
+               (pName && pName.includes(nameLower)) || (pNameEn && pNameEn.includes(nameLower))
+      })
+      if (byName) return { matched: byName, matchType: 'name' }
+    }
+
+    return { matched: null, matchType: 'none' }
+  }
+
+  const handleImportConfirm = async () => {
+    const matchedItems = importedItems.filter(item => item.matched_product)
+    if (matchedItems.length === 0) {
+      alert('ไม่มีสินค้าที่จับคู่ได้')
+      return
+    }
+
+    setImporting(true)
+    let updated = 0
+    let failed = 0
+
+    for (let i = 0; i < matchedItems.length; i++) {
+      const item = matchedItems[i]
+      const product = item.matched_product!
+      setImportProgress(`${i + 1}/${matchedItems.length} ${product.name_th || item.product_name}`)
+
+      try {
+        const updates: any = {
+          [currentPlatform.sellField]: true,
+          [currentPlatform.priceField]: item.special_price || item.price || undefined,
+        }
+
+        const { error } = await supabase
+          .from('products')
+          .update(updates)
+          .eq('id', product.id)
+
+        if (error) throw error
+
+        setProducts(prev => prev.map(p =>
+          p.id === product.id ? { ...p, ...updates } : p
+        ))
+        updated++
+      } catch (err) {
+        console.error(`Error updating ${product.name_th}:`, err)
+        failed++
+      }
+    }
+
+    setImporting(false)
+    setImportProgress('')
+    alert(`อัพเดทสำเร็จ ${updated} รายการ${failed > 0 ? `, ล้มเหลว ${failed} รายการ` : ''}`)
+    setShowImportModal(false)
+    setImportedItems([])
+  }
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -196,10 +414,10 @@ export default function PlatformManagementPage() {
         })}
       </div>
 
-      {/* Stats + Search */}
+      {/* Stats + Search + Upload */}
       <Card>
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-          <div className="flex gap-4">
+          <div className="flex gap-4 flex-wrap">
             <button
               onClick={() => setFilterMode('listed')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -232,6 +450,20 @@ export default function PlatformManagementPage() {
             >
               ทั้งหมด ({products.length})
             </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${currentPlatform.bgColor} text-white hover:opacity-90`}
+            >
+              <Upload className="h-4 w-4 inline mr-1" />
+              อัพโหลด Excel
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
           </div>
           <div className="relative w-full md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -421,6 +653,138 @@ export default function PlatformManagementPage() {
           </div>
         )}
       </Card>
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 border-b">
+              <div className="flex items-center gap-3">
+                <FileSpreadsheet className={`h-6 w-6 ${currentPlatform.color}`} />
+                <div>
+                  <h2 className="text-lg font-bold text-gray-800">นำเข้าสินค้าจาก {currentPlatform.name}</h2>
+                  <p className="text-sm text-gray-500">
+                    พบ {importedItems.length} รายการ · 
+                    จับคู่ได้ <span className="text-green-600 font-medium">{importedItems.filter(i => i.matched_product).length}</span> · 
+                    ไม่พบ <span className="text-red-500 font-medium">{importedItems.filter(i => !i.matched_product).length}</span>
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => { setShowImportModal(false); setImportedItems([]) }} className="p-2 hover:bg-gray-100 rounded-lg">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Import Progress */}
+            {importing && (
+              <div className="px-5 py-3 bg-blue-50 border-b">
+                <div className="flex items-center gap-2 text-sm text-blue-700">
+                  <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full" />
+                  <span>{importProgress}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Table */}
+            <div className="flex-1 overflow-auto p-5">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-white">
+                  <tr className="border-b bg-gray-50">
+                    <th className="text-left py-2 px-3 font-medium text-gray-600 w-10">#</th>
+                    <th className="text-left py-2 px-3 font-medium text-gray-600">สินค้า ({currentPlatform.name})</th>
+                    <th className="text-left py-2 px-3 font-medium text-gray-600">Seller SKU</th>
+                    <th className="text-left py-2 px-3 font-medium text-gray-600">สถานะ</th>
+                    <th className="text-right py-2 px-3 font-medium text-gray-600">ราคา</th>
+                    <th className="text-center py-2 px-3 font-medium text-gray-600">สต็อก</th>
+                    <th className="text-center py-2 px-3 font-medium text-gray-600">จับคู่</th>
+                    <th className="text-left py-2 px-3 font-medium text-gray-600">สินค้าในระบบ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {importedItems.map((item, idx) => (
+                    <tr key={idx} className={`border-b hover:bg-gray-50 ${!item.matched_product ? 'bg-red-50/30' : ''}`}>
+                      <td className="py-2 px-3 text-gray-400">{idx + 1}</td>
+                      <td className="py-2 px-3">
+                        <div className="font-medium text-gray-800 max-w-xs truncate" title={item.product_name}>
+                          {item.product_name || '-'}
+                        </div>
+                        <div className="text-xs text-gray-400">{item.platform_product_id}</div>
+                      </td>
+                      <td className="py-2 px-3">
+                        <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">{item.seller_sku || '-'}</span>
+                      </td>
+                      <td className="py-2 px-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          item.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                        }`}>
+                          {item.status || '-'}
+                        </span>
+                      </td>
+                      <td className="py-2 px-3 text-right">
+                        <div>฿{(item.special_price || item.price || 0).toLocaleString()}</div>
+                        {item.special_price > 0 && item.price > 0 && item.special_price !== item.price && (
+                          <div className="text-xs text-gray-400 line-through">฿{item.price.toLocaleString()}</div>
+                        )}
+                      </td>
+                      <td className="py-2 px-3 text-center">{item.quantity}</td>
+                      <td className="py-2 px-3 text-center">
+                        {item.matched_product ? (
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                            item.match_type === 'barcode' ? 'bg-green-100 text-green-700' :
+                            item.match_type === 'sku' ? 'bg-blue-100 text-blue-700' :
+                            'bg-yellow-100 text-yellow-700'
+                          }`}>
+                            <CheckCircle className="h-3 w-3" />
+                            {item.match_type === 'barcode' ? 'Barcode' : item.match_type === 'sku' ? 'SKU' : 'ชื่อ'}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600">
+                            <AlertCircle className="h-3 w-3" />
+                            ไม่พบ
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2 px-3">
+                        {item.matched_product ? (
+                          <div>
+                            <div className="font-medium text-gray-700 text-xs">{item.matched_product.name_th}</div>
+                            <div className="text-xs text-gray-400">{item.matched_product.barcode || item.matched_product.sku || '-'}</div>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between p-5 border-t bg-gray-50 rounded-b-2xl">
+              <div className="text-sm text-gray-500">
+                จะอัพเดท <span className="font-bold text-green-600">{importedItems.filter(i => i.matched_product).length}</span> รายการที่จับคู่ได้ → ตั้งเป็น "ลงขายใน {currentPlatform.name}" + อัพเดทราคา
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setShowImportModal(false); setImportedItems([]) }}
+                  className="px-4 py-2 rounded-lg border text-gray-600 hover:bg-gray-100"
+                  disabled={importing}
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  onClick={handleImportConfirm}
+                  disabled={importing || importedItems.filter(i => i.matched_product).length === 0}
+                  className={`px-6 py-2 rounded-lg text-white font-medium ${currentPlatform.bgColor} hover:opacity-90 disabled:opacity-50`}
+                >
+                  {importing ? 'กำลังนำเข้า...' : `นำเข้า ${importedItems.filter(i => i.matched_product).length} รายการ`}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
