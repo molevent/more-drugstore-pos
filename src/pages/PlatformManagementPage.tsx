@@ -295,10 +295,10 @@ export default function PlatformManagementPage() {
     }
   }
 
-  const matchToLocalProduct = (sellerSku: string, shopSku: string, name: string): { matched: Product | null, matchType: 'barcode' | 'sku' | 'name' | 'none' } => {
+  const matchToLocalProduct = (sellerSku: string, shopSku: string, _name: string): { matched: Product | null, matchType: 'barcode' | 'sku' | 'name' | 'none' } => {
     if (!products.length) return { matched: null, matchType: 'none' }
 
-    // 1. Match by SellerSKU → barcode
+    // 1. Exact match by SellerSKU → barcode or sku
     if (sellerSku) {
       const byBarcode = products.find(p => p.barcode && p.barcode === sellerSku)
       if (byBarcode) return { matched: byBarcode, matchType: 'barcode' }
@@ -306,23 +306,22 @@ export default function PlatformManagementPage() {
       if (bySku) return { matched: bySku, matchType: 'sku' }
     }
 
-    // 2. Match by ShopSKU
+    // 2. Extract barcode from ShopSKU (Lazada format: "5072184995_TH-2141635939")
+    // Only match if barcode is long enough (>= 8 chars) to avoid false positives
     if (shopSku) {
-      const byBarcode = products.find(p => p.barcode && shopSku.includes(p.barcode))
-      if (byBarcode) return { matched: byBarcode, matchType: 'barcode' }
+      const parts = shopSku.split(/[_\-\s]/)
+      for (const part of parts) {
+        if (part.length >= 8) {
+          const byBarcode = products.find(p => p.barcode && p.barcode === part)
+          if (byBarcode) return { matched: byBarcode, matchType: 'barcode' }
+          const bySku = products.find(p => p.sku && p.sku === part)
+          if (bySku) return { matched: bySku, matchType: 'sku' }
+        }
+      }
     }
 
-    // 3. Fuzzy name match
-    if (name) {
-      const nameLower = name.toLowerCase()
-      const byName = products.find(p => {
-        const pName = (p.name_th || '').toLowerCase()
-        const pNameEn = (p.name_en || '').toLowerCase()
-        return (pName && nameLower.includes(pName)) || (pNameEn && nameLower.includes(pNameEn)) ||
-               (pName && pName.includes(nameLower)) || (pNameEn && pNameEn.includes(nameLower))
-      })
-      if (byName) return { matched: byName, matchType: 'name' }
-    }
+    // 3. Do NOT fuzzy name match — too unreliable, leave as unmatched
+    // User can manually match these later
 
     return { matched: null, matchType: 'none' }
   }
