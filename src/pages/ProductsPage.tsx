@@ -296,9 +296,9 @@ export default function ProductsPage() {
 
   const filteredProducts = products.filter(p => {
     const matchesSearch = searchTerm === '' || 
-      p.name_th.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.name_th?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.name_en?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.barcode.includes(searchTerm)
+      p.barcode?.includes(searchTerm)
     
     // Get all subcategory IDs for the selected category
     const getAllSubCategoryIds = (parentId: string): string[] => {
