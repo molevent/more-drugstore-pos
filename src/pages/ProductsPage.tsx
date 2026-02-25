@@ -682,7 +682,9 @@ export default function ProductsPage() {
     setIsSyncingFA(true)
     setSyncProgress(`กำลัง sync ${activeProducts.length} รายการ...`)
     try {
-      const result = await syncProductsToFlowAccount(activeProducts)
+      const result = await syncProductsToFlowAccount(activeProducts, (current, total, action) => {
+        setSyncProgress(`${current}/${total} ${action}`)
+      })
       setSyncProgress('')
       alert(
         `Sync สินค้าไป FlowAccount เสร็จสิ้น!\n\n` +
@@ -964,11 +966,11 @@ export default function ProductsPage() {
           <button
             onClick={handleSyncProductsToFA}
             disabled={isSyncingFA}
-            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-blue-500 bg-white text-blue-600 text-sm whitespace-nowrap hover:bg-blue-50 disabled:opacity-50 transition-all shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-blue-500 bg-white text-blue-600 text-sm hover:bg-blue-50 disabled:opacity-50 transition-all shadow-sm max-w-xs"
             title="Sync สินค้าไป FlowAccount"
           >
-            <RefreshCw className={`h-4 w-4 ${isSyncingFA ? 'animate-spin' : ''}`} />
-            <span className="font-medium">{isSyncingFA ? syncProgress || 'Syncing...' : 'Sync FA'}</span>
+            <RefreshCw className={`h-4 w-4 flex-shrink-0 ${isSyncingFA ? 'animate-spin' : ''}`} />
+            <span className="font-medium truncate">{isSyncingFA ? syncProgress || 'Syncing...' : 'Sync FA'}</span>
           </button>
 
           {/* Add Product Pill Button */}

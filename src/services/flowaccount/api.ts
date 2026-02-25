@@ -288,6 +288,7 @@ export const convertProductToFlowAccount = (product: {
 /**
  * Sync products to FlowAccount with duplicate detection by code/barcode/name
  * Returns { created, updated, skipped, failed, results }
+ * onProgress callback for real-time UI updates
  */
 export const syncProductsToFlowAccount = async (
   products: Array<{
@@ -303,7 +304,8 @@ export const syncProductsToFlowAccount = async (
     selling_price_excl_vat?: number;
     unit?: string;
     product_type?: string;
-  }>
+  }>,
+  onProgress?: (current: number, total: number, action: string) => void
 ): Promise<{
   created: number;
   updated: number;
@@ -311,7 +313,10 @@ export const syncProductsToFlowAccount = async (
   failed: number;
   results: Array<{ localId: string; faId?: number; action: string; error?: string }>;
 }> => {
+  const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+
   // 1. Fetch all existing FA products for matching
+  onProgress?.(0, products.length, 'กำลังดึงข้อมูลสินค้าจาก FlowAccount...');
   let existingProducts: any[] = [];
   let page = 1;
   while (true) {
@@ -336,8 +341,12 @@ export const syncProductsToFlowAccount = async (
   let created = 0, updated = 0, skipped = 0, failed = 0;
   const results: Array<{ localId: string; faId?: number; action: string; error?: string }> = [];
 
-  // 3. Process each product
-  for (const product of products) {
+  // 3. Process each product sequentially with progress + delay
+  for (let i = 0; i < products.length; i++) {
+    const product = products[i];
+    const label = product.name_th || product.sku || product.barcode || '-';
+    onProgress?.(i + 1, products.length, `${i + 1}/${products.length} ${label}`);
+
     try {
       const faData = convertProductToFlowAccount(product);
       
@@ -351,7 +360,12 @@ export const syncProductsToFlowAccount = async (
         const existingType = String(existing.type);
         if (existingType !== '3') {
           // Existing is not inventory type — delete and recreate as type 3
-          await deleteFlowProduct(existing.id);
+          try {
+            await deleteFlowProduct(existing.id);
+            await delay(100); // small delay between delete and create
+          } catch (delErr: any) {
+            console.warn('Delete failed for', existing.id, delErr.message);
+          }
           const result = await createFlowProduct(faData);
           const newId = result?.data?.list?.[0]?.id;
           updated++;
@@ -374,7 +388,11 @@ export const syncProductsToFlowAccount = async (
     } catch (err: any) {
       failed++;
       results.push({ localId: product.id, action: 'failed', error: err.message });
+      console.warn(`Sync failed [${i + 1}/${products.length}] ${label}:`, err.message);
     }
+
+    // Delay between requests to avoid rate limiting
+    if (i < products.length - 1) await delay(50);
   }
 
   return { created, updated, skipped, failed, results };
