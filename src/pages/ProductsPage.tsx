@@ -876,14 +876,18 @@ export default function ProductsPage() {
       console.log(`[SAVE] Data prepared in ${(performance.now() - dataStart).toFixed(0)}ms`)
       
       if (editingProduct) {
-        console.log('[SAVE] Starting UPDATE operation...')
+        console.log('[SAVE] Starting UPDATE operation for id:', editingProduct.id)
+        console.log('[SAVE] productData keys:', Object.keys(productData).length)
         const updateStart = performance.now()
-        const { error } = await supabase
+        const { error, status, statusText } = await supabase
           .from('products')
           .update(productData)
           .eq('id', editingProduct.id)
-        console.log(`[SAVE] UPDATE completed in ${(performance.now() - updateStart).toFixed(0)}ms`)
-        if (error) throw error
+        console.log(`[SAVE] UPDATE completed in ${(performance.now() - updateStart).toFixed(0)}ms, status: ${status} ${statusText}`)
+        if (error) {
+          console.error('[SAVE] UPDATE error details:', JSON.stringify(error))
+          throw error
+        }
       } else {
         console.log('[SAVE] Starting INSERT operation...')
         const insertStart = performance.now()
