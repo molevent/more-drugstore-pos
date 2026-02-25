@@ -41,6 +41,17 @@ const PLATFORMS: PlatformConfig[] = [
     urlField: 'url_line_shopping',
     priceField: 'price_line_shopping',
     logo: '💚'
+  },
+  {
+    id: 'grab',
+    name: 'Grab',
+    code: 'GRAB',
+    color: 'text-[#00B14F]',
+    bgColor: 'bg-[#00B14F]',
+    sellField: 'sell_on_grab',
+    urlField: 'url_grab',
+    priceField: 'price_grab',
+    logo: '🚕'
   }
 ]
 
@@ -202,7 +213,7 @@ export default function PlatformManagementPage() {
       const sheet = workbook.Sheets[sheetName]
       const rows: any[] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' })
 
-      if (rows.length < 5) {
+      if (rows.length < 2) {
         alert('ไฟล์มีข้อมูลน้อยเกินไป')
         return
       }
@@ -211,7 +222,7 @@ export default function PlatformManagementPage() {
       const headerRow = rows.find((row, i) => {
         if (i > 5) return false
         const joined = row.join(' ').toLowerCase()
-        return joined.includes('product id') || joined.includes('seller') || joined.includes('sku') || joined.includes('ชื่อสินค้า')
+        return joined.includes('product id') || joined.includes('seller') || joined.includes('sku') || joined.includes('ชื่อสินค้า') || joined.includes('itemname') || joined.includes('itemcode') || joined.includes('barcode')
       })
 
       if (!headerRow) {
@@ -229,16 +240,20 @@ export default function PlatformManagementPage() {
 
       // Parse data rows (skip header + any description rows)
       const dataStartIndex = headerIndex + 1
+      const isGrabCSV = headers.some((h: string) => h === 'itemname' || h === 'itemcode')
       // Skip rows that look like descriptions (long text in cells)
+      // But NOT for Grab CSV — Grab data starts right after header with product names
       let actualStart = dataStartIndex
-      for (let i = dataStartIndex; i < Math.min(dataStartIndex + 3, rows.length); i++) {
-        const row = rows[i]
-        const firstCell = String(row[0] || '').trim()
-        // If first cell is not a number/product ID, it's likely a description row
-        if (firstCell.length > 30 || firstCell === '' || /^[ก-๙a-z]/i.test(firstCell)) {
-          actualStart = i + 1
-        } else {
-          break
+      if (!isGrabCSV) {
+        for (let i = dataStartIndex; i < Math.min(dataStartIndex + 3, rows.length); i++) {
+          const row = rows[i]
+          const firstCell = String(row[0] || '').trim()
+          // If first cell is not a number/product ID, it's likely a description row
+          if (firstCell.length > 30 || firstCell === '' || /^[ก-๙a-z]/i.test(firstCell)) {
+            actualStart = i + 1
+          } else {
+            break
+          }
         }
       }
 
@@ -295,6 +310,23 @@ export default function PlatformManagementPage() {
         if (idx >= 0) return idx
       }
       return 0
+    }
+
+    // Detect if this is a Grab CSV (has ITEMNAME/ITEMCODE/BARCODE columns)
+    const isGrabFormat = headers.some(h => h === 'itemname' || h === 'itemcode')
+
+    if (isGrabFormat) {
+      return {
+        productId: find(['barcode']),
+        productName: find(['itemname', 'item name', 'item_name']),
+        status: find(['status', 'สถานะ']),
+        shopSku: find(['barcode']),
+        sellerSku: find(['itemcode', 'item code', 'item_code']),
+        quantity: find(['จำนวน', 'quantity', 'stock', 'qty', 'availableqty']),
+        price: find(['ราคา', 'price', 'sellingprice', 'selling price']),
+        specialPrice: find(['specialprice', 'special price', 'discountedprice', 'ราคาพิเศษ']),
+        variations: find(['variations', 'variation', 'category'])
+      }
     }
 
     return {
