@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
-import { Search, ExternalLink, Package, ShoppingCart, Edit, X, Save, Filter, ArrowLeft, Upload, FileSpreadsheet, CheckCircle, AlertCircle } from 'lucide-react'
+import { Search, ExternalLink, Package, ShoppingCart, Edit, X, Save, Filter, ArrowLeft, Upload, FileSpreadsheet, CheckCircle, AlertCircle, PlusCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { Product } from '../types/database'
 import * as XLSX from 'xlsx'
@@ -340,7 +340,7 @@ export default function PlatformManagementPage() {
     for (let i = 0; i < matchedItems.length; i++) {
       const item = matchedItems[i]
       const product = item.matched_product!
-      setImportProgress(`${i + 1}/${matchedItems.length} ${product.name_th || item.product_name}`)
+      setImportProgress(`อัพเดท ${i + 1}/${matchedItems.length} ${product.name_th || item.product_name}`)
 
       try {
         const updates: any = {
@@ -370,6 +370,83 @@ export default function PlatformManagementPage() {
     alert(`อัพเดทสำเร็จ ${updated} รายการ${failed > 0 ? `, ล้มเหลว ${failed} รายการ` : ''}`)
     setShowImportModal(false)
     setImportedItems([])
+  }
+
+  const handleCreateUnmatched = async () => {
+    const unmatchedItems = importedItems.filter(item => !item.matched_product && item.seller_sku)
+    if (unmatchedItems.length === 0) {
+      alert('ไม่มีรายการที่ต้องสร้างใหม่ (ต้องมี Seller SKU)')
+      return
+    }
+
+    if (!confirm(`จะสร้างสินค้าใหม่ ${unmatchedItems.length} รายการ\nSellerSKU = SKU + Barcode\nราคารวม VAT แล้ว\nเป็นสินค้านับสต็อก\n\nยืนยัน?`)) {
+      return
+    }
+
+    setImporting(true)
+    let created = 0
+    let failed = 0
+
+    for (let i = 0; i < unmatchedItems.length; i++) {
+      const item = unmatchedItems[i]
+      setImportProgress(`สร้างสินค้า ${i + 1}/${unmatchedItems.length} ${item.product_name}`)
+
+      try {
+        const sellingPrice = item.special_price || item.price || 0
+
+        const newProduct: any = {
+          barcode: item.seller_sku,
+          sku: item.seller_sku,
+          name_th: item.product_name,
+          name_en: '',
+          product_type: 'finished_goods',
+          stock_tracking_type: 'tracked',
+          is_active: true,
+          base_price: sellingPrice,
+          selling_price_incl_vat: sellingPrice,
+          selling_price_excl_vat: Math.round((sellingPrice / 1.07) * 100) / 100,
+          cost_price: 0,
+          unit: 'ชิ้น',
+          stock_quantity: item.quantity || 0,
+          min_stock_level: 0,
+          sell_on_pos: true,
+          sell_on_grab: false,
+          sell_on_lineman: false,
+          sell_on_lazada: false,
+          sell_on_shopee: false,
+          sell_on_line_shopping: false,
+          sell_on_tiktok: false,
+          sell_on_consignment: false,
+          sell_on_website: false,
+          [currentPlatform.sellField]: true,
+          [currentPlatform.priceField]: sellingPrice,
+        }
+
+        const { data, error } = await supabase
+          .from('products')
+          .insert(newProduct)
+          .select()
+          .single()
+
+        if (error) throw error
+
+        if (data) {
+          setProducts(prev => [...prev, data as Product])
+          // Update the imported item to reflect it's now matched
+          setImportedItems(prev => prev.map(it =>
+            it === item ? { ...it, matched_product: data as Product, match_type: 'barcode' as const } : it
+          ))
+        }
+        created++
+      } catch (err) {
+        console.error(`Error creating ${item.product_name}:`, err)
+        failed++
+      }
+    }
+
+    setImporting(false)
+    setImportProgress('')
+    alert(`สร้างสินค้าใหม่สำเร็จ ${created} รายการ${failed > 0 ? `, ล้มเหลว ${failed} รายการ` : ''}`)
   }
 
   return (
@@ -750,7 +827,10 @@ export default function PlatformManagementPage() {
                             <div className="text-xs text-gray-400">{item.matched_product.barcode || item.matched_product.sku || '-'}</div>
                           </div>
                         ) : (
-                          <span className="text-xs text-gray-400">-</span>
+                          <span className="inline-flex items-center gap-1 text-xs text-orange-500">
+                            <PlusCircle className="h-3 w-3" />
+                            จะสร้างใหม่
+                          </span>
                         )}
                       </td>
                     </tr>
@@ -760,11 +840,14 @@ export default function PlatformManagementPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="flex items-center justify-between p-5 border-t bg-gray-50 rounded-b-2xl">
-              <div className="text-sm text-gray-500">
-                จะอัพเดท <span className="font-bold text-green-600">{importedItems.filter(i => i.matched_product).length}</span> รายการที่จับคู่ได้ → ตั้งเป็น "ลงขายใน {currentPlatform.name}" + อัพเดทราคา
+            <div className="flex flex-col gap-3 p-5 border-t bg-gray-50 rounded-b-2xl">
+              <div className="flex items-center justify-between text-sm text-gray-500">
+                <div>
+                  จับคู่ได้ <span className="font-bold text-green-600">{importedItems.filter(i => i.matched_product).length}</span> → อัพเดทสถานะ+ราคา · 
+                  ไม่พบ <span className="font-bold text-orange-500">{importedItems.filter(i => !i.matched_product && i.seller_sku).length}</span> → สร้างสินค้าใหม่
+                </div>
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => { setShowImportModal(false); setImportedItems([]) }}
                   className="px-4 py-2 rounded-lg border text-gray-600 hover:bg-gray-100"
@@ -772,12 +855,22 @@ export default function PlatformManagementPage() {
                 >
                   ยกเลิก
                 </button>
+                {importedItems.filter(i => !i.matched_product && i.seller_sku).length > 0 && (
+                  <button
+                    onClick={handleCreateUnmatched}
+                    disabled={importing}
+                    className="px-5 py-2 rounded-lg text-white font-medium bg-orange-500 hover:bg-orange-600 disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                    {importing ? 'กำลังสร้าง...' : `สร้างใหม่ ${importedItems.filter(i => !i.matched_product && i.seller_sku).length} รายการ`}
+                  </button>
+                )}
                 <button
                   onClick={handleImportConfirm}
                   disabled={importing || importedItems.filter(i => i.matched_product).length === 0}
                   className={`px-6 py-2 rounded-lg text-white font-medium ${currentPlatform.bgColor} hover:opacity-90 disabled:opacity-50`}
                 >
-                  {importing ? 'กำลังนำเข้า...' : `นำเข้า ${importedItems.filter(i => i.matched_product).length} รายการ`}
+                  {importing ? 'กำลังนำเข้า...' : `อัพเดท ${importedItems.filter(i => i.matched_product).length} รายการ`}
                 </button>
               </div>
             </div>
