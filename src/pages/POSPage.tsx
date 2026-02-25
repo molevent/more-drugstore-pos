@@ -1674,20 +1674,30 @@ export default function POSPage() {
           <Printer className="h-5 w-5 text-black flex-shrink-0" />
           <span className="font-medium text-gray-900 text-sm whitespace-nowrap">พิมพ์ฉลากยา</span>
         </Link>
-        <button
-          onClick={() => setShowCashierClosing(true)}
-          className="flex items-center gap-2 px-3 py-2 bg-[#F5F0E6] rounded-full border border-[#B8C9B8] hover:bg-[#E8EBF0] hover:shadow-md transition-all"
-        >
-          <Wallet className="h-5 w-5 text-black flex-shrink-0" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">นับเงิน</span>
-        </button>
-        <Link 
-          to="/payment-summary"
-          className="flex items-center gap-2 px-3 py-2 bg-[#E8DFD0] rounded-full border border-[#B8C9B8] hover:bg-[#D5C4B0] hover:shadow-md transition-all"
-        >
-          <CreditCard className="h-5 w-5 text-black flex-shrink-0" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">สรุปยอดชำระเงิน</span>
-        </Link>
+        <div className="relative group">
+          <button
+            className="flex items-center gap-2 px-3 py-2 bg-[#F5F0E6] rounded-full border border-[#B8C9B8] hover:bg-[#E8EBF0] hover:shadow-md transition-all"
+          >
+            <Wallet className="h-5 w-5 text-black flex-shrink-0" />
+            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">นับเงิน / สรุปยอด</span>
+          </button>
+          <div className="absolute left-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 hidden group-hover:block min-w-[180px]">
+            <button
+              onClick={() => setShowCashierClosing(true)}
+              className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50 text-left"
+            >
+              <Wallet className="h-4 w-4 text-gray-600" />
+              <span className="text-sm text-gray-800">นับเงิน</span>
+            </button>
+            <Link
+              to="/payment-summary"
+              className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50"
+            >
+              <CreditCard className="h-4 w-4 text-gray-600" />
+              <span className="text-sm text-gray-800">สรุปยอดชำระเงิน</span>
+            </Link>
+          </div>
+        </div>
         <button
           onClick={() => {
             fetchAlertLogs()
