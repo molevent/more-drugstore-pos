@@ -149,12 +149,14 @@ export default function PlatformManagementPage() {
 
   const handleSaveEdit = async () => {
     if (!editingProduct) return
+    console.log('[PlatformEdit] Saving:', editingProduct)
     setSaving(true)
     try {
       const updates: any = {
-        [currentPlatform.urlField]: editingProduct.url,
-        [currentPlatform.priceField]: editingProduct.price,
+        [currentPlatform.urlField]: editingProduct.url || null,
+        [currentPlatform.priceField]: editingProduct.price || null,
       }
+      console.log('[PlatformEdit] Updates:', updates)
 
       const { error } = await supabase
         .from('products')
@@ -167,8 +169,9 @@ export default function PlatformManagementPage() {
         p.id === editingProduct.id ? { ...p, ...updates } : p
       ))
       setEditingProduct(null)
+      console.log('[PlatformEdit] Save success')
     } catch (err) {
-      console.error('Error saving:', err)
+      console.error('[PlatformEdit] Error saving:', err)
       alert('บันทึกไม่สำเร็จ')
     } finally {
       setSaving(false)
@@ -698,7 +701,7 @@ export default function PlatformManagementPage() {
                       <td className="py-3 px-4 text-center">
                         {isEditing ? (
                           <input
-                            type="url"
+                            type="text"
                             className="w-full px-2 py-1 border rounded text-xs"
                             value={editingProduct.url}
                             onChange={e => setEditingProduct({ ...editingProduct, url: e.target.value })}
@@ -734,16 +737,18 @@ export default function PlatformManagementPage() {
                         {isEditing ? (
                           <div className="flex gap-1 justify-center">
                             <button
-                              onClick={handleSaveEdit}
+                              type="button"
+                              onClick={() => { console.log('[PlatformEdit] Save clicked'); handleSaveEdit() }}
                               disabled={saving}
-                              className="p-1 text-green-600 hover:bg-green-50 rounded"
+                              className="p-1.5 text-green-600 hover:bg-green-50 rounded bg-green-50 border border-green-200"
                               title="บันทึก"
                             >
                               <Save className="h-4 w-4" />
                             </button>
                             <button
+                              type="button"
                               onClick={() => setEditingProduct(null)}
-                              className="p-1 text-gray-400 hover:bg-gray-100 rounded"
+                              className="p-1.5 text-gray-400 hover:bg-gray-100 rounded border border-gray-200"
                               title="ยกเลิก"
                             >
                               <X className="h-4 w-4" />
