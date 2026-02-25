@@ -1825,14 +1825,21 @@ export default function POSPage() {
               <div className="flex flex-wrap gap-2">
                 {visibleChannels.map((channel: SalesChannelConfig) => {
                   const isSelected = salesChannel === channel.id
+                  const channelColors: Record<string, { bg: string, border: string, hover: string }> = {
+                    'grab': { bg: 'bg-[#00B14F]', border: 'border-[#00B14F]', hover: 'hover:border-[#00B14F]/50 hover:bg-[#00B14F]/10' },
+                    'shopee': { bg: 'bg-[#EE4D2D]', border: 'border-[#EE4D2D]', hover: 'hover:border-[#EE4D2D]/50 hover:bg-[#EE4D2D]/10' },
+                    'lineman': { bg: 'bg-[#2DBE60]', border: 'border-[#2DBE60]', hover: 'hover:border-[#2DBE60]/50 hover:bg-[#2DBE60]/10' },
+                    'lazada': { bg: 'bg-[#0F146D]', border: 'border-[#0F146D]', hover: 'hover:border-[#0F146D]/50 hover:bg-[#0F146D]/10' },
+                  }
+                  const cc = channelColors[channel.id]
                   return (
                     <button
                       key={channel.id}
                       onClick={() => setSalesChannel(channel.id)}
                       className={`px-4 py-2 rounded-lg border-2 transition-all text-sm whitespace-nowrap ${
                         isSelected
-                          ? 'border-[#A67B5B] bg-[#A67B5B] text-white font-medium shadow-md'
-                          : 'border-[#D4C4B0]/50 bg-white text-gray-600 hover:border-[#A67B5B]/50 hover:bg-[#A67B5B]/10'
+                          ? cc ? `${cc.border} ${cc.bg} text-white font-medium shadow-md` : 'border-[#A67B5B] bg-[#A67B5B] text-white font-medium shadow-md'
+                          : cc ? `border-gray-200 bg-white text-gray-600 ${cc.hover}` : 'border-[#D4C4B0]/50 bg-white text-gray-600 hover:border-[#A67B5B]/50 hover:bg-[#A67B5B]/10'
                       }`}
                     >
                       {channel.name}
