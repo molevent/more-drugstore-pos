@@ -208,7 +208,25 @@ export default function PlatformManagementPage() {
 
     try {
       const data = await file.arrayBuffer()
-      const workbook = XLSX.read(data, { type: 'array' })
+      const isCSV = file.name.toLowerCase().endsWith('.csv')
+
+      let workbook: XLSX.WorkBook
+      if (isCSV) {
+        // CSV files from Grab may use TIS-620 / Windows-874 encoding
+        // Try UTF-8 first, if Thai chars are garbled try TIS-620
+        let csvText = new TextDecoder('utf-8').decode(data)
+        // Detect garbled Thai: if headers contain 'à¸' it's TIS-620 decoded as UTF-8
+        if (csvText.includes('\u00e0\u00b8') || csvText.includes('Ã ')) {
+          csvText = new TextDecoder('tis-620').decode(data)
+          console.log('[Import] CSV detected as TIS-620 encoding')
+        } else {
+          console.log('[Import] CSV detected as UTF-8 encoding')
+        }
+        workbook = XLSX.read(csvText, { type: 'string' })
+      } else {
+        workbook = XLSX.read(data, { type: 'array' })
+      }
+
       const sheetName = workbook.SheetNames[0]
       const sheet = workbook.Sheets[sheetName]
       const rows: any[] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' })
