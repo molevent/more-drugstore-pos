@@ -645,7 +645,7 @@ export default function ContactsPage() {
           </button>
           <button
             onClick={() => { setShowImportModal(true); handleFetchFaContacts() }}
-            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-blue-500 bg-white text-blue-600 text-sm whitespace-nowrap hover:bg-blue-50 transition-all shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#2B9CD8] bg-white text-[#2B9CD8] text-sm whitespace-nowrap hover:bg-[#2B9CD8]/10 transition-all shadow-sm"
           >
             <Download className="h-4 w-4" />
             ดึงจาก FA
@@ -749,7 +749,7 @@ export default function ContactsPage() {
             disabled={selectedContacts.size === 0 || isBatchSyncing}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               selectedContacts.size > 0 && !isBatchSyncing
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-[#2B9CD8] text-white hover:bg-[#2488C0]'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
           >
@@ -771,7 +771,7 @@ export default function ContactsPage() {
           return (
             <Card 
               key={contact.id} 
-              className={`p-4 hover:shadow-md transition-shadow cursor-pointer ${selectedContacts.has(contact.id) ? 'ring-2 ring-blue-500 bg-blue-50/30' : ''}`}
+              className={`p-4 hover:shadow-md transition-shadow cursor-pointer ${selectedContacts.has(contact.id) ? 'ring-2 ring-[#2B9CD8] bg-[#2B9CD8]/5' : ''}`}
               onClick={() => openEditModal(contact)}
             >
               <div className="flex items-start justify-between mb-3">
@@ -862,7 +862,7 @@ export default function ContactsPage() {
                       handleSyncToFlowAccount(contact)
                     }}
                     disabled={syncingContact === contact.id}
-                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                    className="p-1.5 text-gray-400 hover:text-[#2B9CD8] hover:bg-[#2B9CD8]/10 rounded transition-colors"
                     title="Sync to FlowAccount"
                   >
                     <RefreshCw className={`h-4 w-4 ${syncingContact === contact.id ? 'animate-spin' : ''}`} />
@@ -1459,7 +1459,7 @@ export default function ContactsPage() {
                           key={fa.id}
                           onClick={() => toggleSelectFaContact(fa.id)}
                           className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                            selectedFaContacts.has(fa.id) ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
+                            selectedFaContacts.has(fa.id) ? 'bg-[#2B9CD8]/10 border border-[#2B9CD8]/30' : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
                           }`}
                         >
                           {selectedFaContacts.has(fa.id) ? (
@@ -1506,7 +1506,7 @@ export default function ContactsPage() {
                 <button
                   onClick={handleImportFaContacts}
                   disabled={selectedFaContacts.size === 0 || importingContacts}
-                  className="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  className="px-4 py-2 text-sm text-white bg-[#2B9CD8] rounded-lg hover:bg-[#2488C0] disabled:opacity-50"
                 >
                   นำเข้า {selectedFaContacts.size > 0 ? `(${selectedFaContacts.size})` : ''}
                 </button>

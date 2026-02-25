@@ -245,13 +245,13 @@ export default function FlowAccountSettingsPage() {
 
         {/* Sandbox Info */}
         {isSandbox && (
-          <div className="bg-blue-50 rounded-lg p-6">
-            <h3 className="font-semibold text-blue-900 mb-2">ข้อมูล Sandbox</h3>
-            <div className="text-sm text-blue-800 space-y-1">
+          <div className="bg-[#2B9CD8]/10 rounded-lg p-6">
+            <h3 className="font-semibold text-[#2B9CD8] mb-2">ข้อมูล Sandbox</h3>
+            <div className="text-sm text-gray-700 space-y-1">
               <p><strong>Client ID:</strong> {FLOWACCOUNT_SANDBOX_CONFIG.clientId}</p>
               <p><strong>Scope:</strong> {FLOWACCOUNT_SANDBOX_CONFIG.scope}</p>
               <p><strong>Grant Type:</strong> {FLOWACCOUNT_SANDBOX_CONFIG.grantType}</p>
-              <p className="mt-2 text-blue-600">
+              <p className="mt-2 text-[#2B9CD8]">
                 Sandbox mode ใช้สำหรับทดสอบการเชื่อมต่อโดยไม่กระทบข้อมูลจริง
               </p>
             </div>

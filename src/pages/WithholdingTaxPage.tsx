@@ -505,7 +505,7 @@ export default function WithholdingTaxPage() {
         <button
           onClick={handleOpenSyncModal}
           disabled={syncingToFa}
-          className="flex items-center gap-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+          className="flex items-center gap-1 px-4 py-2.5 bg-[#2B9CD8] hover:bg-[#2488C0] disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
           title="Sync ไป FlowAccount"
         >
           <Upload className="h-4 w-4" />
@@ -823,7 +823,7 @@ export default function WithholdingTaxPage() {
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <Upload className="h-5 w-5 text-blue-600" />
+                <Upload className="h-5 w-5 text-[#2B9CD8]" />
                 Sync หัก ณ ที่จ่ายไป FlowAccount
               </h2>
               <button onClick={() => !syncingToFa && setShowSyncModal(false)} className="p-1 hover:bg-gray-100 rounded-full">
@@ -832,7 +832,7 @@ export default function WithholdingTaxPage() {
             </div>
 
             {/* Info */}
-            <div className="px-4 py-3 bg-blue-50 border-b text-sm text-blue-700 flex-shrink-0">
+            <div className="px-4 py-3 bg-[#2B9CD8]/10 border-b text-sm text-[#2B9CD8] flex-shrink-0">
               เลือกรายการหัก ณ ที่จ่ายที่ต้องการ sync ไปยัง FlowAccount เป็นเอกสาร ภ.ง.ด.53
             </div>
 
@@ -861,7 +861,7 @@ export default function WithholdingTaxPage() {
                           key={tax.id}
                           onClick={() => toggleSyncItem(tax.id)}
                           className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                            selectedSyncIds.has(tax.id) ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
+                            selectedSyncIds.has(tax.id) ? 'bg-[#2B9CD8]/10 border border-[#2B9CD8]/30' : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
                           }`}
                         >
                           {selectedSyncIds.has(tax.id) ? (
@@ -895,7 +895,7 @@ export default function WithholdingTaxPage() {
             {/* Footer */}
             <div className="p-4 border-t flex items-center justify-between flex-shrink-0">
               {syncingToFa ? (
-                <div className="flex items-center gap-2 text-sm text-blue-600">
+                <div className="flex items-center gap-2 text-sm text-[#2B9CD8]">
                   <RefreshCw className="h-4 w-4 animate-spin" />
                   {syncProgress || 'กำลัง sync...'}
                 </div>
@@ -915,7 +915,7 @@ export default function WithholdingTaxPage() {
                 <button
                   onClick={handleSyncToFa}
                   disabled={selectedSyncIds.size === 0 || syncingToFa}
-                  className="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  className="px-4 py-2 text-sm text-white bg-[#2B9CD8] rounded-lg hover:bg-[#2488C0] disabled:opacity-50"
                 >
                   Sync ภ.ง.ด. {selectedSyncIds.size > 0 ? `(${selectedSyncIds.size})` : ''}
                 </button>

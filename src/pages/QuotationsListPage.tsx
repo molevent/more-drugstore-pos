@@ -774,7 +774,7 @@ export default function QuotationsListPage() {
           <button
             onClick={handleImportFromFlowAccount}
             disabled={isImporting}
-            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-blue-500 bg-white text-blue-600 text-sm whitespace-nowrap hover:bg-blue-50 transition-all shadow-sm disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#2B9CD8] bg-white text-[#2B9CD8] text-sm whitespace-nowrap hover:bg-[#2B9CD8]/10 transition-all shadow-sm disabled:opacity-50"
             title="นำเข้าจาก FlowAccount"
           >
             {isImporting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
@@ -876,7 +876,7 @@ export default function QuotationsListPage() {
             disabled={selectedIds.size === 0 || isBatchSyncing}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               selectedIds.size > 0 && !isBatchSyncing
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-[#2B9CD8] text-white hover:bg-[#2488C0]'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
           >
@@ -971,7 +971,7 @@ export default function QuotationsListPage() {
                 {filteredQuotations.map((quotation) => {
                   const status = statusConfig[quotation.status]
                   return (
-                    <tr key={quotation.id} className={`hover:bg-gray-50 ${selectedIds.has(quotation.id) ? 'bg-blue-50/50' : ''}`}>
+                    <tr key={quotation.id} className={`hover:bg-gray-50 ${selectedIds.has(quotation.id) ? 'bg-[#2B9CD8]/5' : ''}`}>
                       <td className="px-2 py-3 text-center">
                         <button onClick={() => toggleSelectQuotation(quotation.id)}>
                           {selectedIds.has(quotation.id) ? (
@@ -1031,7 +1031,7 @@ export default function QuotationsListPage() {
                         ) : (
                           <button
                             onClick={() => handleSyncToFlowAccount(quotation)}
-                            className="inline-flex items-center gap-1 text-xs text-orange-500 hover:text-blue-600 transition-colors"
+                            className="inline-flex items-center gap-1 text-xs text-orange-500 hover:text-[#2B9CD8] transition-colors"
                             title="Sync ไป FlowAccount"
                           >
                             <Upload className="h-3.5 w-3.5" />

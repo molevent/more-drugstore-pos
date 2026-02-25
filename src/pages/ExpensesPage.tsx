@@ -1743,7 +1743,7 @@ export default function ExpensesPage() {
             <button
               onClick={handleOpenSyncFaModal}
               disabled={syncingToFa}
-              className="flex items-center gap-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center gap-1 px-3 py-2 bg-[#2B9CD8] hover:bg-[#2488C0] disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
               title="Sync ค่าใช้จ่ายไป FlowAccount"
             >
               <Upload className="h-4 w-4" />
@@ -3561,7 +3561,7 @@ export default function ExpensesPage() {
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <Upload className="h-5 w-5 text-blue-600" />
+                <Upload className="h-5 w-5 text-[#2B9CD8]" />
                 Sync ไป FlowAccount
               </h2>
               <button onClick={() => !syncingToFa && setShowSyncFaModal(false)} className="p-1 hover:bg-gray-100 rounded-full">
@@ -3707,7 +3707,7 @@ export default function ExpensesPage() {
                   onClick={handleSyncToFa}
                   disabled={selectedSyncExpenses.size === 0 || syncingToFa || (syncMode === 'expense' && !selectedFaCategory)}
                   className={`px-4 py-2 text-sm text-white rounded-lg disabled:opacity-50 ${
-                    syncMode === 'purchase' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
+                    syncMode === 'purchase' ? 'bg-green-600 hover:bg-green-700' : 'bg-[#2B9CD8] hover:bg-[#2488C0]'
                   }`}
                 >
                   {syncMode === 'purchase' ? '📦 Sync ใบรับสินค้า' : '📋 Sync ค่าใช้จ่าย'} {selectedSyncExpenses.size > 0 ? `(${selectedSyncExpenses.size})` : ''}

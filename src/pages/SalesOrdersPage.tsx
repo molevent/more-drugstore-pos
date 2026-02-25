@@ -1118,7 +1118,7 @@ export default function SalesOrdersPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowImportModal(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 bg-[#2B9CD8] text-white text-sm rounded-lg hover:bg-[#2488C0] transition-colors"
             title="ดึงรายการขายเงินสดจาก FlowAccount"
           >
             <Download className="h-4 w-4" />
@@ -1336,7 +1336,7 @@ export default function SalesOrdersPage() {
                       ) : (
                         <button
                           onClick={() => handleSyncToFlowAccount(order)}
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-full border border-blue-200 hover:bg-blue-100 transition-colors"
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-[#2B9CD8]/10 text-[#2B9CD8] text-xs rounded-full border border-[#2B9CD8]/30 hover:bg-[#2B9CD8]/20 transition-colors"
                         >
                           <Upload className="h-3 w-3" /> ส่ง FA
                         </button>
@@ -1529,7 +1529,7 @@ export default function SalesOrdersPage() {
           <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
             <div className="p-4 border-b flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <Download className="h-5 w-5 text-blue-600" />
+                <Download className="h-5 w-5 text-[#2B9CD8]" />
                 ดึงขายเงินสดจาก FlowAccount
               </h2>
               <button onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-gray-600">
@@ -1560,7 +1560,7 @@ export default function SalesOrdersPage() {
                 <button
                   onClick={handleFetchFaInvoices}
                   disabled={loadingFa}
-                  className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-1.5 bg-[#2B9CD8] text-white text-sm rounded-lg hover:bg-[#2488C0] disabled:opacity-50 transition-colors"
                 >
                   {loadingFa ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                   {loadingFa ? 'กำลังดึง...' : 'ค้นหา'}
@@ -1586,7 +1586,7 @@ export default function SalesOrdersPage() {
                       />
                       เลือกทั้งหมด ({faInvoices.length} รายการ)
                     </label>
-                    <span className="text-sm text-blue-600 font-medium">
+                    <span className="text-sm text-[#2B9CD8] font-medium">
                       เลือก {selectedFaIds.size} รายการ
                     </span>
                   </div>
@@ -1605,7 +1605,7 @@ export default function SalesOrdersPage() {
                           key={faId}
                           onClick={() => toggleFaSelect(faId)}
                           className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                            isSelected ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-200 hover:bg-gray-50'
+                            isSelected ? 'bg-[#2B9CD8]/10 border-[#2B9CD8]/40' : 'bg-white border-gray-200 hover:bg-gray-50'
                           }`}
                         >
                           <input

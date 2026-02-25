@@ -1266,14 +1266,14 @@ export default function PurchaseOrderPage() {
                 >
                   ทดสอบ PO API
                 </Button>
-                <Button
-                  variant="secondary"
+                <button
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#2B9CD8] text-white text-sm rounded-lg hover:bg-[#2488C0] disabled:opacity-50 transition-colors"
                   onClick={() => selectedPO && syncPOToFlowAccount(selectedPO)}
                   disabled={isSyncing || poItems.length === 0}
                 >
-                  <BookOpen className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                  <BookOpen className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
                   {isSyncing ? 'กำลัง Sync...' : 'ส่งใบรับสินค้า FA'}
-                </Button>
+                </button>
                 <Button
                   variant="secondary"
                   onClick={() => selectedPO && syncPOToZortOut(selectedPO)}

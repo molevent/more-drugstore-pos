@@ -476,8 +476,8 @@ export default function SettingsPage() {
 
         <Card title="การเชื่อมต่อ FlowAccount">
           <div className="space-y-4">
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-700">
+            <div className="p-3 bg-[#2B9CD8]/10 border border-[#2B9CD8]/30 rounded-lg">
+              <p className="text-sm text-[#2B9CD8]">
                 เชื่อมต่อกับ FlowAccount เพื่อส่งข้อมูลบัญชีและใบกำกับภาษีโดยอัตโนมัติ
               </p>
             </div>
