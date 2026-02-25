@@ -900,8 +900,7 @@ export default function ProductsPage() {
       setSaveMessage({ type: 'success', text: editingProduct ? 'บันทึกการแก้ไขสินค้าสำเร็จ!' : 'สร้างสินค้าใหม่สำเร็จ!' })
       setShowModal(false)
       resetForm()
-      // Skip fetchProducts to make save faster - user can refresh manually if needed
-      // fetchProducts()
+      fetchProducts()
       
       console.log(`[SAVE] Total save time: ${(performance.now() - startTime).toFixed(0)}ms`)
     } catch (error: any) {
