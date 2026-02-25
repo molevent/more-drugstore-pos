@@ -287,7 +287,7 @@ export const convertProductToFlowAccount = (product: {
 
 /**
  * Sync products to FlowAccount with duplicate detection by code/barcode/name
- * Returns { created, updated, skipped, failed, results }
+ * Returns { created, updated, skipped, failed, results, duplicateBarcodes }
  * onProgress callback for real-time UI updates
  */
 export const syncProductsToFlowAccount = async (
@@ -311,9 +311,32 @@ export const syncProductsToFlowAccount = async (
   updated: number;
   skipped: number;
   failed: number;
+  totalProducts: number;
+  totalSynced: number;
+  duplicateBarcodes: Array<{ barcode: string; products: string[] }>;
   results: Array<{ localId: string; faId?: number; action: string; error?: string }>;
 }> => {
   const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+  // 0. Detect duplicate barcodes in local products
+  const barcodeMap = new Map<string, string[]>();
+  for (const p of products) {
+    if (p.barcode && p.barcode.trim()) {
+      const bc = p.barcode.trim().toLowerCase();
+      const names = barcodeMap.get(bc) || [];
+      names.push(p.name_th || p.sku || p.id);
+      barcodeMap.set(bc, names);
+    }
+  }
+  const duplicateBarcodes: Array<{ barcode: string; products: string[] }> = [];
+  for (const [barcode, names] of barcodeMap.entries()) {
+    if (names.length > 1) {
+      duplicateBarcodes.push({ barcode, products: names });
+    }
+  }
+  if (duplicateBarcodes.length > 0) {
+    console.warn('Duplicate barcodes detected:', duplicateBarcodes);
+  }
 
   // 1. Fetch all existing FA products for matching
   onProgress?.(0, products.length, 'กำลังดึงข้อมูลสินค้าจาก FlowAccount...');
@@ -395,7 +418,8 @@ export const syncProductsToFlowAccount = async (
     if (i < products.length - 1) await delay(50);
   }
 
-  return { created, updated, skipped, failed, results };
+  const totalSynced = created + updated;
+  return { created, updated, skipped, failed, totalProducts: products.length, totalSynced, duplicateBarcodes, results };
 };
 
 /**

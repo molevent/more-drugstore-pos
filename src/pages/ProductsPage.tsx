@@ -673,28 +673,56 @@ export default function ProductsPage() {
   const handleSyncProductsToFA = async () => {
     if (isSyncingFA) return
     const activeProducts = products.filter(p => p.is_active)
-    if (activeProducts.length === 0) {
+    const totalAll = products.length
+    const totalActive = activeProducts.length
+    if (totalActive === 0) {
       alert('ไม่มีสินค้าที่ active สำหรับ sync')
       return
     }
-    if (!confirm(`ต้องการ sync สินค้า ${activeProducts.length} รายการไปยัง FlowAccount?\n\n- สินค้าที่มี SKU/Barcode/ชื่อ ซ้ำจะถูกอัพเดท\n- สินค้าใหม่จะถูกสร้างเพิ่ม`)) return
+    if (!confirm(
+      `สินค้าทั้งหมด: ${totalAll} รายการ\n` +
+      `สินค้า Active: ${totalActive} รายการ\n\n` +
+      `ต้องการ sync สินค้า ${totalActive} รายการไปยัง FlowAccount?\n\n` +
+      `- สินค้าที่มี SKU/Barcode/ชื่อ ซ้ำจะถูกอัพเดท\n` +
+      `- สินค้าใหม่จะถูกสร้างเพิ่ม (type: นับสต็อก)`
+    )) return
     
     setIsSyncingFA(true)
-    setSyncProgress(`กำลัง sync ${activeProducts.length} รายการ...`)
+    setSyncProgress(`กำลัง sync ${totalActive} รายการ...`)
     try {
       const result = await syncProductsToFlowAccount(activeProducts, (current, total, action) => {
         setSyncProgress(`${current}/${total} ${action}`)
       })
       setSyncProgress('')
-      alert(
-        `Sync สินค้าไป FlowAccount เสร็จสิ้น!\n\n` +
-        `✓ สร้างใหม่: ${result.created}\n` +
-        `↻ อัพเดท: ${result.updated}\n` +
-        `⊘ ข้าม: ${result.skipped}\n` +
-        `✕ ล้มเหลว: ${result.failed}`
-      )
+
+      // Build summary message
+      let msg = `Sync สินค้าไป FlowAccount เสร็จสิ้น!\n\n`
+      msg += `📦 สินค้าทั้งหมด: ${totalAll} รายการ\n`
+      msg += `📤 Sync ทั้งหมด: ${result.totalProducts} รายการ\n`
+      msg += `✅ สำเร็จ: ${result.totalSynced} รายการ\n`
+      msg += `   - สร้างใหม่: ${result.created}\n`
+      msg += `   - อัพเดท: ${result.updated}\n`
+      if (result.skipped > 0) msg += `   - ข้าม: ${result.skipped}\n`
+      if (result.failed > 0) msg += `❌ ล้มเหลว: ${result.failed}\n`
+
+      // Duplicate barcode warning
+      if (result.duplicateBarcodes.length > 0) {
+        msg += `\n⚠️ พบ Barcode ซ้ำ ${result.duplicateBarcodes.length} รายการ:\n`
+        for (const dup of result.duplicateBarcodes.slice(0, 10)) {
+          msg += `  • ${dup.barcode}: ${dup.products.join(', ')}\n`
+        }
+        if (result.duplicateBarcodes.length > 10) {
+          msg += `  ... และอีก ${result.duplicateBarcodes.length - 10} รายการ (ดู console log)\n`
+        }
+      }
+
+      alert(msg)
+
       if (result.failed > 0) {
         console.log('FA sync failed items:', result.results.filter(r => r.action === 'failed'))
+      }
+      if (result.duplicateBarcodes.length > 0) {
+        console.log('Duplicate barcodes:', result.duplicateBarcodes)
       }
     } catch (err: any) {
       console.error('FA product sync error:', err)
