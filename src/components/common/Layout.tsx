@@ -14,7 +14,8 @@ import {
   Globe,
   Receipt,
   ScanLine,
-  Store
+  Store,
+  ArrowLeftRight
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -81,6 +82,7 @@ export default function Layout({ children }: LayoutProps) {
       items: [
         { name: t('nav.products'), href: '/products', icon: Boxes, id: 'products' as const },
         { name: 'จัดการแพลตฟอร์ม', href: '/platform-management', icon: Store, id: 'products' as const },
+        { name: 'ตัดสต็อกข้ามช่องทาง', href: '/cross-channel-stock', icon: ArrowLeftRight, id: 'products' as const },
         { name: 'เว็บไซต์ร้าน', href: '/store', icon: Globe, id: 'website' as const },
       ].filter(item => canAccessMenu(userRole, item.id))
     },

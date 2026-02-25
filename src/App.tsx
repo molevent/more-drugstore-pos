@@ -59,6 +59,7 @@ import ProductDetailPage from './pages/ProductDetailPage'
 import CheckoutPage from './pages/CheckoutPage'
 import UserManagementPage from './pages/UserManagementPage'
 import PlatformManagementPage from './pages/PlatformManagementPage'
+import CrossChannelStockReportPage from './pages/CrossChannelStockReportPage'
 import AuthGuard from './components/auth/AuthGuard'
 import Layout from './components/common/Layout'
 import { LanguageProvider } from './contexts/LanguageContext'
@@ -140,6 +141,7 @@ function App() {
                     <Route path="/settings/users" element={<UserManagementPage />} />
                     <Route path="/users" element={<UserManagementPage />} />
                     <Route path="/platform-management" element={<PlatformManagementPage />} />
+                    <Route path="/cross-channel-stock" element={<CrossChannelStockReportPage />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   </Routes>
                 </Layout>
