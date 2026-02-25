@@ -900,6 +900,18 @@ export const deleteWithholdingTax = async (id: number): Promise<any> => {
 };
 
 /**
+ * Share link withholding tax document - returns a URL to view/print the official PDF
+ * POST /withholding-taxes/sharedocument
+ * Body: { documentId: recordId, culture: "th" | "en" }
+ */
+export const shareWithholdingTaxDocument = async (documentId: number, culture: string = 'th'): Promise<any> => {
+  return apiRequest<any>('withholding-taxes/sharedocument', {
+    method: 'POST',
+    body: JSON.stringify({ documentId, culture })
+  });
+};
+
+/**
  * Map local income_type to FlowAccount payableCode
  * FlowAccount payableCode:
  *   1 = เงินเดือน/ค่าจ้าง (40(1))

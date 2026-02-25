@@ -57,6 +57,7 @@ export {
   createWithholdingTax,
   updateWithholdingTax,
   deleteWithholdingTax,
+  shareWithholdingTaxDocument,
   convertWhtToFlowAccount,
   syncWhtToFlowAccount,
   getInvoices,

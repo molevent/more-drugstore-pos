@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Percent, Plus, Search, Trash2, Edit2, BookOpen, ArrowLeft, Upload, X, CheckSquare, Square, RefreshCw, Download } from 'lucide-react'
-import { syncWhtToFlowAccount, getWithholdingTaxes } from '../services/flowaccount'
+import { Percent, Plus, Search, Trash2, Edit2, BookOpen, ArrowLeft, Upload, X, CheckSquare, Square, RefreshCw, Download, Printer, FileText } from 'lucide-react'
+import { syncWhtToFlowAccount, getWithholdingTaxes, shareWithholdingTaxDocument } from '../services/flowaccount'
 
 interface WithholdingTax {
   id: string
@@ -19,6 +19,7 @@ interface WithholdingTax {
   tax_amount: number
   payment_date?: string
   notes?: string
+  flowaccount_id?: number
   created_at: string
   updated_at: string
 }
@@ -50,6 +51,8 @@ export default function WithholdingTaxPage() {
   const [syncingToFa, setSyncingToFa] = useState(false)
   const [syncProgress, setSyncProgress] = useState('')
   const [importing, setImporting] = useState(false)
+  const [printingTax, setPrintingTax] = useState<WithholdingTax | null>(null)
+  const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null)
   
   const [formData, setFormData] = useState({
     document_date: new Date().toISOString().split('T')[0],
@@ -569,6 +572,39 @@ export default function WithholdingTaxPage() {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-2">
+                        {tax.flowaccount_id && (
+                          <button
+                            onClick={async () => {
+                              setLoadingPdfId(tax.id)
+                              try {
+                                const result = await shareWithholdingTaxDocument(tax.flowaccount_id!)
+                                const link = result?.data?.link
+                                if (link) {
+                                  window.open(link, '_blank')
+                                } else {
+                                  alert('ไม่สามารถสร้างลิงค์เอกสารได้')
+                                }
+                              } catch (err) {
+                                console.error('Share document error:', err)
+                                alert('เกิดข้อผิดพลาดในการดึงเอกสารจาก FlowAccount')
+                              } finally {
+                                setLoadingPdfId(null)
+                              }
+                            }}
+                            disabled={loadingPdfId === tax.id}
+                            className="p-1.5 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
+                            title="ดูเอกสารจาก FlowAccount (PDF)"
+                          >
+                            <FileText className={`h-4 w-4 ${loadingPdfId === tax.id ? 'animate-pulse' : ''}`} />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setPrintingTax(tax)}
+                          className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          title="พิมพ์ใบ 50 ทวิ"
+                        >
+                          <Printer className="h-4 w-4" />
+                        </button>
                         <button
                           onClick={() => handleEdit(tax)}
                           className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -888,6 +924,236 @@ export default function WithholdingTaxPage() {
           </div>
         </div>
       )}
+
+      {/* Print 50 ทวิ Modal */}
+      {printingTax && (() => {
+        const t = printingTax
+        const taxIdBoxes = (taxId?: string) => {
+          const digits = (taxId || '').replace(/\D/g, '').padEnd(13, ' ').split('')
+          // Format: X-XXXX-XXXXX-XX-X (1-4-5-2-1)
+          const groups = [[0], [1,2,3,4], [5,6,7,8,9], [10,11], [12]]
+          return groups.map((g, gi) => (
+            <span key={gi} style={{ display: 'inline-flex', gap: 0, marginRight: gi < groups.length - 1 ? '3px' : 0 }}>
+              {g.map(i => (
+                <span key={i} style={{ display: 'inline-block', width: '18px', height: '22px', border: '1px solid #000', textAlign: 'center', lineHeight: '22px', fontSize: '12px', fontWeight: 'bold', marginLeft: i > g[0] ? '-1px' : 0 }}>
+                  {digits[i]?.trim() || ''}
+                </span>
+              ))}
+            </span>
+          ))
+        }
+        const thaiDate = (d: string) => {
+          const dt = new Date(d)
+          return dt.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        }
+        const thaiDateLong = (d: string) => {
+          const dt = new Date(d)
+          return dt.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })
+        }
+        const fmtNum = (n: number) => n.toLocaleString('th-TH', { minimumFractionDigits: 2 })
+        const thaiNum = (n: number): string => {
+          if (n === 0) return 'ศูนย์'
+          const digits = ['', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า']
+          const positions = ['', 'สิบ', 'ร้อย', 'พัน', 'หมื่น', 'แสน', 'ล้าน']
+          const s = n.toString()
+          let result = ''
+          for (let i = 0; i < s.length; i++) {
+            const d = parseInt(s[i])
+            const pos = s.length - 1 - i
+            if (d === 0) continue
+            if (pos === 0 && d === 1 && s.length > 1) result += 'เอ็ด'
+            else if (pos === 1 && d === 2) result += 'ยี่สิบ'
+            else if (pos === 1 && d === 1) result += 'สิบ'
+            else result += digits[d] + positions[pos]
+          }
+          return result
+        }
+        const amtWords = (() => {
+          const baht = Math.floor(t.tax_amount)
+          const satang = Math.round((t.tax_amount - baht) * 100)
+          return `${thaiNum(baht)}บาท${satang > 0 ? thaiNum(satang) + 'สตางค์' : 'ถ้วน'}`
+        })()
+        // Determine which income row matches
+        const incomeRows = [
+          { num: '1', label: 'เงินเดือน ค่าจ้าง เบี้ยเลี้ยง โบนัส ฯลฯ ตามมาตรา 40 (1)', types: ['ค่าจ้าง'] },
+          { num: '2', label: 'ค่าธรรมเนียม ค่านายหน้า ฯลฯ ตามมาตรา 40 (2)', types: ['ค่าธรรมเนียม'] },
+          { num: '3', label: 'ค่าแห่งลิขสิทธิ์ ฯลฯ ตามมาตรา 40 (3)', types: ['ค่าสิทธิ'] },
+          { num: '4(ก)', label: 'ค่าดอกเบี้ย ฯลฯ ตามมาตรา 40 (4)(ก)', types: ['ค่าดอกเบี้ย'] },
+          { num: '4(ข)', label: 'เงินปันผล เงินส่วนแบ่งกำไร ฯลฯ ตามมาตรา 40 (4)(ข)', types: ['เงินปันผล'], sub: true },
+          { num: '5', label: 'การจ่ายเงินได้ที่ต้องหักภาษี ณ ที่จ่ายตามคำสั่งกรมสรรพากร ที่ออกตามมาตรา 3 เตรส เช่น ค่าบริการ/ค่าจ้างทำของ/ค่าเช่า/ค่าขนส่ง/ค่าโฆษณา ฯลฯ', types: ['ค่าบริการ', 'ค่าเช่า', 'ค่าโฆษณา'] },
+          { num: '6', label: 'อื่นๆ (ระบุ)', types: ['อื่นๆ'] },
+        ]
+        const cb = (checked: boolean) => checked ? '☑' : '☐'
+        const S: React.CSSProperties = { fontFamily: "'Sarabun', 'TH SarabunPSK', 'Tahoma', serif", fontSize: '12px', lineHeight: 1.5, color: '#000' }
+        const cellS: React.CSSProperties = { border: '1px solid #000', padding: '2px 6px', verticalAlign: 'top' }
+
+        return (
+          <>
+            <style>{`
+              @media print {
+                body * { visibility: hidden !important; }
+                #wht-print-content, #wht-print-content * { visibility: visible !important; }
+                #wht-print-content { position: fixed; left: 0; top: 0; width: 210mm; margin: 0; padding: 8mm; box-shadow: none !important; }
+                .no-print { display: none !important; }
+              }
+            `}</style>
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2" onClick={() => setPrintingTax(null)}>
+              <div className="w-full max-w-[900px] max-h-[98vh] flex flex-col bg-white rounded-xl shadow-xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                {/* Modal Header */}
+                <div className="flex items-center justify-between p-3 border-b flex-shrink-0 no-print">
+                  <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                    <Printer className="h-5 w-5 text-green-600" />
+                    {t.document_number}
+                  </h2>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setPrintingTax(null)} className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">ปิดหน้าต่าง</button>
+                    <button onClick={() => window.print()} className="px-4 py-1.5 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700">พิมพ์</button>
+                  </div>
+                </div>
+
+                {/* Print Content */}
+                <div className="flex-1 overflow-auto p-4 bg-gray-200 min-h-0">
+                  <div id="wht-print-content" style={{ ...S, width: '794px', minHeight: '1100px', margin: '0 auto', padding: '24px 32px', background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,.15)' }}>
+
+                    {/* Copy labels */}
+                    <div style={{ fontSize: '10px', marginBottom: '2px' }}>
+                      <strong>ฉบับที่ 1</strong>&nbsp;&nbsp;(สำหรับผู้ถูกหักภาษี ณ ที่จ่าย ใช้แนบพร้อมกับแบบแสดงรายการภาษี)
+                    </div>
+                    <div style={{ fontSize: '10px', marginBottom: '6px' }}>
+                      <strong>ฉบับที่ 2</strong>&nbsp;&nbsp;(สำหรับผู้ถูกหักภาษี ณ ที่จ่าย เก็บไว้เป็นหลักฐาน)
+                    </div>
+
+                    {/* Header */}
+                    <div style={{ textAlign: 'center', marginBottom: '4px' }}>
+                      <div style={{ fontSize: '16px', fontWeight: 'bold' }}>หนังสือรับรองการหักภาษี ณ ที่จ่าย</div>
+                      <div style={{ fontSize: '12px' }}>ตามมาตรา 50 ทวิ แห่งประมวลรัษฎากร</div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '2px', fontSize: '11px', gap: '20px' }}>
+                      <span>เล่มที่ ....................</span>
+                      <span>เลขที่ <strong>{t.document_number}</strong></span>
+                    </div>
+
+                    {/* === Payer Box === */}
+                    <div style={{ border: '1.5px solid #000', padding: '6px 10px', marginBottom: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+                        <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>ผู้มีหน้าที่หักภาษี ณ ที่จ่าย :-</span>
+                        <span style={{ whiteSpace: 'nowrap' }}>เลขประจำตัวผู้เสียภาษีอากร (13หลัก)▸</span>
+                        {taxIdBoxes(t.payer_tax_id)}
+                      </div>
+                      <div style={{ marginBottom: '2px' }}>
+                        ชื่อ <strong>{t.payer_name}</strong>
+                        <span style={{ marginLeft: '40px' }}>เลขประจำตัวผู้เสียภาษีอากร</span>
+                      </div>
+                      <div style={{ fontSize: '11px' }}>
+                        ที่อยู่ .............................................................................................
+                      </div>
+                    </div>
+
+                    {/* === Payee Box === */}
+                    <div style={{ border: '1.5px solid #000', padding: '6px 10px', marginBottom: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+                        <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>ผู้ถูกหักภาษี ณ ที่จ่าย :-</span>
+                        <span style={{ whiteSpace: 'nowrap' }}>เลขประจำตัวผู้เสียภาษีอากร (13หลัก)▸</span>
+                        {taxIdBoxes(t.payee_tax_id)}
+                      </div>
+                      <div style={{ marginBottom: '2px' }}>
+                        ชื่อ <strong>{t.payee_name}</strong>
+                        <span style={{ marginLeft: '40px' }}>เลขประจำตัวผู้เสียภาษีอากร</span>
+                      </div>
+                      <div style={{ fontSize: '11px' }}>
+                        ที่อยู่ .............................................................................................
+                      </div>
+                    </div>
+
+                    {/* === Form type checkboxes === */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 16px', marginBottom: '6px', fontSize: '11px' }}>
+                      <span style={{ fontWeight: 'bold' }}>ลำดับที่</span>
+                      <span>ในแบบ</span>
+                      <span>{cb(false)} (1) ภ.ง.ด.1ก</span>
+                      <span>{cb(false)} (2) ภ.ง.ด.1ก พิเศษ</span>
+                      <span>{cb(false)} (3) ภ.ง.ด.2</span>
+                      <span>{cb(false)} (4) ภ.ง.ด.3</span>
+                      <span>{cb(false)} (5) ภ.ง.ด.2ก</span>
+                      <span>{cb(false)} (6) ภ.ง.ด.3ก</span>
+                      <span>{cb(true)} (7) ภ.ง.ด.53</span>
+                    </div>
+
+                    {/* === Income Table === */}
+                    <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '4px', fontSize: '11px' }}>
+                      <thead>
+                        <tr>
+                          <th style={{ ...cellS, textAlign: 'center', width: '45%', fontWeight: 'bold' }}>ประเภทเงินได้พึงประเมินที่จ่าย</th>
+                          <th style={{ ...cellS, textAlign: 'center', width: '17%', fontWeight: 'bold' }}>วัน เดือน<br/>หรือปีภาษี ที่จ่าย</th>
+                          <th style={{ ...cellS, textAlign: 'center', width: '19%', fontWeight: 'bold' }}>จำนวนเงินที่จ่าย</th>
+                          <th style={{ ...cellS, textAlign: 'center', width: '19%', fontWeight: 'bold' }}>ภาษีที่หัก<br/>และนำส่งไว้</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {incomeRows.map(row => {
+                          const match = row.types.includes(t.income_type)
+                          return (
+                            <tr key={row.num}>
+                              <td style={{ ...cellS, fontSize: '10.5px', lineHeight: 1.3 }}>{row.num}. {row.label}</td>
+                              <td style={{ ...cellS, textAlign: 'center', fontSize: '11px' }}>{match ? thaiDate(t.document_date) : ''}</td>
+                              <td style={{ ...cellS, textAlign: 'right', fontSize: '11px' }}>{match ? fmtNum(t.income_amount) : ''}</td>
+                              <td style={{ ...cellS, textAlign: 'right', fontSize: '11px' }}>{match ? fmtNum(t.tax_amount) : ''}</td>
+                            </tr>
+                          )
+                        })}
+                        <tr style={{ fontWeight: 'bold' }}>
+                          <td colSpan={2} style={{ ...cellS, textAlign: 'right', fontSize: '11px' }}>รวมเงินที่จ่ายและภาษีที่หักนำส่ง</td>
+                          <td style={{ ...cellS, textAlign: 'right', fontSize: '11px' }}>{fmtNum(t.income_amount)}</td>
+                          <td style={{ ...cellS, textAlign: 'right', fontSize: '11px' }}>{fmtNum(t.tax_amount)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+
+                    {/* Total in words */}
+                    <div style={{ fontSize: '11px', marginBottom: '6px' }}>
+                      รวมเงินภาษีที่หักนำส่ง (ตัวอักษร) <strong>{amtWords}</strong>
+                    </div>
+
+                    {/* Payment / deduction checkboxes */}
+                    <div style={{ fontSize: '11px', marginBottom: '4px' }}>
+                      <span style={{ fontWeight: 'bold' }}>ผู้จ่ายเงิน</span>&nbsp;&nbsp;&nbsp;
+                      {cb(true)} (1) หัก ณ ที่จ่าย&nbsp;&nbsp;&nbsp;
+                      {cb(false)} (2) ออกให้ตลอดไป&nbsp;&nbsp;&nbsp;
+                      {cb(false)} (3) ออกให้ครั้งเดียว&nbsp;&nbsp;&nbsp;
+                      {cb(false)} (4) อื่นๆ (ระบุ)
+                    </div>
+
+                    {/* Certification + Signature */}
+                    <div style={{ border: '1.5px solid #000', padding: '10px 14px', marginTop: '10px', display: 'flex', gap: '20px' }}>
+                      <div style={{ flex: 1, fontSize: '11px' }}>
+                        <div style={{ marginBottom: '4px' }}><strong>ผู้จ่ายเงิน</strong></div>
+                        <div>ขอรับรองว่าข้อความและตัวเลขดังกล่าวข้างต้น ถูกต้องตรงกับความจริงทุกประการ</div>
+                        <div style={{ marginTop: '30px', textAlign: 'center' }}>
+                          <div>ลงชื่อ ............................................. ผู้จ่ายเงิน/ผู้ที่ได้รับมอบหมาย</div>
+                          <div style={{ marginTop: '2px' }}>( {t.payer_name} )</div>
+                          <div style={{ marginTop: '2px' }}>ตำแหน่ง ............................................</div>
+                          <div style={{ marginTop: '2px' }}>ยื่นวันที่ {thaiDateLong(t.document_date)}</div>
+                        </div>
+                      </div>
+                      <div style={{ flex: 1, fontSize: '11px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ marginBottom: '8px' }}>ขอรับรองว่าข้อความและตัวเลขดังกล่าวข้างต้นถูกต้อง ตรงกับความจริงทุกประการ</div>
+                        <div style={{ width: '100px', height: '100px', border: '2px solid #ccc', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: '10px', marginBottom: '4px' }}>
+                          (ตราประทับ)
+                        </div>
+                        <div style={{ fontSize: '10px' }}>วันที่ {thaiDateLong(t.document_date)}</div>
+                      </div>
+                    </div>
+
+                    {/* Footer note */}
+                    <div style={{ fontSize: '9px', marginTop: '8px', color: '#666' }}>
+                      หมายเหตุ: เอกสารฉบับนี้สร้างจากระบบ (1 ชุด = ฉบับที่ 1 - หลักฐานสำคัญประกอบการยื่นภาษีแสดงรายการภาษีเงินได้ ใช้ประกอบการเครดิตภาษี)
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )
+      })()}
     </div>
   )
 }
