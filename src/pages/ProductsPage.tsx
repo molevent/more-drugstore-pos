@@ -493,7 +493,7 @@ export default function ProductsPage() {
           .order('movement_date', { ascending: false })
           .limit(50),
         
-        // 2. Sales - fetch order_items with order details using separate query pattern
+        // 2. Sales - fetch order_items (no created_at column in order_items table)
         supabase
           .from('order_items')
           .select(`
@@ -501,11 +501,9 @@ export default function ProductsPage() {
             product_id,
             quantity,
             unit_price,
-            created_at,
             order_id
           `)
           .eq('product_id', productId)
-          .order('created_at', { ascending: false })
           .limit(100),
         
         // 3. Purchase order items
@@ -593,7 +591,7 @@ export default function ProductsPage() {
           if (order) {
             allMovements.push({
               id: `sale_${item.id}`,
-              date: item.created_at || order.created_at,
+              date: order.created_at,
               type: 'ขายออก',
               quantity: -Math.abs(item.quantity),
               quantity_before: null,
@@ -605,7 +603,7 @@ export default function ProductsPage() {
               unit_cost: item.unit_price,
               reference_type: 'order',
               reference_id: order.id,
-              sortDate: new Date(item.created_at || order.created_at).getTime()
+              sortDate: new Date(order.created_at).getTime()
             })
           }
         })
