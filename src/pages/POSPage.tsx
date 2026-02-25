@@ -1681,7 +1681,7 @@ export default function POSPage() {
             className="flex items-center gap-2 px-3 py-2 bg-[#F5F0E6] rounded-full border border-[#B8C9B8] hover:bg-[#E8EBF0] hover:shadow-md transition-all"
           >
             <Wallet className="h-5 w-5 text-black flex-shrink-0" />
-            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">นับเงิน / สรุปยอด</span>
+            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">สรุปยอด / นับเงิน</span>
           </button>
           {showMoneyMenu && (
             <>
@@ -1714,7 +1714,7 @@ export default function POSPage() {
           className="flex items-center gap-2 px-3 py-2 bg-[#F9E4B7] rounded-full border border-[#B8C9B8] hover:bg-[#F5D0A0] hover:shadow-md transition-all"
         >
           <History className="h-5 w-5 text-black flex-shrink-0" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ประวัติแจ้งเตือน</span>
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">แจ้งเตือน</span>
           {savedAlertLogs.filter(log => !log.acknowledged).length > 0 && (
             <span className="ml-1 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
               {savedAlertLogs.filter(log => !log.acknowledged).length}
