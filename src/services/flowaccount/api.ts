@@ -265,7 +265,7 @@ export const convertProductToFlowAccount = (product: {
   const buyPrice = product.cost_price || 0;
   
   return {
-    type: 1, // 1 = product (not service)
+    type: 3, // 3 = inventory product (นับสต็อก), 1 = service (บริการ)
     name: product.name_th || product.name_en || '-',
     sellDescription: product.description_th || product.name_en || '',
     buyDescription: '',

@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
     for (const product of products) {
       try {
         const faData = {
-          type: 1,
+          type: 3, // 3 = inventory product (นับสต็อก)
           name: product.name_th || product.name_en || '-',
           sellDescription: product.description_th || product.name_en || '',
           buyDescription: '',
