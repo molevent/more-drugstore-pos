@@ -266,29 +266,41 @@ export default function BillScanPage() {
       }
 
       console.log('Quick-add: inserting product...', { name: quickAddName.trim(), barcode: barcodeVal })
-      const { data: newProduct, error } = await supabase
+      
+      // Step 1: Insert without .select() to avoid PostgREST hanging
+      const { error: insertError } = await supabase
         .from('products')
         .insert({
           name_th: quickAddName.trim(),
           barcode: barcodeVal,
           sku: skuVal,
           is_active: true,
-          base_price: item.unit_price || 0,
-          cost_price: item.unit_price || 0,
+          base_price: Number(item.unit_price) || 0,
+          cost_price: Number(item.unit_price) || 0,
           stock_quantity: 0,
           min_stock_level: 0,
           unit: item.unit || 'ชิ้น'
         })
-        .select()
+
+      console.log('Quick-add insert result:', { insertError })
+
+      if (insertError) {
+        throw new Error(insertError.message || 'ไม่สามารถเพิ่มสินค้าได้')
+      }
+
+      // Step 2: Fetch the newly created product
+      let query = supabase.from('products').select('*').eq('name_th', quickAddName.trim())
+      if (barcodeVal) query = query.eq('barcode', barcodeVal)
+      const { data: fetchedProducts, error: fetchError } = await query
+        .order('created_at', { ascending: false })
+        .limit(1)
         .single()
 
-      console.log('Quick-add result:', { newProduct, error })
+      console.log('Quick-add fetch result:', { fetchedProducts, fetchError })
 
-      if (error) {
-        throw new Error(error.message || 'ไม่สามารถเพิ่มสินค้าได้')
-      }
-      if (!newProduct) {
-        throw new Error('ไม่ได้รับข้อมูลสินค้ากลับจากระบบ')
+      const newProduct = fetchedProducts
+      if (fetchError || !newProduct) {
+        throw new Error('เพิ่มสินค้าแล้วแต่ไม่สามารถดึงข้อมูลกลับได้')
       }
 
       // 2. Auto-save supplier mapping (non-blocking)
