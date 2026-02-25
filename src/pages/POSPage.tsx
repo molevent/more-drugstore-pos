@@ -1103,6 +1103,7 @@ export default function POSPage() {
       const { data, error } = await supabase
         .from('sale_alert_logs')
         .select('*')
+        .eq('acknowledged', false)
         .order('created_at', { ascending: false })
         .limit(50)
 
