@@ -11,6 +11,7 @@ interface Product {
   name_th: string
   name_en: string
   barcode: string
+  sku?: string
   stock_quantity: number
   min_stock_level: number
   reorder_point: number
