@@ -488,8 +488,17 @@ export default function BillScanPage() {
       }
       const poNumber = `${prefix}${String(nextNumber).padStart(5, '0')}`
 
+      // Get default warehouse (คลังสินค้าหลัก)
+      const { data: warehouseList } = await supabase
+        .from('warehouses')
+        .select('id, name, code')
+        .order('name')
+        .limit(10)
+      const mainWarehouse = warehouseList?.find(w => w.name === 'คลังสินค้าหลัก' || w.code === 'MAIN') || warehouseList?.[0]
+      console.log('[Import] Default warehouse:', mainWarehouse?.name, mainWarehouse?.id)
+
       // Insert PO without .select().single() to avoid hanging
-      const poData = {
+      const poData: any = {
         po_number: poNumber,
         supplier_name: scanResult.supplier_name,
         supplier_contact: '',
@@ -503,6 +512,9 @@ export default function BillScanPage() {
         net_amount: scanResult.grand_total || 0,
         reference: scanResult.document_number || '',
         notes: `สแกนจากเอกสาร: ${scanResult.document_number} | Order: ${scanResult.order_id}`
+      }
+      if (mainWarehouse) {
+        poData.warehouse_id = mainWarehouse.id
       }
       
       console.log('[Import] Creating PO...')
