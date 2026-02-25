@@ -117,6 +117,7 @@ export default function POSPage() {
     acknowledged_at?: string
   }>>([])
   const [showAlertHistory, setShowAlertHistory] = useState(false)
+  const [showMoneyMenu, setShowMoneyMenu] = useState(false)
   const [dismissedAlertIds, setDismissedAlertIds] = useState<Set<string>>(new Set())
 
   // Dismiss alert function
@@ -1674,29 +1675,36 @@ export default function POSPage() {
           <Printer className="h-5 w-5 text-black flex-shrink-0" />
           <span className="font-medium text-gray-900 text-sm whitespace-nowrap">พิมพ์ฉลากยา</span>
         </Link>
-        <div className="relative group">
+        <div className="relative">
           <button
+            onClick={() => setShowMoneyMenu(prev => !prev)}
             className="flex items-center gap-2 px-3 py-2 bg-[#F5F0E6] rounded-full border border-[#B8C9B8] hover:bg-[#E8EBF0] hover:shadow-md transition-all"
           >
             <Wallet className="h-5 w-5 text-black flex-shrink-0" />
             <span className="font-medium text-gray-900 text-sm whitespace-nowrap">นับเงิน / สรุปยอด</span>
           </button>
-          <div className="absolute left-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 hidden group-hover:block min-w-[180px]">
-            <button
-              onClick={() => setShowCashierClosing(true)}
-              className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50 text-left"
-            >
-              <Wallet className="h-4 w-4 text-gray-600" />
-              <span className="text-sm text-gray-800">นับเงิน</span>
-            </button>
-            <Link
-              to="/payment-summary"
-              className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50"
-            >
-              <CreditCard className="h-4 w-4 text-gray-600" />
-              <span className="text-sm text-gray-800">สรุปยอดชำระเงิน</span>
-            </Link>
-          </div>
+          {showMoneyMenu && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowMoneyMenu(false)} />
+              <div className="absolute left-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-[180px]">
+                <button
+                  onClick={() => { setShowCashierClosing(true); setShowMoneyMenu(false) }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50 text-left"
+                >
+                  <Wallet className="h-4 w-4 text-gray-600" />
+                  <span className="text-sm text-gray-800">นับเงิน</span>
+                </button>
+                <Link
+                  to="/payment-summary"
+                  onClick={() => setShowMoneyMenu(false)}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50"
+                >
+                  <CreditCard className="h-4 w-4 text-gray-600" />
+                  <span className="text-sm text-gray-800">สรุปยอดชำระเงิน</span>
+                </Link>
+              </div>
+            </>
+          )}
         </div>
         <button
           onClick={() => {
