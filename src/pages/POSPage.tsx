@@ -1666,14 +1666,14 @@ export default function POSPage() {
           className="flex items-center gap-2 px-3 py-2 bg-[#D1D1E1] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
         >
           <Package className="h-5 w-5 text-black flex-shrink-0" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">สินค้าตามหมวดหมู่</span>
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ยาตามหมวดหมู่</span>
         </Link>
         <Link 
           to="/medicine-labels"
           className="flex items-center gap-2 px-3 py-2 bg-[#D5EAE7] rounded-full border border-[#B8C9B8] hover:bg-[#D1D1E1] hover:shadow-md transition-all"
         >
           <Printer className="h-5 w-5 text-black flex-shrink-0" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">พิมพ์ฉลากยา</span>
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">พิมพ์ฉลาก</span>
         </Link>
         <div className="relative">
           <button
