@@ -226,12 +226,12 @@ export default function BillScanPage() {
       const barcodeVal = quickAddBarcode.trim() || null
       const skuVal = quickAddBarcode.trim() || null
 
-      // Check if barcode/SKU already exists
+      // Check if barcode/SKU already exists (use simple eq, no .or() which can hang)
       if (barcodeVal) {
         const { data: existingBarcode } = await supabase
           .from('products')
           .select('id, name_th, barcode, sku')
-          .or(`barcode.eq.${barcodeVal},sku.eq.${barcodeVal}`)
+          .eq('barcode', barcodeVal)
           .limit(1)
         if (existingBarcode && existingBarcode.length > 0) {
           const p = existingBarcode[0]
@@ -244,11 +244,12 @@ export default function BillScanPage() {
           )
           if (useExisting) {
             // Fetch full product data and use existing
-            const { data: fullData } = await supabase
+            const { data: fullList } = await supabase
               .from('products')
               .select('*')
               .eq('id', p.id)
-              .single()
+              .limit(1)
+            const fullData = fullList?.[0]
             if (fullData) {
               setProducts(prev => {
                 if (prev.find(pr => pr.id === fullData.id)) return prev
@@ -408,27 +409,40 @@ export default function BillScanPage() {
       }
       const poNumber = `${prefix}${String(nextNumber).padStart(5, '0')}`
 
-      const { data: po, error: poError } = await supabase
+      // Insert PO without .select().single() to avoid hanging
+      const poData = {
+        po_number: poNumber,
+        supplier_name: scanResult.supplier_name,
+        supplier_contact: '',
+        order_date: scanResult.document_date || new Date().toISOString().split('T')[0],
+        expected_delivery_date: scanResult.document_date || new Date().toISOString().split('T')[0],
+        status: 'received',
+        payment_status: 'unpaid',
+        total_amount: scanResult.subtotal_before_discount || 0,
+        tax_amount: scanResult.vat_amount || 0,
+        discount_amount: (scanResult.discount || 0) + (scanResult.voucher_discount || 0),
+        net_amount: scanResult.grand_total || 0,
+        reference: scanResult.document_number || '',
+        notes: `สแกนจากเอกสาร: ${scanResult.document_number} | Order: ${scanResult.order_id}`
+      }
+      
+      console.log('[Import] Creating PO...')
+      const { error: poError } = await supabase
         .from('purchase_orders')
-        .insert([{
-          po_number: poNumber,
-          supplier_name: scanResult.supplier_name,
-          supplier_contact: '',
-          order_date: scanResult.document_date || new Date().toISOString().split('T')[0],
-          expected_delivery_date: scanResult.document_date || new Date().toISOString().split('T')[0],
-          status: 'received',
-          payment_status: 'unpaid',
-          total_amount: scanResult.subtotal_before_discount || 0,
-          tax_amount: scanResult.vat_amount || 0,
-          discount_amount: (scanResult.discount || 0) + (scanResult.voucher_discount || 0),
-          net_amount: scanResult.grand_total || 0,
-          reference: scanResult.document_number || '',
-          notes: `สแกนจากเอกสาร: ${scanResult.document_number} | Order: ${scanResult.order_id}`
-        }])
-        .select()
-        .single()
+        .insert([poData])
 
       if (poError) throw poError
+
+      // Fetch the PO we just created
+      const { data: poList } = await supabase
+        .from('purchase_orders')
+        .select('*')
+        .eq('po_number', poNumber)
+        .limit(1)
+      
+      const po = poList?.[0]
+      if (!po) throw new Error('สร้าง PO แล้วแต่ไม่พบข้อมูล')
+      console.log('[Import] PO created:', po.id)
 
       // 2. Add PO items + update stock
       const { data: userData } = await supabase.auth.getUser()
@@ -490,7 +504,7 @@ export default function BillScanPage() {
           // Record stock movement
           await supabase
             .from('stock_movements')
-            .insert({
+            .insert([{
               product_id: item.matched_product_id,
               movement_type: 'purchase',
               quantity: item.quantity,
@@ -503,7 +517,7 @@ export default function BillScanPage() {
               reason: `สแกนบิลจาก ${scanResult.supplier_name}`,
               notes: `${scanResult.document_number} | Lot: ${item.lot_number}`,
               created_by: userData?.user?.id
-            })
+            }])
 
           // 3. Save mapping for future auto-match
           if (item.match_source !== 'mapping') {
