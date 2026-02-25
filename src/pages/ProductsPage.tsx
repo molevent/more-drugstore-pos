@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useProductStore } from '../stores/productStore'
 import { useLanguage } from '../contexts/LanguageContext'
 import { supabase } from '../services/supabase'
@@ -7,7 +7,7 @@ import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import { LabelWithTooltip } from '../components/common/Tooltip'
 import CSVImportModal from '../components/common/CSVImportModal'
-import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft, Printer, ExternalLink, ArrowLeft, Bell, LayoutDashboard, Fingerprint, FolderTree, DollarSign, Boxes, Image, Radio, AlertTriangle, BookOpen, RefreshCw } from 'lucide-react'
+import { Search, Plus, X, Filter, Upload, Package, Store, ShoppingCart, Truck, Globe, MessageCircle, Video, Warehouse, ArrowRightLeft, Printer, ExternalLink, ArrowLeft, Bell, LayoutDashboard, Fingerprint, FolderTree, DollarSign, Boxes, Image, Radio, AlertTriangle, BookOpen, RefreshCw, Camera } from 'lucide-react'
 import { syncProductsToFlowAccount } from '../services/flowaccount'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import type { Product, Category } from '../types/database'
@@ -246,6 +246,13 @@ export default function ProductsPage() {
   const [saveMessage, setSaveMessage] = useState<{type: 'success' | 'error', text: string} | null>(null)
   const [isSyncingFA, setIsSyncingFA] = useState(false)
   const [syncProgress, setSyncProgress] = useState('')
+
+  // Camera barcode scanning states
+  const [showCameraModal, setShowCameraModal] = useState(false)
+  const [capturedImage, setCapturedImage] = useState<string | null>(null)
+  const [isProcessingBarcode, setIsProcessingBarcode] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
     fetchProducts()
@@ -930,6 +937,93 @@ export default function ProductsPage() {
     setMaxPrice('')
   }
 
+  // Camera barcode scanning functions
+  const handleOpenCamera = () => {
+    setShowCameraModal(true)
+    setCapturedImage(null)
+  }
+
+  const handleCloseCamera = () => {
+    setShowCameraModal(false)
+    setCapturedImage(null)
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream
+      stream.getTracks().forEach(track => track.stop())
+    }
+  }
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      })
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error)
+      alert('ไม่สามารถเข้าถึงกล้องได้ กรุณาตรวจสอบสิทธิ์การใช้งานกล้อง')
+    }
+  }
+
+  const capturePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    const ctx = canvas.getContext('2d')
+    if (ctx) {
+      ctx.drawImage(video, 0, 0)
+      const imageData = canvas.toDataURL('image/png')
+      setCapturedImage(imageData)
+      // Stop camera
+      if (video.srcObject) {
+        const stream = video.srcObject as MediaStream
+        stream.getTracks().forEach(track => track.stop())
+      }
+      processBarcode(imageData)
+    }
+  }
+
+  const processBarcode = async (imageData: string) => {
+    setIsProcessingBarcode(true)
+    try {
+      if ('BarcodeDetector' in window) {
+        const barcodeDetector = new (window as any).BarcodeDetector({
+          formats: ['code_128', 'code_39', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'qr_code']
+        })
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const img = new window.Image()
+          img.src = imageData
+          img.onload = () => resolve(img)
+          img.onerror = reject
+        })
+        const barcodes = await barcodeDetector.detect(img)
+        if (barcodes.length > 0) {
+          const barcode = barcodes[0].rawValue
+          console.log('Detected barcode:', barcode)
+          setSearchTerm(barcode)
+          handleCloseCamera()
+        } else {
+          alert('ไม่พบบาร์โค้ดในรูป กรุณาลองถ่ายใหม่อีกครั้ง')
+          setCapturedImage(null)
+          startCamera()
+        }
+      } else {
+        alert('เบราว์เซอร์นี้ไม่รองรับการอ่านบาร์โค้ดอัตโนมัติ กรุณาใช้ Chrome บน Android หรือ Safari บน iOS')
+        handleCloseCamera()
+      }
+    } catch (error) {
+      console.error('Error processing barcode:', error)
+      alert('เกิดข้อผิดพลาดในการอ่านบาร์โค้ด กรุณาลองใหม่')
+      setCapturedImage(null)
+      startCamera()
+    } finally {
+      setIsProcessingBarcode(false)
+    }
+  }
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
@@ -1074,6 +1168,13 @@ export default function ProductsPage() {
                 />
               </div>
             </div>
+            <button
+              onClick={handleOpenCamera}
+              className="flex items-center justify-center w-12 h-12 bg-[#E8EBF0] rounded-full border border-transparent hover:border-[#7D735F] hover:bg-white transition-all"
+              title="ถ่ายรูปบาร์โค้ด"
+            >
+              <Camera className="h-5 w-5 text-gray-500" />
+            </button>
             <Button
               variant="secondary"
               onClick={() => setShowFilters(!showFilters)}
@@ -3653,6 +3754,52 @@ export default function ProductsPage() {
           fetchProducts()
         }}
       />
+
+      {/* Camera Barcode Modal */}
+      {showCameraModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-bold text-gray-900">ถ่ายรูปบาร์โค้ด</h2>
+              <button onClick={handleCloseCamera} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              {!capturedImage ? (
+                <div className="space-y-4">
+                  <div className="relative bg-black rounded-lg overflow-hidden" style={{ minHeight: '300px' }}>
+                    <video ref={videoRef} autoPlay playsInline className="w-full rounded-lg" />
+                    <canvas ref={canvasRef} className="hidden" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="button" variant="primary" className="flex-1" onClick={startCamera}>
+                      <Camera className="h-5 w-5 mr-2" />
+                      เปิดกล้อง
+                    </Button>
+                    <Button type="button" variant="secondary" className="flex-1" onClick={capturePhoto}>
+                      ถ่ายรูป
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <img src={capturedImage} alt="Captured" className="w-full rounded-lg" />
+                  {isProcessingBarcode && (
+                    <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      กำลังอ่านบาร์โค้ด...
+                    </div>
+                  )}
+                  <Button type="button" variant="secondary" className="w-full" onClick={() => { setCapturedImage(null); startCamera() }}>
+                    ถ่ายใหม่
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )
