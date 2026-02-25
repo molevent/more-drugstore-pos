@@ -20,12 +20,13 @@ import {
   CheckSquare,
   Square,
   Upload,
-  CloudOff
+  CloudOff,
+  Download
 } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import { supabase } from '../services/supabase'
-import { createContact as createFlowContact, updateContact as updateFlowContact, convertContactToFlowAccount } from '../services/flowaccount'
+import { createContact as createFlowContact, updateContact as updateFlowContact, convertContactToFlowAccount, getContacts as getFlowContacts } from '../services/flowaccount'
 
 interface Contact {
   id: string
@@ -72,6 +73,12 @@ export default function ContactsPage() {
   const [syncFilter, setSyncFilter] = useState<'all' | 'synced' | 'not_synced'>('all')
   const [selectedContacts, setSelectedContacts] = useState<Set<string>>(new Set())
   const [isBatchSyncing, setIsBatchSyncing] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [faContacts, setFaContacts] = useState<any[]>([])
+  const [loadingFaContacts, setLoadingFaContacts] = useState(false)
+  const [importingContacts, setImportingContacts] = useState(false)
+  const [selectedFaContacts, setSelectedFaContacts] = useState<Set<number>>(new Set())
+  const [importProgress, setImportProgress] = useState('')
   const [formData, setFormData] = useState({
     name: '',
     type: 'buyer' as 'buyer' | 'seller' | 'both',
@@ -453,6 +460,142 @@ export default function ContactsPage() {
     alert(msg)
   }
 
+  // Import contacts from FlowAccount
+  const handleFetchFaContacts = async () => {
+    setLoadingFaContacts(true)
+    setFaContacts([])
+    setSelectedFaContacts(new Set())
+    try {
+      let allContacts: any[] = []
+      let page = 1
+      while (true) {
+        const res = await getFlowContacts(page, 100) as any
+        const list = res?.data?.list || res?.list || (Array.isArray(res) ? res : [])
+        if (!list || list.length === 0) break
+        allContacts = allContacts.concat(list)
+        if (list.length < 100) break
+        page++
+      }
+      console.log('FA contacts fetched:', allContacts.length)
+      setFaContacts(allContacts)
+      if (allContacts.length === 0) {
+        alert('ไม่พบผู้ติดต่อใน FlowAccount')
+      }
+    } catch (err) {
+      console.error('Fetch FA contacts error:', err)
+      alert('ดึงข้อมูลจาก FlowAccount ล้มเหลว: ' + (err as Error).message)
+    } finally {
+      setLoadingFaContacts(false)
+    }
+  }
+
+  const handleImportFaContacts = async () => {
+    const toImport = faContacts.filter(c => selectedFaContacts.has(c.id))
+    if (toImport.length === 0) {
+      alert('กรุณาเลือกผู้ติดต่อที่ต้องการนำเข้า')
+      return
+    }
+    if (!confirm(`ต้องการนำเข้า ${toImport.length} ผู้ติดต่อจาก FlowAccount?`)) return
+
+    setImportingContacts(true)
+    let imported = 0, failed = 0
+
+    for (let i = 0; i < toImport.length; i++) {
+      const fa = toImport[i]
+      setImportProgress(`${i + 1}/${toImport.length} ${fa.contactName || '-'}`)
+      try {
+        // Map FA contact type: 3=buyer, 5=seller, 7=both
+        const faType = String(fa.contactType)
+        let localType: 'buyer' | 'seller' | 'both' = 'buyer'
+        if (faType === '5') localType = 'seller'
+        else if (faType === '7') localType = 'both'
+
+        // Check if already exists by flowaccount_id or name
+        const { data: existing } = await supabase
+          .from('contacts')
+          .select('id')
+          .or(`flowaccount_id.eq.${fa.id},name.eq.${fa.contactName}`)
+          .limit(1)
+
+        if (existing && existing.length > 0) {
+          // Update existing
+          await supabase
+            .from('contacts')
+            .update({
+              name: fa.contactName || '-',
+              type: localType,
+              phone: fa.contactMobile || fa.contactOffice || undefined,
+              email: fa.contactEmail || undefined,
+              address: fa.contactAddress || undefined,
+              shipping_address: fa.contactShippingAddress || undefined,
+              postal_code: fa.contactZipCode || undefined,
+              tax_id: fa.contactTaxId || undefined,
+              branch_code: fa.contactBranchCode || undefined,
+              code: fa.contactCode || undefined,
+              notes: fa.contactNote || undefined,
+              bank_account_number: fa.contactBankAccountNumber || undefined,
+              bank_branch_name: fa.contactBankBranch || undefined,
+              flowaccount_id: fa.id,
+              flowaccount_synced_at: new Date().toISOString()
+            })
+            .eq('id', existing[0].id)
+          imported++
+        } else {
+          // Insert new
+          await supabase
+            .from('contacts')
+            .insert([{
+              name: fa.contactName || '-',
+              type: localType,
+              person_type: 'company',
+              phone: fa.contactMobile || fa.contactOffice || undefined,
+              email: fa.contactEmail || undefined,
+              address: fa.contactAddress || undefined,
+              shipping_address: fa.contactShippingAddress || undefined,
+              postal_code: fa.contactZipCode || undefined,
+              tax_id: fa.contactTaxId || undefined,
+              branch_code: fa.contactBranchCode || undefined,
+              code: fa.contactCode || undefined,
+              notes: fa.contactNote || undefined,
+              bank_account_number: fa.contactBankAccountNumber || undefined,
+              bank_branch_name: fa.contactBankBranch || undefined,
+              flowaccount_id: fa.id,
+              flowaccount_synced_at: new Date().toISOString()
+            }])
+          imported++
+        }
+      } catch (err) {
+        console.error('Import failed for', fa.contactName, err)
+        failed++
+      }
+
+      if (i < toImport.length - 1) await new Promise(r => setTimeout(r, 50))
+    }
+
+    setImportingContacts(false)
+    setImportProgress('')
+    alert(`นำเข้าเสร็จสิ้น!\n\n✅ สำเร็จ: ${imported}\n❌ ล้มเหลว: ${failed}`)
+    setShowImportModal(false)
+    fetchContacts()
+  }
+
+  const toggleSelectFaContact = (id: number) => {
+    setSelectedFaContacts(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAllFa = () => {
+    if (selectedFaContacts.size === faContacts.length) {
+      setSelectedFaContacts(new Set())
+    } else {
+      setSelectedFaContacts(new Set(faContacts.map(c => c.id)))
+    }
+  }
+
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'buyer': return { label: 'ผู้ซื้อ', color: 'bg-[#7D735F]/10 text-[#7D735F]', icon: User }
@@ -484,6 +627,13 @@ export default function ContactsPage() {
             title="คู่มือการใช้งาน"
           >
             <BookOpen className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => { setShowImportModal(true); handleFetchFaContacts() }}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-blue-500 bg-white text-blue-600 text-sm whitespace-nowrap hover:bg-blue-50 transition-all shadow-sm"
+          >
+            <Download className="h-4 w-4" />
+            ดึงจาก FA
           </button>
           <button
             onClick={() => { setEditingContact(null); resetForm(); setShowModal(true) }}
@@ -1231,6 +1381,111 @@ export default function ContactsPage() {
               </div>
             </form>
           </Card>
+        </div>
+      )}
+
+      {/* Import from FlowAccount Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowImportModal(false)}>
+          <div className="w-full max-w-2xl max-h-[80vh] flex flex-col bg-white rounded-xl shadow-xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
+              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Download className="h-5 w-5 text-blue-600" />
+                ดึงผู้ติดต่อจาก FlowAccount
+              </h2>
+              <button onClick={() => setShowImportModal(false)} className="p-1 hover:bg-gray-100 rounded-full">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 min-h-0">
+              {loadingFaContacts ? (
+                <div className="flex items-center justify-center py-12">
+                  <RefreshCw className="h-6 w-6 animate-spin text-blue-500 mr-2" />
+                  <span className="text-gray-600">กำลังดึงข้อมูลจาก FlowAccount...</span>
+                </div>
+              ) : faContacts.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">ไม่พบผู้ติดต่อใน FlowAccount</div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-3">
+                    <button
+                      onClick={toggleSelectAllFa}
+                      className="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600"
+                    >
+                      {selectedFaContacts.size === faContacts.length ? (
+                        <CheckSquare className="h-4 w-4 text-blue-600" />
+                      ) : (
+                        <Square className="h-4 w-4" />
+                      )}
+                      เลือกทั้งหมด ({faContacts.length})
+                    </button>
+                    <span className="text-sm text-gray-500">เลือกแล้ว {selectedFaContacts.size} รายการ</span>
+                  </div>
+                  <div className="space-y-1">
+                    {faContacts.map((fa) => {
+                      const faType = String(fa.contactType)
+                      const typeLabel = faType === '5' ? 'ผู้ขาย' : faType === '7' ? 'ซื้อ/ขาย' : 'ผู้ซื้อ'
+                      const typeColor = faType === '5' ? 'text-green-600' : faType === '7' ? 'text-orange-600' : 'text-blue-600'
+                      return (
+                        <div
+                          key={fa.id}
+                          onClick={() => toggleSelectFaContact(fa.id)}
+                          className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                            selectedFaContacts.has(fa.id) ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
+                          }`}
+                        >
+                          {selectedFaContacts.has(fa.id) ? (
+                            <CheckSquare className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                          ) : (
+                            <Square className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-gray-900 truncate">{fa.contactName || '-'}</div>
+                            <div className="text-xs text-gray-500 flex gap-3 mt-0.5">
+                              {fa.contactMobile && <span>📱 {fa.contactMobile}</span>}
+                              {fa.contactEmail && <span>✉ {fa.contactEmail}</span>}
+                              {fa.contactTaxId && <span>🏢 {fa.contactTaxId}</span>}
+                            </div>
+                          </div>
+                          <span className={`text-xs font-medium ${typeColor}`}>{typeLabel}</span>
+                          <span className="text-xs text-gray-400">FA#{fa.id}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="p-4 border-t flex items-center justify-between">
+              {importingContacts ? (
+                <div className="flex items-center gap-2 text-sm text-blue-600">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  {importProgress || 'กำลังนำเข้า...'}
+                </div>
+              ) : (
+                <span className="text-sm text-gray-500">
+                  ผู้ติดต่อใน FA: {faContacts.length} | เลือก: {selectedFaContacts.size}
+                </span>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowImportModal(false)}
+                  className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
+                >
+                  ปิด
+                </button>
+                <button
+                  onClick={handleImportFaContacts}
+                  disabled={selectedFaContacts.size === 0 || importingContacts}
+                  className="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  นำเข้า {selectedFaContacts.size > 0 ? `(${selectedFaContacts.size})` : ''}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

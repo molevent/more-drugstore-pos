@@ -532,6 +532,506 @@ export const convertOrderToCashInvoice = (
 };
 
 /**
+ * Expenses API (ค่าใช้จ่าย - FlowAccount uses /expenses endpoint)
+ * POST requires accounting fields: systemCode, categoryId, creditId, debitId
+ * Use getExpenseCategories to get valid category/accounting IDs
+ */
+export const getExpenses = async (page: number = 1, limit: number = 100): Promise<any> => {
+  return apiRequest<any>(`expenses?currentPage=${page}&pageSize=${limit}&sortBy=&filter=`);
+};
+
+export const getExpenseById = async (id: number): Promise<any> => {
+  return apiRequest<any>(`expenses/${id}`);
+};
+
+export const getExpenseCategories = async (): Promise<any> => {
+  return apiRequest<any>('expenses/categories/business');
+};
+
+export const createExpense = async (expense: any): Promise<any> => {
+  return apiRequest<any>('expenses', {
+    method: 'POST',
+    body: JSON.stringify(expense)
+  });
+};
+
+export const updateExpense = async (id: number, expense: any): Promise<any> => {
+  return apiRequest<any>(`expenses/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(expense)
+  });
+};
+
+export const deleteExpense = async (id: number): Promise<any> => {
+  return apiRequest<any>(`expenses/${id}`, {
+    method: 'DELETE'
+  });
+};
+
+/**
+ * Convert local expense to FlowAccount expense format
+ * Requires FA expense category with accounting fields
+ */
+export const convertExpenseToFlowAccount = (
+  expense: {
+    description: string;
+    amount: number;
+    expense_date: string;
+    document_date?: string;
+    vendor?: string;
+    receipt_number?: string;
+    notes?: string;
+    vat_amount?: number;
+    amount_before_tax?: number;
+    withholding_tax?: number;
+    tax_invoice_number?: string;
+    quantity?: number;
+    unit_price?: number;
+  },
+  faCategory: {
+    systemCode: string;
+    categoryId: string;
+    creditId: string;
+    debitId: string;
+  }
+): any => {
+  const qty = expense.quantity || 1;
+  const total = expense.amount;
+  const publishedOn = expense.document_date || expense.expense_date;
+  const hasVat = !!(expense.vat_amount && expense.vat_amount > 0);
+  const vatAmount = expense.vat_amount || 0;
+  
+  // FlowAccount requires: totalAfterDiscount >= vatAmount
+  // subTotal = amount before VAT, totalAfterDiscount = subTotal (no discount)
+  // grandTotal = subTotal + vatAmount (if VAT exclusive) or = total (if VAT inclusive)
+  const subTotal = expense.amount_before_tax || (hasVat ? total - vatAmount : total);
+  const totalAfterDiscount = subTotal;
+  const pricePerUnit = expense.unit_price || subTotal / qty;
+
+  return {
+    contactName: expense.vendor || '',
+    publishedOn,
+    creditType: 3,
+    creditDays: 0,
+    dueDate: publishedOn,
+    isVat: hasVat,
+    isVatInclusive: false,
+    subTotal: subTotal,
+    discountPercentage: 0,
+    discountAmount: 0,
+    totalAfterDiscount: totalAfterDiscount,
+    vatAmount: vatAmount,
+    grandTotal: total,
+    remarks: [expense.receipt_number ? `เลขที่: ${expense.receipt_number}` : '', expense.notes || ''].filter(Boolean).join('\n'),
+    internalNotes: expense.tax_invoice_number ? `ใบกำกับภาษี: ${expense.tax_invoice_number}` : '',
+    documentWithholdingTaxAmount: expense.withholding_tax || 0,
+    documentShowWithholdingTax: !!(expense.withholding_tax && expense.withholding_tax > 0),
+    items: [{
+      description: expense.description || 'ค่าใช้จ่าย',
+      quantity: qty,
+      pricePerUnit: pricePerUnit,
+      total: subTotal,
+      systemCode: faCategory.systemCode,
+      categoryId: faCategory.categoryId,
+      creditId: faCategory.creditId,
+      debitId: faCategory.debitId
+    }]
+  };
+};
+
+/**
+ * Sync expenses to FlowAccount
+ * Returns { created, updated, skipped, failed, results }
+ */
+export const syncExpensesToFlowAccount = async (
+  expenses: Array<{
+    id: string;
+    description: string;
+    amount: number;
+    expense_date: string;
+    document_date?: string;
+    vendor?: string;
+    receipt_number?: string;
+    notes?: string;
+    vat_amount?: number;
+    amount_before_tax?: number;
+    withholding_tax?: number;
+    tax_invoice_number?: string;
+    quantity?: number;
+    unit_price?: number;
+    flowaccount_id?: number;
+  }>,
+  faCategory: {
+    systemCode: string;
+    categoryId: string;
+    creditId: string;
+    debitId: string;
+  },
+  onProgress?: (current: number, total: number, action: string) => void
+): Promise<{
+  created: number;
+  updated: number;
+  skipped: number;
+  failed: number;
+  results: Array<{ localId: string; faId?: number; action: string; error?: string }>;
+}> => {
+  const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+  let created = 0, updated = 0, skipped = 0, failed = 0;
+  const results: Array<{ localId: string; faId?: number; action: string; error?: string }> = [];
+
+  for (let i = 0; i < expenses.length; i++) {
+    const expense = expenses[i];
+    const label = expense.description || expense.vendor || '-';
+    onProgress?.(i + 1, expenses.length, `${i + 1}/${expenses.length} ${label}`);
+
+    try {
+      const faData = convertExpenseToFlowAccount(expense, faCategory);
+
+      if (expense.flowaccount_id) {
+        // Update existing
+        const result = await updateExpense(expense.flowaccount_id, faData);
+        const updatedId = result?.data?.recordId || expense.flowaccount_id;
+        updated++;
+        results.push({ localId: expense.id, faId: updatedId, action: 'updated' });
+      } else {
+        // Create new
+        const result = await createExpense(faData);
+        const newId = result?.data?.recordId || result?.data?.documentId;
+        created++;
+        results.push({ localId: expense.id, faId: newId, action: 'created' });
+      }
+    } catch (err: any) {
+      failed++;
+      results.push({ localId: expense.id, action: 'failed', error: err.message });
+      console.warn(`Expense sync failed [${i + 1}/${expenses.length}] ${label}:`, err.message);
+    }
+
+    if (i < expenses.length - 1) await delay(100);
+  }
+
+  return { created, updated, skipped, failed, results };
+};
+
+/**
+ * Purchase (ใบรับสินค้า) API
+ */
+export const getPurchases = async (page: number = 1, limit: number = 50): Promise<any> => {
+  return apiRequest<any>(`purchases?currentPage=${page}&pageSize=${limit}`);
+};
+
+export const getPurchaseById = async (id: number): Promise<any> => {
+  return apiRequest<any>(`purchases/${id}`);
+};
+
+export const createPurchase = async (purchase: any): Promise<any> => {
+  return apiRequest<any>('purchases', {
+    method: 'POST',
+    body: JSON.stringify(purchase)
+  });
+};
+
+export const updatePurchase = async (id: number, purchase: any): Promise<any> => {
+  return apiRequest<any>(`purchases/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(purchase)
+  });
+};
+
+export const deletePurchase = async (id: number): Promise<any> => {
+  return apiRequest<any>(`purchases/${id}`, {
+    method: 'DELETE'
+  });
+};
+
+/**
+ * Convert a local expense to FlowAccount Purchase format (ใบรับสินค้า)
+ * Used for "ซื้อสินค้าเพื่อขาย" type expenses
+ */
+export const convertExpenseToPurchase = (
+  expense: {
+    description: string;
+    amount: number;
+    expense_date: string;
+    document_date?: string;
+    vendor?: string;
+    receipt_number?: string;
+    notes?: string;
+    vat_amount?: number;
+    amount_before_tax?: number;
+    withholding_tax?: number;
+    tax_invoice_number?: string;
+    quantity?: number;
+    unit_price?: number;
+  }
+): any => {
+  const qty = expense.quantity || 1;
+  const total = expense.amount;
+  const publishedOn = expense.document_date || expense.expense_date;
+  const hasVat = !!(expense.vat_amount && expense.vat_amount > 0);
+  const vatAmount = expense.vat_amount || 0;
+  const subTotal = expense.amount_before_tax || (hasVat ? total - vatAmount : total);
+  const totalAfterDiscount = subTotal;
+  const pricePerUnit = expense.unit_price || subTotal / qty;
+
+  return {
+    contactName: expense.vendor || '',
+    publishedOn,
+    creditType: 3,
+    creditDays: 0,
+    dueDate: publishedOn,
+    isVat: hasVat,
+    isVatInclusive: false,
+    subTotal: subTotal,
+    discountPercentage: 0,
+    discountAmount: 0,
+    totalAfterDiscount: totalAfterDiscount,
+    vatAmount: vatAmount,
+    grandTotal: total,
+    remarks: [expense.receipt_number ? `เลขที่: ${expense.receipt_number}` : '', expense.notes || ''].filter(Boolean).join('\n'),
+    internalNotes: expense.tax_invoice_number ? `ใบกำกับภาษี: ${expense.tax_invoice_number}` : '',
+    documentWithholdingTaxAmount: expense.withholding_tax || 0,
+    documentShowWithholdingTax: !!(expense.withholding_tax && expense.withholding_tax > 0),
+    items: [{
+      name: expense.description || 'ซื้อสินค้า',
+      description: expense.description || 'ซื้อสินค้า',
+      quantity: qty,
+      pricePerUnit: pricePerUnit,
+      total: subTotal
+    }]
+  };
+};
+
+/**
+ * Sync expenses as Purchases to FlowAccount (ใบรับสินค้า)
+ * Returns { created, updated, skipped, failed, results }
+ */
+export const syncPurchasesToFlowAccount = async (
+  expenses: Array<{
+    id: string;
+    description: string;
+    amount: number;
+    expense_date: string;
+    document_date?: string;
+    vendor?: string;
+    receipt_number?: string;
+    notes?: string;
+    vat_amount?: number;
+    amount_before_tax?: number;
+    withholding_tax?: number;
+    tax_invoice_number?: string;
+    quantity?: number;
+    unit_price?: number;
+    flowaccount_id?: number;
+  }>,
+  onProgress?: (current: number, total: number, action: string) => void
+): Promise<{
+  created: number;
+  updated: number;
+  skipped: number;
+  failed: number;
+  results: Array<{ localId: string; faId?: number; action: string; error?: string }>;
+}> => {
+  const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+  let created = 0, updated = 0, skipped = 0, failed = 0;
+  const results: Array<{ localId: string; faId?: number; action: string; error?: string }> = [];
+
+  for (let i = 0; i < expenses.length; i++) {
+    const expense = expenses[i];
+    const label = expense.description || expense.vendor || '-';
+    onProgress?.(i + 1, expenses.length, `${i + 1}/${expenses.length} ${label}`);
+
+    try {
+      const faData = convertExpenseToPurchase(expense);
+
+      if (expense.flowaccount_id) {
+        const result = await updatePurchase(expense.flowaccount_id, faData);
+        const updatedId = result?.data?.recordId || expense.flowaccount_id;
+        updated++;
+        results.push({ localId: expense.id, faId: updatedId, action: 'updated' });
+      } else {
+        const result = await createPurchase(faData);
+        const newId = result?.data?.recordId || result?.data?.documentId;
+        created++;
+        results.push({ localId: expense.id, faId: newId, action: 'created' });
+      }
+    } catch (err: any) {
+      failed++;
+      results.push({ localId: expense.id, action: 'failed', error: err.message });
+      console.warn(`Purchase sync failed [${i + 1}/${expenses.length}] ${label}:`, err.message);
+    }
+
+    if (i < expenses.length - 1) await delay(100);
+  }
+
+  return { created, updated, skipped, failed, results };
+};
+
+/**
+ * Withholding Tax (ภ.ง.ด. / หัก ณ ที่จ่าย) API
+ */
+export const getWithholdingTaxes = async (page: number = 1, limit: number = 50): Promise<any> => {
+  return apiRequest<any>(`withholding-taxes?currentPage=${page}&pageSize=${limit}`);
+};
+
+export const getWithholdingTaxById = async (id: number): Promise<any> => {
+  return apiRequest<any>(`withholding-taxes/${id}`);
+};
+
+export const createWithholdingTax = async (wht: any): Promise<any> => {
+  return apiRequest<any>('withholding-taxes', {
+    method: 'POST',
+    body: JSON.stringify(wht)
+  });
+};
+
+export const updateWithholdingTax = async (id: number, wht: any): Promise<any> => {
+  return apiRequest<any>(`withholding-taxes/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(wht)
+  });
+};
+
+export const deleteWithholdingTax = async (id: number): Promise<any> => {
+  return apiRequest<any>(`withholding-taxes/${id}`, {
+    method: 'DELETE'
+  });
+};
+
+/**
+ * Map local income_type to FlowAccount payableCode
+ * FlowAccount payableCode:
+ *   1 = เงินเดือน/ค่าจ้าง (40(1))
+ *   2 = ค่านายหน้า (40(2))
+ *   3 = ค่าลิขสิทธิ์/ค่าสิทธิ (40(3))
+ *   4 = ดอกเบี้ย (40(4)(a))
+ *   5 = เงินปันผล (40(4)(b))
+ *   6 = ค่าจ้างทำของ/ค่าบริการ (3%)
+ *   7 = ค่าเช่าทรัพย์สิน (5%)
+ *   8 = ค่าโฆษณา (2%)
+ *   9 = อื่นๆ
+ */
+const mapIncomeTypeToPayableCode = (incomeType: string): string => {
+  const map: Record<string, string> = {
+    'ค่าจ้าง': '6',
+    'ค่าบริการ': '6',
+    'ค่าเช่า': '7',
+    'ค่าโฆษณา': '8',
+    'ค่าสิทธิ': '3',
+    'ค่าธรรมเนียม': '6',
+    'ค่าดอกเบี้ย': '4',
+    'เงินปันผล': '5',
+  };
+  return map[incomeType] || '9';
+};
+
+/**
+ * Convert local WithholdingTax to FlowAccount format
+ */
+export const convertWhtToFlowAccount = (
+  wht: {
+    document_date: string;
+    document_number: string;
+    payer_name: string;
+    payer_tax_id?: string;
+    payee_name: string;
+    payee_tax_id?: string;
+    income_type: string;
+    income_amount: number;
+    tax_rate: number;
+    tax_amount: number;
+    payment_date?: string;
+    notes?: string;
+  }
+): any => {
+  return {
+    contactName: wht.payee_name,
+    contactTaxId: wht.payee_tax_id || '',
+    contactAddress: '',
+    contactBranch: 'สำนักงานใหญ่',
+    publishedOn: wht.document_date,
+    entity: '3',
+    taxPayment: '1',
+    WithholidingTaxItem: [{
+      description: wht.income_type,
+      payableCode: mapIncomeTypeToPayableCode(wht.income_type),
+      amount: wht.income_amount,
+      withheldPercentage: wht.tax_rate,
+      withheldAmount: wht.tax_amount
+    }],
+    total: wht.income_amount,
+    totalTaxWithheld: wht.tax_amount,
+    remarks: wht.notes || '',
+    internalNotes: wht.document_number ? `เลขที่: ${wht.document_number}` : ''
+  };
+};
+
+/**
+ * Sync withholding taxes to FlowAccount
+ */
+export const syncWhtToFlowAccount = async (
+  whts: Array<{
+    id: string;
+    document_date: string;
+    document_number: string;
+    payer_name: string;
+    payer_tax_id?: string;
+    payee_name: string;
+    payee_tax_id?: string;
+    income_type: string;
+    income_amount: number;
+    tax_rate: number;
+    tax_amount: number;
+    payment_date?: string;
+    notes?: string;
+    flowaccount_id?: number;
+  }>,
+  onProgress?: (current: number, total: number, action: string) => void
+): Promise<{
+  created: number;
+  updated: number;
+  skipped: number;
+  failed: number;
+  results: Array<{ localId: string; faId?: number; action: string; error?: string }>;
+}> => {
+  const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+  let created = 0, updated = 0, skipped = 0, failed = 0;
+  const results: Array<{ localId: string; faId?: number; action: string; error?: string }> = [];
+
+  for (let i = 0; i < whts.length; i++) {
+    const wht = whts[i];
+    const label = `${wht.payee_name} - ${wht.income_type}`;
+    onProgress?.(i + 1, whts.length, `${i + 1}/${whts.length} ${label}`);
+
+    try {
+      const faData = convertWhtToFlowAccount(wht);
+
+      if (wht.flowaccount_id) {
+        const result = await updateWithholdingTax(wht.flowaccount_id, faData);
+        const updatedId = result?.data?.recordId || wht.flowaccount_id;
+        updated++;
+        results.push({ localId: wht.id, faId: updatedId, action: 'updated' });
+      } else {
+        const result = await createWithholdingTax(faData);
+        const newId = result?.data?.recordId || result?.data?.documentId;
+        created++;
+        results.push({ localId: wht.id, faId: newId, action: 'created' });
+      }
+    } catch (err: any) {
+      failed++;
+      results.push({ localId: wht.id, action: 'failed', error: err.message });
+      console.warn(`WHT sync failed [${i + 1}/${whts.length}] ${label}:`, err.message);
+    }
+
+    if (i < whts.length - 1) await delay(100);
+  }
+
+  return { created, updated, skipped, failed, results };
+};
+
+/**
  * Invoices API
  */
 export const getInvoices = async (

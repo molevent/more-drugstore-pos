@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle, Percent, FileText, ShoppingCart, BookOpen, Wallet, Printer } from 'lucide-react'
+import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle, Percent, FileText, ShoppingCart, BookOpen, Wallet, Printer, Upload, X, CheckSquare, Square } from 'lucide-react'
+import { getExpenseCategories as getFaExpenseCategories, syncExpensesToFlowAccount, syncPurchasesToFlowAccount } from '../services/flowaccount'
 
 interface PaymentVoucher {
   id?: string
@@ -559,6 +560,16 @@ export default function ExpensesPage() {
 
   // Expenses Print Modal state
   const [showPrintModal, setShowPrintModal] = useState(false)
+
+  // FlowAccount Sync states
+  const [showSyncFaModal, setShowSyncFaModal] = useState(false)
+  const [faCategories, setFaCategories] = useState<any[]>([])
+  const [loadingFaCategories, setLoadingFaCategories] = useState(false)
+  const [selectedFaCategory, setSelectedFaCategory] = useState<any>(null)
+  const [selectedSyncExpenses, setSelectedSyncExpenses] = useState<Set<string>>(new Set())
+  const [syncingToFa, setSyncingToFa] = useState(false)
+  const [syncProgress, setSyncProgress] = useState('')
+  const [syncMode, setSyncMode] = useState<'expense' | 'purchase'>('expense')
 
   const createExpenseWithCategory = async (category: string, description: string = '') => {
     resetForm()
@@ -1179,6 +1190,139 @@ export default function ExpensesPage() {
     }
   }
 
+  // FlowAccount Sync: Fetch FA expense categories
+  const handleOpenSyncFaModal = async () => {
+    setShowSyncFaModal(true)
+    setSelectedSyncExpenses(new Set())
+    setSelectedFaCategory(null)
+    setSyncProgress('')
+    
+    if (faCategories.length === 0) {
+      setLoadingFaCategories(true)
+      try {
+        const result = await getFaExpenseCategories()
+        // Flatten categories and subcategories into a flat list
+        const cats: any[] = []
+        const rawCats = result?.data || result || []
+        const processCat = (cat: any) => {
+          cats.push({
+            systemCode: String(cat.systemCode),
+            categoryId: String(cat.categoryId),
+            creditId: String(cat.creditId),
+            debitId: String(cat.debitId),
+            nameLocal: cat.nameLocal,
+            nameForeign: cat.nameForeign
+          })
+          if (cat.subCategories) {
+            cat.subCategories.forEach((sub: any) => processCat(sub))
+          }
+        }
+        if (Array.isArray(rawCats)) {
+          rawCats.forEach((cat: any) => processCat(cat))
+        }
+        setFaCategories(cats)
+        // Default to "ค่าใช้จ่ายทั่วไป" (General expenses) if available
+        const defaultCat = cats.find(c => c.nameForeign === 'General expenses') || cats[0]
+        if (defaultCat) setSelectedFaCategory(defaultCat)
+      } catch (err) {
+        console.error('Error fetching FA categories:', err)
+        alert('ดึงหมวดหมู่ค่าใช้จ่ายจาก FlowAccount ล้มเหลว: ' + (err as Error).message)
+      } finally {
+        setLoadingFaCategories(false)
+      }
+    }
+  }
+
+  // FlowAccount Sync: Toggle select expense
+  const toggleSyncExpense = (id: string) => {
+    setSelectedSyncExpenses(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  // FlowAccount Sync: Toggle select all filtered expenses
+  const toggleSelectAllSync = () => {
+    if (selectedSyncExpenses.size === filteredExpenses.length) {
+      setSelectedSyncExpenses(new Set())
+    } else {
+      setSelectedSyncExpenses(new Set(filteredExpenses.map(e => e.id)))
+    }
+  }
+
+  // FlowAccount Sync: Perform sync (supports both Expense and Purchase modes)
+  const handleSyncToFa = async () => {
+    if (syncMode === 'expense' && !selectedFaCategory) {
+      alert('กรุณาเลือกหมวดหมู่ค่าใช้จ่ายใน FlowAccount')
+      return
+    }
+    const toSync = filteredExpenses.filter(e => selectedSyncExpenses.has(e.id))
+    if (toSync.length === 0) {
+      alert('กรุณาเลือกรายการค่าใช้จ่ายที่ต้องการ sync')
+      return
+    }
+    const modeLabel = syncMode === 'purchase' ? 'ใบรับสินค้า (Purchase)' : `ค่าใช้จ่าย (Expense) - ${selectedFaCategory?.nameLocal}`
+    if (!confirm(`ต้องการ sync ${toSync.length} รายการเป็น ${modeLabel} ไปยัง FlowAccount?`)) return
+
+    setSyncingToFa(true)
+    try {
+      const expenseData = toSync.map(e => ({
+        id: e.id,
+        description: e.description,
+        amount: e.amount,
+        expense_date: e.expense_date,
+        document_date: e.document_date,
+        vendor: e.vendor,
+        receipt_number: e.receipt_number,
+        notes: e.notes,
+        vat_amount: e.vat_amount,
+        amount_before_tax: e.amount_before_tax,
+        withholding_tax: e.withholding_tax,
+        tax_invoice_number: e.tax_invoice_number,
+        quantity: e.quantity,
+        unit_price: e.unit_price,
+        flowaccount_id: (e as any).flowaccount_id
+      }))
+
+      const result = syncMode === 'purchase'
+        ? await syncPurchasesToFlowAccount(expenseData, (_c, _t, action) => setSyncProgress(action))
+        : await syncExpensesToFlowAccount(expenseData, selectedFaCategory, (_c, _t, action) => setSyncProgress(action))
+
+      // Update local DB with flowaccount_id for successfully synced expenses
+      for (const r of result.results) {
+        if (r.faId && (r.action === 'created' || r.action === 'updated')) {
+          await supabase
+            .from('expenses')
+            .update({
+              flowaccount_id: r.faId,
+              flowaccount_synced_at: new Date().toISOString()
+            })
+            .eq('id', r.localId)
+            .then(({ error }) => {
+              if (error) console.warn('Failed to update flowaccount_id for', r.localId, error)
+            })
+        }
+      }
+
+      const typeLabel = syncMode === 'purchase' ? 'ใบรับสินค้า' : 'ค่าใช้จ่าย'
+      setSyncProgress('')
+      alert(`Sync ${typeLabel} เสร็จสิ้น!\n\n✅ สร้างใหม่: ${result.created}\n📝 อัปเดต: ${result.updated}\n❌ ล้มเหลว: ${result.failed}`)
+      
+      if (result.created > 0 || result.updated > 0) {
+        fetchExpenses()
+      }
+      setShowSyncFaModal(false)
+    } catch (err) {
+      console.error('Sync error:', err)
+      alert('เกิดข้อผิดพลาดในการ sync: ' + (err as Error).message)
+    } finally {
+      setSyncingToFa(false)
+      setSyncProgress('')
+    }
+  }
+
   return (
     <div>
       {/* Print Styles - Hide everything except print modal when printing */}
@@ -1594,6 +1738,17 @@ export default function ExpensesPage() {
                 <XCircle className="h-4 w-4" />
               </button>
             )}
+            
+            {/* Sync to FlowAccount Button */}
+            <button
+              onClick={handleOpenSyncFaModal}
+              disabled={syncingToFa}
+              className="flex items-center gap-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+              title="Sync ค่าใช้จ่ายไป FlowAccount"
+            >
+              <Upload className="h-4 w-4" />
+              {syncingToFa ? syncProgress || 'กำลัง sync...' : 'Sync FA'}
+            </button>
             
             {/* Print Button */}
             <button
@@ -3396,6 +3551,169 @@ export default function ExpensesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Sync to FlowAccount Modal */}
+      {showSyncFaModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => !syncingToFa && setShowSyncFaModal(false)}>
+          <div className="w-full max-w-3xl max-h-[85vh] flex flex-col bg-white rounded-xl shadow-xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
+              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Upload className="h-5 w-5 text-blue-600" />
+                Sync ไป FlowAccount
+              </h2>
+              <button onClick={() => !syncingToFa && setShowSyncFaModal(false)} className="p-1 hover:bg-gray-100 rounded-full">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Sync Mode Toggle + Category Picker */}
+            <div className="p-4 border-b flex-shrink-0 bg-gray-50 space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">ประเภทเอกสารใน FlowAccount *</label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setSyncMode('expense')}
+                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium border-2 transition-colors ${
+                      syncMode === 'expense' ? 'bg-orange-50 border-orange-400 text-orange-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    📋 ค่าใช้จ่าย (Expense)
+                    <div className="text-xs font-normal mt-0.5 opacity-70">ค่าเช่า, ค่าน้ำ, ค่าไฟ, ค่าบริการ</div>
+                  </button>
+                  <button
+                    onClick={() => setSyncMode('purchase')}
+                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium border-2 transition-colors ${
+                      syncMode === 'purchase' ? 'bg-green-50 border-green-400 text-green-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    📦 ใบรับสินค้า (Purchase)
+                    <div className="text-xs font-normal mt-0.5 opacity-70">ซื้อสินค้าเพื่อขาย, ต้นทุนสินค้า</div>
+                  </button>
+                </div>
+              </div>
+
+              {syncMode === 'expense' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">หมวดหมู่ค่าใช้จ่าย *</label>
+                  {loadingFaCategories ? (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      กำลังดึงหมวดหมู่จาก FlowAccount...
+                    </div>
+                  ) : (
+                    <select
+                      value={selectedFaCategory ? `${selectedFaCategory.systemCode}` : ''}
+                      onChange={(e) => {
+                        const cat = faCategories.find(c => c.systemCode === e.target.value)
+                        setSelectedFaCategory(cat || null)
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">-- เลือกหมวดหมู่ --</option>
+                      {faCategories.map((cat, idx) => (
+                        <option key={idx} value={cat.systemCode}>
+                          {cat.nameLocal} ({cat.nameForeign})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Expense List */}
+            <div className="flex-1 overflow-y-auto p-4 min-h-0">
+              {filteredExpenses.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">ไม่มีค่าใช้จ่ายในช่วงที่กรอง</div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-3">
+                    <button
+                      onClick={toggleSelectAllSync}
+                      className="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600"
+                    >
+                      {selectedSyncExpenses.size === filteredExpenses.length ? (
+                        <CheckSquare className="h-4 w-4 text-blue-600" />
+                      ) : (
+                        <Square className="h-4 w-4" />
+                      )}
+                      เลือกทั้งหมด ({filteredExpenses.length})
+                    </button>
+                    <span className="text-sm text-gray-500">เลือกแล้ว {selectedSyncExpenses.size} รายการ</span>
+                  </div>
+                  <div className="space-y-1">
+                    {filteredExpenses.map((expense) => {
+                      const isSynced = !!(expense as any).flowaccount_id
+                      return (
+                        <div
+                          key={expense.id}
+                          onClick={() => toggleSyncExpense(expense.id)}
+                          className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                            selectedSyncExpenses.has(expense.id) ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
+                          }`}
+                        >
+                          {selectedSyncExpenses.has(expense.id) ? (
+                            <CheckSquare className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                          ) : (
+                            <Square className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-gray-900 truncate">{expense.description}</div>
+                            <div className="text-xs text-gray-500 flex gap-3 mt-0.5">
+                              <span>{expense.document_date || expense.expense_date}</span>
+                              {expense.vendor && <span>{expense.vendor}</span>}
+                              <span className="text-gray-400">{expense.category}</span>
+                            </div>
+                          </div>
+                          <span className="text-sm font-medium text-gray-900 whitespace-nowrap">
+                            ฿{expense.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                          </span>
+                          {isSynced && (
+                            <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full whitespace-nowrap">FA✓</span>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t flex items-center justify-between flex-shrink-0">
+              {syncingToFa ? (
+                <div className="flex items-center gap-2 text-sm text-blue-600">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  {syncProgress || 'กำลัง sync...'}
+                </div>
+              ) : (
+                <span className="text-sm text-gray-500">
+                  รายการทั้งหมด: {filteredExpenses.length} | เลือก: {selectedSyncExpenses.size} | 
+                  ยอดรวม: ฿{filteredExpenses.filter(e => selectedSyncExpenses.has(e.id)).reduce((s, e) => s + e.amount, 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                </span>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowSyncFaModal(false)}
+                  disabled={syncingToFa}
+                  className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+                >
+                  ปิด
+                </button>
+                <button
+                  onClick={handleSyncToFa}
+                  disabled={selectedSyncExpenses.size === 0 || syncingToFa || (syncMode === 'expense' && !selectedFaCategory)}
+                  className={`px-4 py-2 text-sm text-white rounded-lg disabled:opacity-50 ${
+                    syncMode === 'purchase' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                >
+                  {syncMode === 'purchase' ? '📦 Sync ใบรับสินค้า' : '📋 Sync ค่าใช้จ่าย'} {selectedSyncExpenses.size > 0 ? `(${selectedSyncExpenses.size})` : ''}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
