@@ -63,8 +63,7 @@ export default function BillScanPage() {
 
   // Product matching state
   const [products, setProducts] = useState<Product[]>([])
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [mappings, setMappings] = useState<SupplierMapping[]>([])
+  const [_mappings, setMappings] = useState<SupplierMapping[]>([])
   const [matchedItems, setMatchedItems] = useState<MatchedItem[]>([])
   const [showProductSearch, setShowProductSearch] = useState<number | null>(null)
   const [productSearchTerm, setProductSearchTerm] = useState('')
