@@ -396,25 +396,40 @@ export default function PlatformManagementPage() {
 
     setImporting(true)
     let created = 0
+    let alreadyExists = 0
     let failed = 0
-    const createdSkuMap = new Map<string, Product>()
 
     for (let i = 0; i < uniqueItems.length; i++) {
       const item = uniqueItems[i]
       setImportProgress(`สร้างสินค้า ${i + 1}/${uniqueItems.length} ${item.product_name}`)
 
       try {
-        // Check if barcode already exists in local products (may have been created in this batch)
-        const existingProduct = products.find(p => p.barcode === item.seller_sku || p.sku === item.seller_sku)
-        if (existingProduct) {
-          // Already exists — just mark as matched
-          createdSkuMap.set(item.seller_sku, existingProduct)
+        // Check DB directly for existing barcode (not just local state)
+        const { data: existingData } = await supabase
+          .from('products')
+          .select('*')
+          .eq('barcode', item.seller_sku)
+          .limit(1)
+
+        if (existingData && existingData.length > 0) {
+          const existingProduct = existingData[0] as Product
+          // Already exists in DB — update platform flag + mark as matched
+          await supabase
+            .from('products')
+            .update({ [currentPlatform.sellField]: true, [currentPlatform.priceField]: item.special_price || item.price || undefined })
+            .eq('id', existingProduct.id)
+
+          setProducts(prev => {
+            const exists = prev.find(p => p.id === existingProduct.id)
+            if (exists) return prev.map(p => p.id === existingProduct.id ? { ...p, ...existingProduct, [currentPlatform.sellField]: true } : p)
+            return [...prev, existingProduct]
+          })
           setImportedItems(prev => prev.map(it =>
             it.seller_sku === item.seller_sku && !it.matched_product
               ? { ...it, matched_product: existingProduct, match_type: 'barcode' as const }
               : it
           ))
-          created++
+          alreadyExists++
           continue
         }
 
@@ -459,8 +474,6 @@ export default function PlatformManagementPage() {
         if (data) {
           const createdProduct = data as Product
           setProducts(prev => [...prev, createdProduct])
-          createdSkuMap.set(item.seller_sku, createdProduct)
-          // Update ALL imported items with same seller_sku
           setImportedItems(prev => prev.map(it =>
             it.seller_sku === item.seller_sku && !it.matched_product
               ? { ...it, matched_product: createdProduct, match_type: 'barcode' as const }
@@ -476,7 +489,12 @@ export default function PlatformManagementPage() {
 
     setImporting(false)
     setImportProgress('')
-    alert(`สร้างสินค้าใหม่สำเร็จ ${created} รายการ${skipped > 0 ? `, ข้าม ${skipped} รายการ (SKU ซ้ำ)` : ''}${failed > 0 ? `, ล้มเหลว ${failed} รายการ` : ''}`)
+    const parts = []
+    if (created > 0) parts.push(`สร้างใหม่ ${created}`)
+    if (alreadyExists > 0) parts.push(`มีอยู่แล้ว ${alreadyExists} (อัพเดทแล้ว)`)
+    if (skipped > 0) parts.push(`ข้าม ${skipped} (SKU ซ้ำ)`)
+    if (failed > 0) parts.push(`ล้มเหลว ${failed}`)
+    alert(parts.join(', '))
   }
 
   return (
