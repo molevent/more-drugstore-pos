@@ -58,6 +58,7 @@ import StorefrontPage from './pages/StorefrontPage'
 import ProductDetailPage from './pages/ProductDetailPage'
 import CheckoutPage from './pages/CheckoutPage'
 import UserManagementPage from './pages/UserManagementPage'
+import PlatformManagementPage from './pages/PlatformManagementPage'
 import AuthGuard from './components/auth/AuthGuard'
 import Layout from './components/common/Layout'
 import { LanguageProvider } from './contexts/LanguageContext'
@@ -138,6 +139,7 @@ function App() {
                     <Route path="/settings/flowaccount" element={<FlowAccountSettingsPage />} />
                     <Route path="/settings/users" element={<UserManagementPage />} />
                     <Route path="/users" element={<UserManagementPage />} />
+                    <Route path="/platform-management" element={<PlatformManagementPage />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   </Routes>
                 </Layout>
