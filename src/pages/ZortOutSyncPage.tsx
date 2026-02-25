@@ -393,7 +393,7 @@ export default function ZortOutSyncPage() {
       case 'error':
         return <AlertCircle className="h-5 w-5 text-red-500" />
       case 'syncing':
-        return <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
+        return <Loader2 className="h-5 w-5 text-[#4D6FE8] animate-spin" />
       default:
         return null
     }
@@ -421,8 +421,8 @@ export default function ZortOutSyncPage() {
         <Card className="relative">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Package className="h-6 w-6 text-blue-600" />
+              <div className="p-3 bg-[#4D6FE8]/15 rounded-lg">
+                <Package className="h-6 w-6 text-[#2D2E5E]" />
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900">สินค้า</h3>
@@ -440,7 +440,7 @@ export default function ZortOutSyncPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">อัพเดต:</span>
-                <span className="font-medium text-blue-600">{results.products.updated}</span>
+                <span className="font-medium text-[#4D6FE8]">{results.products.updated}</span>
               </div>
               {results.products.errors > 0 && (
                 <div className="flex justify-between">
@@ -494,7 +494,7 @@ export default function ZortOutSyncPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">อัพเดต:</span>
-                <span className="font-medium text-blue-600">{results.orders.updated}</span>
+                <span className="font-medium text-[#4D6FE8]">{results.orders.updated}</span>
               </div>
               {results.orders.errors > 0 && (
                 <div className="flex justify-between">
@@ -544,7 +544,7 @@ export default function ZortOutSyncPage() {
             <div className="space-y-1 text-sm mb-4">
               <div className="flex justify-between">
                 <span className="text-gray-600">พบเอกสาร:</span>
-                <span className="font-medium text-blue-600">{results.documents} รายการ</span>
+                <span className="font-medium text-[#4D6FE8]">{results.documents} รายการ</span>
               </div>
             </div>
           )}
@@ -576,8 +576,8 @@ export default function ZortOutSyncPage() {
         <Card className="relative">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-indigo-100 rounded-lg">
-                <Download className="h-6 w-6 text-indigo-600" />
+              <div className="p-3 bg-[#2D2E5E]/10 rounded-lg">
+                <Download className="h-6 w-6 text-[#4D6FE8]" />
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900">ดึงออเดอร์เฉพาะ</h3>

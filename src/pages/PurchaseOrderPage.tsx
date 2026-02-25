@@ -1274,14 +1274,14 @@ export default function PurchaseOrderPage() {
                   <BookOpen className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
                   {isSyncing ? 'กำลัง Sync...' : 'ส่งใบรับสินค้า FA'}
                 </button>
-                <Button
-                  variant="secondary"
+                <button
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#2D2E5E] text-white text-sm rounded-lg hover:bg-[#4D6FE8] disabled:opacity-50 transition-colors"
                   onClick={() => selectedPO && syncPOToZortOut(selectedPO)}
                   disabled={isSyncing || poItems.length === 0}
                 >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
                   {isSyncing ? 'กำลัง Sync...' : 'Sync ไป ZortOut'}
-                </Button>
+                </button>
                 <Button 
                   variant="primary" 
                   onClick={() => selectedPO && handleMarkAsReceivedAndPaid(selectedPO)}

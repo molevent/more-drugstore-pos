@@ -278,8 +278,8 @@ export default function SettingsPage() {
     },
     {
       icon: Plug,
-      iconBg: 'bg-[#A67B5B]/10',
-      iconColor: 'text-[#A67B5B]',
+      iconBg: 'bg-[#4D6FE8]/10',
+      iconColor: 'text-[#2D2E5E]',
       title: 'การเชื่อมต่อ ZortOut',
       subtitle: 'ระบบจัดการสต็อก',
       status: { text: 'พร้อมใช้งาน', bgColor: 'bg-[#B8C9B8]/10', textColor: 'text-[#7D735F]' },
