@@ -279,7 +279,9 @@ export default function BillScanPage() {
           cost_price: Number(item.unit_price) || 0,
           stock_quantity: 0,
           min_stock_level: 0,
-          unit: item.unit || 'ชิ้น'
+          unit: item.unit || 'ชิ้น',
+          lot_number: item.lot_number || null,
+          expiry_date: item.expiry_date || null
         })
 
       console.log('Quick-add insert result:', { insertError })
