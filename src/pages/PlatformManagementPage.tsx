@@ -499,6 +499,10 @@ export default function PlatformManagementPage() {
         }
 
         const sellingPrice = item.special_price || item.price || 0
+        // For Grab: price from file is Grab-specific (higher than in-store)
+        // so don't set base_price / selling_price — only set channel price
+        const isGrabPlatform = currentPlatform.id === 'grab'
+        const basePrice = isGrabPlatform ? 0 : sellingPrice
 
         const newProduct: any = {
           barcode: item.seller_sku,
@@ -508,9 +512,9 @@ export default function PlatformManagementPage() {
           product_type: 'finished_goods',
           stock_tracking_type: 'tracked',
           is_active: true,
-          base_price: sellingPrice,
-          selling_price_incl_vat: sellingPrice,
-          selling_price_excl_vat: Math.round((sellingPrice / 1.07) * 100) / 100,
+          base_price: basePrice,
+          selling_price_incl_vat: basePrice,
+          selling_price_excl_vat: basePrice ? Math.round((basePrice / 1.07) * 100) / 100 : 0,
           cost_price: 0,
           unit: 'ชิ้น',
           stock_quantity: 0,
