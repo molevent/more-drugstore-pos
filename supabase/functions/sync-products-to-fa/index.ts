@@ -153,8 +153,18 @@ Deno.serve(async (req) => {
         if (!existing && product.name_th) existing = byName.get(product.name_th.toLowerCase())
 
         if (existing) {
-          await faRequest(token, baseUrl, `products/${existing.id}`, 'PUT', JSON.stringify(faData))
-          updated++
+          const existingType = String(existing.type)
+          if (existingType !== '3') {
+            // Existing is not inventory type — delete and recreate as type 3
+            await faRequest(token, baseUrl, `products/${existing.id}`, 'DELETE')
+            await faRequest(token, baseUrl, 'products', 'POST', JSON.stringify(faData))
+            updated++
+          } else {
+            // Same type — update without type field to avoid ProductTypeNotMatch
+            const { type: _t, ...updateData } = faData
+            await faRequest(token, baseUrl, `products/${existing.id}`, 'PUT', JSON.stringify(updateData))
+            updated++
+          }
         } else {
           await faRequest(token, baseUrl, 'products', 'POST', JSON.stringify(faData))
           created++

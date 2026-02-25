@@ -245,6 +245,12 @@ export const updateFlowProduct = async (id: number, product: any): Promise<any> 
   });
 };
 
+export const deleteFlowProduct = async (id: number): Promise<any> => {
+  return apiRequest<any>(`products/${id}`, {
+    method: 'DELETE'
+  });
+};
+
 /**
  * Convert local product to FlowAccount product format
  */
@@ -342,11 +348,22 @@ export const syncProductsToFlowAccount = async (
       if (!existing && product.name_th) existing = byName.get(product.name_th.toLowerCase());
 
       if (existing) {
-        // Update existing
-        const result = await updateFlowProduct(existing.id, faData);
-        const updatedId = result?.data?.list?.[0]?.id || existing.id;
-        updated++;
-        results.push({ localId: product.id, faId: updatedId, action: 'updated' });
+        const existingType = String(existing.type);
+        if (existingType !== '3') {
+          // Existing is not inventory type — delete and recreate as type 3
+          await deleteFlowProduct(existing.id);
+          const result = await createFlowProduct(faData);
+          const newId = result?.data?.list?.[0]?.id;
+          updated++;
+          results.push({ localId: product.id, faId: newId, action: 'recreated' });
+        } else {
+          // Same type — update without type field to avoid ProductTypeNotMatch
+          const { type, ...updateData } = faData;
+          const result = await updateFlowProduct(existing.id, updateData);
+          const updatedId = result?.data?.list?.[0]?.id || existing.id;
+          updated++;
+          results.push({ localId: product.id, faId: updatedId, action: 'updated' });
+        }
       } else {
         // Create new
         const result = await createFlowProduct(faData);
