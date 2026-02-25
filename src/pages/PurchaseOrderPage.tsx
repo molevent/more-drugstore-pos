@@ -515,7 +515,7 @@ export default function PurchaseOrderPage() {
         const zortItems = poItems.map(item => {
           const product = products.find(p => p.id === item.product_id)
           return {
-            sku: product?.barcode || product?.sku || item.product_id,
+            sku: product?.barcode || product?.sku || '',
             name: item.product?.name_th || product?.name_th || 'Unknown',
             quantity: item.quantity,
             pricepernumber: item.unit_price,

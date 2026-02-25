@@ -198,7 +198,7 @@ export default function StockManagementPage() {
           const product = products.find(p => p.id === selectedProduct.id)
           if (product) {
             zortOutService.updateProductStockBySkuForReceiving(
-              product.barcode || product.id,
+              product.barcode || product.sku || '',
               quantityChange,
               newQuantity
             ).then(result => {
@@ -280,7 +280,7 @@ export default function StockManagementPage() {
         const product = products.find(p => p.id === selectedProduct.id)
         if (product) {
           zortOutService.updateProductStockBySkuForReceiving(
-            product.barcode || product.id,
+            product.barcode || product.sku || '',
             batchFormData.quantity,
             newQuantity
           ).then(result => {
