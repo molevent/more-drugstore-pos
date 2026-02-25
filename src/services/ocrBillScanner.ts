@@ -163,7 +163,7 @@ export async function scanBill(files: File[]): Promise<ScannedBillData> {
           temperature: 0.1,
           topK: 1,
           topP: 1,
-          maxOutputTokens: 8192,
+          maxOutputTokens: 32768,
         }
       }),
       signal: controller.signal
@@ -196,6 +196,14 @@ export async function scanBill(files: File[]): Promise<ScannedBillData> {
     }
 
     const result: ScannedBillData = JSON.parse(jsonMatch[0])
+    
+    // Validate items were parsed
+    if (!result.items || result.items.length === 0) {
+      console.warn('OCR: No items parsed from response. Full AI text:', aiResponse)
+    } else {
+      console.log(`OCR: Parsed ${result.items.length} items successfully`)
+    }
+    
     return result
 
   } catch (error: any) {
