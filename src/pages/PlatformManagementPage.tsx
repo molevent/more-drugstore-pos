@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
-import { Search, ExternalLink, Package, ShoppingCart, Edit, X, Save, Filter, ArrowLeft, Upload, FileSpreadsheet, CheckCircle, AlertCircle, PlusCircle } from 'lucide-react'
+import { Search, ExternalLink, Package, ShoppingCart, Edit, X, Save, Filter, ArrowLeft, Upload, FileSpreadsheet, CheckCircle, AlertCircle, PlusCircle, Download } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { Product } from '../types/database'
 import * as XLSX from 'xlsx'
@@ -566,6 +566,40 @@ export default function PlatformManagementPage() {
     alert(parts.join(', '))
   }
 
+  const handleExportNoSku = () => {
+    const noSkuItems = importedItems.filter(i => !i.matched_product && !i.seller_sku)
+    if (noSkuItems.length === 0) {
+      alert('ไม่มีรายการที่ขาด SKU/ITEMCODE')
+      return
+    }
+
+    const wsData = [
+      ['#', 'ชื่อสินค้า', 'Barcode', 'ราคา', 'สต็อก', 'สถานะ'],
+      ...noSkuItems.map((item, idx) => [
+        idx + 1,
+        item.product_name,
+        item.shop_sku || '-',
+        item.special_price || item.price || 0,
+        item.quantity,
+        item.status
+      ])
+    ]
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData)
+    // Auto-width columns
+    ws['!cols'] = [
+      { wch: 5 },
+      { wch: 50 },
+      { wch: 20 },
+      { wch: 10 },
+      { wch: 10 },
+      { wch: 15 }
+    ]
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'ขาด ITEMCODE')
+    XLSX.writeFile(wb, `${currentPlatform.name}_ขาด_ITEMCODE_${new Date().toISOString().slice(0, 10)}.xlsx`)
+  }
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -964,7 +998,19 @@ export default function PlatformManagementPage() {
                 <div>
                   จับคู่ได้ <span className="font-bold text-green-600">{importedItems.filter(i => i.matched_product).length}</span> → อัพเดทสถานะ+ราคา · 
                   ไม่พบ <span className="font-bold text-orange-500">{importedItems.filter(i => !i.matched_product && i.seller_sku).length}</span> → สร้างสินค้าใหม่
+                  {importedItems.filter(i => !i.matched_product && !i.seller_sku).length > 0 && (
+                    <> · <span className="font-bold text-red-500">{importedItems.filter(i => !i.matched_product && !i.seller_sku).length}</span> ไม่มี ITEMCODE</>
+                  )}
                 </div>
+                {importedItems.filter(i => !i.matched_product && !i.seller_sku).length > 0 && (
+                  <button
+                    onClick={handleExportNoSku}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 text-xs font-medium"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    ดาวน์โหลดรายการขาด ITEMCODE
+                  </button>
+                )}
               </div>
               <div className="flex gap-3 justify-end">
                 <button
