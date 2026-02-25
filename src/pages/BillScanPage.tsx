@@ -19,10 +19,19 @@ interface SupplierMapping {
   product?: Product
 }
 
+interface SupplierCatalogEntry {
+  id: string
+  supplier_name: string
+  bill_product_name: string
+  barcode: string | null
+  product_id: string | null
+  product_name_full: string | null
+}
+
 interface MatchedItem extends ScannedBillItem {
   matched_product_id: string | null
   matched_product?: Product | null
-  match_source: 'mapping' | 'fuzzy' | 'manual' | 'none'
+  match_source: 'catalog' | 'mapping' | 'fuzzy' | 'manual' | 'none'
   match_confidence: number
   is_confirmed: boolean
 }
@@ -96,7 +105,6 @@ export default function BillScanPage() {
       .select('*')
       .eq('supplier_name', supplierName)
     if (data) {
-      // Attach product info
       const withProducts = data.map(m => ({
         ...m,
         product: products.find(p => p.id === m.product_id)
@@ -105,6 +113,35 @@ export default function BillScanPage() {
       return withProducts
     }
     return []
+  }
+
+  const fetchSupplierCatalog = async (supplierName: string): Promise<SupplierCatalogEntry[]> => {
+    const { data } = await supabase
+      .from('supplier_catalog')
+      .select('id, supplier_name, bill_product_name, barcode, product_id, product_name_full')
+      .eq('supplier_name', supplierName)
+    return (data || []) as SupplierCatalogEntry[]
+  }
+
+  // Save to supplier_catalog when a product is matched (non-blocking)
+  const saveToCatalog = (supplierName: string, billProductName: string, product: Product, unitPrice?: number) => {
+    if (!billProductName || !product.id) return
+    supabase
+      .from('supplier_catalog')
+      .upsert({
+        supplier_name: supplierName,
+        bill_product_name: billProductName,
+        product_name_full: product.name_th,
+        barcode: product.barcode || null,
+        sku: product.sku || null,
+        product_id: product.id,
+        unit_price: unitPrice || null,
+        last_matched_at: new Date().toISOString()
+      }, { onConflict: 'supplier_name,bill_product_name' })
+      .then(res => {
+        if (res.error) console.warn('[Catalog] Save failed:', res.error)
+        else console.log('[Catalog] Saved:', billProductName, '->', product.name_th)
+      })
   }
 
   // Handle file selection
@@ -144,11 +181,15 @@ export default function BillScanPage() {
       const result = await scanBill(files)
       setScanResult(result)
       
-      // Fetch mappings for this supplier
-      const supplierMappings = await fetchMappings(result.supplier_name)
+      // Fetch mappings and catalog for this supplier
+      const [supplierMappings, catalog] = await Promise.all([
+        fetchMappings(result.supplier_name),
+        fetchSupplierCatalog(result.supplier_name)
+      ])
+      console.log(`[OCR] Loaded ${supplierMappings.length} mappings, ${catalog.length} catalog entries for ${result.supplier_name}`)
       
       // Match items
-      const matched = matchItems(result.items, supplierMappings)
+      const matched = matchItems(result.items, supplierMappings, catalog)
       setMatchedItems(matched)
     } catch (err: any) {
       setScanError(err.message || 'เกิดข้อผิดพลาดในการสแกน')
@@ -158,9 +199,9 @@ export default function BillScanPage() {
   }
 
   // Match scanned items to products
-  const matchItems = (items: ScannedBillItem[], supplierMappings: SupplierMapping[]): MatchedItem[] => {
+  const matchItems = (items: ScannedBillItem[], supplierMappings: SupplierMapping[], catalog: SupplierCatalogEntry[]): MatchedItem[] => {
     return items.map(item => {
-      // 1. Try mapping table first
+      // 1. Try supplier_product_mappings first (by supplier_product_id)
       const mapping = supplierMappings.find(m => m.supplier_product_id === item.supplier_product_id)
       if (mapping) {
         const product = products.find(p => p.id === mapping.product_id)
@@ -174,7 +215,41 @@ export default function BillScanPage() {
         }
       }
 
-      // 2. Try fuzzy matching by product name
+      // 2. Try supplier_catalog (by bill product name)
+      const catalogEntry = catalog.find(c => {
+        const cName = c.bill_product_name.toLowerCase().replace(/[^a-z0-9ก-๙]/g, '')
+        const iName = item.product_name.toLowerCase().replace(/[^a-z0-9ก-๙]/g, '')
+        return cName === iName
+      })
+      if (catalogEntry?.product_id) {
+        const product = products.find(p => p.id === catalogEntry.product_id)
+        if (product) {
+          return {
+            ...item,
+            matched_product_id: product.id,
+            matched_product: product,
+            match_source: 'catalog' as const,
+            match_confidence: 100,
+            is_confirmed: true
+          }
+        }
+      }
+      // Also try catalog match by barcode
+      if (catalogEntry?.barcode) {
+        const product = products.find(p => p.barcode === catalogEntry.barcode)
+        if (product) {
+          return {
+            ...item,
+            matched_product_id: product.id,
+            matched_product: product,
+            match_source: 'catalog' as const,
+            match_confidence: 95,
+            is_confirmed: true
+          }
+        }
+      }
+
+      // 3. Try fuzzy matching by product name
       let bestMatch: Product | null = null
       let bestScore = 0
       
@@ -201,7 +276,7 @@ export default function BillScanPage() {
         }
       }
 
-      // 3. No match found
+      // 4. No match found
       return {
         ...item,
         matched_product_id: null,
@@ -343,6 +418,10 @@ export default function BillScanPage() {
   const setItemMatch = (index: number, product: Product) => {
     setMatchedItems(prev => prev.map((item, i) => {
       if (i !== index) return item
+      // Auto-save to supplier catalog for future matching
+      if (scanResult) {
+        saveToCatalog(scanResult.supplier_name, item.product_name, product, Number(item.unit_price) || undefined)
+      }
       return {
         ...item,
         matched_product_id: product.id,
@@ -531,6 +610,11 @@ export default function BillScanPage() {
               }, {
                 onConflict: 'supplier_name,supplier_product_id'
               })
+          }
+
+          // 4. Save to supplier catalog for bill-name-based matching
+          if (product) {
+            saveToCatalog(scanResult.supplier_name, item.product_name, product, item.unit_price)
           }
 
           success++
@@ -795,6 +879,7 @@ export default function BillScanPage() {
                                 <p className="font-medium text-indigo-700 truncate">{item.matched_product.name_th}</p>
                                 <p className="text-xs text-gray-500">
                                   SKU: {item.matched_product.sku || '-'} | 
+                                  {item.match_source === 'catalog' && <span className="text-emerald-600 ml-1">📋 Catalog</span>}
                                   {item.match_source === 'mapping' && <span className="text-green-600 ml-1">✓ Mapping</span>}
                                   {item.match_source === 'fuzzy' && <span className="text-yellow-600 ml-1">~ Fuzzy ({item.match_confidence}%)</span>}
                                   {item.match_source === 'manual' && <span className="text-blue-600 ml-1">✎ Manual</span>}
