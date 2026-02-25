@@ -517,7 +517,9 @@ export default function PurchaseOrderPage() {
           discount_amount: item.discount_amount || 0,
           tax_amount: item.tax_amount || 0,
           total_amount: item.total_amount,
-          unit: (product as any)?.unit || 'ชิ้น'
+          unit: (product as any)?.unit || 'ชิ้น',
+          barcode: product?.barcode || '',
+          sku: (product as any)?.sku || ''
         }
       })
 

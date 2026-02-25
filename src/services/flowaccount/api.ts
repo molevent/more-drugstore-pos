@@ -893,6 +893,8 @@ export const convertPOToPurchase = (
     tax_amount?: number;
     total_amount: number;
     unit?: string;
+    barcode?: string;
+    sku?: string;
   }>
 ): any => {
   const hasVat = po.tax_amount > 0;
@@ -923,13 +925,16 @@ export const convertPOToPurchase = (
     ].filter(Boolean).join('\n'),
     internalNotes: `สร้างจาก PO: ${po.po_number}`,
     items: items.map(item => ({
+      type: 5, // 5 = สินค้านับสต็อก (Inventory), 1 = บริการ (Service), 3 = ไม่นับสต็อก
       name: item.product_name,
       description: item.product_name,
       unitName: item.unit || 'ชิ้น',
       quantity: item.quantity,
       pricePerUnit: item.unit_price,
       discount: item.discount_amount || 0,
-      total: item.total_amount
+      total: item.total_amount,
+      barcode: item.barcode || '',
+      code: item.sku || ''
     }))
   };
 };
