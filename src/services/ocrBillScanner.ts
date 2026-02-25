@@ -190,19 +190,68 @@ export async function scanBill(files: File[]): Promise<ScannedBillData> {
       throw new Error('ไม่ได้รับคำตอบจาก AI กรุณาลองใหม่')
     }
 
-    console.log('OCR AI Response:', aiResponse)
+    console.log('OCR AI Response length:', aiResponse.length)
+    console.log('OCR AI Response (first 500 chars):', aiResponse.substring(0, 500))
 
-    // Extract JSON from response
-    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
+    // Extract JSON from response - try multiple patterns
+    let jsonStr: string | null = null
+    
+    // Try 1: Extract from markdown code block ```json ... ```
+    const codeBlockMatch = aiResponse.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/)
+    if (codeBlockMatch) {
+      jsonStr = codeBlockMatch[1]
+      console.log('OCR: Found JSON in code block')
+    }
+    
+    // Try 2: Find the largest JSON object (greedy match)
+    if (!jsonStr) {
+      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        jsonStr = jsonMatch[0]
+        console.log('OCR: Found JSON with greedy match')
+      }
+    }
+    
+    if (!jsonStr) {
+      console.error('OCR: No JSON found in response:', aiResponse)
       throw new Error('ไม่สามารถแปลงข้อมูลจากเอกสารได้')
     }
 
-    const result: ScannedBillData = JSON.parse(jsonMatch[0])
+    // Clean up common JSON issues from AI responses
+    let cleanJson = jsonStr
+      .replace(/,\s*}/g, '}')           // Remove trailing commas before }
+      .replace(/,\s*\]/g, ']')          // Remove trailing commas before ]
+      .replace(/[\x00-\x1F\x7F]/g, (c) => c === ' ' ? ' ' : '') // Remove control chars except space
+    
+    let result: ScannedBillData
+    try {
+      result = JSON.parse(cleanJson)
+    } catch (parseErr1) {
+      console.warn('OCR: First JSON parse failed:', (parseErr1 as Error).message)
+      console.warn('OCR: Chars around error position:', cleanJson.substring(600, 650))
+      
+      // Try fixing: sometimes Gemini outputs comments or text inside JSON
+      // Remove // comments
+      cleanJson = cleanJson.replace(/\/\/[^\n"]*(?=\n|$)/g, '')
+      // Remove /* */ comments  
+      cleanJson = cleanJson.replace(/\/\*[\s\S]*?\*\//g, '')
+      // Fix trailing commas again after comment removal
+      cleanJson = cleanJson.replace(/,\s*}/g, '}').replace(/,\s*\]/g, ']')
+      
+      try {
+        result = JSON.parse(cleanJson)
+        console.log('OCR: JSON parsed after comment cleanup')
+      } catch (parseErr2) {
+        console.error('OCR: JSON parse failed after all cleanup:', (parseErr2 as Error).message)
+        console.error('OCR: Raw JSON (first 1500 chars):', jsonStr.substring(0, 1500))
+        throw new Error('ข้อมูล JSON จาก AI ไม่ถูกต้อง กรุณาลองสแกนใหม่')
+      }
+    }
     
     // Validate items were parsed
     if (!result.items || result.items.length === 0) {
-      console.warn('OCR: No items parsed from response. Full AI text:', aiResponse)
+      console.warn('OCR: No items parsed! Full response:', aiResponse)
+      console.warn('OCR: Parsed JSON:', JSON.stringify(result, null, 2))
     } else {
       console.log(`OCR: Parsed ${result.items.length} items successfully`)
     }
