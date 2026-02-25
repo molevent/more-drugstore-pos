@@ -1638,6 +1638,15 @@ export default function POSPage() {
             <Brain className="h-5 w-5 text-black" />
           </Link>
 
+          {/* Calculator Button */}
+          <button
+            onClick={() => setShowCalculator(true)}
+            className="flex items-center justify-center w-10 h-10 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+            title="เครื่องคิดเลข"
+          >
+            <Calculator className="h-5 w-5" />
+          </button>
+
           {/* Help Button */}
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
@@ -1679,13 +1688,6 @@ export default function POSPage() {
           <CreditCard className="h-5 w-5 text-black flex-shrink-0" />
           <span className="font-medium text-gray-900 text-sm whitespace-nowrap">สรุปยอดชำระเงิน</span>
         </Link>
-        <button
-          onClick={() => setShowCalculator(true)}
-          className="flex items-center gap-2 px-3 py-2 bg-[#E8EBF0] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
-        >
-          <Calculator className="h-5 w-5 text-black flex-shrink-0" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">เครื่องคิดเลข</span>
-        </button>
         <button
           onClick={() => {
             fetchAlertLogs()
