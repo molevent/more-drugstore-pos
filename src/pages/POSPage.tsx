@@ -969,8 +969,14 @@ export default function POSPage() {
             }
           }
 
+          // Generate cross-channel stock alerts (async - don't block UI)
+          generateCrossChannelAlerts(items, salesChannel, orderData?.id)
+
           alert(`ขายสำเร็จ! เลขออเดอร์: ${orderNumber}`)
         }
+        
+        // Refresh alert logs
+        fetchAlertLogs()
         
         clearCart()
         setCashReceived('')
@@ -994,6 +1000,9 @@ export default function POSPage() {
       if (currentAlerts.length > 0) {
         saveAlertsToDatabase(currentAlerts)
       }
+      
+      // Generate cross-channel stock alerts
+      generateCrossChannelAlerts(items, salesChannel)
       
       alert(`ขายสำเร็จ! ช่องทาง: ${channelName}`)
       
@@ -1094,6 +1103,86 @@ export default function POSPage() {
       }
     } catch (err) {
       console.error('Exception saving alerts:', err)
+    }
+  }
+
+  // Generate cross-channel stock deduction alerts
+  const generateCrossChannelAlerts = async (soldItems: typeof items, channel: string, orderId?: string) => {
+    // Map sales channel ID to sell_on_* field
+    const channelFieldMap: Record<string, { field: string, name: string }[]> = {
+      'walk-in': [
+        { field: 'sell_on_grab', name: 'GRAB' },
+        { field: 'sell_on_lazada', name: 'Lazada' },
+        { field: 'sell_on_shopee', name: 'Shopee' },
+        { field: 'sell_on_lineman', name: 'LINEMAN' },
+        { field: 'sell_on_line_shopping', name: 'LINE Shopping' },
+        { field: 'sell_on_tiktok', name: 'TikTok' },
+      ],
+      'grab': [
+        { field: 'sell_on_pos', name: 'หน้าร้าน' },
+        { field: 'sell_on_lazada', name: 'Lazada' },
+        { field: 'sell_on_shopee', name: 'Shopee' },
+        { field: 'sell_on_lineman', name: 'LINEMAN' },
+        { field: 'sell_on_line_shopping', name: 'LINE Shopping' },
+        { field: 'sell_on_tiktok', name: 'TikTok' },
+      ],
+      'shopee': [
+        { field: 'sell_on_pos', name: 'หน้าร้าน' },
+        { field: 'sell_on_grab', name: 'GRAB' },
+        { field: 'sell_on_lazada', name: 'Lazada' },
+        { field: 'sell_on_lineman', name: 'LINEMAN' },
+        { field: 'sell_on_line_shopping', name: 'LINE Shopping' },
+        { field: 'sell_on_tiktok', name: 'TikTok' },
+      ],
+      'lineman': [
+        { field: 'sell_on_pos', name: 'หน้าร้าน' },
+        { field: 'sell_on_grab', name: 'GRAB' },
+        { field: 'sell_on_lazada', name: 'Lazada' },
+        { field: 'sell_on_shopee', name: 'Shopee' },
+        { field: 'sell_on_line_shopping', name: 'LINE Shopping' },
+        { field: 'sell_on_tiktok', name: 'TikTok' },
+      ],
+    }
+
+    const otherChannels = channelFieldMap[channel]
+    if (!otherChannels) return
+
+    const channelName = salesChannels.find(c => c.id === channel)?.name || channel
+    const alertLogs: any[] = []
+
+    for (const item of soldItems) {
+      const product = item.product as any
+      // Find which other channels this product is listed on
+      const listedOn = otherChannels.filter(ch => product[ch.field] === true)
+      
+      if (listedOn.length > 0) {
+        const channelNames = listedOn.map(ch => ch.name).join(', ')
+        alertLogs.push({
+          order_id: orderId,
+          product_id: product.id,
+          product_name: product.name_th,
+          alert_type: 'cross_channel_stock',
+          alert_title: `ตัดสต็อกข้ามช่องทาง`,
+          alert_message: `ขาย ${item.quantity} ชิ้น ผ่าน${channelName} → ต้องตัดสต็อกออกจาก ${channelNames}`,
+          acknowledged: false,
+          created_at: new Date().toISOString()
+        })
+      }
+    }
+
+    if (alertLogs.length > 0) {
+      try {
+        const { error } = await supabase
+          .from('sale_alert_logs')
+          .insert(alertLogs)
+        if (error) {
+          console.error('Error saving cross-channel alerts:', error)
+        } else {
+          console.log(`Saved ${alertLogs.length} cross-channel stock alerts`)
+        }
+      } catch (err) {
+        console.error('Exception saving cross-channel alerts:', err)
+      }
     }
   }
 

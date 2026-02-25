@@ -243,7 +243,7 @@ export interface SaleAlertLog {
   order_id?: string
   product_id: string
   product_name: string
-  alert_type: 'out_of_stock' | 'low_stock' | 'expiry' | 'expired' | 'custom'
+  alert_type: 'out_of_stock' | 'low_stock' | 'expiry' | 'expired' | 'custom' | 'cross_channel_stock'
   alert_title: string
   alert_message?: string
   created_at: string
