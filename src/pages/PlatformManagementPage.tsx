@@ -379,19 +379,45 @@ export default function PlatformManagementPage() {
       return
     }
 
-    if (!confirm(`จะสร้างสินค้าใหม่ ${unmatchedItems.length} รายการ\nSellerSKU = SKU + Barcode\nราคารวม VAT แล้ว\nเป็นสินค้านับสต็อก\n\nยืนยัน?`)) {
+    // Deduplicate by seller_sku — Lazada variations share the same barcode
+    const seenSkus = new Set<string>()
+    const uniqueItems: typeof unmatchedItems = []
+    for (const item of unmatchedItems) {
+      if (!seenSkus.has(item.seller_sku)) {
+        seenSkus.add(item.seller_sku)
+        uniqueItems.push(item)
+      }
+    }
+
+    const skipped = unmatchedItems.length - uniqueItems.length
+    if (!confirm(`จะสร้างสินค้าใหม่ ${uniqueItems.length} รายการ${skipped > 0 ? ` (ข้าม ${skipped} รายการที่ SKU ซ้ำ)` : ''}\nSellerSKU = SKU + Barcode\nราคารวม VAT แล้ว\nเป็นสินค้านับสต็อก\n\nยืนยัน?`)) {
       return
     }
 
     setImporting(true)
     let created = 0
     let failed = 0
+    const createdSkuMap = new Map<string, Product>()
 
-    for (let i = 0; i < unmatchedItems.length; i++) {
-      const item = unmatchedItems[i]
-      setImportProgress(`สร้างสินค้า ${i + 1}/${unmatchedItems.length} ${item.product_name}`)
+    for (let i = 0; i < uniqueItems.length; i++) {
+      const item = uniqueItems[i]
+      setImportProgress(`สร้างสินค้า ${i + 1}/${uniqueItems.length} ${item.product_name}`)
 
       try {
+        // Check if barcode already exists in local products (may have been created in this batch)
+        const existingProduct = products.find(p => p.barcode === item.seller_sku || p.sku === item.seller_sku)
+        if (existingProduct) {
+          // Already exists — just mark as matched
+          createdSkuMap.set(item.seller_sku, existingProduct)
+          setImportedItems(prev => prev.map(it =>
+            it.seller_sku === item.seller_sku && !it.matched_product
+              ? { ...it, matched_product: existingProduct, match_type: 'barcode' as const }
+              : it
+          ))
+          created++
+          continue
+        }
+
         const sellingPrice = item.special_price || item.price || 0
 
         const newProduct: any = {
@@ -431,10 +457,14 @@ export default function PlatformManagementPage() {
         if (error) throw error
 
         if (data) {
-          setProducts(prev => [...prev, data as Product])
-          // Update the imported item to reflect it's now matched
+          const createdProduct = data as Product
+          setProducts(prev => [...prev, createdProduct])
+          createdSkuMap.set(item.seller_sku, createdProduct)
+          // Update ALL imported items with same seller_sku
           setImportedItems(prev => prev.map(it =>
-            it === item ? { ...it, matched_product: data as Product, match_type: 'barcode' as const } : it
+            it.seller_sku === item.seller_sku && !it.matched_product
+              ? { ...it, matched_product: createdProduct, match_type: 'barcode' as const }
+              : it
           ))
         }
         created++
@@ -446,7 +476,7 @@ export default function PlatformManagementPage() {
 
     setImporting(false)
     setImportProgress('')
-    alert(`สร้างสินค้าใหม่สำเร็จ ${created} รายการ${failed > 0 ? `, ล้มเหลว ${failed} รายการ` : ''}`)
+    alert(`สร้างสินค้าใหม่สำเร็จ ${created} รายการ${skipped > 0 ? `, ข้าม ${skipped} รายการ (SKU ซ้ำ)` : ''}${failed > 0 ? `, ล้มเหลว ${failed} รายการ` : ''}`)
   }
 
   return (
