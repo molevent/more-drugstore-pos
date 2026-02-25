@@ -53,6 +53,7 @@ import PaymentMethodSettingsPage from './pages/PaymentMethodSettingsPage'
 import TaxPP30Page from './pages/TaxPP30Page'
 import HelpManagementPage from './pages/HelpManagementPage'
 import FlowAccountSettingsPage from './pages/FlowAccountSettingsPage'
+import BillScanPage from './pages/BillScanPage'
 import StorefrontPage from './pages/StorefrontPage'
 import ProductDetailPage from './pages/ProductDetailPage'
 import CheckoutPage from './pages/CheckoutPage'
@@ -92,6 +93,7 @@ function App() {
                     <Route path="/inventory" element={<InventoryPage />} />
                     <Route path="/warehouse-management" element={<WarehouseManagementPage />} />
                     <Route path="/purchase-orders" element={<PurchaseOrderPage />} />
+                    <Route path="/bill-scan" element={<BillScanPage />} />
                     <Route path="/payment-vouchers" element={<PaymentVoucherPage />} />
                     <Route path="/payment-methods" element={<PaymentMethodsPage />} />
                     <Route path="/withholding-tax" element={<WithholdingTaxPage />} />

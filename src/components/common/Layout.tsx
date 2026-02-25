@@ -12,7 +12,8 @@ import {
   Wallet,
   Calendar,
   Globe,
-  Receipt
+  Receipt,
+  ScanLine
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -91,6 +92,7 @@ export default function Layout({ children }: LayoutProps) {
       title: 'เอกสาร',
       items: [
         { name: t('nav.documents'), href: '/expenses', icon: Wallet, id: 'documents' as const },
+        { name: 'สแกนบิล OCR', href: '/bill-scan', icon: ScanLine, id: 'documents' as const },
         { name: 'ใบกำกับภาษีฝั่งขาย', href: '/tax-invoices', icon: Receipt, id: 'tax_invoices' as const },
         { name: 'ตารางเข้างาน', href: '/work-schedule', icon: Calendar, id: 'work_schedule' as const },
       ].filter(item => canAccessMenu(userRole, item.id))

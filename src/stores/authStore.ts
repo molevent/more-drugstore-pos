@@ -130,6 +130,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     } catch (err: any) {
       console.error('Login error:', err)
+      
+      // Handle AbortError - retry once after a short delay
+      if (err?.name === 'AbortError' || err?.message?.includes('aborted')) {
+        console.log('Sign-in aborted, retrying...')
+        try {
+          await new Promise(resolve => setTimeout(resolve, 500))
+          const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
+            email: identifier.includes('@') ? identifier : (await supabase.from('users').select('email').eq('username', identifier).eq('is_active', true).single()).data?.email || identifier,
+            password,
+          })
+          if (!retryError && retryData?.user) {
+            const { data: userData } = await supabase.from('users').select('*').eq('id', retryData.user.id).single()
+            if (userData && userData.is_active) {
+              set({ user: userData, loading: false, error: null })
+              return
+            }
+          }
+        } catch (retryErr) {
+          console.error('Retry also failed:', retryErr)
+        }
+      }
+      
       set({ 
         user: null, 
         loading: false, 
