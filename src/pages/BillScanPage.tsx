@@ -226,15 +226,40 @@ export default function BillScanPage() {
       const barcodeVal = quickAddBarcode.trim() || null
       const skuVal = quickAddBarcode.trim() || null
 
-      // Check if barcode already exists
+      // Check if barcode/SKU already exists
       if (barcodeVal) {
-        const { data: existing } = await supabase
+        const { data: existingBarcode } = await supabase
           .from('products')
-          .select('id, name_th')
-          .eq('barcode', barcodeVal)
+          .select('id, name_th, barcode, sku')
+          .or(`barcode.eq.${barcodeVal},sku.eq.${barcodeVal}`)
           .limit(1)
-        if (existing && existing.length > 0) {
-          alert(`Barcode "${barcodeVal}" มีอยู่แล้วในระบบ (${existing[0].name_th})`)
+        if (existingBarcode && existingBarcode.length > 0) {
+          const p = existingBarcode[0]
+          const useExisting = confirm(
+            `⚠️ Barcode/SKU "${barcodeVal}" มีอยู่แล้วในระบบ!\n\n` +
+            `สินค้า: ${p.name_th || '-'}\n` +
+            `Barcode: ${p.barcode || '-'}\n` +
+            `SKU: ${p.sku || '-'}\n\n` +
+            `ต้องการใช้สินค้านี้แทนไหม? (กด OK เพื่อจับคู่สินค้านี้, กด Cancel เพื่อกลับไปแก้ไข)`
+          )
+          if (useExisting) {
+            // Fetch full product data and use existing
+            const { data: fullData } = await supabase
+              .from('products')
+              .select('*')
+              .eq('id', p.id)
+              .single()
+            if (fullData) {
+              setProducts(prev => {
+                if (prev.find(pr => pr.id === fullData.id)) return prev
+                return [...prev, fullData as Product]
+              })
+              setItemMatch(index, fullData as Product)
+              setShowQuickAdd(false)
+              setQuickAddName('')
+              setQuickAddBarcode('')
+            }
+          }
           setQuickAddSaving(false)
           return
         }
