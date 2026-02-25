@@ -1708,8 +1708,8 @@ export default function POSPage() {
         </div>
         <button
           onClick={() => {
-            fetchAlertLogs()
-            setShowAlertHistory(true)
+            if (!showAlertHistory) fetchAlertLogs()
+            setShowAlertHistory(prev => !prev)
           }}
           className="flex items-center gap-2 px-3 py-2 bg-[#F9E4B7] rounded-full border border-[#B8C9B8] hover:bg-[#F5D0A0] hover:shadow-md transition-all"
         >
