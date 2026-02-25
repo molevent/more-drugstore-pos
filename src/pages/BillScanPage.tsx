@@ -223,54 +223,62 @@ export default function BillScanPage() {
     setQuickAddSaving(true)
     try {
       // 1. Create new product
-      // barcode/sku must be unique - use entered value or generate a temp one
-      const barcodeVal = quickAddBarcode.trim() || `SCAN-${Date.now()}`
+      const barcodeVal = quickAddBarcode.trim() || null
+      const skuVal = quickAddBarcode.trim() || null
+
+      // Check if barcode already exists
+      if (barcodeVal) {
+        const { data: existing } = await supabase
+          .from('products')
+          .select('id, name_th')
+          .eq('barcode', barcodeVal)
+          .limit(1)
+        if (existing && existing.length > 0) {
+          alert(`Barcode "${barcodeVal}" มีอยู่แล้วในระบบ (${existing[0].name_th})`)
+          setQuickAddSaving(false)
+          return
+        }
+      }
+
+      console.log('Quick-add: inserting product...', { name: quickAddName.trim(), barcode: barcodeVal })
       const { data: newProduct, error } = await supabase
         .from('products')
-        .insert([{
+        .insert({
           name_th: quickAddName.trim(),
           barcode: barcodeVal,
-          sku: barcodeVal,
-          product_type: 'finished_goods',
+          sku: skuVal,
           is_active: true,
-          stock_tracking_type: 'tracked',
           base_price: item.unit_price || 0,
           cost_price: item.unit_price || 0,
           stock_quantity: 0,
           min_stock_level: 0,
-          unit: item.unit || 'ชิ้น',
-          sell_on_pos: true,
-          sell_on_grab: false,
-          sell_on_lineman: false,
-          sell_on_lazada: false,
-          sell_on_shopee: false,
-          sell_on_line_shopping: false,
-          sell_on_tiktok: false,
-          sell_on_consignment: false,
-          sell_on_website: false
-        }])
+          unit: item.unit || 'ชิ้น'
+        })
         .select()
         .single()
 
+      console.log('Quick-add result:', { newProduct, error })
+
       if (error) {
-        console.error('Product insert error:', error)
         throw new Error(error.message || 'ไม่สามารถเพิ่มสินค้าได้')
+      }
+      if (!newProduct) {
+        throw new Error('ไม่ได้รับข้อมูลสินค้ากลับจากระบบ')
       }
 
       // 2. Auto-save supplier mapping (non-blocking)
       if (scanResult && item.supplier_product_id) {
-        try {
-          await supabase
-            .from('supplier_product_mappings')
-            .upsert({
-              supplier_name: scanResult.supplier_name,
-              supplier_product_id: item.supplier_product_id,
-              supplier_product_name: item.product_name,
-              product_id: newProduct.id
-            }, { onConflict: 'supplier_name,supplier_product_id' })
-        } catch (mappingErr) {
-          console.warn('Mapping save failed (non-critical):', mappingErr)
-        }
+        supabase
+          .from('supplier_product_mappings')
+          .upsert({
+            supplier_name: scanResult.supplier_name,
+            supplier_product_id: item.supplier_product_id,
+            supplier_product_name: item.product_name,
+            product_id: newProduct.id
+          }, { onConflict: 'supplier_name,supplier_product_id' })
+          .then(res => {
+            if (res.error) console.warn('Mapping save failed:', res.error)
+          })
       }
 
       // 3. Add to local products list
@@ -284,8 +292,11 @@ export default function BillScanPage() {
       setShowQuickAdd(false)
       setQuickAddName('')
       setQuickAddBarcode('')
+
+      alert(`เพิ่มสินค้า "${quickAddName.trim()}" สำเร็จ!`)
     } catch (err: any) {
-      alert('เพิ่มสินค้าไม่สำเร็จ: ' + err.message)
+      console.error('Quick-add product error:', err)
+      alert('เพิ่มสินค้าไม่สำเร็จ: ' + (err.message || err))
     } finally {
       setQuickAddSaving(false)
     }
