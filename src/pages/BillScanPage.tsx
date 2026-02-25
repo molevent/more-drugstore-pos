@@ -265,19 +265,10 @@ export default function BillScanPage() {
         }
       }
 
-      console.log('Quick-add: inserting product...', { name: quickAddName.trim(), barcode: barcodeVal })
+      const safeName = quickAddName.trim()
       
-      // Sanitize name - remove problematic characters
-      const safeName = quickAddName.trim().replace(/"/g, "'")
-      
-      console.log('Quick-add: calling insert...', { name: safeName, barcode: barcodeVal, lot: item.lot_number, exp: item.expiry_date })
-      
-      // Use fetch directly to avoid Supabase client hanging issues
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-      const session = (await supabase.auth.getSession()).data.session
-      
-      const insertBody = {
+      // Use exact same insert pattern as ProductsPage (fast, no .select())
+      const productData = {
         name_th: safeName,
         barcode: barcodeVal,
         sku: skuVal,
@@ -290,36 +281,31 @@ export default function BillScanPage() {
         lot_number: item.lot_number || null,
         expiry_date: item.expiry_date || null
       }
-      
-      const insertRes = await fetch(`${supabaseUrl}/rest/v1/products`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${session?.access_token || supabaseKey}`,
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify(insertBody)
-      })
-      
-      console.log('Quick-add insert response status:', insertRes.status)
-      
-      if (!insertRes.ok) {
-        const errText = await insertRes.text()
-        console.error('Quick-add insert error:', errText)
-        throw new Error(`เพิ่มสินค้าไม่สำเร็จ (${insertRes.status}): ${errText}`)
-      }
-      
-      const insertData = await insertRes.json()
-      const newProduct = Array.isArray(insertData) ? insertData[0] : insertData
-      
-      console.log('Quick-add insert success:', newProduct)
-      
-      if (!newProduct?.id) {
-        throw new Error('ไม่ได้รับข้อมูลสินค้ากลับจากระบบ')
+
+      console.log('[Quick-add] INSERT start...', productData)
+      const insertStart = performance.now()
+      const { error: insertError } = await supabase
+        .from('products')
+        .insert([productData])
+      console.log(`[Quick-add] INSERT completed in ${(performance.now() - insertStart).toFixed(0)}ms`, { insertError })
+
+      if (insertError) {
+        throw new Error(insertError.message || 'ไม่สามารถเพิ่มสินค้าได้')
       }
 
-      // 2. Auto-save supplier mapping (non-blocking)
+      // Fetch the newly created product to get its ID
+      const fetchStart = performance.now()
+      let query = supabase.from('products').select('*').eq('name_th', safeName)
+      if (barcodeVal) query = query.eq('barcode', barcodeVal)
+      const { data: fetched } = await query.order('created_at', { ascending: false }).limit(1)
+      console.log(`[Quick-add] FETCH completed in ${(performance.now() - fetchStart).toFixed(0)}ms`)
+
+      const newProduct = fetched?.[0]
+      if (!newProduct) {
+        throw new Error('เพิ่มสินค้าแล้วแต่ไม่สามารถดึงข้อมูลกลับได้')
+      }
+
+      // Auto-save supplier mapping (non-blocking, same as before)
       if (scanResult && item.supplier_product_id) {
         supabase
           .from('supplier_product_mappings')
@@ -334,12 +320,9 @@ export default function BillScanPage() {
           })
       }
 
-      // 3. Add to local products list
-      const fullProduct = newProduct as Product
-      setProducts(prev => [...prev, fullProduct])
-
-      // 4. Auto-match this item
-      setItemMatch(index, fullProduct)
+      // Add to local products list & auto-match
+      setProducts(prev => [...prev, newProduct as Product])
+      setItemMatch(index, newProduct as Product)
 
       // Reset quick-add form
       setShowQuickAdd(false)
