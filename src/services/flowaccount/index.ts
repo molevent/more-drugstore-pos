@@ -51,6 +51,7 @@ export {
   updatePurchase,
   deletePurchase,
   convertExpenseToPurchase,
+  convertPOToPurchase,
   syncPurchasesToFlowAccount,
   getWithholdingTaxes,
   getWithholdingTaxById,

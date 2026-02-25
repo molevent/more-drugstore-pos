@@ -869,6 +869,72 @@ export const syncPurchasesToFlowAccount = async (
 };
 
 /**
+ * Convert a Purchase Order to FlowAccount Purchase format (ใบรับสินค้า)
+ * Supports multiple line items from PO
+ */
+export const convertPOToPurchase = (
+  po: {
+    supplier_name: string;
+    supplier_contact?: string;
+    order_date: string;
+    po_number: string;
+    total_amount: number;
+    tax_amount: number;
+    discount_amount: number;
+    net_amount: number;
+    notes?: string;
+    reference?: string;
+  },
+  items: Array<{
+    product_name: string;
+    quantity: number;
+    unit_price: number;
+    discount_amount?: number;
+    tax_amount?: number;
+    total_amount: number;
+    unit?: string;
+  }>
+): any => {
+  const hasVat = po.tax_amount > 0;
+  const subTotal = po.total_amount || 0;
+  const discountAmount = po.discount_amount || 0;
+  const totalAfterDiscount = subTotal - discountAmount;
+  const vatAmount = po.tax_amount || 0;
+  const grandTotal = po.net_amount || (totalAfterDiscount + vatAmount);
+
+  return {
+    contactName: po.supplier_name || '',
+    publishedOn: po.order_date,
+    creditType: 3,
+    creditDays: 0,
+    dueDate: po.order_date,
+    isVat: hasVat,
+    isVatInclusive: hasVat,
+    subTotal: subTotal,
+    discountPercentage: 0,
+    discountAmount: discountAmount,
+    totalAfterDiscount: totalAfterDiscount,
+    vatAmount: vatAmount,
+    grandTotal: grandTotal,
+    remarks: [
+      po.reference ? `เลขที่อ้างอิง: ${po.reference}` : '',
+      po.po_number ? `PO: ${po.po_number}` : '',
+      po.notes || ''
+    ].filter(Boolean).join('\n'),
+    internalNotes: `สร้างจาก PO: ${po.po_number}`,
+    items: items.map(item => ({
+      name: item.product_name,
+      description: item.product_name,
+      unitName: item.unit || 'ชิ้น',
+      quantity: item.quantity,
+      pricePerUnit: item.unit_price,
+      discount: item.discount_amount || 0,
+      total: item.total_amount
+    }))
+  };
+};
+
+/**
  * Withholding Tax (ภ.ง.ด. / หัก ณ ที่จ่าย) API
  */
 export const getWithholdingTaxes = async (page: number = 1, limit: number = 50): Promise<any> => {

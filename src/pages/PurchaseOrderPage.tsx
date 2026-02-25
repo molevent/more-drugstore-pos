@@ -5,6 +5,7 @@ import Button from '../components/common/Button'
 import Input from '../components/common/Input'
 import { FileText, Plus, Trash2, X, Search, CheckCircle, Package, AlertCircle, ShoppingCart, Eye, History, RefreshCw, BookOpen, ArrowLeft } from 'lucide-react'
 import { zortOutService } from '../services/zortout'
+import { convertPOToPurchase, createPurchase } from '../services/flowaccount'
 import type { Product } from '../types/database'
 
 interface PurchaseOrder {
@@ -496,6 +497,47 @@ export default function PurchaseOrderPage() {
       setPoMovements(data || [])
     } catch (error) {
       console.error('Error fetching PO movements:', error)
+    }
+  }
+
+  const syncPOToFlowAccount = async (po: PurchaseOrder) => {
+    if (!poItems || poItems.length === 0) {
+      alert('ไม่มีรายการสินค้าใน PO นี้')
+      return
+    }
+
+    setIsSyncing(true)
+    try {
+      const faItems = poItems.map(item => {
+        const product = products.find(p => p.id === item.product_id)
+        return {
+          product_name: item.product?.name_th || product?.name_th || 'Unknown',
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          discount_amount: item.discount_amount || 0,
+          tax_amount: item.tax_amount || 0,
+          total_amount: item.total_amount,
+          unit: (product as any)?.unit || 'ชิ้น'
+        }
+      })
+
+      const faData = convertPOToPurchase(po, faItems)
+      console.log('[FlowAccount] Creating Purchase (ใบรับสินค้า):', faData)
+
+      const result = await createPurchase(faData)
+      console.log('[FlowAccount] Purchase created:', result)
+
+      const faId = result?.data?.recordId || result?.data?.id
+      if (faId) {
+        alert(`สร้างใบรับสินค้าใน FlowAccount สำเร็จ! (ID: ${faId})`)
+      } else {
+        alert('สร้างใบรับสินค้าใน FlowAccount สำเร็จ!')
+      }
+    } catch (error: any) {
+      console.error('Error syncing PO to FlowAccount:', error)
+      alert('Sync ไป FlowAccount ไม่สำเร็จ: ' + (error.message || error))
+    } finally {
+      setIsSyncing(false)
     }
   }
 
@@ -1221,6 +1263,14 @@ export default function PurchaseOrderPage() {
                   }}
                 >
                   ทดสอบ PO API
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => selectedPO && syncPOToFlowAccount(selectedPO)}
+                  disabled={isSyncing || poItems.length === 0}
+                >
+                  <BookOpen className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                  {isSyncing ? 'กำลัง Sync...' : 'ส่งใบรับสินค้า FA'}
                 </Button>
                 <Button
                   variant="secondary"
