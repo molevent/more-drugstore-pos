@@ -670,9 +670,9 @@ export default function PurchaseOrderPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               <ShoppingCart className="h-7 w-7 text-[#7D735F]" />
-              ใบสั่งซื้อ (Purchase Orders)
+              ใบรับสินค้า (Purchase Orders)
             </h1>
-            <p className="text-gray-600 mt-1">จัดการใบสั่งซื้อจากซัพพลายเออร์</p>
+            <p className="text-gray-600 mt-1">จัดการใบรับสินค้าจากซัพพลายเออร์</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -769,7 +769,7 @@ export default function PurchaseOrderPage() {
           ) : filteredPOs.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-              <p>ไม่พบใบสั่งซื้อ</p>
+              <p>ไม่พบใบรับสินค้า</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -875,7 +875,7 @@ export default function PurchaseOrderPage() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">สร้างใบสั่งซื้อใหม่</h2>
+                <h2 className="text-xl font-bold text-gray-900">สร้างใบรับสินค้าใหม่</h2>
                 <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
                   <X className="h-6 w-6" />
                 </button>

@@ -1742,7 +1742,7 @@ export default function ContactsPage() {
                             <div>
                               <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
                                 <Package className="h-3.5 w-3.5" />
-                                ใบสั่งซื้อ ({detailPOs.length})
+                                ใบรับสินค้า ({detailPOs.length})
                               </h4>
                               <table className="w-full text-sm">
                                 <thead className="bg-gray-50">
@@ -1771,7 +1771,7 @@ export default function ContactsPage() {
                                 </tbody>
                                 <tfoot className="bg-orange-50/50 font-medium">
                                   <tr>
-                                    <td colSpan={3} className="px-3 py-2 text-right text-sm">รวมใบสั่งซื้อ</td>
+                                    <td colSpan={3} className="px-3 py-2 text-right text-sm">รวมใบรับสินค้า</td>
                                     <td className="px-3 py-2 text-right text-orange-700">฿{detailPOs.reduce((sum: number, po: any) => sum + (po.total_amount || 0), 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</td>
                                     <td></td>
                                   </tr>

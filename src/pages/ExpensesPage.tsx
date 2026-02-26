@@ -1382,7 +1382,7 @@ export default function ExpensesPage() {
           className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
         >
           <ShoppingCart className="h-5 w-5 text-gray-900" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบสั่งซื้อ</span>
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบรับสินค้า</span>
         </Link>
         <Link 
           to="/quotations"
@@ -1467,7 +1467,7 @@ export default function ExpensesPage() {
           className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
         >
           <ShoppingCart className="h-5 w-5 text-gray-900" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบสั่งซื้อ</span>
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบรับสินค้า</span>
         </Link>
         <Link 
           to="/quotations"

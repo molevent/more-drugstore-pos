@@ -68,7 +68,7 @@ export const MENU_PERMISSIONS: MenuPermission[] = [
     allowedRoles: ['owner', 'manager', 'accountant'],
     subMenus: [
       { label: 'ใบเสนอราคา', path: '/quotations' },
-      { label: 'ใบสั่งซื้อ', path: '/purchase-orders' },
+      { label: 'ใบรับสินค้า', path: '/purchase-orders' },
       { label: 'ใบส่งสินค้า', path: '/delivery-notes' },
       { label: 'ใบกำกับภาษี', path: '/tax-invoices' },
       { label: 'เอกสารหัก ณ ที่จ่าย', path: '/withholding-tax' },
