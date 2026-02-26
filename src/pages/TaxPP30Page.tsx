@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
-import { Receipt, TrendingUp, TrendingDown, Calculator, FileText, Calendar, Search } from 'lucide-react'
+import { Receipt, TrendingUp, TrendingDown, Calculator, FileText, Calendar, Search, ArrowLeft } from 'lucide-react'
 
 interface InputVatItem {
   id: string
@@ -154,6 +155,10 @@ export default function TaxPP30Page() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
+          <Link to="/expenses" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[#7D735F] mb-2 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            เอกสาร
+          </Link>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <FileText className="h-7 w-7 text-amber-600" />
             ภ.พ.30 (VAT Return)

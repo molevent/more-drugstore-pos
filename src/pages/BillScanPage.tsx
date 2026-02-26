@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 import { scanBill, ScannedBillData, ScannedBillItem } from '../services/ocrBillScanner'
 import { useLanguage } from '../contexts/LanguageContext'
@@ -666,6 +667,10 @@ export default function BillScanPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
+          <Link to="/expenses" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[#7D735F] mb-2 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            เอกสาร
+          </Link>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <ScanLine className="h-7 w-7 text-[#7D735F]" />
             {t('page.billScan.title')}
