@@ -162,10 +162,22 @@ ${chatHistory || '(ยังไม่มีประวัติ)'}
   }
 }
 
+// ─── Thai timezone helper (UTC+7) ────────────────────────────
+
+function getThaiNow(): Date {
+  const utc = new Date()
+  return new Date(utc.getTime() + 7 * 60 * 60 * 1000)
+}
+
+function getThaiToday(): string {
+  const thai = getThaiNow()
+  return thai.toISOString().split('T')[0]
+}
+
 // ─── Step 2: Fetch data by intent ────────────────────────────
 
 async function fetchDataByIntent(intent: IntentResult, question: string, supabase: any): Promise<string> {
-  const today = new Date().toISOString().split('T')[0]
+  const today = getThaiToday()
   const monthStart = today.substring(0, 7) + '-01'
   const sections: string[] = []
 
@@ -323,26 +335,50 @@ async function fetchDataByIntent(intent: IntentResult, question: string, supabas
     }
 
     case 'schedule': {
-      // Today
-      const { data: todayShifts } = await supabase
-        .from('work_shifts')
-        .select('employee_name, position, start_time, end_time, total_hours, notes')
-        .eq('work_date', today)
-        .order('start_time', { ascending: true })
+      // Employees with wage info
+      const { data: emps } = await supabase
+        .from('employees')
+        .select('name, position, employment_type, hourly_wage, monthly_salary, phone, is_active')
+        .eq('is_active', true)
 
-      if (todayShifts?.length) {
-        sections.push(`ตารางวันนี้ (${new Date().toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long' })}):`)
-        todayShifts.forEach((s: any) => {
-          sections.push(s.notes === 'ลา'
-            ? `- ${s.employee_name} (${s.position || '-'}) — ลา`
-            : `- ${s.employee_name} (${s.position || '-'}) — ${s.start_time}-${s.end_time} (${s.total_hours?.toFixed(1) || '-'} ชม.)`)
+      if (emps?.length) {
+        sections.push(`พนักงานทั้งหมด (${emps.length} คน):`)
+        emps.forEach((e: any) => {
+          let info = `- ${e.name} (${e.position}) [${e.employment_type}]`
+          if (e.hourly_wage) info += ` ค่าแรง ฿${e.hourly_wage}/ชม.`
+          if (e.monthly_salary) info += ` เงินเดือน ฿${formatCurrency(e.monthly_salary)}`
+          if (e.phone) info += ` โทร: ${e.phone}`
+          sections.push(info)
         })
-      } else {
-        sections.push('วันนี้: ยังไม่มีตารางเข้างาน')
       }
 
-      // Tomorrow
-      const tmr = new Date(); tmr.setDate(tmr.getDate() + 1)
+      // Today's shifts
+      console.log(`[Schedule] Querying work_shifts for today=${today}`)
+      const { data: todayShifts, error: shiftError } = await supabase
+        .from('work_shifts')
+        .select('employee_name, position, start_time, end_time, total_hours, notes, work_date')
+        .eq('work_date', today)
+        .order('start_time', { ascending: true })
+      console.log(`[Schedule] Result: ${todayShifts?.length || 0} shifts, error: ${shiftError?.message || 'none'}`)
+
+      if (todayShifts?.length) {
+        sections.push(`\nตารางวันนี้ (${getThaiNow().toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long' })}):`)
+        const working = todayShifts.filter((s: any) => s.notes !== 'ลา')
+        const onLeave = todayShifts.filter((s: any) => s.notes === 'ลา')
+        working.forEach((s: any) => {
+          sections.push(`- ${s.employee_name} (${s.position || '-'}) — ${s.start_time}-${s.end_time} (${s.total_hours?.toFixed(1) || '-'} ชม.)`)
+        })
+        if (onLeave.length) {
+          sections.push(`ลาวันนี้:`)
+          onLeave.forEach((s: any) => sections.push(`- ${s.employee_name} (${s.position || '-'}) — ลา`))
+        }
+        sections.push(`สรุป: ทำงาน ${working.length} คน, ลา ${onLeave.length} คน`)
+      } else {
+        sections.push('\nวันนี้: ยังไม่มีตารางเข้างาน')
+      }
+
+      // Tomorrow's shifts
+      const tmr = getThaiNow(); tmr.setDate(tmr.getDate() + 1)
       const tmrStr = tmr.toISOString().split('T')[0]
       const { data: tmrShifts } = await supabase
         .from('work_shifts')
@@ -354,12 +390,41 @@ async function fetchDataByIntent(intent: IntentResult, question: string, supabas
         sections.push(`\nพรุ่งนี้ (${tmr.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long' })}):`)
         tmrShifts.forEach((s: any) => {
           sections.push(s.notes === 'ลา'
-            ? `- ${s.employee_name} (${s.position || '-'}) — ลา`
-            : `- ${s.employee_name} (${s.position || '-'}) — ${s.start_time}-${s.end_time}`)
+            ? `- ${s.employee_name} — ลา`
+            : `- ${s.employee_name} — ${s.start_time}-${s.end_time}`)
         })
       }
 
-      // Weekly if asked
+      // This month's summary (hours + wages + leave count per employee)
+      const { data: monthShifts } = await supabase
+        .from('work_shifts')
+        .select('employee_name, position, total_hours, notes, work_date')
+        .gte('work_date', monthStart)
+        .lte('work_date', today)
+
+      if (monthShifts?.length) {
+        const stats: Record<string, { hours: number; days: number; leaves: number }> = {}
+        monthShifts.forEach((s: any) => {
+          if (!stats[s.employee_name]) stats[s.employee_name] = { hours: 0, days: 0, leaves: 0 }
+          if (s.notes === 'ลา') {
+            stats[s.employee_name].leaves++
+          } else {
+            stats[s.employee_name].hours += (s.total_hours || 0)
+            stats[s.employee_name].days++
+          }
+        })
+
+        sections.push(`\nสรุปเดือนนี้ (${getThaiNow().toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })}):`)
+        Object.entries(stats).forEach(([name, d]) => {
+          const emp = emps?.find((e: any) => e.name === name)
+          let line = `- ${name}: ทำงาน ${d.days} วัน (${d.hours.toFixed(1)} ชม.)`
+          if (d.leaves > 0) line += `, ลา ${d.leaves} วัน`
+          if (emp?.hourly_wage) line += ` → ค่าแรง ≈ ฿${formatCurrency(d.hours * emp.hourly_wage)}`
+          sections.push(line)
+        })
+      }
+
+      // Weekly schedule if asked
       if (question.match(/สัปดาห์|อาทิตย์|week|7.*วัน/i)) {
         const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate() + 6)
         const { data: weekShifts } = await supabase
@@ -379,17 +444,6 @@ async function fetchDataByIntent(intent: IntentResult, question: string, supabas
             sections.push(s.notes === 'ลา' ? `  ${s.employee_name} — ลา` : `  ${s.employee_name} ${s.start_time}-${s.end_time}`)
           })
         }
-      }
-
-      // Employees
-      const { data: emps } = await supabase
-        .from('employees')
-        .select('name, position, employment_type, is_active')
-        .eq('is_active', true)
-
-      if (emps?.length) {
-        sections.push(`\nพนักงานทั้งหมด (${emps.length} คน):`)
-        emps.forEach((e: any) => sections.push(`- ${e.name} (${e.position}) [${e.employment_type}]`))
       }
       break
     }
@@ -542,7 +596,12 @@ ${storeData || '(ไม่มีข้อมูลเพิ่มเติม)'}
 - ถ้าไม่มีข้อมูล ให้บอกตรงๆ ว่าไม่พบ
 - ตอบเป็นธรรมชาติเหมือนคนคุยกัน ไม่ต้องเป็นรายการยาว
 - ถ้าเป็น followup ให้ตอบต่อเนื่องจากประวัติ
-- สรุปตัวเลขสำคัญให้ชัดเจน`
+- สรุปตัวเลขสำคัญให้ชัดเจน
+- ถ้าถามเรื่องตารางเข้างาน ต้องบอกชื่อ ตำแหน่ง เวลาเข้า-ออก และชั่วโมงทำงานของทุกคนเสมอ ห้ามละเว้น
+- ข้อมูลตัวเลข เวลา ราคา จำนวน ที่มีในระบบ ต้องแสดงทุกครั้ง ห้ามสรุปรวบรัดจนตัวเลขหาย`
+
+  console.log(`[GenerateResponse] intent=${intent.intent}, storeData length=${storeData.length}`)
+  console.log(`[GenerateResponse] storeData preview: ${storeData.substring(0, 500)}`)
 
   return await callGemini(prompt, 0.5, 1500) || '❌ ขออภัยค่ะ ระบบขัดข้อง กรุณาลองใหม่อีกครั้งนะคะ'
 }
