@@ -16,6 +16,7 @@ import PaymentVoucherPage from './pages/PaymentVoucherPage'
 import PaymentMethodsPage from './pages/PaymentMethodsPage'
 import WithholdingTaxPage from './pages/WithholdingTaxPage'
 import ExpensesPage from './pages/ExpensesPage'
+import AddExpensePage from './pages/AddExpensePage'
 import ReportsPage from './pages/ReportsPage'
 import ContactsPage from './pages/ContactsPage'
 import SalesOrdersPage from './pages/SalesOrdersPage'
@@ -102,6 +103,7 @@ function App() {
                     <Route path="/payment-methods" element={<PaymentMethodsPage />} />
                     <Route path="/withholding-tax" element={<WithholdingTaxPage />} />
                     <Route path="/expenses" element={<ExpensesPage />} />
+                    <Route path="/expenses/add" element={<AddExpensePage />} />
                     <Route path="/reports" element={<ReportsPage />} />
                     <Route path="/contacts" element={<ContactsPage />} />
                     <Route path="/sales-orders" element={<SalesOrdersPage />} />

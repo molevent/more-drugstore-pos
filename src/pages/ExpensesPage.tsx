@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle, Percent, FileText, ShoppingCart, BookOpen, Wallet, Printer, Upload, X, CheckSquare, Square, ScanLine, CreditCard, AlertCircle, Save } from 'lucide-react'
+import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle, Percent, FileText, ShoppingCart, BookOpen, Printer, Upload, X, CheckSquare, Square, ScanLine, CreditCard, AlertCircle, Save } from 'lucide-react'
 import { getExpenseCategories as getFaExpenseCategories, syncExpensesToFlowAccount, syncPurchasesToFlowAccount } from '../services/flowaccount'
 import { useLanguage } from '../contexts/LanguageContext'
 
@@ -75,6 +75,22 @@ interface Contact {
   created_at?: string
 }
 
+// Unified document type for combined view
+interface UnifiedDocument {
+  id: string
+  doc_type: 'expense' | 'payment_voucher' | 'purchase_order' | 'quotation' | 'withholding_tax'
+  doc_date: string
+  doc_number?: string
+  category?: string
+  description: string
+  vendor?: string
+  amount: number
+  status?: string
+  has_vat?: boolean
+  has_pv?: boolean
+  raw: any
+}
+
 const PAYMENT_METHODS = [
   'เงินสด',
   'โอนเงิน',
@@ -88,6 +104,13 @@ export default function ExpensesPage() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+
+  // Document tab for unified view
+  const [docTab, setDocTab] = useState<'all' | 'expense' | 'payment_voucher' | 'purchase_order' | 'quotation' | 'withholding_tax'>('all')
+  const [paymentVouchersList, setPaymentVouchersList] = useState<any[]>([])
+  const [purchaseOrdersList, setPurchaseOrdersList] = useState<any[]>([])
+  const [quotationsList, setQuotationsList] = useState<any[]>([])
+  const [withholdingTaxesList, setWithholdingTaxesList] = useState<any[]>([])
   
   // Get default date range: 1st of last month to today
   const today = new Date()
@@ -262,7 +285,59 @@ export default function ExpensesPage() {
     fetchPaymentMethodRules()
     fetchExpenseCategories()
     fetchPaymentMethods()
+    fetchPaymentVouchersList()
+    fetchPurchaseOrdersList()
+    fetchQuotationsList()
+    fetchWithholdingTaxesList()
   }, [])
+
+  const fetchPaymentVouchersList = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('payment_vouchers')
+        .select('*')
+        .order('voucher_date', { ascending: false })
+      if (!error && data) setPaymentVouchersList(data)
+    } catch (e) {
+      console.error('Error fetching payment vouchers:', e)
+    }
+  }
+
+  const fetchPurchaseOrdersList = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('purchase_orders')
+        .select('*')
+        .order('order_date', { ascending: false })
+      if (!error && data) setPurchaseOrdersList(data)
+    } catch (e) {
+      console.error('Error fetching purchase orders:', e)
+    }
+  }
+
+  const fetchQuotationsList = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('quotations')
+        .select('*')
+        .order('issue_date', { ascending: false })
+      if (!error && data) setQuotationsList(data)
+    } catch (e) {
+      console.error('Error fetching quotations:', e)
+    }
+  }
+
+  const fetchWithholdingTaxesList = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('withholding_taxes')
+        .select('*')
+        .order('document_date', { ascending: false })
+      if (!error && data) setWithholdingTaxesList(data)
+    } catch (e) {
+      console.error('Error fetching withholding taxes:', e)
+    }
+  }
 
   const fetchExpenses = async () => {
     setLoading(true)
@@ -582,23 +657,6 @@ export default function ExpensesPage() {
   const [syncProgress, setSyncProgress] = useState('')
   const [syncMode, setSyncMode] = useState<'expense' | 'purchase'>('expense')
 
-  const createExpenseWithCategory = async (category: string, description: string = '') => {
-    resetForm()
-    setSelectedShortcutCategory(category)
-    
-    // Set initial dates for new expense
-    const today = new Date()
-    const dateStr = today.toISOString().split('T')[0]
-    
-    setFormData(prev => ({
-      ...prev,
-      category,
-      description: description || category,
-      document_date: dateStr,  // วันที่ตามเอกสาร (คงที่)
-      expense_date: dateStr  // วันที่ชำระเงิน (เปลี่ยนได้)
-    }))
-    setShowModal(true)
-  }
 
   // Expense shortcuts configuration - Bridgerton Blue borders
   const expenseShortcuts = [
@@ -1079,6 +1137,122 @@ export default function ExpensesPage() {
   })
 
   const totalAmount = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0)
+
+  // Build unified document list for the combined "all documents" view
+  const unifiedDocuments: UnifiedDocument[] = (() => {
+    const docs: UnifiedDocument[] = []
+
+    // Add expenses (approved only)
+    expenses.filter(e => e.status !== 'pending').forEach(e => {
+      docs.push({
+        id: e.id,
+        doc_type: 'expense',
+        doc_date: e.document_date || e.expense_date,
+        category: e.category,
+        description: e.description,
+        vendor: e.vendor,
+        amount: e.amount,
+        status: e.status,
+        has_vat: (e.vat_amount ?? 0) > 0,
+        has_pv: !!e.payment_voucher_id,
+        raw: e
+      })
+    })
+
+    // Add payment vouchers
+    paymentVouchersList.forEach(pv => {
+      docs.push({
+        id: pv.id,
+        doc_type: 'payment_voucher',
+        doc_date: pv.voucher_date,
+        doc_number: pv.voucher_number,
+        description: pv.description || `ใบสำคัญจ่าย ${pv.voucher_number}`,
+        vendor: pv.payee_name,
+        amount: pv.amount || 0,
+        status: 'approved',
+        raw: pv
+      })
+    })
+
+    // Add purchase orders
+    purchaseOrdersList.forEach(po => {
+      docs.push({
+        id: po.id,
+        doc_type: 'purchase_order',
+        doc_date: po.order_date,
+        doc_number: po.po_number,
+        description: `${po.po_number} - ${po.supplier_name || ''}`.trim(),
+        vendor: po.supplier_name,
+        amount: po.total_amount || 0,
+        status: po.status,
+        raw: po
+      })
+    })
+
+    // Add quotations
+    quotationsList.forEach(q => {
+      docs.push({
+        id: q.id,
+        doc_type: 'quotation',
+        doc_date: q.issue_date,
+        doc_number: q.quotation_number,
+        description: q.contact_company || q.contact_name || `ใบเสนอราคา ${q.quotation_number}`,
+        vendor: q.contact_name,
+        amount: q.total_amount || 0,
+        status: q.status,
+        raw: q
+      })
+    })
+
+    // Add withholding taxes
+    withholdingTaxesList.forEach(wt => {
+      docs.push({
+        id: wt.id,
+        doc_type: 'withholding_tax',
+        doc_date: wt.document_date,
+        doc_number: wt.document_number,
+        description: `${wt.income_type || ''} - ${wt.payee_name || ''}`.trim(),
+        vendor: wt.payee_name,
+        amount: wt.income_amount || 0,
+        raw: wt
+      })
+    })
+
+    // Sort by date descending
+    docs.sort((a, b) => new Date(b.doc_date || '1970-01-01').getTime() - new Date(a.doc_date || '1970-01-01').getTime())
+    return docs
+  })()
+
+  // Filter unified documents by docTab, search, and date
+  const filteredUnifiedDocs = unifiedDocuments.filter(doc => {
+    // Tab filter
+    if (docTab !== 'all' && doc.doc_type !== docTab) return false
+
+    // Text search
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase()
+      const matchesSearch = 
+        doc.description?.toLowerCase().includes(term) ||
+        doc.vendor?.toLowerCase().includes(term) ||
+        doc.doc_number?.toLowerCase().includes(term) ||
+        doc.category?.toLowerCase().includes(term)
+      if (!matchesSearch) return false
+    }
+
+    // Date range
+    if (filterDateFrom && doc.doc_date < filterDateFrom) return false
+    if (filterDateTo && doc.doc_date > filterDateTo) return false
+
+    return true
+  })
+
+  // Counts per tab
+  const docCountAll = unifiedDocuments.length
+  const docCountExpense = unifiedDocuments.filter(d => d.doc_type === 'expense').length
+  const docCountPV = unifiedDocuments.filter(d => d.doc_type === 'payment_voucher').length
+  const docCountPO = unifiedDocuments.filter(d => d.doc_type === 'purchase_order').length
+  const docCountQuotation = unifiedDocuments.filter(d => d.doc_type === 'quotation').length
+  const docCountWHT = unifiedDocuments.filter(d => d.doc_type === 'withholding_tax').length
 
   // Pending expenses
   const pendingExpenses = expenses.filter(e => e.status === 'pending')
@@ -1602,6 +1776,13 @@ export default function ExpensesPage() {
           <div className="absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
             <div className="py-1">
               <Link
+                to="/expenses/add"
+                className="flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 text-gray-700 transition-colors"
+              >
+                <Plus className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium">บันทึกค่าใช้จ่าย</span>
+              </Link>
+              <Link
                 to="/bill-scan"
                 className="flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 text-gray-700 transition-colors"
               >
@@ -1722,13 +1903,6 @@ export default function ExpensesPage() {
           </div>
         </div>
 
-        <Link 
-          to="/petty-cash"
-          className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
-        >
-          <Wallet className="h-5 w-5 text-gray-900" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">เงินสดย่อย</span>
-        </Link>
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
             className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
@@ -1807,43 +1981,6 @@ export default function ExpensesPage() {
         </Card>
       </div>
 
-      {/* Expense Category Shortcuts - Quick Add */}
-      {viewMode === 'database' && (
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">บันทึกค่าใช้จ่าย *</label>
-          <div className="flex flex-wrap gap-2">
-            {expenseShortcuts.map((shortcut) => (
-              <button
-                key={shortcut.name}
-                onClick={() => createExpenseWithCategory(shortcut.category, shortcut.name)}
-                className="bg-white border-2 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-900 transition-all shadow-sm hover:bg-gray-50"
-                style={{ borderColor: shortcut.color }}
-              >
-                {shortcut.name}
-              </button>
-            ))}
-            <button
-              onClick={async () => {
-                resetForm()
-                // Set initial dates for new expense
-                const today = new Date()
-                const dateStr = today.toISOString().split('T')[0]
-                setFormData(prev => ({
-                  ...prev,
-                  document_date: dateStr,
-                  expense_date: dateStr
-                }))
-                setShowModal(true)
-              }}
-              className="flex items-center gap-1 bg-[#A67B5B] border-2 border-gray-300 px-3 py-1.5 rounded-lg text-sm font-medium text-white transition-all shadow-sm hover:bg-[#8B6B4F]"
-            >
-              <Plus className="h-4 w-4" />
-              เพิ่มค่าใช้จ่ายอื่นๆ
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Actions Bar - Database View with Filters */}
       {viewMode === 'database' && (
         <div className="flex flex-col gap-2 mb-6">
@@ -1921,6 +2058,14 @@ export default function ExpensesPage() {
               <option value="waiting_receipt">รอใบเสร็จ</option>
               <option value="waiting_payment">รอใบสำคัญ</option>
             </select>
+
+            {/* GO Button */}
+            <button
+              onClick={() => { fetchExpenses(); fetchPaymentVouchersList(); fetchPurchaseOrdersList(); fetchQuotationsList(); fetchWithholdingTaxesList() }}
+              className="px-3 py-2 bg-[#A8C4D9] hover:bg-[#8FB3CC] text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              GO
+            </button>
             
             {/* Clear Button */}
             {(searchTerm || filterDateFrom || filterDateTo || filterCategory || filterPaymentMethod || filterStatus) && (
@@ -2205,81 +2350,199 @@ export default function ExpensesPage() {
         </Card>
       )}
 
-      {/* Expenses List - Database View */}
+      {/* Unified Documents List - Database View */}
       {viewMode === 'database' && (
         <Card>
+          {/* Document Type Tabs */}
+          <div className="flex border-b border-gray-200 pl-0 pt-3">
+            {([
+              { key: 'all', label: 'ทั้งหมด', count: docCountAll },
+              { key: 'expense', label: 'ค่าใช้จ่าย', count: docCountExpense },
+              { key: 'payment_voucher', label: 'ใบสำคัญจ่าย', count: docCountPV },
+              { key: 'purchase_order', label: 'ใบรับสินค้า', count: docCountPO },
+              { key: 'quotation', label: 'ใบเสนอราคา', count: docCountQuotation },
+              { key: 'withholding_tax', label: 'หัก ณ ที่จ่าย', count: docCountWHT },
+            ] as { key: typeof docTab; label: string; count: number }[]).map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setDocTab(tab.key)}
+                className={`px-4 py-2.5 text-sm font-medium transition-all border-b-2 -mb-px ${
+                  docTab === tab.key
+                    ? 'border-[#A8C4D9] text-[#5B7A8B]'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {tab.label}
+                <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-xs ${
+                  docTab === tab.key ? 'bg-[#A8C4D9]/20 text-[#5B7A8B]' : 'bg-gray-100 text-gray-500'
+                }`}>
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
           {loading ? (
             <p className="text-center text-gray-600 py-8">กำลังโหลด...</p>
-          ) : filteredExpenses.length === 0 ? (
+          ) : filteredUnifiedDocs.length === 0 ? (
             <div className="text-center py-12">
               <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-600">ไม่มีรายการค่าใช้จ่าย</p>
-              <p className="text-sm text-gray-500 mt-1">คลิก "เพิ่มค่าใช้จ่าย" เพื่อบันทึก</p>
+              <p className="text-gray-600">ไม่มีเอกสาร</p>
+              <p className="text-sm text-gray-500 mt-1">คลิก "บันทึกค่าใช้จ่าย" เพื่อเริ่มบันทึก</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">วันที่ตามเอกสาร</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">หมวดหมู่</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">วันที่เอกสาร</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 min-w-[110px]">ประเภท</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">รายการ</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">ผู้จำหน่าย</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">คู่ค้า</th>
                     <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">จำนวนเงิน</th>
                     <th className="px-4 py-3 text-center text-sm font-medium text-gray-700"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredExpenses.map((expense) => (
-                    <tr key={expense.id} className="hover:bg-gray-50">
+                  {filteredUnifiedDocs.map((doc) => (
+                    <tr key={`${doc.doc_type}-${doc.id}`} className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm text-gray-900">
-                        {new Date(expense.document_date || expense.expense_date).toLocaleDateString('en-GB', { year: 'numeric', month: 'numeric', day: 'numeric' })}
+                        {doc.doc_date ? new Date(doc.doc_date).toLocaleDateString('en-GB', { year: 'numeric', month: 'numeric', day: 'numeric' }) : '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">
-                          {expense.category}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span>{expense.description}</span>
-                          {expense.is_newly_imported && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                              NEW
+                      <td className="px-4 py-3 text-sm">
+                        <div className="flex flex-col gap-1">
+                          {doc.doc_type === 'expense' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
+                              ค่าใช้จ่าย
                             </span>
                           )}
-                          {(expense.vat_amount ?? 0) > 0 && (
-                            <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded font-medium">VAT</span>
+                          {doc.doc_type === 'payment_voucher' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200 whitespace-nowrap">
+                              ใบสำคัญจ่าย
+                            </span>
                           )}
-                          {!expense.receipt_number && expense.delivery_number && (
-                            <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 text-xs rounded font-medium" title="รอใบเสร็จ">รอบิล</span>
+                          {doc.doc_type === 'purchase_order' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
+                              ใบรับสินค้า
+                            </span>
                           )}
-                          {expense.payment_voucher_id && (
-                            <span className="px-2 py-1 bg-blue-200 text-blue-800 text-xs rounded font-medium flex items-center gap-1 shadow-sm" title="มีใบสำคัญจ่ายแล้ว">
-                              <FileText className="h-3 w-3" />
-                              PV
+                          {doc.doc_type === 'quotation' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
+                              ใบเสนอราคา
+                            </span>
+                          )}
+                          {doc.doc_type === 'withholding_tax' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap">
+                              หัก ณ ที่จ่าย
+                            </span>
+                          )}
+                          {doc.category && (
+                            <span className="px-2 py-0.5 bg-gray-100 rounded-full text-xs text-gray-600 w-fit">
+                              {doc.category}
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{expense.vendor || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span>{doc.description}</span>
+                          {doc.doc_number && doc.doc_type !== 'expense' && (
+                            <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-xs rounded font-mono">
+                              {doc.doc_number}
+                            </span>
+                          )}
+                          {doc.has_vat && (
+                            <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded font-medium">VAT</span>
+                          )}
+                          {doc.has_pv && (
+                            <span className="px-2 py-0.5 bg-blue-200 text-blue-800 text-xs rounded font-medium inline-flex items-center gap-1">
+                              <FileText className="h-3 w-3" />
+                              PV
+                            </span>
+                          )}
+                          {doc.doc_type === 'purchase_order' && doc.status && (
+                            <span className={`px-1.5 py-0.5 text-xs rounded font-medium ${
+                              doc.status === 'received' ? 'bg-green-100 text-green-700' :
+                              doc.status === 'sent' ? 'bg-blue-100 text-blue-700' :
+                              doc.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                              'bg-gray-100 text-gray-600'
+                            }`}>
+                              {doc.status === 'draft' ? 'แบบร่าง' :
+                               doc.status === 'sent' ? 'ส่งแล้ว' :
+                               doc.status === 'received' ? 'รับแล้ว' :
+                               doc.status === 'cancelled' ? 'ยกเลิก' :
+                               doc.status === 'success' ? 'สำเร็จ' :
+                               doc.status}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{doc.vendor || '-'}</td>
                       <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
-                        ฿{expense.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        ฿{doc.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => handleEdit(expense)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </button>
+                          {doc.doc_type === 'expense' && (
+                            <button
+                              onClick={() => handleEdit(doc.raw as Expense)}
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="แก้ไข"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                          )}
+                          {doc.doc_type === 'payment_voucher' && (
+                            <button
+                              onClick={() => handleViewPaymentVoucher(doc.id)}
+                              className="p-1.5 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                              title="ดูใบสำคัญจ่าย"
+                            >
+                              <FileText className="h-4 w-4" />
+                            </button>
+                          )}
+                          {doc.doc_type === 'purchase_order' && (
+                            <Link
+                              to="/purchase-orders"
+                              className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                              title="ดูใบรับสินค้า"
+                            >
+                              <ShoppingCart className="h-4 w-4" />
+                            </Link>
+                          )}
+                          {doc.doc_type === 'quotation' && (
+                            <Link
+                              to="/quotations"
+                              className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                              title="ดูใบเสนอราคา"
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Link>
+                          )}
+                          {doc.doc_type === 'withholding_tax' && (
+                            <Link
+                              to="/withholding-tax"
+                              className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                              title="ดูใบหัก ณ ที่จ่าย"
+                            >
+                              <Percent className="h-4 w-4" />
+                            </Link>
+                          )}
                         </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              {/* Summary row */}
+              <div className="flex justify-between items-center px-4 py-3 bg-gray-50 border-t text-sm">
+                <span className="text-gray-600">
+                  {filteredUnifiedDocs.length} รายการ
+                </span>
+                <span className="font-medium text-gray-900">
+                  รวม ฿{filteredUnifiedDocs.reduce((sum, d) => sum + d.amount, 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
             </div>
           )}
         </Card>
