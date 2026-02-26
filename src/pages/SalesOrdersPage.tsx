@@ -1149,14 +1149,14 @@ export default function SalesOrdersPage() {
             </div>
           </div>
         </Card>
-        <Card className="bg-green-50/50 border-green-200">
+        <Card className="bg-white border-emerald-200/60">
           <div className="flex items-center">
-            <div className="h-10 w-10 rounded-xl bg-green-600 flex items-center justify-center shadow-sm">
+            <div className="h-10 w-10 rounded-xl bg-emerald-400 flex items-center justify-center shadow-sm">
               <ListOrdered className="h-5 w-5 text-white" />
             </div>
             <div className="ml-4">
-              <p className="text-sm text-green-700">ยอดขายรวม</p>
-              <p className="text-2xl font-bold text-green-800">{formatCurrency(totalSales)}</p>
+              <p className="text-sm text-emerald-600">ยอดขายรวม</p>
+              <p className="text-2xl font-bold text-emerald-700">{formatCurrency(totalSales)}</p>
             </div>
           </div>
         </Card>

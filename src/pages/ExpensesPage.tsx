@@ -1414,46 +1414,51 @@ export default function ExpensesPage() {
         </Link>
         <div className="flex-grow"></div>
         */}
-        <button
-          onClick={() => setViewMode('database')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-            viewMode === 'database'
-              ? 'bg-[#A8C4D9] text-white border-black'
-              : 'bg-white text-gray-700 border-black hover:bg-gray-50'
-          }`}
-        >
-          <Database className="h-4 w-4" />
-          ค่าใช้จ่าย
-        </button>
-        <Link
-          to="/bill-scan"
-          className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-        >
-          <ScanLine className="h-4 w-4" />
-          สแกนบิล OCR
-        </Link>
-        <button
-          onClick={() => setViewMode('pending')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-            viewMode === 'pending'
-              ? 'bg-amber-500 text-white'
-              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-          }`}
-        >
-          <Clock className="h-4 w-4" />
-          รออนุมัติ
-        </button>
-        <button
-          onClick={() => setViewMode('sheets')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-            viewMode === 'sheets'
-              ? 'bg-green-600 text-white'
-              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-          }`}
-        >
-          <Sheet className="h-4 w-4" />
-          ดึงข้อมูล
-        </button>
+        {/* Expenses Dropdown Menu */}
+        <div className="relative group">
+          <button
+            onClick={() => setViewMode('database')}
+            className={`flex items-center gap-2 px-3 py-2 rounded-full border font-medium transition-all ${
+              viewMode === 'database'
+                ? 'bg-[#A8C4D9] text-white border-[#A8C4D9] shadow-md'
+                : 'bg-white text-gray-700 border-[#B8C9B8] hover:bg-[#E8F4F8] hover:shadow-md'
+            }`}
+          >
+            <Database className="h-5 w-5" />
+            <span className="text-sm whitespace-nowrap">ค่าใช้จ่าย</span>
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div className="absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+            <div className="py-1">
+              <Link
+                to="/bill-scan"
+                className="flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 text-gray-700 transition-colors"
+              >
+                <ScanLine className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium">สแกนบิล OCR</span>
+              </Link>
+              <button
+                onClick={() => setViewMode('pending')}
+                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-amber-50 text-gray-700 transition-colors"
+              >
+                <Clock className="h-4 w-4 text-amber-600" />
+                <span className="text-sm font-medium">รออนุมัติ</span>
+                {pendingExpenses.length > 0 && (
+                  <span className="ml-auto px-1.5 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full font-bold">{pendingExpenses.length}</span>
+                )}
+              </button>
+              <button
+                onClick={() => setViewMode('sheets')}
+                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-green-50 text-gray-700 transition-colors"
+              >
+                <Sheet className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium">ดึงข้อมูล</span>
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* Quick Links */}
         <div className="w-px h-8 bg-gray-300 mx-2"></div>

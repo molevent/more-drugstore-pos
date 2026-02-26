@@ -1729,7 +1729,7 @@ export default function POSPage() {
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
             className="flex items-center justify-center w-10 h-10 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
-            title="คู่มือการใช้งาน"
+            title={t('pos.userManual')}
           >
             <BookOpen className="h-5 w-5" />
           </button>
@@ -1743,14 +1743,14 @@ export default function POSPage() {
           className="flex items-center gap-2 px-3 py-2 bg-[#D1D1E1] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
         >
           <Package className="h-5 w-5 text-black flex-shrink-0" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ยาตามหมวดหมู่</span>
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">{t('pos.browseByCategory')}</span>
         </Link>
         <Link 
           to="/medicine-labels"
           className="flex items-center gap-2 px-3 py-2 bg-[#D5EAE7] rounded-full border border-[#B8C9B8] hover:bg-[#D1D1E1] hover:shadow-md transition-all"
         >
           <Printer className="h-5 w-5 text-black flex-shrink-0" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">พิมพ์ฉลาก</span>
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">{t('pos.printLabel')}</span>
         </Link>
         <div className="relative">
           <button
@@ -1758,7 +1758,7 @@ export default function POSPage() {
             className="flex items-center gap-2 px-3 py-2 bg-[#F5F0E6] rounded-full border border-[#B8C9B8] hover:bg-[#E8EBF0] hover:shadow-md transition-all"
           >
             <Wallet className="h-5 w-5 text-black flex-shrink-0" />
-            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">สรุปยอด / นับเงิน</span>
+            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">{t('pos.summaryCount')}</span>
           </button>
           {showMoneyMenu && (
             <>
@@ -1770,14 +1770,14 @@ export default function POSPage() {
                   className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50"
                 >
                   <CreditCard className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm text-gray-800">สรุปยอดชำระเงิน</span>
+                  <span className="text-sm text-gray-800">{t('pos.paymentSummary')}</span>
                 </Link>
                 <button
                   onClick={() => { setShowCashierClosing(true); setShowMoneyMenu(false) }}
                   className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50 text-left"
                 >
                   <Wallet className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm text-gray-800">นับเงิน</span>
+                  <span className="text-sm text-gray-800">{t('pos.countMoney')}</span>
                 </button>
               </div>
             </>
@@ -1791,7 +1791,7 @@ export default function POSPage() {
           className="flex items-center gap-2 px-3 py-2 bg-[#DFEAF5] rounded-full border border-[#B8C9B8] hover:bg-[#C8DCF0] hover:shadow-md transition-all"
         >
           <Receipt className="h-5 w-5 text-black flex-shrink-0" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">รายการขายล่าสุด</span>
+          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">{t('pos.recentSales')}</span>
         </button>
       </div>
 
@@ -1800,17 +1800,17 @@ export default function POSPage() {
         <div className="mb-4 mx-4 sm:mx-0 p-3 rounded-lg border bg-[#F9E4B7]/50 border-[#D4756A]/30">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-500">
-              บิลที่พักไว้ ({heldBills.length})
+              {t('pos.heldBills')} ({heldBills.length})
             </span>
             <button
               onClick={() => setShowHeldBills(true)}
               className="text-sm text-gray-600 hover:text-gray-600/80 underline"
             >
-              ดูทั้งหมด
+              {t('pos.viewAll')}
             </button>
           </div>
           <div className="text-xs text-gray-500/80">
-            ล่าสุด: {heldBills[heldBills.length - 1]?.name}
+            {t('pos.latest')}: {heldBills[heldBills.length - 1]?.name}
           </div>
         </div>
       )}
@@ -1820,7 +1820,7 @@ export default function POSPage() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Bell className="h-5 w-5 text-gray-600" />
-              <h3 className="font-semibold text-gray-900">ประวัติการแจ้งเตือน</h3>
+              <h3 className="font-semibold text-gray-900">{t('pos.alertHistory')}</h3>
             </div>
             <button
               onClick={() => setShowAlertHistory(false)}
@@ -1882,7 +1882,7 @@ export default function POSPage() {
             {/* Sales Channel Selection */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-600 mb-2">
-                ช่องทางการขาย
+                {t('pos.salesChannel')}
               </label>
               <div className="flex flex-wrap gap-2">
                 {visibleChannels.map((channel: SalesChannelConfig) => {
@@ -1921,7 +1921,7 @@ export default function POSPage() {
                     value={barcode}
                     onChange={(e) => setBarcode(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="สแกนหรือพิมพ์บาร์โค้ดสินค้า..."
+                    placeholder={t('pos.scanOrType')}
                     className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-base"
                     autoFocus
                   />
@@ -1987,8 +1987,8 @@ export default function POSPage() {
                   <div className="h-20 w-20 mx-auto mb-4 rounded-2xl bg-[#F5F0E6] flex items-center justify-center">
                     <ShoppingCart className="h-10 w-10 text-[#B8C9B8]" />
                   </div>
-                  <p className="text-sm font-medium text-gray-900">ยังไม่มีสินค้าในตะกร้า</p>
-                  <p className="text-xs text-gray-600/70 mt-1">สแกนบาร์โค้ดเพื่อเพิ่มสินค้า</p>
+                  <p className="text-sm font-medium text-gray-900">{t('pos.emptyCart')}</p>
+                  <p className="text-xs text-gray-600/70 mt-1">{t('pos.emptyCartHint')}</p>
                 </div>
               ) : (
                 <>
@@ -2104,7 +2104,7 @@ export default function POSPage() {
         </div>
 
         <div>
-          <Card title="สรุปรายการ">
+          <Card title={t('pos.orderSummary')}>
             {/* Customer Selection - Hidden label */}
             <div className="mb-4">
               <div className="relative" ref={customerDropdownRef}>
@@ -2184,7 +2184,7 @@ export default function POSPage() {
             {salesChannel && (
               <div className="mb-3 p-2 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600">
-                  กำลังขายผ่าน: <span className="font-medium text-gray-900">{salesChannels.find(c => c.id === salesChannel)?.name}</span>
+                  {t('pos.sellingVia')} <span className="font-medium text-gray-900">{salesChannels.find(c => c.id === salesChannel)?.name}</span>
                 </p>
               </div>
             )}
@@ -2192,7 +2192,7 @@ export default function POSPage() {
             {/* Payment Method Selection */}
             <div className="mb-4">
               <label className="block text-xs font-medium text-gray-600 mb-2">
-                วิธีชำระ
+                {t('pos.paymentMethod')}
               </label>
               {(() => {
                 // Get visible payment methods for current sales channel
@@ -2231,7 +2231,7 @@ export default function POSPage() {
                           onClick={() => setShowOtherPaymentMethods(true)}
                           className="px-2 py-1 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 text-gray-500 hover:border-gray-400 hover:bg-gray-100 transition-all text-xs whitespace-nowrap"
                         >
-                          อื่นๆ
+                          {t('pos.otherMethods')}
                         </button>
                       )}
                     </div>
@@ -2267,7 +2267,7 @@ export default function POSPage() {
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 mb-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         <Wallet className="h-4 w-4 inline mr-1" />
-                        ลูกค้าชำระ
+                        {t('pos.customerPays')}
                       </label>
                       <div className="flex items-center gap-2">
                         <span className="text-gray-600 font-medium text-sm">฿</span>
@@ -2283,7 +2283,7 @@ export default function POSPage() {
                       </div>
                       {received > 0 && (
                         <div className={`mt-1 pt-1 border-t border-gray-200 flex justify-between items-center text-sm ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          <span className="font-medium">เงินทอน:</span>
+                          <span className="font-medium">{t('pos.change')}:</span>
                           <span className="font-bold">
                             {change >= 0 ? `฿${change.toFixed(2)}` : `ขาด ฿${Math.abs(change).toFixed(2)}`}
                           </span>
@@ -2296,16 +2296,16 @@ export default function POSPage() {
               })()}
 
               <div className="flex justify-between text-gray-600">
-                <span>ยอดรวม</span>
+                <span>{t('pos.subtotal')}</span>
                 <span>฿{getSubtotal().toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-gray-600">
-                <span>ส่วนลด</span>
+                <span>{t('pos.discount')}</span>
                 <span>฿0.00</span>
               </div>
               <div className="border-t border-[#B8C9B8]/50 pt-3">
                 <div className="flex justify-between text-xl font-bold text-gray-900">
-                  <span>ยอดชำระ</span>
+                  <span>{t('pos.totalPayable')}</span>
                   <span>฿{getTotal().toFixed(2)}</span>
                 </div>
               </div>
@@ -2326,7 +2326,7 @@ export default function POSPage() {
                 onClick={handleCheckout}
                 disabled={items.length === 0}
               >
-                {editOrderId ? 'บันทึกการแก้ไข' : 'ชำระเงิน'}
+                {editOrderId ? 'บันทึกการแก้ไข' : t('pos.pay')}
               </Button>
               <div className="grid grid-cols-2 gap-2">
                 <Button
@@ -2337,7 +2337,7 @@ export default function POSPage() {
                   className="w-full py-3 flex items-center justify-center gap-2"
                 >
                   <Save className="h-5 w-5" />
-                  <span>พัก</span>
+                  <span>{t('pos.hold')}</span>
                 </Button>
                 <Button
                   variant="secondary"
@@ -2347,7 +2347,7 @@ export default function POSPage() {
                   className="w-full py-3 flex items-center justify-center gap-2"
                 >
                   <Receipt className="h-5 w-5" />
-                  <span>พิมพ์</span>
+                  <span>{t('pos.print')}</span>
                 </Button>
               </div>
             </div>

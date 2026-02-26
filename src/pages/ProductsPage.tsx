@@ -1146,6 +1146,15 @@ export default function ProductsPage() {
             <span className="font-medium text-gray-900 text-sm whitespace-nowrap">แคตตาล็อกสินค้า</span>
           </Link>
 
+          {/* Platform Management Pill Button */}
+          <Link 
+            to="/platform-management"
+            className="flex items-center gap-2 px-3 py-2 bg-white rounded-full border-2 border-[#4A90A4]/50 hover:bg-[#4A90A4]/10 hover:shadow-md transition-all"
+          >
+            <Store className="h-5 w-5 text-[#4A90A4] flex-shrink-0" />
+            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">จัดการแพลตฟอร์ม</span>
+          </Link>
+
           {/* Sync to FlowAccount Button */}
           <button
             onClick={openSyncFAModal}

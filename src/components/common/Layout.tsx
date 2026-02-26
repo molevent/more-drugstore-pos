@@ -13,7 +13,6 @@ import {
   Calendar,
   Globe,
   Receipt,
-  Store,
   ArrowLeftRight
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
@@ -80,7 +79,6 @@ export default function Layout({ children }: LayoutProps) {
       title: t('nav.section.products'),
       items: [
         { name: t('nav.products'), href: '/products', icon: Boxes, id: 'products' as const },
-        { name: t('nav.platformManagement'), href: '/platform-management', icon: Store, id: 'products' as const },
         { name: t('nav.crossChannelStock'), href: '/cross-channel-stock', icon: ArrowLeftRight, id: 'products' as const },
       ].filter(item => canAccessMenu(userRole, item.id))
     },
