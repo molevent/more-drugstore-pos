@@ -7,7 +7,7 @@ import CalculatorModal from '../components/CalculatorModal'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Scan, Trash2, ShoppingCart, Save, X, User, Search, Package, Receipt, AlertTriangle, Bell, Camera, Brain, CreditCard, Printer, Wallet, Calculator, BookOpen } from 'lucide-react'
+import { Trash2, ShoppingCart, Save, X, User, Search, Package, Receipt, AlertTriangle, Bell, Camera, Brain, CreditCard, Printer, Wallet, Calculator, BookOpen } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { Product } from '../types/database'
 import { supabase } from '../services/supabase'
@@ -1967,9 +1967,6 @@ export default function POSPage() {
                     </div>
                   )}
                 </div>
-                <Button type="submit" variant="primary">
-                  <Scan className="h-5 w-5" />
-                </Button>
                 <Button 
                   type="button" 
                   variant="secondary"
@@ -2427,7 +2424,7 @@ export default function POSPage() {
 
       {/* Camera Modal */}
       {showCameraModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[10001] p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-lg font-bold text-gray-900">ถ่ายรูปบาร์โค้ด</h2>
