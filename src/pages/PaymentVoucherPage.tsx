@@ -206,7 +206,7 @@ export default function PaymentVoucherPage() {
           </a>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <FileText className="h-7 w-7 text-blue-600" />
+              <FileText className="h-7 w-7 text-[#7D735F]" />
               ใบสำคัญจ่าย
             </h1>
             <p className="text-gray-600 mt-1">บันทึกและจัดการใบสำคัญจ่าย</p>
@@ -224,11 +224,11 @@ export default function PaymentVoucherPage() {
       </div>
 
       {/* Summary Card */}
-      <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+      <Card className="mb-6 bg-gradient-to-r from-[#EDF1F5] to-[#E4EAF0] border-[#7B96B2]/30">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-blue-600 font-medium">ยอดรวมใบสำคัญจ่าย</p>
-            <p className="text-3xl font-bold text-blue-900">
+            <p className="text-sm text-[#7B96B2] font-medium">ยอดรวมใบสำคัญจ่าย</p>
+            <p className="text-3xl font-bold text-[#4A6178]">
               ฿{totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </p>
           </div>
@@ -242,7 +242,7 @@ export default function PaymentVoucherPage() {
       {/* Actions Bar */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="flex-1 relative">
-          <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-3 border border-transparent focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+          <div className="flex items-center gap-2 bg-[#E8EBF0] rounded-full px-4 py-3 border border-transparent focus-within:border-[#7B96B2] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#7B96B2]/20 transition-all">
             <Search className="h-5 w-5 text-gray-400 flex-shrink-0" />
             <input
               type="text"
@@ -259,7 +259,7 @@ export default function PaymentVoucherPage() {
             onClick={() => setViewMode('list')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
               viewMode === 'list'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-[#7B96B2] text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
@@ -270,7 +270,7 @@ export default function PaymentVoucherPage() {
             onClick={() => setViewMode('calendar')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
               viewMode === 'calendar'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-[#7B96B2] text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
@@ -296,7 +296,7 @@ export default function PaymentVoucherPage() {
           <p className="text-red-600 mb-4">{error}</p>
           <button
             onClick={fetchVouchers}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-4 py-2 bg-[#7B96B2] text-white rounded-lg hover:bg-[#6A869F]"
           >
             ลองใหม่
           </button>
@@ -357,7 +357,7 @@ export default function PaymentVoucherPage() {
                           </button>
                           <button
                             onClick={() => handleEdit(voucher)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="p-1.5 text-[#7B96B2] hover:bg-[#7B96B2]/10 rounded-lg transition-colors"
                           >
                             <Edit2 className="h-4 w-4" />
                           </button>
@@ -413,9 +413,9 @@ export default function PaymentVoucherPage() {
                 const monthTotal = monthVouchers.reduce((sum, v) => sum + v.amount, 0)
                 
                 return (
-                  <div className="bg-blue-100 rounded-lg p-3 mb-4 flex justify-between items-center">
-                    <span className="text-blue-800 font-medium">ยอดรวมในเดือนนี้</span>
-                    <span className="text-xl font-bold text-blue-900">
+                  <div className="bg-[#7B96B2]/15 rounded-lg p-3 mb-4 flex justify-between items-center">
+                    <span className="text-[#4A6178] font-medium">ยอดรวมในเดือนนี้</span>
+                    <span className="text-xl font-bold text-[#4A6178]">
                       ฿{monthTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
@@ -455,13 +455,13 @@ export default function PaymentVoucherPage() {
                       <div
                         key={day}
                         className={`h-24 border rounded-lg p-2 ${
-                          hasVouchers ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
+                          hasVouchers ? 'bg-[#7B96B2]/10 border-[#7B96B2]/30' : 'bg-gray-50 border-gray-200'
                         }`}
                       >
                         <div className="text-sm font-medium text-gray-900">{day}</div>
                         {hasVouchers && (
                           <div className="mt-1">
-                            <div className="text-xs text-blue-600 font-medium">
+                            <div className="text-xs text-[#7B96B2] font-medium">
                               {dayVouchers.length} รายการ
                             </div>
                             <div className="text-xs text-gray-600">
@@ -470,7 +470,7 @@ export default function PaymentVoucherPage() {
                             {dayVouchers.map(v => (
                               <div
                                 key={v.id}
-                                className="mt-1 text-xs bg-white rounded px-1 py-0.5 truncate cursor-pointer hover:bg-blue-100"
+                                className="mt-1 text-xs bg-white rounded px-1 py-0.5 truncate cursor-pointer hover:bg-[#7B96B2]/15"
                                 onClick={() => {
                                   setPrintVoucher(v)
                                   setShowPrintModal(true)
@@ -731,7 +731,7 @@ export default function PaymentVoucherPage() {
               </div>
 
               {/* Title */}
-              <div className="bg-blue-100 py-2 px-4 mb-4">
+              <div className="bg-[#7B96B2]/15 py-2 px-4 mb-4">
                 <h1 className="text-xl font-bold text-center text-gray-800">
                   ใบสำคัญจ่าย {printVoucher.voucher_number}
                 </h1>
@@ -831,7 +831,7 @@ export default function PaymentVoucherPage() {
             <div className="flex gap-3 p-4 border-t bg-gray-50 print:hidden">
               <button
                 onClick={() => window.print()}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                className="flex-1 bg-[#7B96B2] hover:bg-[#6A869F] text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
               >
                 <Printer className="h-4 w-4" />
                 พิมพ์

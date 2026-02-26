@@ -1489,9 +1489,9 @@ export default function POSPage() {
       })
       if (videoRef.current) {
         videoRef.current.srcObject = stream
-        videoRef.current.onloadedmetadata = () => {
-          setIsCameraReady(true)
-        }
+        setIsCameraReady(true)
+        // Explicitly play for mobile Safari
+        videoRef.current.play().catch(() => {})
       }
     } catch (error) {
       console.error('Error accessing camera:', error)
