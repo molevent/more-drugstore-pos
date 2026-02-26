@@ -439,3 +439,58 @@ export interface Employee {
   created_at: string
   updated_at: string
 }
+
+// ============================================================================
+// GRAB ORDER TYPES
+// ============================================================================
+
+export type GrabOrderStatus = 'scanned' | 'picking' | 'verified' | 'completed' | 'cancelled'
+export type DeliveryPlatform = 'grab' | 'lineman' | 'robinhood' | 'foodpanda' | 'other'
+
+export interface GrabOrder {
+  id: string
+  order_number: string
+  booking_code?: string
+  tracking_number?: string
+  platform: DeliveryPlatform
+  customer_name?: string
+  customer_phone?: string
+  customer_notes?: string
+  driver_name?: string
+  driver_phone?: string
+  subtotal: number
+  discount: number
+  delivery_fee: number
+  platform_fee: number
+  vat: number
+  grand_total: number
+  status: GrabOrderStatus
+  order_image_url?: string
+  pick_image_url?: string
+  picked_by?: string
+  verified_at?: string
+  verified_by?: string
+  ocr_raw_json?: any
+  order_date: string
+  created_at: string
+  updated_at: string
+  // Joined
+  items?: GrabOrderItem[]
+}
+
+export interface GrabOrderItem {
+  id: string
+  grab_order_id: string
+  item_name: string
+  quantity: number
+  unit_price: number
+  total_price: number
+  notes?: string
+  matched_product_id?: string
+  matched_product_name?: string
+  match_confidence: number
+  is_picked: boolean
+  pick_quantity?: number
+  pick_notes?: string
+  created_at: string
+}
