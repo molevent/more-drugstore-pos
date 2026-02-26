@@ -90,6 +90,7 @@ export default function POSPage() {
   // Camera barcode scanning states
   const [showCameraModal, setShowCameraModal] = useState(false)
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
+  const [isCameraReady, setIsCameraReady] = useState(false)
   const [isProcessingBarcode, setIsProcessingBarcode] = useState(false)
   const [detectedProducts, setDetectedProducts] = useState<Product[]>([])
   const [selectedDetectedProducts, setSelectedDetectedProducts] = useState<Set<string>>(new Set())
@@ -1472,6 +1473,7 @@ export default function POSPage() {
   const handleCloseCamera = () => {
     setShowCameraModal(false)
     setCapturedImage(null)
+    setIsCameraReady(false)
     // Stop camera stream if active
     if (videoRef.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream
@@ -1487,9 +1489,13 @@ export default function POSPage() {
       })
       if (videoRef.current) {
         videoRef.current.srcObject = stream
+        videoRef.current.onloadedmetadata = () => {
+          setIsCameraReady(true)
+        }
       }
     } catch (error) {
       console.error('Error accessing camera:', error)
+      setIsCameraReady(false)
       alert('ไม่สามารถเข้าถึงกล้องได้ กรุณาตรวจสอบสิทธิ์การใช้งานกล้อง')
     }
   }
@@ -2412,7 +2418,7 @@ export default function POSPage() {
                       variant="secondary"
                       className="flex-1"
                       onClick={capturePhoto}
-                      disabled={!videoRef.current?.srcObject}
+                      disabled={!isCameraReady}
                     >
                       ถ่ายรูป
                     </Button>
