@@ -320,8 +320,8 @@ export default function AddExpensePage() {
   // Quick category buttons
   const quickCategories = [
     'ซื้อสินค้า',
-    'ค่าของใช้ - วัสดุสำนักงาน',
     'ค่า Service Fee Grab',
+    'ค่าของใช้ - วัสดุสำนักงาน',
     'ค่าเช่าสำนักงาน',
     'ค่าธรรมเนียม Kbank',
     'ค่าธรรมเนียม Lazada',

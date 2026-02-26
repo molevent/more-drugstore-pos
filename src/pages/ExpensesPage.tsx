@@ -1761,15 +1761,11 @@ export default function ExpensesPage() {
         <div className="relative group">
           <button
             onClick={() => setViewMode('database')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-full border font-medium transition-all ${
-              viewMode === 'database'
-                ? 'bg-[#A8C4D9] text-white border-[#A8C4D9] shadow-md'
-                : 'bg-white text-gray-700 border-[#B8C9B8] hover:bg-[#E8F4F8] hover:shadow-md'
-            }`}
+            className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
           >
-            <Database className="h-5 w-5" />
-            <span className="text-sm whitespace-nowrap">ค่าใช้จ่าย</span>
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <Database className="h-5 w-5 text-gray-900" />
+            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ค่าใช้จ่าย</span>
+            <svg className="h-4 w-4 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
@@ -1822,20 +1818,69 @@ export default function ExpensesPage() {
 
         {/* Quick Links */}
         <div className="w-px h-8 bg-gray-300 mx-2"></div>
-        <Link 
-          to="/purchase-orders"
-          className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
-        >
-          <ShoppingCart className="h-5 w-5 text-gray-900" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบรับสินค้า</span>
-        </Link>
-        <Link 
-          to="/quotations"
-          className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
-        >
-          <FileText className="h-5 w-5 text-gray-900" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบเสนอราคา</span>
-        </Link>
+        {/* Purchase Documents Dropdown */}
+        <div className="relative group">
+          <button className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all">
+            <ShoppingCart className="h-5 w-5 text-gray-900" />
+            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">เอกสารซื้อ</span>
+            <svg className="h-4 w-4 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+            <div className="py-1">
+              <Link
+                to="/purchase-orders"
+                className="flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 text-gray-700 transition-colors"
+              >
+                <FileText className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium">ใบสั่งซื้อ</span>
+              </Link>
+              <Link
+                to="/purchase-orders"
+                className="flex items-center gap-3 px-4 py-2.5 hover:bg-emerald-50 text-gray-700 transition-colors"
+              >
+                <ShoppingCart className="h-4 w-4 text-emerald-600" />
+                <span className="text-sm font-medium">ใบรับสินค้า</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+        {/* Sales Documents Dropdown */}
+        <div className="relative group">
+          <button className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all">
+            <FileText className="h-5 w-5 text-gray-900" />
+            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">เอกสารขาย</span>
+            <svg className="h-4 w-4 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+            <div className="py-1">
+              <Link
+                to="/quotations"
+                className="flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 text-gray-700 transition-colors"
+              >
+                <FileText className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium">ใบเสนอราคา</span>
+              </Link>
+              <Link
+                to="/tax-invoices"
+                className="flex items-center gap-3 px-4 py-2.5 hover:bg-amber-50 text-gray-700 transition-colors"
+              >
+                <Receipt className="h-4 w-4 text-amber-600" />
+                <span className="text-sm font-medium">ใบกำกับภาษีขาย</span>
+              </Link>
+              <Link
+                to="/receipts"
+                className="flex items-center gap-3 px-4 py-2.5 hover:bg-emerald-50 text-gray-700 transition-colors"
+              >
+                <Receipt className="h-4 w-4 text-emerald-600" />
+                <span className="text-sm font-medium">ใบเสร็จรับเงิน</span>
+              </Link>
+            </div>
+          </div>
+        </div>
         <Link 
           to="/payment-vouchers"
           className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
@@ -1846,10 +1891,10 @@ export default function ExpensesPage() {
 
         {/* Tax Menu Dropdown */}
         <div className="relative group">
-          <button className="flex items-center gap-2 px-3 py-2 bg-[#FEF3C7] rounded-full border border-[#F59E0B] hover:bg-[#FDE68A] hover:shadow-md transition-all">
-            <Percent className="h-5 w-5 text-amber-700" />
-            <span className="font-medium text-amber-800 text-sm whitespace-nowrap">ภาษี</span>
-            <svg className="h-4 w-4 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <button className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all">
+            <Percent className="h-5 w-5 text-gray-900" />
+            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ภาษี</span>
+            <svg className="h-4 w-4 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
@@ -1867,7 +1912,7 @@ export default function ExpensesPage() {
                 className="flex items-center gap-3 px-4 py-2.5 hover:bg-amber-50 text-gray-700 transition-colors"
               >
                 <FileText className="h-4 w-4 text-amber-600" />
-                <span className="text-sm font-medium">ภ.พ.30 (VAT Return)</span>
+                <span className="text-sm font-medium">ภ.พ.30</span>
               </Link>
               <Link 
                 to="/tax-invoices"
@@ -1883,21 +1928,21 @@ export default function ExpensesPage() {
                 className="flex items-center gap-3 px-4 py-2.5 hover:bg-amber-50 text-gray-700 transition-colors"
               >
                 <FileText className="h-4 w-4 text-amber-600" />
-                <span className="text-sm">ภ.ง.ด.1 (เงินเดือน)</span>
+                <span className="text-sm">ภ.ง.ด.1</span>
               </Link>
               <Link 
                 to="/tax-pnd3"
                 className="flex items-center gap-3 px-4 py-2.5 hover:bg-amber-50 text-gray-700 transition-colors"
               >
                 <FileText className="h-4 w-4 text-amber-600" />
-                <span className="text-sm">ภ.ง.ด.3 (ค่าบริการ)</span>
+                <span className="text-sm">ภ.ง.ด.3</span>
               </Link>
               <Link 
                 to="/tax-pnd53"
                 className="flex items-center gap-3 px-4 py-2.5 hover:bg-amber-50 text-gray-700 transition-colors"
               >
                 <FileText className="h-4 w-4 text-amber-600" />
-                <span className="text-sm">ภ.ง.ด.53 (ค่าจ้าง)</span>
+                <span className="text-sm">ภ.ง.ด.53</span>
               </Link>
             </div>
           </div>
