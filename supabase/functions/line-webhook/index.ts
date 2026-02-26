@@ -603,6 +603,23 @@ ${storeData || '(ไม่มีข้อมูลเพิ่มเติม)'}
   console.log(`[GenerateResponse] intent=${intent.intent}, storeData length=${storeData.length}`)
   console.log(`[GenerateResponse] storeData preview: ${storeData.substring(0, 500)}`)
 
+  // For data-heavy intents, guarantee raw data is always in the reply
+  const dataIntents = ['schedule', 'sales', 'expense', 'outstanding', 'stock_alert', 'product']
+  if (dataIntents.includes(intent.intent) && storeData.length > 10) {
+    // Ask Gemini for a short friendly intro only
+    const introPrompt = `${systemPrompt}
+
+${chatHistory ? `ประวัติสนทนา:\n${chatHistory}\n` : ''}
+คำถามใหม่: "${question}"
+
+ตอบแค่ประโยคทักทาย/นำเข้าสั้นๆ 1-2 ประโยค (ไม่เกิน 100 ตัวอักษร) ก่อนที่จะแสดงข้อมูล
+ห้ามใส่ข้อมูลตัวเลขหรือรายละเอียดในส่วนนี้
+ตัวอย่าง: "วันนี้มีคนเข้างาน 2 คนค่ะ ดูรายละเอียดเลยนะคะ 👇"`
+
+    const intro = await callGemini(introPrompt, 0.7, 200) || ''
+    return `${intro}\n\n📋 ${storeData}`
+  }
+
   return await callGemini(prompt, 0.5, 1500) || '❌ ขออภัยค่ะ ระบบขัดข้อง กรุณาลองใหม่อีกครั้งนะคะ'
 }
 
