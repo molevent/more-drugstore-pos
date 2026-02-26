@@ -690,14 +690,37 @@ export default function GrabOrdersPage() {
 
   // ─── Delete order ────────────────────────────────────────
 
-  const handleDeleteOrder = async (orderId: string) => {
-    if (!confirm('ต้องการลบออเดอร์นี้?')) return
-    await supabase.from('grab_order_items').delete().eq('grab_order_id', orderId)
-    await supabase.from('grab_orders').delete().eq('id', orderId)
-    fetchOrders()
-    if (selectedOrder?.id === orderId) {
-      setViewMode('list')
-      setSelectedOrder(null)
+  const handleDeleteOrder = async (orderId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation() // Prevent card click when clicking delete
+    if (!confirm('ต้องการลบออเดอร์นี้? (จะลบทั้งออเดอร์ GRAB และรายการขายที่เชื่อมโยง)')) return
+
+    try {
+      // 1. Find linked sales order
+      const { data: grabOrder } = await supabase
+        .from('grab_orders')
+        .select('sales_order_id')
+        .eq('id', orderId)
+        .single()
+
+      // 2. Delete linked sales order if exists
+      if (grabOrder?.sales_order_id) {
+        await supabase.from('order_items').delete().eq('order_id', grabOrder.sales_order_id)
+        await supabase.from('orders').delete().eq('id', grabOrder.sales_order_id)
+        console.log('[Grab] Deleted linked sales order:', grabOrder.sales_order_id)
+      }
+
+      // 3. Delete grab order items + grab order
+      await supabase.from('grab_order_items').delete().eq('grab_order_id', orderId)
+      await supabase.from('grab_orders').delete().eq('id', orderId)
+
+      fetchOrders()
+      if (selectedOrder?.id === orderId) {
+        setViewMode('list')
+        setSelectedOrder(null)
+      }
+    } catch (err: any) {
+      console.error('[Grab] Delete error:', err)
+      alert('ลบไม่สำเร็จ: ' + (err.message || 'Unknown error'))
     }
   }
 
@@ -874,11 +897,20 @@ export default function GrabOrdersPage() {
                           </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-[#8B6F4E]">฿{formatCurrency(order.grand_total)}</p>
-                        <p className="text-xs text-gray-400">
-                          {new Date(order.created_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className="font-bold text-[#8B6F4E]">฿{formatCurrency(order.grand_total)}</p>
+                          <p className="text-xs text-gray-400">
+                            {new Date(order.created_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                        <button
+                          onClick={(e) => handleDeleteOrder(order.id, e)}
+                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          title="ลบออเดอร์"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                   </Card>
