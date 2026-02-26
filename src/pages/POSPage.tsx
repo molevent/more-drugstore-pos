@@ -96,6 +96,7 @@ export default function POSPage() {
   const [isProcessingBarcode, setIsProcessingBarcode] = useState(false)
   const [detectedProducts, setDetectedProducts] = useState<Product[]>([])
   const [selectedDetectedProducts, setSelectedDetectedProducts] = useState<Set<string>>(new Set())
+  const [detectedProductQuantities, setDetectedProductQuantities] = useState<Record<string, number>>({})
   const [showDetectedProductsView, setShowDetectedProductsView] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -1661,21 +1662,26 @@ export default function POSPage() {
       if (detectedCodes.length > 0) {
         console.log(`Found ${detectedCodes.length} barcodes:`, detectedCodes)
 
-        const foundProducts: Product[] = []
-        const uniqueBarcodes = new Set<string>()
-
+        // Count how many times each barcode appears
+        const barcodeCounts: Record<string, number> = {}
         for (const code of detectedCodes) {
-          if (!uniqueBarcodes.has(code)) {
-            uniqueBarcodes.add(code)
-            const product = getProductByBarcode(code) || products.find(p => p.barcode === code)
-            if (product && !foundProducts.find(p => p.id === product.id)) {
-              foundProducts.push(product)
-            }
+          barcodeCounts[code] = (barcodeCounts[code] || 0) + 1
+        }
+
+        const foundProducts: Product[] = []
+        const quantities: Record<string, number> = {}
+
+        for (const [code, count] of Object.entries(barcodeCounts)) {
+          const product = getProductByBarcode(code) || products.find(p => p.barcode === code)
+          if (product && !foundProducts.find(p => p.id === product.id)) {
+            foundProducts.push(product)
+            quantities[product.id] = count
           }
         }
 
         if (foundProducts.length > 0) {
           setDetectedProducts(foundProducts)
+          setDetectedProductQuantities(quantities)
           setSelectedDetectedProducts(new Set(foundProducts.map(p => p.id)))
           setShowDetectedProductsView(true)
         } else {
@@ -1716,14 +1722,27 @@ export default function POSPage() {
     setSelectedDetectedProducts(new Set())
   }
 
+  const handleDetectedQuantityChange = (productId: string, delta: number) => {
+    setDetectedProductQuantities(prev => {
+      const current = prev[productId] || 1
+      const newQty = Math.max(1, current + delta)
+      return { ...prev, [productId]: newQty }
+    })
+  }
+
   const handleAddSelectedToCart = () => {
     const selectedProducts = detectedProducts.filter(p => selectedDetectedProducts.has(p.id))
+    let totalItems = 0
     
     for (const product of selectedProducts) {
-      addItem(product)
+      const qty = detectedProductQuantities[product.id] || 1
+      for (let i = 0; i < qty; i++) {
+        addItem(product)
+      }
+      totalItems += qty
     }
     
-    alert(`เพิ่มสินค้า ${selectedProducts.length} รายการเข้าตะกร้าแล้ว`)
+    alert(`เพิ่มสินค้า ${totalItems} ชิ้น (${selectedProducts.length} รายการ) เข้าตะกร้าแล้ว`)
     handleCloseCamera()
   }
 
@@ -2539,10 +2558,10 @@ export default function POSPage() {
                 <div className="space-y-4">
                   <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                     <p className="text-green-800 font-medium">
-                      พบสินค้า {detectedProducts.length} รายการจากรูปภาพ
+                      พบสินค้า {detectedProducts.length} รายการ ({detectedProducts.reduce((sum, p) => sum + (detectedProductQuantities[p.id] || 1), 0)} ชิ้น) จากรูปภาพ
                     </p>
                     <p className="text-sm text-green-600">
-                      เลือกสินค้าที่ต้องการเพิ่มเข้าตะกร้า
+                      เลือกสินค้าและปรับจำนวนที่ต้องการเพิ่มเข้าตะกร้า
                     </p>
                   </div>
 
@@ -2596,14 +2615,31 @@ export default function POSPage() {
                             บาร์โค้ด: {product.barcode}
                           </p>
                         </div>
-                        <div className="text-right">
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={() => handleDetectedQuantityChange(product.id, -1)}
+                            className="w-7 h-7 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-700 font-bold"
+                          >
+                            −
+                          </button>
+                          <span className="w-8 text-center font-bold text-gray-900">
+                            {detectedProductQuantities[product.id] || 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleDetectedQuantityChange(product.id, 1)}
+                            className="w-7 h-7 rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center text-white font-bold"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <div className="text-right min-w-[80px]">
                           <p className="font-bold text-blue-600">
-                            ฿{getProductPriceForChannel(product, salesChannel as SalesChannel).toFixed(2)}
-                            {getProductPriceForChannel(product, salesChannel as SalesChannel) !== product.base_price && (
-                              <span className="text-xs text-gray-400 line-through ml-1">
-                                ฿{product.base_price.toFixed(2)}
-                              </span>
-                            )}
+                            ฿{(getProductPriceForChannel(product, salesChannel as SalesChannel) * (detectedProductQuantities[product.id] || 1)).toFixed(2)}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            ฿{getProductPriceForChannel(product, salesChannel as SalesChannel).toFixed(2)} × {detectedProductQuantities[product.id] || 1}
                           </p>
                           <p className="text-xs text-gray-500">
                             คงเหลือ: {product.stock_quantity}
@@ -2617,12 +2653,14 @@ export default function POSPage() {
                   <div className="border-t pt-4 space-y-3">
                     <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
                       <span className="text-gray-600">
-                        เลือก {selectedDetectedProducts.size} จาก {detectedProducts.length} รายการ
+                        เลือก {selectedDetectedProducts.size} รายการ ({detectedProducts
+                          .filter(p => selectedDetectedProducts.has(p.id))
+                          .reduce((sum, p) => sum + (detectedProductQuantities[p.id] || 1), 0)} ชิ้น)
                       </span>
                       <span className="font-bold text-blue-600">
                         รวม: ฿{detectedProducts
                           .filter(p => selectedDetectedProducts.has(p.id))
-                          .reduce((sum, p) => sum + getProductPriceForChannel(p, salesChannel as SalesChannel), 0)
+                          .reduce((sum, p) => sum + getProductPriceForChannel(p, salesChannel as SalesChannel) * (detectedProductQuantities[p.id] || 1), 0)
                           .toFixed(2)}
                       </span>
                     </div>
@@ -2643,7 +2681,9 @@ export default function POSPage() {
                         onClick={handleAddSelectedToCart}
                         disabled={selectedDetectedProducts.size === 0}
                       >
-                        เพิ่มเข้าตะกร้า ({selectedDetectedProducts.size})
+                        เพิ่มเข้าตะกร้า ({detectedProducts
+                          .filter(p => selectedDetectedProducts.has(p.id))
+                          .reduce((sum, p) => sum + (detectedProductQuantities[p.id] || 1), 0)} ชิ้น)
                       </Button>
                     </div>
                   </div>
