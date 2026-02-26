@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
-import { ArrowLeft, CheckCircle, ExternalLink, RefreshCw, Download, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, CheckCircle, ExternalLink, RefreshCw, Download, AlertTriangle, BookOpen, ArrowRightLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { Product } from '../types/database'
 import * as XLSX from 'xlsx'
@@ -298,22 +298,32 @@ export default function CrossChannelStockReportPage() {
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">รายงานตัดสต็อกข้ามช่องทาง</h1>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <ArrowRightLeft className="h-7 w-7 text-[#7D735F]" />
+              รายการตัดสต็อก
+            </h1>
             <p className="text-sm text-gray-500">แจกแจงรายการสินค้าที่ต้องไปตัดสต็อกในแต่ละแพลตฟอร์ม</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
+            className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+            title="คู่มือการใช้งาน"
+          >
+            <BookOpen className="h-5 w-5" />
+          </button>
           <button
             onClick={handleExport}
             disabled={platformTasks.length === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+            className="flex items-center gap-2 px-3 py-2 bg-white text-green-700 rounded-full border-2 border-green-400 hover:bg-green-50 disabled:opacity-50 text-sm font-medium transition-all shadow-sm whitespace-nowrap"
           >
             <Download className="h-4 w-4" />
             Export Excel
           </button>
           <button
             onClick={fetchData}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+            className="flex items-center gap-2 px-3 py-2 bg-white text-gray-700 rounded-full border-2 border-gray-300 hover:bg-gray-50 text-sm font-medium transition-all shadow-sm whitespace-nowrap"
           >
             <RefreshCw className="h-4 w-4" />
             รีเฟรช

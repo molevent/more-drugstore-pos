@@ -50,7 +50,7 @@ export const useCartStore = create<CartState>((set, get) => ({
   items: [],
   salesChannel: 'walk-in',
   
-  addItem: (product, quantity = 1) => {
+  addItem: (product, quantity = 1, customPrice) => {
     const items = get().items
     const existingItem = items.find(item => item.product.id === product.id)
     
@@ -58,13 +58,13 @@ export const useCartStore = create<CartState>((set, get) => ({
       set({
         items: items.map(item =>
           item.product.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
+            ? { ...item, quantity: item.quantity + quantity, ...(customPrice !== undefined ? { custom_price: customPrice } : {}) }
             : item
         ),
       })
     } else {
       set({
-        items: [...items, { product, quantity, discount: 0 }],
+        items: [...items, { product, quantity, discount: 0, ...(customPrice !== undefined ? { custom_price: customPrice } : {}) }],
       })
     }
   },

@@ -6,6 +6,7 @@ import Button from '../components/common/Button'
 import Input from '../components/common/Input'
 import OrderEditModal from '../components/OrderEditModal'
 import { supabase } from '../services/supabase'
+import { useLanguage } from '../contexts/LanguageContext'
 
 interface SalesOrder {
   id: string
@@ -61,6 +62,7 @@ const PAYMENT_METHODS: Record<string, string> = {
 }
 
 export default function SalesOrdersPage() {
+  const { t } = useLanguage()
   const [orders, setOrders] = useState<SalesOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -1111,14 +1113,14 @@ export default function SalesOrdersPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <ListOrdered className="h-7 w-7 text-[#7D735F]" />
-            รายการขาย
+            {t('page.salesOrders.title')}
           </h1>
           <p className="text-gray-600 mt-1">รายการขายและยอดขายรวม</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowImportModal(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-[#2B9CD8] text-white text-sm rounded-lg hover:bg-[#2488C0] transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#2B9CD8] text-sm rounded-full border-2 border-[#2B9CD8]/50 hover:bg-[#2B9CD8]/10 transition-all shadow-sm whitespace-nowrap"
             title="ดึงรายการขายเงินสดจาก FlowAccount"
           >
             <Download className="h-4 w-4" />
@@ -1147,14 +1149,14 @@ export default function SalesOrdersPage() {
             </div>
           </div>
         </Card>
-        <Card className="bg-[#B8D4E3]/30 border-[#B8D4E3]">
+        <Card className="bg-green-50/50 border-green-200">
           <div className="flex items-center">
-            <div className="h-10 w-10 rounded-xl bg-[#2E5266] flex items-center justify-center shadow-sm">
+            <div className="h-10 w-10 rounded-xl bg-green-600 flex items-center justify-center shadow-sm">
               <ListOrdered className="h-5 w-5 text-white" />
             </div>
             <div className="ml-4">
-              <p className="text-sm text-[#2E5266]">ยอดขายรวม</p>
-              <p className="text-2xl font-bold text-[#2E5266]">{formatCurrency(totalSales)}</p>
+              <p className="text-sm text-green-700">ยอดขายรวม</p>
+              <p className="text-2xl font-bold text-green-800">{formatCurrency(totalSales)}</p>
             </div>
           </div>
         </Card>
@@ -1241,7 +1243,7 @@ export default function SalesOrdersPage() {
             onClick={() => setSyncFilter(f.key)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
               syncFilter === f.key
-                ? 'bg-blue-600 text-white'
+                ? 'bg-[#7FB3D3] text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >

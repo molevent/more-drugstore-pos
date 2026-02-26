@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../services/supabase'
 import { scanBill, ScannedBillData, ScannedBillItem } from '../services/ocrBillScanner'
+import { useLanguage } from '../contexts/LanguageContext'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import { 
   ScanLine, Upload, FileText, Check, X, Search, Link2, AlertCircle, 
   ChevronDown, ChevronUp, Package, ArrowLeft, Loader2, Save, Plus,
-  CheckCircle2, XCircle, HelpCircle
+  CheckCircle2, XCircle, HelpCircle, BookOpen
 } from 'lucide-react'
 import { Product } from '../types/database'
 
@@ -62,6 +63,7 @@ function fuzzyScore(a: string, b: string): number {
 }
 
 export default function BillScanPage() {
+  const { t } = useLanguage()
   // Upload & scan state
   const [files, setFiles] = useState<File[]>([])
   const [previews, setPreviews] = useState<string[]>([])
@@ -660,24 +662,33 @@ export default function BillScanPage() {
   const unmatchedCount = matchedItems.filter(i => !i.matched_product_id).length
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <ScanLine className="h-7 w-7 text-indigo-600" />
-            สแกนบิล / OCR
+            <ScanLine className="h-7 w-7 text-[#7D735F]" />
+            {t('page.billScan.title')}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-gray-600 mt-1">
             อัพโหลดใบกำกับภาษี / ใบส่งสินค้า แล้วดึงข้อมูลอัตโนมัติ
           </p>
         </div>
-        {scanResult && (
-          <Button onClick={handleReset} className="flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            สแกนใหม่
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
+            className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+            title="คู่มือการใช้งาน"
+          >
+            <BookOpen className="h-5 w-5" />
+          </button>
+          {scanResult && (
+            <Button onClick={handleReset} className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              สแกนใหม่
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Step 1: Upload */}
@@ -685,7 +696,7 @@ export default function BillScanPage() {
         <Card>
           <div className="p-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Upload className="h-5 w-5 text-indigo-500" />
+              <Upload className="h-5 w-5 text-[#7D735F]" />
               อัพโหลดเอกสาร
             </h2>
 

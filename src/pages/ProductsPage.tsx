@@ -227,6 +227,9 @@ export default function ProductsPage() {
   const [warehouses, setWarehouses] = useState<any[]>([])
   const [productWarehouseStocks, setProductWarehouseStocks] = useState<Record<string, number>>({})
   const [showCategoryTable, setShowCategoryTable] = useState(true)
+  const [showEnglishName, setShowEnglishName] = useState(false)
+  const [englishNameManuallySet, setEnglishNameManuallySet] = useState(false)
+  const [skuManuallySet, setSkuManuallySet] = useState(false)
   const [formData, setFormData] = useState<ProductFormData>(initialFormData)
   const [showSearchModal, setShowSearchModal] = useState(false)
   const [showCSVModal, setShowCSVModal] = useState(false)
@@ -246,6 +249,8 @@ export default function ProductsPage() {
   const [saveMessage, setSaveMessage] = useState<{type: 'success' | 'error', text: string} | null>(null)
   const [isSyncingFA, setIsSyncingFA] = useState(false)
   const [syncProgress, setSyncProgress] = useState('')
+  const [showSyncFAModal, setShowSyncFAModal] = useState(false)
+  const [syncFASelected, setSyncFASelected] = useState<Set<string>>(new Set())
 
   // Camera barcode scanning states
   const [showCameraModal, setShowCameraModal] = useState(false)
@@ -437,6 +442,11 @@ export default function ProductsPage() {
     setActiveTab('dashboard')
     setShowCategoryTable(!product.category_id)
     setInventorySubTab('general')
+    // If name_en exists and differs from name_th, consider it manually set
+    const hasCustomEnglishName = !!(product.name_en && product.name_en !== product.name_th)
+    setEnglishNameManuallySet(hasCustomEnglishName)
+    setShowEnglishName(hasCustomEnglishName)
+    setSkuManuallySet(!!(product.sku && product.sku !== product.barcode))
     
     // Fetch warehouse stocks and movement history for this product
     if (product.id) {
@@ -671,6 +681,50 @@ export default function ProductsPage() {
       setMovementHistory([])
     } finally {
       setMovementLoading(false)
+    }
+  }
+
+  // Open Sync FA modal with products sorted: unsynced newest first
+  const openSyncFAModal = () => {
+    // Pre-select all active products
+    const activeIds = new Set(products.filter(p => p.is_active).map(p => p.id))
+    setSyncFASelected(activeIds)
+    setShowSyncFAModal(true)
+  }
+
+  // Sync selected products to FlowAccount
+  const handleSyncSelectedToFA = async () => {
+    if (isSyncingFA) return
+    const selectedProducts = products.filter(p => syncFASelected.has(p.id))
+    if (selectedProducts.length === 0) {
+      alert('กรุณาเลือกสินค้าอย่างน้อย 1 รายการ')
+      return
+    }
+    setShowSyncFAModal(false)
+    setIsSyncingFA(true)
+    setSyncProgress(`กำลัง sync ${selectedProducts.length} รายการ...`)
+    try {
+      const result = await syncProductsToFlowAccount(selectedProducts, (current, total, action) => {
+        setSyncProgress(`${current}/${total} ${action}`)
+      })
+      setSyncProgress('')
+      let msg = `Sync สินค้าไป FlowAccount เสร็จสิ้น!\n\n`
+      msg += `📤 Sync ทั้งหมด: ${result.totalProducts} รายการ\n`
+      msg += `✅ สำเร็จ: ${result.totalSynced} รายการ\n`
+      msg += `   - สร้างใหม่: ${result.created}\n`
+      msg += `   - อัพเดท: ${result.updated}\n`
+      if (result.skipped > 0) msg += `   - ข้าม: ${result.skipped}\n`
+      if (result.failed > 0) msg += `❌ ล้มเหลว: ${result.failed}\n`
+      if (result.duplicateBarcodes.length > 0) {
+        msg += `\n⚠️ พบ Barcode ซ้ำ ${result.duplicateBarcodes.length} รายการ`
+      }
+      alert(msg)
+    } catch (err: any) {
+      console.error('FA product sync error:', err)
+      alert('Sync ล้มเหลว: ' + err.message)
+    } finally {
+      setIsSyncingFA(false)
+      setSyncProgress('')
     }
   }
 
@@ -912,7 +966,17 @@ export default function ProductsPage() {
       console.log(`[SAVE] Total save time: ${(performance.now() - startTime).toFixed(0)}ms`)
     } catch (error: any) {
       console.error('Error saving product:', error)
-      const errorMsg = error?.message || error?.error_description || 'ไม่สามารถบันทึกสินค้าได้ กรุณาลองใหม่อีกครั้ง'
+      let errorMsg = error?.message || error?.error_description || 'ไม่สามารถบันทึกสินค้าได้ กรุณาลองใหม่อีกครั้ง'
+      if (errorMsg.includes('products_barcode_key')) {
+        // Look up which product has this barcode
+        const { data: existing } = await supabase.from('products').select('name_th, barcode').eq('barcode', formData.barcode).maybeSingle()
+        const existingName = existing?.name_th ? ` (สินค้า: "${existing.name_th}")` : ''
+        errorMsg = `Barcode "${formData.barcode}" ซ้ำกับสินค้าที่มีอยู่แล้ว${existingName} กรุณาตรวจสอบ Barcode`
+      } else if (errorMsg.includes('products_sku_key')) {
+        const { data: existing } = await supabase.from('products').select('name_th, sku').eq('sku', formData.sku).maybeSingle()
+        const existingName = existing?.name_th ? ` (สินค้า: "${existing.name_th}")` : ''
+        errorMsg = `SKU "${formData.sku}" ซ้ำกับสินค้าที่มีอยู่แล้ว${existingName} กรุณาตรวจสอบ SKU`
+      }
       setSaveMessage({ type: 'error', text: errorMsg })
       alert('บันทึกไม่สำเร็จ: ' + errorMsg)
     } finally {
@@ -928,6 +992,9 @@ export default function ProductsPage() {
     setActiveTab('dashboard')
     setShowCategoryTable(true)
     setLabelSubTab('thai')
+    setShowEnglishName(false)
+    setEnglishNameManuallySet(false)
+    setSkuManuallySet(false)
   }
 
   const clearFilters = () => {
@@ -1048,55 +1115,55 @@ export default function ProductsPage() {
                   : t('products.title')
               }
             </h1>
-            <p className="text-gray-600 mt-1">จัดการสินค้าและสต็อกสินค้า</p>
+            <p className="text-gray-600 mt-1">จัดการสินค้าและสต็อกสินค้า <span className="text-xs text-gray-400">({products.length} รายการ)</span></p>
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2">
           {/* CSV Import Pill Button */}
           <button
             onClick={() => setShowCSVModal(true)}
-            className="flex items-center gap-3 px-5 py-3 bg-[#F5F0E6] hover:bg-[#E8E0D0] rounded-full border border-[#D4C4B0] transition-all shadow-sm"
+            className="flex items-center gap-2 px-3 py-2 bg-white rounded-full border-2 border-[#E8A87C] hover:bg-[#E8A87C]/10 hover:shadow-md transition-all"
           >
-            <Upload className="h-6 w-6 text-[#7D735F]" />
-            <span className="font-medium text-gray-800 text-sm">นำเข้า CSV</span>
+            <Upload className="h-5 w-5 text-[#C78555] flex-shrink-0" />
+            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">นำเข้า CSV</span>
           </button>
 
           {/* Stock Management Pill Button */}
           <Link 
             to="/stock-management"
-            className="flex items-center gap-3 px-5 py-3 bg-[#E8E0D0] hover:bg-[#D4C4B0] rounded-full border border-[#C8B89A] transition-all shadow-sm"
+            className="flex items-center gap-2 px-3 py-2 bg-white rounded-full border-2 border-[#85C9A3] hover:bg-[#85C9A3]/10 hover:shadow-md transition-all"
           >
-            <Boxes className="h-6 w-6 text-[#A67B5B]" />
-            <span className="font-medium text-gray-800 text-sm">จัดการสต็อก</span>
+            <Boxes className="h-5 w-5 text-[#4A9B6E] flex-shrink-0" />
+            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">จัดการสต็อก</span>
           </Link>
 
           {/* Product Catalogs Pill Button */}
           <Link 
             to="/product-catalogs"
-            className="flex items-center gap-3 px-5 py-3 bg-[#D4E4D4] hover:bg-[#B8D4B8] rounded-full border border-[#A8C4A8] transition-all shadow-sm"
+            className="flex items-center gap-2 px-3 py-2 bg-white rounded-full border-2 border-[#B8A9C9] hover:bg-[#B8A9C9]/10 hover:shadow-md transition-all"
           >
-            <BookOpen className="h-6 w-6 text-[#5A7A5A]" />
-            <span className="font-medium text-gray-800 text-sm">แคตตาล็อกสินค้า</span>
+            <BookOpen className="h-5 w-5 text-[#7B6B8D] flex-shrink-0" />
+            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">แคตตาล็อกสินค้า</span>
           </Link>
 
           {/* Sync to FlowAccount Button */}
           <button
-            onClick={handleSyncProductsToFA}
+            onClick={openSyncFAModal}
             disabled={isSyncingFA}
-            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-blue-500 bg-white text-blue-600 text-sm hover:bg-blue-50 disabled:opacity-50 transition-all shadow-sm max-w-xs"
+            className="flex items-center gap-2 px-3 py-2 bg-white rounded-full border-2 border-[#2B9CD8]/50 hover:bg-[#2B9CD8]/10 hover:shadow-md disabled:opacity-50 transition-all"
             title="Sync สินค้าไป FlowAccount"
           >
-            <RefreshCw className={`h-4 w-4 flex-shrink-0 ${isSyncingFA ? 'animate-spin' : ''}`} />
-            <span className="font-medium truncate">{isSyncingFA ? syncProgress || 'Syncing...' : 'Sync FA'}</span>
+            <RefreshCw className={`h-5 w-5 text-[#2B9CD8] flex-shrink-0 ${isSyncingFA ? 'animate-spin' : ''}`} />
+            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">{isSyncingFA ? syncProgress || 'Syncing...' : 'Sync FA'}</span>
           </button>
 
           {/* Add Product Pill Button */}
           <button
             onClick={() => { setActiveTab('identification'); setShowModal(true) }}
-            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#A67B5B] bg-white text-[#A67B5B] text-sm whitespace-nowrap hover:bg-[#A67B5B]/10 transition-all shadow-sm"
+            className="flex items-center gap-2 px-3 py-2 bg-white rounded-full border-2 border-[#A67B5B] hover:bg-[#A67B5B]/10 hover:shadow-md transition-all"
           >
-            <Plus className="h-4 w-4" />
-            <span className="font-medium">{t('products.addProduct')}</span>
+            <Plus className="h-5 w-5 text-[#A67B5B] flex-shrink-0" />
+            <span className="font-medium text-gray-900 text-sm whitespace-nowrap">{t('products.addProduct')}</span>
           </button>
 
           {/* Help Button - Book icon only */}
@@ -1573,7 +1640,7 @@ export default function ProductsPage() {
       {/* Product Form Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-[1200px] w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900">
                 {editingProduct ? t('products.editProduct') : t('products.addProduct')}
@@ -1591,7 +1658,7 @@ export default function ProductsPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('dashboard')}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'dashboard' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors border ${activeTab === 'dashboard' ? 'bg-white text-[#7D735F] border-[#C4B89C] shadow-sm' : 'bg-white text-gray-800 border-gray-200 hover:border-[#C4B89C] hover:text-[#7D735F]'}`}
               >
                 <LayoutDashboard className="h-4 w-4" />
                 ภาพรวม
@@ -1599,7 +1666,7 @@ export default function ProductsPage() {
                 <button
                 type="button"
                 onClick={() => setActiveTab('identification')}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'identification' ? 'bg-gray-200 text-gray-800 border border-gray-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors border ${activeTab === 'identification' ? 'bg-white text-[#7D735F] border-[#C4B89C] shadow-sm' : 'bg-white text-gray-800 border-gray-200 hover:border-[#C4B89C] hover:text-[#7D735F]'}`}
               >
                 <Fingerprint className="h-4 w-4" />
                 รายละเอียดสินค้า
@@ -1607,7 +1674,7 @@ export default function ProductsPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('categorization')}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'categorization' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors border ${activeTab === 'categorization' ? 'bg-white text-[#7D735F] border-[#C4B89C] shadow-sm' : 'bg-white text-gray-800 border-gray-200 hover:border-[#C4B89C] hover:text-[#7D735F]'}`}
               >
                 <FolderTree className="h-4 w-4" />
                 หมวดหมู่
@@ -1615,7 +1682,7 @@ export default function ProductsPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('financials')}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'financials' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors border ${activeTab === 'financials' ? 'bg-white text-[#7D735F] border-[#C4B89C] shadow-sm' : 'bg-white text-gray-800 border-gray-200 hover:border-[#C4B89C] hover:text-[#7D735F]'}`}
               >
                 <DollarSign className="h-4 w-4" />
                 ราคา
@@ -1623,7 +1690,7 @@ export default function ProductsPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('inventory')}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'inventory' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors border ${activeTab === 'inventory' ? 'bg-white text-[#7D735F] border-[#C4B89C] shadow-sm' : 'bg-white text-gray-800 border-gray-200 hover:border-[#C4B89C] hover:text-[#7D735F]'}`}
               >
                 <Boxes className="h-4 w-4" />
                 สต็อก
@@ -1631,7 +1698,7 @@ export default function ProductsPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('logistics')}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'logistics' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors border ${activeTab === 'logistics' ? 'bg-white text-[#7D735F] border-[#C4B89C] shadow-sm' : 'bg-white text-gray-800 border-gray-200 hover:border-[#C4B89C] hover:text-[#7D735F]'}`}
               >
                 <Image className="h-4 w-4" />
                 รูปภาพ
@@ -1639,7 +1706,7 @@ export default function ProductsPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('channels')}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'channels' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors border ${activeTab === 'channels' ? 'bg-white text-[#7D735F] border-[#C4B89C] shadow-sm' : 'bg-white text-gray-800 border-gray-200 hover:border-[#C4B89C] hover:text-[#7D735F]'}`}
               >
                 <Radio className="h-4 w-4" />
                 ช่องทางขาย
@@ -1652,7 +1719,7 @@ export default function ProductsPage() {
                     fetchMovementHistory(editingProduct.id)
                   }
                 }}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'movements' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors border ${activeTab === 'movements' ? 'bg-white text-[#7D735F] border-[#C4B89C] shadow-sm' : 'bg-white text-gray-800 border-gray-200 hover:border-[#C4B89C] hover:text-[#7D735F]'}`}
               >
                 <ArrowRightLeft className="h-4 w-4" />
                 เคลื่อนไหว
@@ -1660,7 +1727,7 @@ export default function ProductsPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('alerts')}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'alerts' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors border ${activeTab === 'alerts' ? 'bg-white text-[#7D735F] border-[#C4B89C] shadow-sm' : 'bg-white text-gray-800 border-gray-200 hover:border-[#C4B89C] hover:text-[#7D735F]'}`}
               >
                 <AlertTriangle className="h-4 w-4" />
                 แจ้งเตือน
@@ -1668,7 +1735,7 @@ export default function ProductsPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('label')}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'label' ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors border ${activeTab === 'label' ? 'bg-white text-[#7D735F] border-[#C4B89C] shadow-sm' : 'bg-white text-gray-800 border-gray-200 hover:border-[#C4B89C] hover:text-[#7D735F]'}`}
               >
                 <Printer className="h-4 w-4" />
                 ฉลาก
@@ -1921,32 +1988,81 @@ export default function ProductsPage() {
               {/* Tab 1: รายละเอียดสินค้า */}
               {activeTab === 'identification' && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">รายละเอียดสินค้า</h3>
-                  
-                  {/* Description Field - Added */}
+                  <h3 className="text-lg font-semibold text-gray-800">รายละเอียดสินค้า</h3>
+
+                  {/* Product Name - First and most important */}
                   <div>
-                    <LabelWithTooltip label="คำอธิบายสินค้า" tooltip="คำอธิบายสั้นๆ สำหรับแสดงหน้าร้าน" />
-                    <textarea
-                      value={formData.description_th}
-                      onChange={(e) => setFormData({ ...formData, description_th: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
-                      rows={3}
-                      placeholder="คำอธิบายสินค้าที่จะแสดงให้ลูกค้าเห็น"
+                    <div className="flex items-baseline gap-2 mb-1 flex-wrap">
+                      <LabelWithTooltip label="Product Name (ชื่อภาษาไทย)" tooltip="จำเป็นอย่างน้อย 1 อย่าง: SKU, Barcode หรือ Product Name" />
+                      <div className="flex items-center gap-2 ml-1">
+                        <button
+                          type="button"
+                          onClick={() => setShowEnglishName(!showEnglishName)}
+                          className={`text-xs px-2.5 py-1 rounded-full border transition-all ${
+                            showEnglishName ? 'bg-blue-50 border-blue-300 text-blue-600' : 'bg-gray-50 border-gray-300 text-gray-500 hover:bg-gray-100'
+                          }`}
+                        >
+                          {showEnglishName ? '▾ EN Name' : '▸ EN Name'}
+                        </button>
+                        <span className="text-gray-300">|</span>
+                        <span className="text-xs text-gray-500">Brand:</span>
+                        <input
+                          type="text"
+                          value={formData.brand}
+                          onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                          className="text-xs px-2.5 py-1 border border-gray-300 rounded-full w-32 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                          placeholder="ยี่ห้อ"
+                        />
+                        <label className="flex items-center gap-1.5 cursor-pointer ml-1">
+                          <input
+                            type="checkbox"
+                            checked={formData.is_active}
+                            onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                            className="h-3.5 w-3.5 text-blue-600 rounded border-gray-300"
+                          />
+                          <span className={`text-xs font-medium whitespace-nowrap ${formData.is_active ? 'text-green-700' : 'text-red-600'}`}>
+                            {formData.is_active ? '✓ Active' : '✗ Inactive'}
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      value={formData.name_th}
+                      onChange={(e) => {
+                        const newName = e.target.value
+                        const firstWord = newName.trim().split(/\s+/)[0] || ''
+                        const updates: any = { name_th: newName, brand: firstWord }
+                        if (!englishNameManuallySet) {
+                          updates.name_en = newName
+                        }
+                        setFormData({ ...formData, ...updates })
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="ชื่อสินค้า (จำเป็น)"
                     />
+                    {/* English Name - Collapsible inline */}
+                    {showEnglishName && (
+                      <div className="mt-2 pl-3 border-l-2 border-blue-200">
+                        <label className="block text-xs font-medium text-gray-500 mb-0.5">English Name (ชื่อภาษาอังกฤษ)</label>
+                        <input
+                          type="text"
+                          value={formData.name_en}
+                          onChange={(e) => {
+                            setEnglishNameManuallySet(true)
+                            setFormData({ ...formData, name_en: e.target.value })
+                          }}
+                          className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="English product name"
+                        />
+                      </div>
+                    )}
                   </div>
-                  
+
+                  {/* Barcode and Code/SKU - Right after Product Name */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <LabelWithTooltip label="Code/SKU (รหัสสินค้า)" tooltip="จำเป็นอย่างน้อย 1 อย่าง: SKU, Barcode หรือ Product Name" />
-                      <input
-                        type="text"
-                        value={formData.sku}
-                        onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <LabelWithTooltip label="Barcode (รหัสบาร์โค้ด)" tooltip="เลข 13 หลักตามตัวสินค้า" />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Barcode (รหัสบาร์โค้ด)</label>
                       <input
                         type="text"
                         value={formData.barcode}
@@ -1955,102 +2071,80 @@ export default function ProductsPage() {
                           setFormData({ 
                             ...formData, 
                             barcode,
-                            sku: formData.sku || barcode // Auto-fill SKU if empty
+                            sku: skuManuallySet ? formData.sku : barcode
                           })
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Code/SKU (รหัสสินค้า)</label>
+                      <input
+                        type="text"
+                        value={formData.sku}
+                        onChange={(e) => {
+                          setSkuManuallySet(true)
+                          setFormData({ ...formData, sku: e.target.value })
                         }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </div>
 
+                  {/* Description Field */}
                   <div>
-                    <LabelWithTooltip label="Product Name (ชื่อภาษาไทย)" tooltip="จำเป็นอย่างน้อย 1 อย่าง: SKU, Barcode หรือ Product Name" />
-                    <input
-                      type="text"
-                      value={formData.name_th}
-                      onChange={(e) => setFormData({ ...formData, name_th: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    <label className="block text-sm font-medium text-gray-700 mb-1">คำอธิบายสินค้า</label>
+                    <textarea
+                      value={formData.description_th}
+                      onChange={(e) => setFormData({ ...formData, description_th: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
+                      rows={3}
+                      placeholder="คำอธิบายสินค้าที่จะแสดงให้ลูกค้าเห็น"
                     />
                   </div>
 
+                  {/* Weight & Dimensions - Single row */}
                   <div>
-                    <LabelWithTooltip label="English Name (ชื่อภาษาอังกฤษ)" tooltip="ชื่อสินค้าภาษาอังกฤษ (ถ้ามี)" />
-                    <input
-                      type="text"
-                      value={formData.name_en}
-                      onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <LabelWithTooltip label="Brand (ยี่ห้อ)" tooltip="ยี่ห้อสินค้า เช่น GSK, Pfizer, หรือผู้ผลิตในประเทศ" />
-                      <input
-                        type="text"
-                        value={formData.brand}
-                        onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="เช่น GSK, Unilever, ศิริราช"
-                      />
-                    </div>
-                    <div>
-                      <label className="flex items-center gap-2 h-full py-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.is_active}
-                          onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                          className="h-4 w-4 text-blue-600 rounded border-gray-300"
-                        />
-                        <span className={`text-sm font-medium ${formData.is_active ? 'text-green-700' : 'text-red-600'}`}>
-                          {formData.is_active ? '✓ Active (ขายอยู่)' : '✗ Inactive (ระงับการขาย)'}
-                        </span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Weight & Dimensions */}
-                  <div className="border-t pt-4 mt-4">
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">ขนาดและน้ำหนัก (สำหรับคำนวณค่าขนส่ง)</h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      <div>
-                        <LabelWithTooltip label="น้ำหนัก (กรัม)" tooltip="สำหรับคำนวณค่าขนส่งออนไลน์" />
+                    <div className="flex flex-wrap items-end gap-3">
+                      <span className="text-sm font-medium text-gray-700 pb-2">ขนาด/น้ำหนัก:</span>
+                      <div className="flex-1 min-w-[80px]">
+                        <label className="block text-xs text-gray-500 mb-0.5">น้ำหนัก (กรัม)</label>
                         <input
                           type="number"
                           step="0.01"
                           value={formData.weight_grams}
                           onChange={(e) => setFormData({ ...formData, weight_grams: parseFloat(e.target.value) || 0 })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
-                      <div>
-                        <LabelWithTooltip label="กว้าง (ซม.)" tooltip="ความกว้าง (เซนติเมตร)" />
+                      <div className="flex-1 min-w-[70px]">
+                        <label className="block text-xs text-gray-500 mb-0.5">กว้าง (ซม.)</label>
                         <input
                           type="number"
                           step="0.01"
                           value={formData.width_cm}
                           onChange={(e) => setFormData({ ...formData, width_cm: parseFloat(e.target.value) || 0 })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
-                      <div>
-                        <LabelWithTooltip label="ยาว (ซม.)" tooltip="ความยาว (เซนติเมตร)" />
+                      <div className="flex-1 min-w-[70px]">
+                        <label className="block text-xs text-gray-500 mb-0.5">ยาว (ซม.)</label>
                         <input
                           type="number"
                           step="0.01"
                           value={formData.length_cm}
                           onChange={(e) => setFormData({ ...formData, length_cm: parseFloat(e.target.value) || 0 })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
-                      <div>
-                        <LabelWithTooltip label="สูง (ซม.)" tooltip="ความสูง (เซนติเมตร)" />
+                      <div className="flex-1 min-w-[70px]">
+                        <label className="block text-xs text-gray-500 mb-0.5">สูง (ซม.)</label>
                         <input
                           type="number"
                           step="0.01"
                           value={formData.height_cm}
                           onChange={(e) => setFormData({ ...formData, height_cm: parseFloat(e.target.value) || 0 })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                     </div>
@@ -2064,7 +2158,7 @@ export default function ProductsPage() {
                   <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">หมวดหมู่และการจัดกลุ่ม (Categorization)</h3>
                   
                   <div>
-                    <LabelWithTooltip label="Category (หมวดสินค้า)" tooltip="เลือกหมวดหมู่จากตาราง" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Category (หมวดสินค้า)</label>
                     
                     {/* Selected Category Display - Collapsed View */}
                     {formData.category_id && !showCategoryTable && (
@@ -2120,7 +2214,7 @@ export default function ProductsPage() {
                     
                     {/* Hierarchical Category Table - Expandable */}
                     {showCategoryTable && (
-                      <div className="border rounded-lg overflow-hidden max-h-80 overflow-y-auto mt-2">
+                      <div className="border rounded-lg overflow-hidden mt-2">
                         <table className="w-full text-sm">
                           <thead className="bg-gray-100 sticky top-0">
                             <tr>
@@ -2247,7 +2341,7 @@ export default function ProductsPage() {
                   </div>
 
                   <div>
-                    <LabelWithTooltip label="Tag สินค้า" tooltip="คำค้นหาเพิ่มเติม คั่นด้วยลูกน้ำ (เช่น #ยาแก้ปวด, #สินค้าแนะนำ)" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tag สินค้า</label>
                     <input
                       type="text"
                       value={formData.tags}
@@ -2258,7 +2352,7 @@ export default function ProductsPage() {
                   </div>
 
                   <div>
-                    <LabelWithTooltip label="สรรพคุณ / ข้อบ่งใช้" tooltip="รายละเอียดการใช้งานสินค้า" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">สรรพคุณ / ข้อบ่งใช้</label>
                     <textarea
                       value={formData.indications}
                       onChange={(e) => setFormData({ ...formData, indications: e.target.value })}
@@ -2268,7 +2362,7 @@ export default function ProductsPage() {
                   </div>
 
                   <div>
-                    <LabelWithTooltip label="คำแนะนำเพิ่มเติม" tooltip="ข้อควรระวัง หรือวิธีเก็บรักษา" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">คำแนะนำเพิ่มเติม</label>
                     <textarea
                       value={formData.usage_instructions}
                       onChange={(e) => setFormData({ ...formData, usage_instructions: e.target.value })}
@@ -2278,7 +2372,7 @@ export default function ProductsPage() {
                   </div>
 
                   <div>
-                    <LabelWithTooltip label="ตัวยาสำคัญ (Active Ingredient)" tooltip="สำหรับสินค้ากลุ่มยา เช่น Paracetamol 500mg" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ตัวยาสำคัญ (Active Ingredient)</label>
                     <input
                       type="text"
                       value={formData.active_ingredient}
@@ -2289,7 +2383,7 @@ export default function ProductsPage() {
                   </div>
 
                   <div>
-                    <LabelWithTooltip label="หมายเหตุภายใน (Note)" tooltip="พนักงานดูได้อย่างเดียว ลูกค้าไม่เห็น" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">หมายเหตุภายใน (Note)</label>
                     <textarea
                       value={formData.internal_notes}
                       onChange={(e) => setFormData({ ...formData, internal_notes: e.target.value })}
@@ -2307,7 +2401,7 @@ export default function ProductsPage() {
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <LabelWithTooltip label="Cost/Unit" tooltip="ต้นทุนเฉลี่ยต่อหน่วย" />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Cost/Unit</label>
                       <input
                         type="number"
                         step="0.01"
@@ -2327,7 +2421,7 @@ export default function ProductsPage() {
                       />
                     </div>
                     <div>
-                      <LabelWithTooltip label="Purchasing Price (Excl. VAT)" tooltip="ราคาทุนซื้อล่าสุด (ไม่รวม VAT) - คำนวณอัตโนมัติจาก Cost/Unit" />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Purchasing Price (Excl. VAT)</label>
                       <input
                         type="number"
                         step="0.01"
@@ -2342,7 +2436,7 @@ export default function ProductsPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <LabelWithTooltip label="Selling Price (Incl. VAT)" tooltip="ราคาขายหน้าร้าน (รวมภาษีแล้ว)" />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Selling Price (Incl. VAT)</label>
                       <input
                         type="number"
                         step="0.01"
@@ -2363,7 +2457,7 @@ export default function ProductsPage() {
                       />
                     </div>
                     <div>
-                      <LabelWithTooltip label="Selling Price (Excl. VAT)" tooltip="ราคาขายก่อนภาษี - คำนวณอัตโนมัติจากราคารวม VAT" />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Selling Price (Excl. VAT)</label>
                       <input
                         type="number"
                         step="0.01"
@@ -2378,7 +2472,7 @@ export default function ProductsPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <LabelWithTooltip label="ราคาเต็ม" tooltip="ราคาตั้งต้นก่อนทำส่วนลด" />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">ราคาเต็ม</label>
                       <input
                         type="number"
                         step="0.01"
@@ -2388,7 +2482,7 @@ export default function ProductsPage() {
                       />
                     </div>
                     <div>
-                      <LabelWithTooltip label="ราคาส่ง" tooltip="ราคาพิเศษกรณีขายจำนวนมาก" />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">ราคาส่ง</label>
                       <input
                         type="number"
                         step="0.01"
@@ -2398,7 +2492,7 @@ export default function ProductsPage() {
                       />
                     </div>
                     <div>
-                      <LabelWithTooltip label="Unit (หน่วยนับ)" tooltip="เช่น กล่อง, แผง, ชิ้น, ขวด" />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Unit (หน่วยนับ)</label>
                       <input
                         type="text"
                         value={formData.unit}
@@ -2438,7 +2532,7 @@ export default function ProductsPage() {
 
                       {/* Stock Tracking Type */}
                       <div>
-                        <LabelWithTooltip label="ประเภทการนับสต็อก" tooltip="กำหนดว่าสินค้านี้ต้องนับสต็อกหรือไม่" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">ประเภทการนับสต็อก</label>
                         <select
                           value={formData.stock_tracking_type}
                           onChange={(e) => setFormData({ ...formData, stock_tracking_type: e.target.value as 'tracked' | 'untracked' | 'service' })}
@@ -2452,7 +2546,7 @@ export default function ProductsPage() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
-                          <LabelWithTooltip label="Remaining Qty" tooltip="จำนวนสินค้าคงเหลือปัจจุบัน" />
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Remaining Qty</label>
                           <input
                             type="number"
                             value={formData.stock_quantity}
@@ -2461,7 +2555,7 @@ export default function ProductsPage() {
                           />
                         </div>
                         <div>
-                          <LabelWithTooltip label="จำนวนขั้นต่ำ (Min Stock)" tooltip="จุดแจ้งเตือนเมื่อของใกล้หมด" />
+                          <label className="block text-sm font-medium text-gray-700 mb-1">จำนวนขั้นต่ำ (Min Stock)</label>
                           <input
                             type="number"
                             value={formData.min_stock_level}
@@ -2470,7 +2564,7 @@ export default function ProductsPage() {
                           />
                         </div>
                         <div>
-                          <LabelWithTooltip label="Opening Stock Date" tooltip="วันที่ตั้งต้นยอดยกมา (ค.ศ.)" />
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Opening Stock Date</label>
                           <input
                             type="date"
                             value={formData.opening_stock_date}
@@ -2482,7 +2576,7 @@ export default function ProductsPage() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <LabelWithTooltip label="วันหมดอายุ (Expiry Date)" tooltip="วันหมดอายุของสินค้า Lot ปัจจุบัน" />
+                          <label className="block text-sm font-medium text-gray-700 mb-1">วันหมดอายุ (Expiry Date)</label>
                           <input
                             type="date"
                             value={formData.expiry_date}
@@ -2491,7 +2585,7 @@ export default function ProductsPage() {
                           />
                         </div>
                         <div>
-                          <LabelWithTooltip label="Serial / Lot Number" tooltip="เลขที่ผลิตของสินค้า" />
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Serial / Lot Number</label>
                           <input
                             type="text"
                             value={formData.lot_number}
@@ -2502,7 +2596,7 @@ export default function ProductsPage() {
                       </div>
 
                       <div>
-                        <LabelWithTooltip label="ปริมาณ" tooltip="ขนาดบรรจุ (เช่น 10 เม็ด, 500 มล.)" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">ปริมาณ</label>
                         <input
                           type="text"
                           value={formData.packaging_size}
@@ -2575,7 +2669,7 @@ export default function ProductsPage() {
 
                   {/* Image URL Input */}
                   <div>
-                    <LabelWithTooltip label="ลิงก์รูปภาพสินค้า (Image URL)" tooltip="ใส่ลิงก์รูปภาพจากแหล่งอื่น (เช่น Google Drive, Dropbox)" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ลิงก์รูปภาพสินค้า (Image URL)</label>
                     <div className="flex gap-2">
                       <input
                         type="url"
@@ -2698,7 +2792,7 @@ export default function ProductsPage() {
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {/* POS */}
-                    <div className="p-3 border rounded-lg">
+                    <div className={`p-3 rounded-lg ${formData.sell_on_pos ? 'border-2 border-blue-400 bg-blue-50/30' : 'border border-gray-200'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <label className="flex items-center gap-2">
                           <input
@@ -2743,7 +2837,7 @@ export default function ProductsPage() {
                     </div>
 
                     {/* GRAB */}
-                    <div className="p-3 border rounded-lg">
+                    <div className={`p-3 rounded-lg ${formData.sell_on_grab ? 'border-2 border-green-400 bg-green-50/30' : 'border border-gray-200'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <label className="flex items-center gap-2">
                           <input
@@ -2790,7 +2884,7 @@ export default function ProductsPage() {
                     </div>
 
                     {/* LINEMAN */}
-                    <div className="p-3 border rounded-lg">
+                    <div className={`p-3 rounded-lg ${formData.sell_on_lineman ? 'border-2 border-green-400 bg-green-50/30' : 'border border-gray-200'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <label className="flex items-center gap-2">
                           <input
@@ -2837,7 +2931,7 @@ export default function ProductsPage() {
                     </div>
 
                     {/* LAZADA */}
-                    <div className="p-3 border rounded-lg">
+                    <div className={`p-3 rounded-lg ${formData.sell_on_lazada ? 'border-2 border-orange-400 bg-orange-50/30' : 'border border-gray-200'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <label className="flex items-center gap-2">
                           <input
@@ -2884,7 +2978,7 @@ export default function ProductsPage() {
                     </div>
 
                     {/* SHOPEE */}
-                    <div className="p-3 border rounded-lg">
+                    <div className={`p-3 rounded-lg ${formData.sell_on_shopee ? 'border-2 border-orange-400 bg-orange-50/30' : 'border border-gray-200'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <label className="flex items-center gap-2">
                           <input
@@ -2929,7 +3023,7 @@ export default function ProductsPage() {
                     </div>
 
                     {/* LINE SHOPPING */}
-                    <div className="p-3 border rounded-lg">
+                    <div className={`p-3 rounded-lg ${formData.sell_on_line_shopping ? 'border-2 border-green-400 bg-green-50/30' : 'border border-gray-200'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <label className="flex items-center gap-2">
                           <input
@@ -2974,7 +3068,7 @@ export default function ProductsPage() {
                     </div>
 
                     {/* TIKTOK */}
-                    <div className="p-3 border rounded-lg">
+                    <div className={`p-3 rounded-lg ${formData.sell_on_tiktok ? 'border-2 border-gray-500 bg-gray-50/30' : 'border border-gray-200'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <label className="flex items-center gap-2">
                           <input
@@ -3019,7 +3113,7 @@ export default function ProductsPage() {
                     </div>
 
                     {/* CONSIGNMENT - ฝากขาย */}
-                    <div className="p-3 border rounded-lg">
+                    <div className={`p-3 rounded-lg ${formData.sell_on_consignment ? 'border-2 border-purple-400 bg-purple-50/30' : 'border border-gray-200'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <label className="flex items-center gap-2">
                           <input
@@ -3066,7 +3160,7 @@ export default function ProductsPage() {
                     </div>
 
                     {/* WEBSITE */}
-                    <div className="p-3 border rounded-lg">
+                    <div className={`p-3 rounded-lg ${formData.sell_on_website ? 'border-2 border-blue-400 bg-blue-50/30' : 'border border-gray-200'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <label className="flex items-center gap-2">
                           <input
@@ -3355,7 +3449,7 @@ export default function ProductsPage() {
                   {labelSubTab === 'thai' && (
                     <div className="space-y-4">
                       <div>
-                        <LabelWithTooltip label="วิธีใช้ (ไทย)" tooltip="คำแนะนำการใช้ยาภาษาไทย จะแสดงบนฉลาก" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">วิธีใช้ (ไทย)</label>
                         <textarea
                           value={formData.label_dosage_instructions_th}
                           onChange={(e) => setFormData({ ...formData, label_dosage_instructions_th: e.target.value })}
@@ -3396,7 +3490,7 @@ export default function ProductsPage() {
                       </div>
 
                       <div>
-                        <LabelWithTooltip label="คำเตือน/ข้อควรระวัง (ไทย)" tooltip="คำเตือนหรือข้อควรระวังภาษาไทย" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">คำเตือน/ข้อควรระวัง (ไทย)</label>
                         <textarea
                           value={formData.label_special_instructions_th}
                           onChange={(e) => setFormData({ ...formData, label_special_instructions_th: e.target.value })}
@@ -3412,7 +3506,7 @@ export default function ProductsPage() {
                   {labelSubTab === 'english' && (
                     <div className="space-y-4">
                       <div>
-                        <LabelWithTooltip label="Dosage Instructions (English)" tooltip="Dosage instructions in English" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Dosage Instructions (English)</label>
                         <textarea
                           value={formData.label_dosage_instructions_en}
                           onChange={(e) => setFormData({ ...formData, label_dosage_instructions_en: e.target.value })}
@@ -3453,7 +3547,7 @@ export default function ProductsPage() {
                       </div>
 
                       <div>
-                        <LabelWithTooltip label="Warnings/Precautions (English)" tooltip="Warnings or precautions in English" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Warnings/Precautions (English)</label>
                         <textarea
                           value={formData.label_special_instructions_en}
                           onChange={(e) => setFormData({ ...formData, label_special_instructions_en: e.target.value })}
@@ -3470,7 +3564,7 @@ export default function ProductsPage() {
                     <div className="space-y-4">
                       <p className="text-sm text-gray-600">ข้อความแบบกำหนดเองจะแสดงแทนวิธีใช้มาตรฐาน (ถ้ากรอก)</p>
                       <div>
-                        <LabelWithTooltip label="ข้อความบรรทัดที่ 1" tooltip="ข้อความแถวแรกบนฉลาก" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">ข้อความบรรทัดที่ 1</label>
                         <input
                           type="text"
                           value={formData.label_custom_line1}
@@ -3480,7 +3574,7 @@ export default function ProductsPage() {
                         />
                       </div>
                       <div>
-                        <LabelWithTooltip label="ข้อความบรรทัดที่ 2" tooltip="ข้อความแถวที่สองบนฉลาก" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">ข้อความบรรทัดที่ 2</label>
                         <input
                           type="text"
                           value={formData.label_custom_line2}
@@ -3490,7 +3584,7 @@ export default function ProductsPage() {
                         />
                       </div>
                       <div>
-                        <LabelWithTooltip label="ข้อความบรรทัดที่ 3" tooltip="ข้อความแถวที่สามบนฉลาก" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">ข้อความบรรทัดที่ 3</label>
                         <input
                           type="text"
                           value={formData.label_custom_line3}
@@ -3510,7 +3604,7 @@ export default function ProductsPage() {
                   {saveMessage.type === 'success' ? '✓ ' : '✗ '}{saveMessage.text}
                 </div>
               )}
-              <div className="flex gap-3 pt-6 border-t mt-6">
+              <div className="flex gap-3 pt-4 mt-4">
                 <Button type="submit" variant="primary" className="flex-1" disabled={isSaving}>
                   {isSaving ? 'กำลังบันทึก...' : t('common.save')}
                 </Button>
@@ -3754,6 +3848,156 @@ export default function ProductsPage() {
           fetchProducts()
         }}
       />
+
+      {/* Sync FA Selection Modal */}
+      {showSyncFAModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-[800px] w-full my-8 max-h-[85vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <RefreshCw className="h-5 w-5 text-[#2B9CD8]" />
+                  Sync สินค้าไป FlowAccount
+                </h2>
+                <p className="text-sm text-gray-500 mt-0.5">เลือกสินค้าที่ต้องการ sync (เรียงจากล่าสุดที่ยังไม่ sync)</p>
+              </div>
+              <button onClick={() => setShowSyncFAModal(false)} className="p-2 hover:bg-gray-100 rounded-full">
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center gap-3 px-4 py-3 border-b bg-gray-50 flex-wrap">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const activeIds = new Set(products.filter(p => p.is_active).map(p => p.id))
+                    setSyncFASelected(activeIds)
+                  }}
+                  className="text-xs px-2.5 py-1 rounded-full border border-blue-300 text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors"
+                >
+                  เลือกทั้งหมด ({products.filter(p => p.is_active).length})
+                </button>
+                <button
+                  onClick={() => setSyncFASelected(new Set())}
+                  className="text-xs px-2.5 py-1 rounded-full border border-gray-300 text-gray-600 bg-white hover:bg-gray-100 transition-colors"
+                >
+                  ไม่เลือก
+                </button>
+                <button
+                  onClick={() => {
+                    const unsyncedIds = new Set(
+                      products
+                        .filter(p => p.is_active && !(p as any).flowaccount_id)
+                        .map(p => p.id)
+                    )
+                    setSyncFASelected(unsyncedIds)
+                  }}
+                  className="text-xs px-2.5 py-1 rounded-full border border-orange-300 text-orange-600 bg-orange-50 hover:bg-orange-100 transition-colors"
+                >
+                  เฉพาะยังไม่ sync
+                </button>
+              </div>
+              <span className="text-sm text-gray-500 ml-auto">
+                เลือก <span className="font-bold text-[#2B9CD8]">{syncFASelected.size}</span> / {products.filter(p => p.is_active).length} รายการ
+              </span>
+            </div>
+
+            {/* Product List */}
+            <div className="flex-1 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 sticky top-0">
+                  <tr>
+                    <th className="px-3 py-2 text-left w-10"></th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600">สินค้า</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600">Barcode</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-600">SKU</th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-600">ราคา</th>
+                    <th className="px-3 py-2 text-center font-medium text-gray-600">สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {products
+                    .filter(p => p.is_active)
+                    .sort((a, b) => {
+                      // Unsynced first
+                      const aSync = (a as any).flowaccount_id ? 1 : 0
+                      const bSync = (b as any).flowaccount_id ? 1 : 0
+                      if (aSync !== bSync) return aSync - bSync
+                      // Then newest first
+                      return new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
+                    })
+                    .map((product) => (
+                      <tr
+                        key={product.id}
+                        onClick={() => {
+                          setSyncFASelected(prev => {
+                            const next = new Set(prev)
+                            if (next.has(product.id)) next.delete(product.id)
+                            else next.add(product.id)
+                            return next
+                          })
+                        }}
+                        className={`cursor-pointer transition-colors ${syncFASelected.has(product.id) ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}
+                      >
+                        <td className="px-3 py-2">
+                          <input
+                            type="checkbox"
+                            checked={syncFASelected.has(product.id)}
+                            onChange={() => {}}
+                            className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="font-medium text-gray-900 truncate max-w-[250px]">{product.name_th || product.name_en || '-'}</div>
+                        </td>
+                        <td className="px-3 py-2 text-gray-600 font-mono text-xs">{product.barcode || '-'}</td>
+                        <td className="px-3 py-2 text-gray-600 text-xs">{product.sku || '-'}</td>
+                        <td className="px-3 py-2 text-right">฿{(product.base_price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</td>
+                        <td className="px-3 py-2 text-center">
+                          {(product as any).flowaccount_id ? (
+                            <span className="px-1.5 py-0.5 rounded text-xs bg-green-100 text-green-700">Synced</span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 rounded text-xs bg-orange-100 text-orange-700">ยังไม่ sync</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSyncProductsToFA}
+                  className="text-xs text-gray-500 hover:text-gray-700 underline"
+                >
+                  Sync ทั้งหมดแบบเดิม
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowSyncFAModal(false)}
+                  className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  onClick={handleSyncSelectedToFA}
+                  disabled={syncFASelected.size === 0}
+                  className="px-4 py-2 text-sm text-white bg-[#2B9CD8] rounded-lg hover:bg-[#2488C0] disabled:opacity-50 flex items-center gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Sync {syncFASelected.size > 0 ? `(${syncFASelected.size} รายการ)` : ''}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Camera Barcode Modal */}
       {showCameraModal && (

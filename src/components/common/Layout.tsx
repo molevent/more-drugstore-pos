@@ -71,40 +71,45 @@ export default function Layout({ children }: LayoutProps) {
   // Filter navigation based on user role
   const navigationSections = [
     {
-      title: 'หลัก',
+      title: t('nav.section.main'),
       items: [
         { name: t('nav.pos'), href: '/pos', icon: ShoppingCart, id: 'pos' as const },
         { name: t('nav.salesOrders'), href: '/sales-orders', icon: ListOrdered, id: 'sales' as const },
       ].filter(item => canAccessMenu(userRole, item.id))
     },
     {
-      title: 'สินค้า',
+      title: t('nav.section.products'),
       items: [
         { name: t('nav.products'), href: '/products', icon: Boxes, id: 'products' as const },
-        { name: 'จัดการแพลตฟอร์ม', href: '/platform-management', icon: Store, id: 'products' as const },
-        { name: 'ตัดสต็อกข้ามช่องทาง', href: '/cross-channel-stock', icon: ArrowLeftRight, id: 'products' as const },
-        { name: 'เว็บไซต์ร้าน', href: '/store', icon: Globe, id: 'website' as const },
+        { name: t('nav.platformManagement'), href: '/platform-management', icon: Store, id: 'products' as const },
+        { name: t('nav.crossChannelStock'), href: '/cross-channel-stock', icon: ArrowLeftRight, id: 'products' as const },
       ].filter(item => canAccessMenu(userRole, item.id))
     },
     {
-      title: 'ผู้ติดต่อ',
+      title: t('nav.section.contacts'),
       items: [
         { name: t('nav.contacts'), href: '/contacts', icon: Users, id: 'contacts' as const },
       ].filter(item => canAccessMenu(userRole, item.id))
     },
     {
-      title: 'เอกสาร',
+      title: t('nav.section.documents'),
       items: [
         { name: t('nav.documents'), href: '/expenses', icon: Wallet, id: 'documents' as const },
-        { name: 'สแกนบิล OCR', href: '/bill-scan', icon: ScanLine, id: 'documents' as const },
-        { name: 'ใบกำกับภาษีฝั่งขาย', href: '/tax-invoices', icon: Receipt, id: 'tax_invoices' as const },
-        { name: 'ตารางเข้างาน', href: '/work-schedule', icon: Calendar, id: 'work_schedule' as const },
+        { name: t('nav.billScan'), href: '/bill-scan', icon: ScanLine, id: 'documents' as const },
+        { name: t('nav.taxInvoices'), href: '/tax-invoices', icon: Receipt, id: 'tax_invoices' as const },
+        { name: t('nav.workSchedule'), href: '/work-schedule', icon: Calendar, id: 'work_schedule' as const },
       ].filter(item => canAccessMenu(userRole, item.id))
     },
     {
-      title: 'ตั้งค่า',
+      title: t('nav.section.settings'),
       items: [
         { name: t('nav.settings'), href: '/settings', icon: Settings, id: 'settings' as const },
+      ].filter(item => canAccessMenu(userRole, item.id))
+    },
+    {
+      title: '',
+      items: [
+        { name: t('nav.website'), href: '/store', icon: Globe, id: 'website' as const },
       ].filter(item => canAccessMenu(userRole, item.id))
     }
   ].filter(section => section.items.length > 0)
@@ -176,7 +181,7 @@ export default function Layout({ children }: LayoutProps) {
                           className={`flex items-center gap-3 px-3 py-2.5 text-base font-medium rounded-xl transition-all border-2 ${
                             isActive
                               ? 'bg-[#C5C9E8] text-black border-[#8B9DC3] shadow-md'
-                              : 'text-[#5C4A32] border-transparent hover:border-[#B8D4E3] hover:bg-[#F5EFE6]'
+                              : 'text-black border-transparent hover:border-[#B8D4E3] hover:bg-[#F5EFE6]'
                           }`}
                         >
                           <item.icon className={`h-5 w-5 ${isActive ? 'text-[#4A5568]' : 'text-[#8B7355]'}`} />

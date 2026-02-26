@@ -526,8 +526,8 @@ export const convertOrderToCashInvoice = (
     isVat: false,
     vatAmount: 0,
     grandTotal: order.total,
-    remarks: `${order.platform_name || ''} ${order.order_number} ${order.payment_method || ''}`.trim(),
-    internalNotes: ''
+    remarks: '',
+    internalNotes: `${order.platform_name || ''} ${order.order_number} ${order.payment_method || ''}`.trim()
   };
 };
 

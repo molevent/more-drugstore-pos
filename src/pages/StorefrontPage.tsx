@@ -8,7 +8,9 @@ import {
   X,
   Package,
   Phone,
-  MapPin
+  MapPin,
+  AlertTriangle,
+  Languages
 } from 'lucide-react'
 
 interface Product {
@@ -21,12 +23,15 @@ interface Product {
   image_url: string | null
   unit: string
   category_id: string | null
+  alert_custom?: boolean
+  alert_custom_title?: string
 }
 
 interface Category {
   id: string
   name_th: string
   name_en: string
+  parent_id: string | null
 }
 
 interface CartItem {
@@ -47,6 +52,16 @@ export default function StorefrontPage() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [showCart, setShowCart] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [controlledCategoryIds, setControlledCategoryIds] = useState<Set<string>>(new Set())
+  const [lang, setLang] = useState<'th' | 'en'>(() => {
+    return (localStorage.getItem('storefront_lang') as 'th' | 'en') || 'th'
+  })
+
+  const toggleLang = () => {
+    const next = lang === 'th' ? 'en' : 'th'
+    setLang(next)
+    localStorage.setItem('storefront_lang', next)
+  }
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -101,10 +116,10 @@ export default function StorefrontPage() {
 
   const fetchCategories = async () => {
     try {
+      // Fetch all categories (without is_active filter, as categories table may not have it)
       const { data, error } = await supabase
         .from('categories')
         .select('*')
-        .eq('is_active', true)
         .order('name_th', { ascending: true })
 
       if (error) {
@@ -112,7 +127,25 @@ export default function StorefrontPage() {
         return
       }
 
-      setCategories(data || [])
+      const allCats = data || []
+      setCategories(allCats)
+
+      // Build set of controlled medicine category IDs
+      // Find categories whose name contains 'ควบคุม' or 'Prescription'
+      const controlledCats = allCats.filter((c: any) =>
+        c.name_th?.includes('ควบคุม') || c.name_th?.includes('Prescription')
+      )
+      const controlledIds = new Set<string>()
+      // Add the controlled categories and all their descendants (walk down)
+      const addDescendants = (parentId: string) => {
+        controlledIds.add(parentId)
+        allCats.filter((c: any) => c.parent_id === parentId).forEach((child: any) => {
+          addDescendants(child.id)
+        })
+      }
+      controlledCats.forEach((cp: any) => addDescendants(cp.id))
+      setControlledCategoryIds(controlledIds)
+      console.log('[Storefront] All categories:', allCats.length, 'Controlled categories found:', controlledCats.map((c: any) => c.name_th), 'Controlled IDs:', Array.from(controlledIds))
     } catch (error) {
       console.error('Error:', error)
     }
@@ -186,7 +219,7 @@ export default function StorefrontPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-40">
+      <header className="bg-gray-900 shadow-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
@@ -194,7 +227,7 @@ export default function StorefrontPage() {
               <div className="w-10 h-10 bg-[#7D735F] rounded-lg flex items-center justify-center">
                 <Package className="w-6 h-6 text-white" />
               </div>
-              <span className="font-semibold text-xl text-[#5A5A5A] hidden sm:block">
+              <span className="font-semibold text-xl text-white hidden sm:block">
                 More Drugstore
               </span>
             </Link>
@@ -205,22 +238,31 @@ export default function StorefrontPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="ค้นหาสินค้า..."
+                  placeholder={lang === 'th' ? 'ค้นหาสินค้า...' : 'Search products...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#7D735F]/20 focus:border-[#7D735F] outline-none"
+                  className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 text-white placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-[#7D735F]/40 focus:border-[#7D735F] outline-none"
                 />
               </div>
             </div>
 
             {/* Right Actions */}
             <div className="flex items-center gap-2">
+              {/* Language Toggle */}
+              <button
+                onClick={toggleLang}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                title={lang === 'th' ? 'Switch to English' : 'เปลี่ยนเป็นภาษาไทย'}
+              >
+                <Languages className="w-4 h-4" />
+                {lang === 'th' ? 'EN' : 'TH'}
+              </button>
               {/* Cart Button */}
               <button
                 onClick={() => setShowCart(true)}
-                className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="relative p-2 hover:bg-gray-800 rounded-lg transition-colors"
               >
-                <ShoppingCart className="w-6 h-6 text-[#5A5A5A]" />
+                <ShoppingCart className="w-6 h-6 text-white" />
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                     {cartCount}
@@ -231,12 +273,12 @@ export default function StorefrontPage() {
               {/* Mobile Menu */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 hover:bg-gray-100 rounded-lg lg:hidden"
+                className="p-2 hover:bg-gray-800 rounded-lg lg:hidden"
               >
                 {mobileMenuOpen ? (
-                  <X className="w-6 h-6 text-[#5A5A5A]" />
+                  <X className="w-6 h-6 text-white" />
                 ) : (
-                  <Menu className="w-6 h-6 text-[#5A5A5A]" />
+                  <Menu className="w-6 h-6 text-white" />
                 )}
               </button>
             </div>
@@ -249,7 +291,7 @@ export default function StorefrontPage() {
           {/* Sidebar - Categories */}
           <aside className={`lg:w-64 ${mobileMenuOpen ? 'block' : 'hidden lg:block'}`}>
             <div className="bg-white rounded-lg shadow-sm p-4">
-              <h2 className="font-semibold text-[#5A5A5A] mb-4">หมวดหมู่สินค้า</h2>
+              <h2 className="font-semibold text-gray-900 mb-4">{lang === 'th' ? 'หมวดหมู่สินค้า' : 'Categories'}</h2>
               <nav className="space-y-1">
                 <button
                   onClick={() => setSelectedCategory(null)}
@@ -259,7 +301,7 @@ export default function StorefrontPage() {
                       : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
-                  ทั้งหมด
+                  {lang === 'th' ? 'ทั้งหมด' : 'All'}
                 </button>
                 {categories.map(category => (
                   <button
@@ -271,7 +313,7 @@ export default function StorefrontPage() {
                         : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
-                    {category.name_th}
+                    {lang === 'th' ? category.name_th : (category.name_en || category.name_th)}
                   </button>
                 ))}
               </nav>
@@ -279,7 +321,7 @@ export default function StorefrontPage() {
 
             {/* Contact Info */}
             <div className="bg-white rounded-lg shadow-sm p-4 mt-4">
-              <h2 className="font-semibold text-[#5A5A5A] mb-4">ติดต่อเรา</h2>
+              <h2 className="font-semibold text-gray-900 mb-4">{lang === 'th' ? 'ติดต่อเรา' : 'Contact Us'}</h2>
               <div className="space-y-3 text-sm">
                 <div className="flex items-center gap-2 text-gray-600">
                   <Phone className="w-4 h-4" />
@@ -296,9 +338,9 @@ export default function StorefrontPage() {
           {/* Main Content */}
           <main className="flex-1">
             {/* Banner */}
-            <div className="bg-gradient-to-r from-[#7D735F] to-[#9D9380] rounded-lg p-6 mb-6 text-white">
-              <h1 className="text-2xl font-bold mb-2">ยินดีต้อนรับสู่ More Drugstore</h1>
-              <p className="text-white/80">สั่งซื้อสินค้าออนไลน์ ส่งตรงถึงมือคุณ</p>
+            <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-[#7D735F] rounded-lg p-6 mb-6 text-white">
+              <h1 className="text-2xl font-bold mb-2">{lang === 'th' ? 'ยินดีต้อนรับสู่ More Drugstore' : 'Welcome to More Drugstore'}</h1>
+              <p className="text-gray-300">{lang === 'th' ? 'สั่งซื้อสินค้าออนไลน์ ส่งตรงถึงมือคุณ' : 'Order online, delivered to your door'}</p>
             </div>
 
             {/* Products Grid */}
@@ -315,64 +357,92 @@ export default function StorefrontPage() {
             ) : filteredProducts.length === 0 ? (
               <div className="text-center py-12">
                 <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">ไม่พบสินค้า</p>
+                <p className="text-gray-500">{lang === 'th' ? 'ไม่พบสินค้า' : 'No products found'}</p>
                 {searchQuery && (
                   <button
                     onClick={() => {setSearchQuery(''); setSelectedCategory(null)}}
                     className="mt-2 text-[#7D735F] hover:underline"
                   >
-                    ล้างการค้นหา
+                    {lang === 'th' ? 'ล้างการค้นหา' : 'Clear search'}
                   </button>
                 )}
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {filteredProducts.map(product => (
-                  <div key={product.id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                    {/* Product Image */}
-                    <Link to={`/store/product/${product.id}`} className="block aspect-square bg-gray-100 relative">
-                      {product.image_url ? (
-                        <img 
-                          src={product.image_url} 
-                          alt={product.name_th}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-300">
-                          <Package className="w-12 h-12" />
-                        </div>
-                      )}
-                      {product.stock_quantity <= 5 && (
-                        <span className="absolute top-2 right-2 px-2 py-1 bg-red-500 text-white text-xs rounded">
-                          เหลือ {product.stock_quantity} ชิ้น
-                        </span>
-                      )}
-                    </Link>
-
-                    {/* Product Info */}
-                    <div className="p-3">
-                      <Link to={`/store/product/${product.id}`}>
-                        <h3 className="font-medium text-[#5A5A5A] text-sm line-clamp-2 hover:text-[#7D735F] transition-colors">
-                          {product.name_th}
-                        </h3>
+                {filteredProducts.map(product => {
+                  // Check controlled: 1) category in controlled set, 2) alert_custom_title contains ควบคุม, 3) walk up ancestor chain
+                  const isInControlledCategory = !!(product.category_id && controlledCategoryIds.has(product.category_id))
+                  const hasControlledAlert = !!(product.alert_custom && product.alert_custom_title?.includes('ควบคุม'))
+                  let ancestorIsControlled = false
+                  if (product.category_id && !isInControlledCategory) {
+                    let currentId: string | null = product.category_id
+                    const visited = new Set<string>()
+                    while (currentId && !visited.has(currentId)) {
+                      visited.add(currentId)
+                      const cat = categories.find((c: any) => c.id === currentId)
+                      if (cat && (cat.name_th?.includes('ควบคุม') || cat.name_th?.includes('Prescription'))) {
+                        ancestorIsControlled = true
+                        break
+                      }
+                      currentId = cat?.parent_id || null
+                    }
+                  }
+                  const isControlled = isInControlledCategory || hasControlledAlert || ancestorIsControlled
+                  return (
+                    <div key={product.id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                      {/* Product Image */}
+                      <Link to={`/store/product/${product.id}`} className="block aspect-square bg-gray-100 relative">
+                        {product.image_url ? (
+                          <img 
+                            src={product.image_url} 
+                            alt={product.name_th}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-300">
+                            <Package className="w-12 h-12" />
+                          </div>
+                        )}
+                        {isControlled && (
+                          <span className="absolute top-2 right-2 px-2 py-1 bg-amber-500 text-white text-xs rounded flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            ยาควบคุม
+                          </span>
+                        )}
                       </Link>
-                      <p className="text-xs text-gray-500 mt-1">{product.unit}</p>
-                      
-                      <div className="flex items-center justify-between mt-3">
-                        <span className="font-semibold text-[#7D735F]">
-                          ฿{product.base_price.toLocaleString()}
-                        </span>
-                        <button
-                          onClick={() => addToCart(product)}
-                          disabled={product.stock_quantity === 0}
-                          className="p-2 bg-[#7D735F] text-white rounded-lg hover:bg-[#6D6350] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                        >
-                          <ShoppingCart className="w-4 h-4" />
-                        </button>
+
+                      {/* Product Info */}
+                      <div className="p-3">
+                        <Link to={`/store/product/${product.id}`}>
+                          <h3 className="font-medium text-gray-900 text-sm line-clamp-2 hover:text-[#7D735F] transition-colors">
+                            {lang === 'th' ? product.name_th : (product.name_en || product.name_th)}
+                          </h3>
+                        </Link>
+                        <p className="text-xs text-gray-500 mt-1">{product.unit}</p>
+                        
+                        {isControlled ? (
+                          <div className="mt-3 flex items-center gap-1.5 text-amber-600 bg-amber-50 rounded-lg px-2 py-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span className="text-xs font-medium">{lang === 'th' ? 'โปรดติดต่อเภสัชกร' : 'Contact pharmacist'}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between mt-3">
+                            <span className="font-semibold text-[#7D735F]">
+                              ฿{product.base_price.toLocaleString()}
+                            </span>
+                            <button
+                              onClick={() => addToCart(product)}
+                              disabled={product.stock_quantity === 0}
+                              className="p-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                            >
+                              <ShoppingCart className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </main>
@@ -391,7 +461,7 @@ export default function StorefrontPage() {
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="font-semibold text-[#5A5A5A] text-lg flex items-center gap-2">
                 <ShoppingCart className="w-5 h-5" />
-                ตะกร้าสินค้า
+                {lang === 'th' ? 'ตะกร้าสินค้า' : 'Shopping Cart'}
               </h2>
               <button
                 onClick={() => setShowCart(false)}
@@ -406,12 +476,12 @@ export default function StorefrontPage() {
               {cart.length === 0 ? (
                 <div className="text-center py-8">
                   <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">ตะกร้าว่างเปล่า</p>
+                  <p className="text-gray-500">{lang === 'th' ? 'ตะกร้าว่างเปล่า' : 'Cart is empty'}</p>
                   <button
                     onClick={() => setShowCart(false)}
                     className="mt-4 text-[#7D735F] hover:underline"
                   >
-                    กลับไปเลือกสินค้า
+                    {lang === 'th' ? 'กลับไปเลือกสินค้า' : 'Continue shopping'}
                   </button>
                 </div>
               ) : (
@@ -457,7 +527,10 @@ export default function StorefrontPage() {
                           </button>
                         </div>
                         
-                        <p className="text-xs text-gray-500 mt-1">รวม: ฿{(item.price * item.quantity).toLocaleString()}</p>
+                        <p className="text-xs text-gray-500 mt-1">{lang === 'th' ? 'รวม' : 'Subtotal'}: ฿{(item.price * item.quantity).toLocaleString()}</p>
+                        {item.stock <= 5 && (
+                          <p className="text-xs text-red-500 mt-0.5">{lang === 'th' ? `เหลือ ${item.stock} ชิ้น` : `${item.stock} left`}</p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -469,7 +542,7 @@ export default function StorefrontPage() {
             {cart.length > 0 && (
               <div className="border-t p-4 space-y-4">
                 <div className="flex items-center justify-between text-lg font-semibold">
-                  <span>รวมทั้งหมด</span>
+                  <span>{lang === 'th' ? 'รวมทั้งหมด' : 'Total'}</span>
                   <span className="text-[#7D735F]">฿{cartTotal.toLocaleString()}</span>
                 </div>
                 <Link
@@ -477,7 +550,7 @@ export default function StorefrontPage() {
                   onClick={() => setShowCart(false)}
                   className="block w-full py-3 bg-[#7D735F] text-white text-center rounded-lg hover:bg-[#6D6350] transition-colors font-medium"
                 >
-                  ดำเนินการสั่งซื้อ
+                  {lang === 'th' ? 'ดำเนินการสั่งซื้อ' : 'Proceed to Checkout'}
                 </Link>
               </div>
             )}

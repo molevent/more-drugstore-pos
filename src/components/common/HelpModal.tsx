@@ -17,6 +17,29 @@ interface HelpManual {
   short_description: string
 }
 
+// Local fallback help content for pages
+const LOCAL_HELP: Record<string, { page_name_th: string, page_name_en: string, content: string, short_description: string }> = {
+  '/contacts': {
+    page_name_th: 'ผู้ติดต่อ',
+    page_name_en: 'Contacts',
+    short_description: 'จัดการผู้ซื้อ ผู้ขาย และคู่ค้า',
+    content: `📋 หน้าผู้ติดต่อ - คู่มือการใช้งาน
+
+🔹 ดึงจาก FA
+Sync ข้อมูลผู้ติดต่อจาก FlowAccount มาใส่ในระบบ
+ข้อดีคือ FlowAccount มีการเชื่อมต่อข้อมูลกับทางกรมสรรพากร ทำให้เมื่อคีย์เลขผู้เสียภาษี ชื่อ ที่อยู่ ข้อมูลบริษัท จะแสดงอัตโนมัติ ซึ่งช่วยลดความผิดพลาดในการกรอกข้อมูล
+
+🔹 เพิ่มผู้ติดต่อ
+เพิ่มผู้ติดต่อใหม่ด้วยตนเอง สามารถกำหนดประเภท (ผู้ขาย/ผู้ซื้อ/คู่ค้า) และกรอกข้อมูลที่อยู่ เลขผู้เสียภาษี เบอร์โทร อีเมล ได้
+
+🔹 ค้นหาผู้ติดต่อ
+พิมพ์ชื่อ เลขผู้เสียภาษี หรือเบอร์โทร ในช่องค้นหาเพื่อหาผู้ติดต่อที่ต้องการ
+
+🔹 แก้ไข / ลบ
+กดที่รายชื่อผู้ติดต่อเพื่อดูรายละเอียดและแก้ไขข้อมูล`
+  },
+}
+
 export default function HelpModal({ pageRoute, isOpen, onClose }: HelpModalProps) {
   const [manual, setManual] = useState<HelpManual | null>(null)
   const [loading, setLoading] = useState(true)
@@ -37,15 +60,27 @@ export default function HelpModal({ pageRoute, isOpen, onClose }: HelpModalProps
         .single()
 
       if (error) {
-        // ถ้าไม่มีข้อมูล ให้แสดงข้อความเริ่มต้น
-        setManual({
-          id: '',
-          page_route: pageRoute,
-          page_name_th: 'คู่มือการใช้งาน',
-          page_name_en: 'User Manual',
-          content: 'ยังไม่มีคู่มือสำหรับหน้านี้ กรุณาติดต่อผู้ดูแลระบบ',
-          short_description: ''
-        })
+        // ถ้าไม่มีใน DB ให้ดูจาก local fallback
+        const local = LOCAL_HELP[pageRoute]
+        if (local) {
+          setManual({
+            id: '',
+            page_route: pageRoute,
+            page_name_th: local.page_name_th,
+            page_name_en: local.page_name_en,
+            content: local.content,
+            short_description: local.short_description
+          })
+        } else {
+          setManual({
+            id: '',
+            page_route: pageRoute,
+            page_name_th: 'คู่มือการใช้งาน',
+            page_name_en: 'User Manual',
+            content: 'ยังไม่มีคู่มือสำหรับหน้านี้ กรุณาติดต่อผู้ดูแลระบบ',
+            short_description: ''
+          })
+        }
       } else {
         setManual(data)
       }

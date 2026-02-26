@@ -8,7 +8,8 @@ import {
   Minus,
   Plus,
   Check,
-  AlertCircle
+  AlertCircle,
+  AlertTriangle
 } from 'lucide-react'
 
 interface Product {
@@ -24,6 +25,8 @@ interface Product {
   category_id: string | null
   barcode: string
   sku: string
+  alert_custom?: boolean
+  alert_custom_title?: string
 }
 
 interface CartItem {
@@ -42,6 +45,8 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1)
   const [cart, setCart] = useState<CartItem[]>([])
   const [addedToCart, setAddedToCart] = useState(false)
+  const [controlledCategoryIds, setControlledCategoryIds] = useState<Set<string>>(new Set())
+  const [allCategories, setAllCategories] = useState<any[]>([])
 
   // Load cart from localStorage
   useEffect(() => {
@@ -59,7 +64,32 @@ export default function ProductDetailPage() {
     if (id) {
       fetchProduct()
     }
+    fetchCategories()
   }, [id])
+
+  const fetchCategories = async () => {
+    try {
+      const { data } = await supabase
+        .from('categories')
+        .select('id, name_th, parent_id')
+      const allCats = data || []
+      setAllCategories(allCats)
+      const controlledParents = allCats.filter((c: any) =>
+        c.name_th?.includes('ควบคุม') || c.name_th?.includes('Prescription')
+      )
+      const controlledIds = new Set<string>()
+      const addDescendants = (parentId: string) => {
+        controlledIds.add(parentId)
+        allCats.filter((c: any) => c.parent_id === parentId).forEach((child: any) => {
+          addDescendants(child.id)
+        })
+      }
+      controlledParents.forEach((cp: any) => addDescendants(cp.id))
+      setControlledCategoryIds(controlledIds)
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+    }
+  }
 
   const fetchProduct = async () => {
     setLoading(true)
@@ -148,6 +178,28 @@ export default function ProductDetailPage() {
   }
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
+
+  // Compute controlled medicine status
+  const isControlled = (() => {
+    if (!product) return false
+    const isInControlledCategory = !!(product.category_id && controlledCategoryIds.has(product.category_id))
+    const hasControlledAlert = !!(product.alert_custom && product.alert_custom_title?.includes('ควบคุม'))
+    let ancestorIsControlled = false
+    if (product.category_id && !isInControlledCategory) {
+      let currentId: string | null = product.category_id
+      const visited = new Set<string>()
+      while (currentId && !visited.has(currentId)) {
+        visited.add(currentId)
+        const cat = allCategories.find((c: any) => c.id === currentId)
+        if (cat && (cat.name_th?.includes('ควบคุม') || cat.name_th?.includes('Prescription'))) {
+          ancestorIsControlled = true
+          break
+        }
+        currentId = cat?.parent_id || null
+      }
+    }
+    return isInControlledCategory || hasControlledAlert || ancestorIsControlled
+  })()
 
   if (loading) {
     return (
@@ -282,32 +334,44 @@ export default function ProductDetailPage() {
                 <h1 className="text-2xl font-bold text-[#5A5A5A] mb-2">{product.name_th}</h1>
                 <p className="text-gray-500 mb-4">{product.name_en}</p>
                 
-                <div className="text-3xl font-bold text-[#7D735F] mb-6">
-                  ฿{product.base_price.toLocaleString()}
-                  <span className="text-base font-normal text-gray-500"> / {product.unit}</span>
-                </div>
+                {isControlled ? (
+                  <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-6">
+                    <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-amber-700">ยาควบคุม</p>
+                      <p className="text-sm text-amber-600">โปรดติดต่อเภสัชกร เพื่อสอบถามราคาและความพร้อมจำหน่าย</p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold text-[#7D735F] mb-6">
+                      ฿{product.base_price.toLocaleString()}
+                      <span className="text-base font-normal text-gray-500"> / {product.unit}</span>
+                    </div>
 
-                {/* Stock Status */}
-                <div className="flex items-center gap-2 mb-6">
-                  {product.stock_quantity > 0 ? (
-                    product.stock_quantity <= 5 ? (
-                      <>
-                        <AlertCircle className="w-5 h-5 text-orange-500" />
-                        <span className="text-orange-600">เหลือ {product.stock_quantity} ชิ้น</span>
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-5 h-5 text-green-500" />
-                        <span className="text-green-600">มีสินค้า ({product.stock_quantity} ชิ้น)</span>
-                      </>
-                    )
-                  ) : (
-                    <>
-                      <AlertCircle className="w-5 h-5 text-red-500" />
-                      <span className="text-red-600">สินค้าหมด</span>
-                    </>
-                  )}
-                </div>
+                    {/* Stock Status */}
+                    <div className="flex items-center gap-2 mb-6">
+                      {product.stock_quantity > 0 ? (
+                        product.stock_quantity <= 5 ? (
+                          <>
+                            <AlertCircle className="w-5 h-5 text-orange-500" />
+                            <span className="text-orange-600">เหลือ {product.stock_quantity} ชิ้น</span>
+                          </>
+                        ) : (
+                          <>
+                            <Check className="w-5 h-5 text-green-500" />
+                            <span className="text-green-600">มีสินค้า ({product.stock_quantity} ชิ้น)</span>
+                          </>
+                        )
+                      ) : (
+                        <>
+                          <AlertCircle className="w-5 h-5 text-red-500" />
+                          <span className="text-red-600">สินค้าหมด</span>
+                        </>
+                      )}
+                    </div>
+                  </>
+                )}
 
                 {/* Description */}
                 {product.description_th && (
@@ -325,7 +389,7 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Add to Cart */}
-              {product.stock_quantity > 0 && (
+              {product.stock_quantity > 0 && !isControlled && (
                 <div className="space-y-4">
                   {/* Quantity Selector */}
                   <div className="flex items-center gap-4">

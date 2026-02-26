@@ -7,10 +7,11 @@ import CalculatorModal from '../components/CalculatorModal'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import Input from '../components/common/Input'
-import { Scan, Trash2, ShoppingCart, Save, X, User, Search, Package, Receipt, AlertTriangle, History, Bell, Camera, Brain, CreditCard, Printer, Wallet, Calculator, BookOpen } from 'lucide-react'
+import { Scan, Trash2, ShoppingCart, Save, X, User, Search, Package, Receipt, AlertTriangle, Bell, Camera, Brain, CreditCard, Printer, Wallet, Calculator, BookOpen } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { Product } from '../types/database'
 import { supabase } from '../services/supabase'
+import { useLanguage } from '../contexts/LanguageContext'
 import { zortOutService } from '../services/zortout'
 
 interface SavedOrder {
@@ -44,6 +45,7 @@ const DEFAULT_salesChannels: SalesChannelConfig[] = [
 ]
 
 export default function POSPage() {
+  const { t } = useLanguage()
   const [barcode, setBarcode] = useState('')
   const [searchResults, setSearchResults] = useState<Product[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
@@ -1277,7 +1279,7 @@ export default function POSPage() {
   }
 
   // Load sale to cart (re-order)
-  const handleLoadSale = async (orderId: string) => {
+  const handleLoadSale = async (orderId: string, orderNumber?: string) => {
     try {
       // Fetch order items
       const { data: orderItems, error } = await supabase
@@ -1302,16 +1304,16 @@ export default function POSPage() {
       // Clear current cart
       clearCart()
 
-      // Add items to cart
+      // Add items to cart with original order prices
       let addedCount = 0
       for (const item of orderItems) {
         if (item.product) {
-          addItem(item.product, item.quantity)
+          addItem(item.product, item.quantity, item.unit_price)
           addedCount++
         }
       }
 
-      alert(`โหลดรายการขายสำเร็จ เพิ่มสินค้า ${addedCount} รายการ`)
+      alert(`โหลดรายการขายย้อนหลัง เลขที่ ${orderNumber || orderId} เพื่อแก้ไข`)
       setShowRecentSales(false)
     } catch (err) {
       console.error('Exception loading sale:', err)
@@ -1625,12 +1627,29 @@ export default function POSPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <ShoppingCart className="h-7 w-7 text-[#7D735F]" />
-            ขายสินค้า
+            {t('page.pos.title')}
           </h1>
-          <p className="text-gray-600 mt-1">POS System</p>
+          <p className="text-gray-600 mt-1">{t('page.pos.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2 absolute top-4 right-4 sm:top-6 sm:right-6">
-          {/* AI Button - Icon only, far right */}
+          {/* Alert Button - Icon only */}
+          <button
+            onClick={() => {
+              if (!showAlertHistory) fetchAlertLogs()
+              setShowAlertHistory(prev => !prev)
+            }}
+            className="relative flex items-center justify-center w-10 h-10 bg-[#F9E4B7] rounded-full border border-[#B8C9B8] hover:bg-[#F5D0A0] hover:shadow-md transition-all"
+            title="แจ้งเตือน"
+          >
+            <Bell className="h-5 w-5 text-black" />
+            {visibleAlertLogs.length > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center px-1 bg-red-500 text-white text-[10px] font-bold rounded-full leading-none">
+                {visibleAlertLogs.length}
+              </span>
+            )}
+          </button>
+
+          {/* AI Button - Icon only */}
           <Link 
             to="/ai-symptom-checker"
             className="flex items-center justify-center w-10 h-10 bg-[#DFEAF5] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
@@ -1686,14 +1705,7 @@ export default function POSPage() {
           {showMoneyMenu && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowMoneyMenu(false)} />
-              <div className="absolute left-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-[180px]">
-                <button
-                  onClick={() => { setShowCashierClosing(true); setShowMoneyMenu(false) }}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50 text-left"
-                >
-                  <Wallet className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm text-gray-800">นับเงิน</span>
-                </button>
+              <div className="absolute left-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-full">
                 <Link
                   to="/payment-summary"
                   onClick={() => setShowMoneyMenu(false)}
@@ -1702,31 +1714,23 @@ export default function POSPage() {
                   <CreditCard className="h-4 w-4 text-gray-600" />
                   <span className="text-sm text-gray-800">สรุปยอดชำระเงิน</span>
                 </Link>
+                <button
+                  onClick={() => { setShowCashierClosing(true); setShowMoneyMenu(false) }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50 text-left"
+                >
+                  <Wallet className="h-4 w-4 text-gray-600" />
+                  <span className="text-sm text-gray-800">นับเงิน</span>
+                </button>
               </div>
             </>
           )}
         </div>
         <button
           onClick={() => {
-            if (!showAlertHistory) fetchAlertLogs()
-            setShowAlertHistory(prev => !prev)
-          }}
-          className="flex items-center gap-2 px-3 py-2 bg-[#F9E4B7] rounded-full border border-[#B8C9B8] hover:bg-[#F5D0A0] hover:shadow-md transition-all"
-        >
-          <History className="h-5 w-5 text-black flex-shrink-0" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">แจ้งเตือน</span>
-          {savedAlertLogs.filter(log => !log.acknowledged).length > 0 && (
-            <span className="ml-1 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
-              {savedAlertLogs.filter(log => !log.acknowledged).length}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => {
             fetchRecentSales()
             setShowRecentSales(true)
           }}
-          className="flex items-center gap-2 px-3 py-2 bg-[#D5EAE7] rounded-full border border-[#B8C9B8] hover:bg-[#B8C9B8] hover:shadow-md transition-all"
+          className="flex items-center gap-2 px-3 py-2 bg-[#DFEAF5] rounded-full border border-[#B8C9B8] hover:bg-[#C8DCF0] hover:shadow-md transition-all"
         >
           <Receipt className="h-5 w-5 text-black flex-shrink-0" />
           <span className="font-medium text-gray-900 text-sm whitespace-nowrap">รายการขายล่าสุด</span>
@@ -2627,7 +2631,7 @@ export default function POSPage() {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1 cursor-pointer hover:bg-blue-50 rounded p-1 -m-1 transition-colors"
-                             onClick={() => handleLoadSale(sale.id)}>
+                             onClick={() => handleLoadSale(sale.id, sale.order_number)}>
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-gray-900">{sale.order_number}</span>
                             <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">

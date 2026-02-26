@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
-import { Search, ExternalLink, Package, ShoppingCart, Edit, X, Save, Filter, ArrowLeft, Upload, FileSpreadsheet, CheckCircle, AlertCircle, PlusCircle, Download } from 'lucide-react'
+import { Search, ExternalLink, Package, ShoppingCart, Edit, X, Save, Filter, ArrowLeft, Upload, FileSpreadsheet, CheckCircle, AlertCircle, PlusCircle, Download, BookOpen, LayoutGrid } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { Product } from '../types/database'
 import * as XLSX from 'xlsx'
@@ -52,6 +52,17 @@ const PLATFORMS: PlatformConfig[] = [
     urlField: 'url_grab',
     priceField: 'price_grab',
     logo: '🚕'
+  },
+  {
+    id: 'website',
+    name: 'เว็บไซต์ร้าน',
+    code: 'WEB',
+    color: 'text-[#7D735F]',
+    bgColor: 'bg-[#7D735F]',
+    sellField: 'sell_on_website',
+    urlField: 'url_website',
+    priceField: 'price_website',
+    logo: '🌐'
   }
 ]
 
@@ -134,14 +145,18 @@ export default function PlatformManagementPage() {
       p.barcode?.includes(searchTerm) ||
       p.sku?.includes(searchTerm)
 
-    const isListed = !!(p as any)[currentPlatform.sellField]
+    const isListed = activePlatform === 'website'
+      ? p.stock_quantity > 0
+      : !!(p as any)[currentPlatform.sellField]
 
     if (filterMode === 'listed') return matchesSearch && isListed
     if (filterMode === 'unlisted') return matchesSearch && !isListed
     return matchesSearch
   })
 
-  const listedCount = products.filter(p => !!(p as any)[currentPlatform.sellField]).length
+  const listedCount = activePlatform === 'website'
+    ? products.filter(p => p.stock_quantity > 0).length
+    : products.filter(p => !!(p as any)[currentPlatform.sellField]).length
   const unlistedCount = products.length - listedCount
 
   const handleToggleListing = async (product: Product, listed: boolean) => {
@@ -609,30 +624,40 @@ export default function PlatformManagementPage() {
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">จัดการแพลตฟอร์ม</h1>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <LayoutGrid className="h-7 w-7 text-[#7D735F]" />
+              จัดการแพลตฟอร์ม
+            </h1>
             <p className="text-sm text-gray-500">ดูและจัดการสินค้าที่ขายในแต่ละแพลตฟอร์ม</p>
           </div>
         </div>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
+          className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+          title="คู่มือการใช้งาน"
+        >
+          <BookOpen className="h-5 w-5" />
+        </button>
       </div>
 
       {/* Platform Tabs */}
       <div className="flex gap-2">
         {PLATFORMS.map(platform => {
-          const count = products.filter(p => !!(p as any)[platform.sellField]).length
+          const count = platform.id === 'website' ? products.filter(p => p.stock_quantity > 0).length : products.filter(p => !!(p as any)[platform.sellField]).length
           return (
             <button
               key={platform.id}
-              onClick={() => { setActivePlatform(platform.id); setFilterMode('listed') }}
-              className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-all ${
+              onClick={() => { setActivePlatform(platform.id); setFilterMode(platform.id === 'website' ? 'all' : 'listed') }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border-2 ${
                 activePlatform === platform.id
-                  ? `${platform.bgColor} text-white shadow-lg`
-                  : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-400'
+                  ? `bg-white ${platform.color} border-current shadow-sm`
+                  : 'bg-white text-gray-800 border-gray-200 hover:border-[#C4B89C] hover:text-[#7D735F]'
               }`}
             >
-              <span className="text-xl">{platform.logo}</span>
+              <span className="text-sm">{platform.logo}</span>
               <span>{platform.name}</span>
               <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${
-                activePlatform === platform.id ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'
+                activePlatform === platform.id ? 'bg-gray-100 text-gray-700' : 'bg-gray-100 text-gray-600'
               }`}>
                 {count}
               </span>
@@ -654,7 +679,7 @@ export default function PlatformManagementPage() {
               }`}
             >
               <Package className="h-4 w-4 inline mr-1" />
-              ลงขาย ({listedCount})
+              {activePlatform === 'website' ? `มีสต็อก (${listedCount})` : `ลงขาย (${listedCount})`}
             </button>
             <button
               onClick={() => setFilterMode('unlisted')}
@@ -665,7 +690,7 @@ export default function PlatformManagementPage() {
               }`}
             >
               <Filter className="h-4 w-4 inline mr-1" />
-              ยังไม่ลง ({unlistedCount})
+              {activePlatform === 'website' ? `หมดสต็อก (${unlistedCount})` : `ยังไม่ลง (${unlistedCount})`}
             </button>
             <button
               onClick={() => setFilterMode('all')}
@@ -677,20 +702,24 @@ export default function PlatformManagementPage() {
             >
               ทั้งหมด ({products.length})
             </button>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${currentPlatform.bgColor} text-white hover:opacity-90`}
-            >
-              <Upload className="h-4 w-4 inline mr-1" />
-              อัพโหลด Excel
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls,.csv"
-              className="hidden"
-              onChange={handleFileUpload}
-            />
+            {activePlatform !== 'website' && (
+              <>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${currentPlatform.bgColor} text-white hover:opacity-90`}
+                >
+                  <Upload className="h-4 w-4 inline mr-1" />
+                  อัพโหลด Excel
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                />
+              </>
+            )}
           </div>
           <div className="relative w-full md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />

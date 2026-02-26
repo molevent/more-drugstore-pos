@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { useLanguage } from '../contexts/LanguageContext'
+
 import { 
   CreditCard, 
   Store, 
@@ -21,7 +21,6 @@ import {
   Home,
   Receipt,
   Calendar,
-  FileText,
   BookOpen,
   UserCog,
   BarChart3
@@ -31,6 +30,7 @@ import Card from '../components/common/Card'
 import Input from '../components/common/Input'
 import Button from '../components/common/Button'
 import React from 'react'
+import { useLanguage } from '../contexts/LanguageContext'
 
 interface SettingsCardProps {
   icon: React.ElementType
@@ -44,7 +44,7 @@ interface SettingsCardProps {
 }
 
 function SettingsCard({ icon: Icon, iconBg, iconColor, title, subtitle, details, status, link }: SettingsCardProps) {
-  const isReport = title.includes('รายงาน')
+  const isReport = title.includes('รายงาน') || title.includes('Report')
   return (
     <Link 
       to={link}
@@ -90,7 +90,7 @@ function SettingsCard({ icon: Icon, iconBg, iconColor, title, subtitle, details,
 
 export default function SettingsPage() {
   const { t } = useLanguage()
-  
+
   // Shop info state
   const [shopInfo, setShopInfo] = useState({
     name: 'More Drug Store',
@@ -168,32 +168,32 @@ export default function SettingsPage() {
       icon: Home,
       iconBg: 'bg-[#7D735F]/10',
       iconColor: 'text-[#7D735F]',
-      title: 'แดชบอร์ด',
-      subtitle: 'ภาพรวมยอดขายและสถิติ',
+      title: t('settings.dashboard'),
+      subtitle: t('settings.dashboardDesc'),
       link: '/dashboard'
     },
     {
       icon: Bike,
       iconBg: 'bg-[#B8C9B8]/10',
       iconColor: 'text-[#7D735F]',
-      title: 'ช่องทางการขาย',
-      subtitle: `ตั้งค่าแล้ว ${getConfiguredCount()}/${SALES_CHANNELS.length} ช่องทาง`,
+      title: t('settings.salesChannels'),
+      subtitle: `${t('settings.salesChannelsDesc')} ${getConfiguredCount()}/${SALES_CHANNELS.length} ${t('settings.salesChannelsUnit')}`,
       link: '/settings/sales-channels'
     },
     {
       icon: CreditCard,
       iconBg: 'bg-[#7D735F]/10',
       iconColor: 'text-[#7D735F]',
-      title: 'ช่องทางการชำระเงิน',
-      subtitle: 'ตั้งค่าวิธีการรับเงิน',
-      status: { text: 'เปิดใช้งาน', bgColor: 'bg-[#B8C9B8]/10', textColor: 'text-[#7D735F]' },
+      title: t('settings.paymentChannels'),
+      subtitle: t('settings.paymentChannelsDesc'),
+      status: { text: t('settings.paymentChannelsStatus'), bgColor: 'bg-[#B8C9B8]/10', textColor: 'text-[#7D735F]' },
       link: '/payment-methods'
     },
     {
       icon: Store,
       iconBg: 'bg-[#A67B5B]/10',
       iconColor: 'text-[#A67B5B]',
-      title: 'ข้อมูลร้าน',
+      title: t('settings.shopInfo'),
       subtitle: shopInfo.name,
       link: '/settings/shop'
     },
@@ -201,10 +201,10 @@ export default function SettingsPage() {
       icon: Users,
       iconBg: 'bg-[#F5F0E6]',
       iconColor: 'text-[#7D735F]',
-      title: 'การจัดการผู้ใช้',
-      subtitle: 'ผู้ใช้งานในระบบ',
+      title: t('settings.userManagementTitle'),
+      subtitle: t('settings.userManagementDesc'),
       details: [
-        { value: '1 ผู้ใช้งาน' },
+        { value: `1 ${t('settings.usersCount')}` },
       ],
       link: '/settings/users'
     },
@@ -212,55 +212,45 @@ export default function SettingsPage() {
       icon: UserCog,
       iconBg: 'bg-[#4A90A4]/10',
       iconColor: 'text-[#4A90A4]',
-      title: 'จัดการพนักงาน',
-      subtitle: 'ตั้งค่าพนักงานและสิทธิ์การใช้งาน',
+      title: t('settings.employeeManagement'),
+      subtitle: t('settings.employeeManagementDesc'),
       link: '/employee-settings'
     },
     {
       icon: Warehouse,
       iconBg: 'bg-[#D4756A]/10',
       iconColor: 'text-[#D4756A]',
-      title: 'คลังสินค้า',
-      subtitle: 'จัดการคลังสินค้าและสต็อก',
+      title: t('settings.warehouse'),
+      subtitle: t('settings.warehouseDesc'),
       link: '/warehouse-management'
     },
     {
       icon: FolderTree,
       iconBg: 'bg-[#B8C9B8]/10',
       iconColor: 'text-[#B8C9B8]',
-      title: 'หมวดหมู่สินค้า',
-      subtitle: 'จัดการหมวดหมู่และหมวดหมู่ย่อย',
+      title: t('settings.productCategories'),
+      subtitle: t('settings.productCategoriesDesc'),
       link: '/categories-management'
     },
     {
       icon: Receipt,
       iconBg: 'bg-[#A67B5B]/10',
       iconColor: 'text-[#A67B5B]',
-      title: 'หมวดหมู่ค่าใช้จ่าย',
-      subtitle: 'ตั้งค่ารหัสและแผนผังบัญชี',
+      title: t('settings.expenseCategories'),
+      subtitle: t('settings.expenseCategoriesDesc'),
       link: '/settings/expense-categories'
     },
     {
       icon: CreditCard,
       iconBg: 'bg-[#4A90A4]/10',
       iconColor: 'text-[#4A90A4]',
-      title: 'กฎการชำระเงิน',
-      subtitle: 'ตั้งค่าวิธีการชำระเงินตามคีย์เวิร์ด',
+      title: t('settings.paymentRules'),
+      subtitle: t('settings.paymentRulesDesc'),
       link: '/settings/payment-method-rules'
     },
   ]
 
-  // Document Items
-  const documentItems = [
-    {
-      icon: FileText,
-      iconBg: 'bg-[#4A90A4]/10',
-      iconColor: 'text-[#4A90A4]',
-      title: 'ใบเสนอราคา',
-      subtitle: 'สร้างและจัดการใบเสนอราคา',
-      link: '/quotation'
-    },
-  ]
+  // Document Items (removed - accessible from Documents page)
 
   // External Connection Settings Items
   const externalConnectionItems = [
@@ -268,11 +258,11 @@ export default function SettingsPage() {
       icon: Building2,
       iconBg: 'bg-[#7D735F]/10',
       iconColor: 'text-[#7D735F]',
-      title: 'การเชื่อมต่อ FlowAccount',
-      subtitle: 'บัญชีและใบกำกับภาษี',
+      title: t('settings.flowAccount'),
+      subtitle: t('settings.flowAccountDesc'),
       status: flowAccount.connected 
-        ? { text: 'เชื่อมต่อแล้ว', bgColor: 'bg-[#B8C9B8]/10', textColor: 'text-[#7D735F]' }
-        : { text: 'ยังไม่เชื่อมต่อ', bgColor: 'bg-[#D4756A]/10', textColor: 'text-[#D4756A]' },
+        ? { text: t('settings.flowAccountConnected'), bgColor: 'bg-[#B8C9B8]/10', textColor: 'text-[#7D735F]' }
+        : { text: t('settings.flowAccountDisconnected'), bgColor: 'bg-[#D4756A]/10', textColor: 'text-[#D4756A]' },
       details: undefined,
       link: '/settings/flowaccount'
     },
@@ -280,9 +270,9 @@ export default function SettingsPage() {
       icon: Plug,
       iconBg: 'bg-[#4D6FE8]/10',
       iconColor: 'text-[#2D2E5E]',
-      title: 'การเชื่อมต่อ ZortOut',
-      subtitle: 'ระบบจัดการสต็อก',
-      status: { text: 'พร้อมใช้งาน', bgColor: 'bg-[#B8C9B8]/10', textColor: 'text-[#7D735F]' },
+      title: t('settings.zortOut'),
+      subtitle: t('settings.zortOutDesc'),
+      status: { text: t('settings.zortOutStatus'), bgColor: 'bg-[#B8C9B8]/10', textColor: 'text-[#7D735F]' },
       details: undefined,
       link: '/zortout-sync'
     },
@@ -294,72 +284,72 @@ export default function SettingsPage() {
       icon: BarChart3,
       iconBg: 'bg-[#7D735F]/10',
       iconColor: 'text-[#7D735F]',
-      title: 'สรุปภาพรวมธุรกิจ',
-      subtitle: 'Executive Summary สำหรับผู้บริหาร',
+      title: t('settings.executiveSummary'),
+      subtitle: t('settings.executiveSummaryDesc'),
       link: '/executive-summary'
     },
     {
       icon: Wallet,
       iconBg: 'bg-[#B8C9B8]/10',
       iconColor: 'text-[#B8C9B8]',
-      title: 'รายงานปิดร้าน / นับเงิน',
-      subtitle: 'ตรวจสอบประวัติการปิดร้านและยอดเงินในเก๊ะ',
+      title: t('settings.cashierClosing'),
+      subtitle: t('settings.cashierClosingDesc'),
       link: '/cashier-closing-report'
     },
     {
       icon: AlertTriangle,
       iconBg: 'bg-[#D4756A]/10',
       iconColor: 'text-[#D4756A]',
-      title: 'รายงานสินค้าติดลบ',
-      subtitle: 'ตรวจสอบสินค้าที่สต็อกติดลบและการเคลื่อนไหว',
+      title: t('settings.negativeStock'),
+      subtitle: t('settings.negativeStockDesc'),
       link: '/negative-stock-report'
     },
     {
       icon: ClipboardList,
       iconBg: 'bg-[#7D735F]/10',
       iconColor: 'text-[#7D735F]',
-      title: 'รายงานการปรับยอดสต็อก',
-      subtitle: 'ตรวจสอบการปรับยอดสต็อกโดยผู้ใช้งาน',
+      title: t('settings.stockAdjustment'),
+      subtitle: t('settings.stockAdjustmentDesc'),
       link: '/stock-adjustment-report'
     },
     {
       icon: ArrowRightLeft,
       iconBg: 'bg-[#B8C9B8]/10',
       iconColor: 'text-[#B8C9B8]',
-      title: 'รายงานการโอนสินค้าระหว่างคลัง',
-      subtitle: 'ตรวจสอบการเคลื่อนย้ายสินค้าระหว่างคลัง',
+      title: t('settings.stockTransfer'),
+      subtitle: t('settings.stockTransferDesc'),
       link: '/stock-transfer-report'
     },
     {
       icon: AlertTriangle,
       iconBg: 'bg-[#A67B5B]/10',
       iconColor: 'text-[#A67B5B]',
-      title: 'รายงานออเดอร์ไม่ปกติ',
-      subtitle: 'ตรวจสอบการแก้ไขราคาและของแถม',
+      title: t('settings.abnormalOrders'),
+      subtitle: t('settings.abnormalOrdersDesc'),
       link: '/abnormal-orders-report'
     },
     {
       icon: Receipt,
       iconBg: 'bg-[#7D735F]/10',
       iconColor: 'text-[#7D735F]',
-      title: 'รายงานใบเสร็จ/ใบกำกับภาษี',
-      subtitle: 'ตรวจสอบรายการขอใบเสร็จและใบกำกับภาษี',
+      title: t('settings.receiptTaxInvoice'),
+      subtitle: t('settings.receiptTaxInvoiceDesc'),
       link: '/receipt-tax-invoice-report'
     },
     {
       icon: Calendar,
       iconBg: 'bg-[#A67B5B]/10',
       iconColor: 'text-[#A67B5B]',
-      title: 'สินค้าใกล้หมดอายุ',
-      subtitle: 'ตรวจสอบสินค้าใกล้วันหมดอายุ',
+      title: t('settings.nearExpiry'),
+      subtitle: t('settings.nearExpiryDesc'),
       link: '/near-expiry-report'
     },
     {
       icon: BookOpen,
       iconBg: 'bg-[#7D735F]/10',
       iconColor: 'text-[#7D735F]',
-      title: 'จัดการคู่มือการใช้งาน',
-      subtitle: 'สร้างและแก้ไขคู่มือสำหรับแต่ละหน้า',
+      title: t('settings.helpManagement'),
+      subtitle: t('settings.helpManagementDesc'),
       link: '/help-management'
     },
   ]
@@ -372,38 +362,20 @@ export default function SettingsPage() {
             <Settings className="h-7 w-7 text-[#7D735F]" />
             {t('settings.title')}
           </h1>
-          <p className="text-gray-600 mt-1">ตั้งค่าระบบและการเชื่อมต่อ</p>
+          <p className="text-gray-600 mt-1">{t('settings.subtitle')}</p>
         </div>
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
           className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
-          title="คู่มือการใช้งาน"
+          title={t('settings.helpManual')}
         >
           <BookOpen className="h-5 w-5" />
         </button>
       </div>
 
-      {/* Documents Section */}
-      <div className="mb-8">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">เอกสาร</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {documentItems.map((item, index) => (
-            <SettingsCard
-              key={index}
-              icon={item.icon}
-              iconBg={item.iconBg}
-              iconColor={item.iconColor}
-              title={item.title}
-              subtitle={item.subtitle}
-              link={item.link}
-            />
-          ))}
-        </div>
-      </div>
-
       {/* Business Settings Section */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">ตั้งค่าธุรกิจ</h2>
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">{t('settings.section.business')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {businessSettingsItems.map((item, index) => (
             <SettingsCard
@@ -423,7 +395,7 @@ export default function SettingsPage() {
 
       {/* External Connections Section */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">ตั้งค่าการเชื่อมต่อภายนอก</h2>
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">{t('settings.section.externalConnections')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {externalConnectionItems.map((item, index) => (
             <SettingsCard
@@ -443,7 +415,7 @@ export default function SettingsPage() {
 
       {/* Audit Section */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Audit - ตรวจสอบและควบคุม</h2>
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">{t('settings.section.audit')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {auditItems.map((item, index) => (
             <SettingsCard

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useLanguage } from '../contexts/LanguageContext'
 import { 
   Users, 
   UserPlus, 
@@ -21,7 +22,12 @@ import {
   Square,
   Upload,
   CloudOff,
-  Download
+  Download,
+  Eye,
+  FileText,
+  ShoppingCart,
+  Package,
+  Star
 } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -59,10 +65,12 @@ interface Contact {
   bank_qr_code_url?: string
   flowaccount_id?: number
   flowaccount_synced_at?: string
+  is_starred?: boolean
   created_at: string
 }
 
 export default function ContactsPage() {
+  const { t } = useLanguage()
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -80,6 +88,14 @@ export default function ContactsPage() {
   const [selectedFaContacts, setSelectedFaContacts] = useState<Set<number>>(new Set())
   const [importProgress, setImportProgress] = useState('')
   const [faSearchTerm, setFaSearchTerm] = useState('')
+  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [detailContact, setDetailContact] = useState<Contact | null>(null)
+  const [detailOrders, setDetailOrders] = useState<any[]>([])
+  const [detailPOs, setDetailPOs] = useState<any[]>([])
+  const [detailExpenses, setDetailExpenses] = useState<any[]>([])
+  const [detailQuotations, setDetailQuotations] = useState<any[]>([])
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [detailTab, setDetailTab] = useState<'sales' | 'purchases' | 'quotations'>('sales')
   const [formData, setFormData] = useState({
     name: '',
     type: 'buyer' as 'buyer' | 'seller' | 'both',
@@ -166,6 +182,84 @@ export default function ContactsPage() {
       ])
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleToggleStar = async (contact: Contact) => {
+    const newStarred = !contact.is_starred
+    try {
+      const { error } = await supabase
+        .from('contacts')
+        .update({ is_starred: newStarred })
+        .eq('id', contact.id)
+      if (error) throw error
+      setContacts(prev => prev.map(c => c.id === contact.id ? { ...c, is_starred: newStarred } : c))
+    } catch (error) {
+      console.error('Error toggling star:', error)
+    }
+  }
+
+  const handleViewDetail = async (contact: Contact) => {
+    setDetailContact(contact)
+    setShowDetailModal(true)
+    setDetailLoading(true)
+    setDetailTab('sales')
+    try {
+      // Fetch sales orders for this contact
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('id, created_at, total_amount, payment_method, status, channel, items:order_items(quantity, product_name, price)')
+        .eq('customer_id', contact.id)
+        .order('created_at', { ascending: false })
+        .limit(50)
+      setDetailOrders(orders || [])
+
+      // Fetch purchase orders where supplier_name matches contact name or company_name
+      const names = [contact.name, contact.company_name].filter(Boolean)
+      let poResults: any[] = []
+      for (const n of names) {
+        if (n) {
+          const { data } = await supabase
+            .from('purchase_orders')
+            .select('*')
+            .ilike('supplier_name', `%${n}%`)
+            .order('order_date', { ascending: false })
+            .limit(50)
+          if (data) poResults.push(...data)
+        }
+      }
+      // Deduplicate
+      const uniquePOs = Array.from(new Map(poResults.map(p => [p.id, p])).values())
+      setDetailPOs(uniquePOs)
+
+      // Fetch expenses where vendor matches contact name or company_name
+      let expResults: any[] = []
+      for (const n of names) {
+        if (n) {
+          const { data } = await supabase
+            .from('expenses')
+            .select('*')
+            .ilike('vendor', `%${n}%`)
+            .order('expense_date', { ascending: false })
+            .limit(50)
+          if (data) expResults.push(...data)
+        }
+      }
+      const uniqueExpenses = Array.from(new Map(expResults.map(e => [e.id, e])).values())
+      setDetailExpenses(uniqueExpenses)
+
+      // Fetch quotations
+      const { data: quotations } = await supabase
+        .from('quotations')
+        .select('*')
+        .eq('contact_id', contact.id)
+        .order('created_at', { ascending: false })
+        .limit(50)
+      setDetailQuotations(quotations || [])
+    } catch (error) {
+      console.error('Error fetching contact details:', error)
+    } finally {
+      setDetailLoading(false)
     }
   }
 
@@ -381,7 +475,7 @@ export default function ContactsPage() {
       || (syncFilter === 'synced' && !!contact.flowaccount_id)
       || (syncFilter === 'not_synced' && !contact.flowaccount_id)
     return matchesSearch && matchesType && matchesSync
-  })
+  }).sort((a, b) => (b.is_starred ? 1 : 0) - (a.is_starred ? 1 : 0))
 
   const notSyncedCount = contacts.filter(c => !c.flowaccount_id).length
   const syncedCount = contacts.filter(c => !!c.flowaccount_id).length
@@ -478,6 +572,8 @@ export default function ContactsPage() {
         page++
       }
       console.log('FA contacts fetched:', allContacts.length)
+      // Sort by ID descending (newest first)
+      allContacts.sort((a: any, b: any) => (Number(b.id) || 0) - (Number(a.id) || 0))
       setFaContacts(allContacts)
       if (allContacts.length === 0) {
         alert('ไม่พบผู้ติดต่อใน FlowAccount')
@@ -631,9 +727,9 @@ export default function ContactsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Users className="h-7 w-7 text-[#7D735F]" />
-            ผู้ติดต่อ
+            {t('page.contacts.title')}
           </h1>
-          <p className="text-gray-600 mt-1">จัดการผู้ซื้อ ผู้ขาย และคู่ค้า</p>
+          <p className="text-gray-600 mt-1">{t('page.contacts.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -722,41 +818,41 @@ export default function ContactsPage() {
 
       {/* Batch Actions Bar */}
       {filteredContacts.length > 0 && (
-        <div className="flex items-center justify-between bg-white border border-[#B8C9B8] rounded-xl px-4 py-3 shadow-sm">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-3 py-1.5">
+          <div className="flex items-center gap-2">
             <button
               onClick={toggleSelectAll}
-              className="flex items-center gap-2 text-sm text-gray-700 hover:text-[#7D735F] transition-colors"
+              className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-[#7D735F] transition-colors"
             >
               {selectedContacts.size === filteredContacts.length && filteredContacts.length > 0 ? (
-                <CheckSquare className="h-5 w-5 text-[#7D735F]" />
+                <CheckSquare className="h-4 w-4 text-[#7D735F]" />
               ) : (
-                <Square className="h-5 w-5" />
+                <Square className="h-4 w-4" />
               )}
-              {selectedContacts.size > 0 ? `เลือก ${selectedContacts.size} รายการ` : 'เลือกทั้งหมด'}
+              {selectedContacts.size > 0 ? `เลือก ${selectedContacts.size}` : 'เลือกทั้งหมด'}
             </button>
             {selectedContacts.size > 0 && (
               <button
                 onClick={() => setSelectedContacts(new Set())}
-                className="text-xs text-gray-500 hover:text-gray-700 underline"
+                className="text-xs text-gray-400 hover:text-gray-600 underline"
               >
-                ยกเลิกทั้งหมด
+                ยกเลิก
               </button>
             )}
           </div>
           <button
             onClick={handleBatchSync}
             disabled={selectedContacts.size === 0 || isBatchSyncing}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
               selectedContacts.size > 0 && !isBatchSyncing
                 ? 'bg-[#2B9CD8] text-white hover:bg-[#2488C0]'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
             }`}
           >
             {isBatchSyncing ? (
-              <><RefreshCw className="h-4 w-4 animate-spin" /> กำลัง Sync...</>
+              <><RefreshCw className="h-3.5 w-3.5 animate-spin" /> Sync...</>
             ) : (
-              <><Upload className="h-4 w-4" /> Sync ที่เลือก ({selectedContacts.size})</>
+              <><Upload className="h-3.5 w-3.5" /> Sync ({selectedContacts.size})</>
             )}
           </button>
         </div>
@@ -786,7 +882,14 @@ export default function ContactsPage() {
                       <Square className="h-5 w-5 text-gray-300 hover:text-gray-500" />
                     )}
                   </button>
-                  <div className={`w-10 h-10 rounded-lg ${typeInfo.color} flex items-center justify-center`}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleToggleStar(contact) }}
+                    className="flex-shrink-0 p-2 rounded-full hover:bg-yellow-50 active:bg-yellow-100 transition-colors"
+                    title={contact.is_starred ? 'เลิกติดดาว' : 'ติดดาว'}
+                  >
+                    <Star className={`h-5 w-5 ${contact.is_starred ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300 hover:text-yellow-400'}`} />
+                  </button>
+                  <div className={`w-10 h-10 rounded-full ${typeInfo.color} flex items-center justify-center`}>
                     <TypeIcon className="h-5 w-5" />
                   </div>
                   <div>
@@ -859,6 +962,16 @@ export default function ContactsPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
+                      handleViewDetail(contact)
+                    }}
+                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                    title="ดูรายละเอียดการซื้อ-ขาย"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
                       handleSyncToFlowAccount(contact)
                     }}
                     disabled={syncingContact === contact.id}
@@ -876,16 +989,6 @@ export default function ContactsPage() {
                     title="Edit"
                   >
                     <UserPlus className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDelete(contact.id)
-                    }}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -1511,6 +1614,288 @@ export default function ContactsPage() {
                   นำเข้า {selectedFaContacts.size > 0 ? `(${selectedFaContacts.size})` : ''}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Contact Detail Modal */}
+      {showDetailModal && detailContact && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-[900px] w-full my-8 max-h-[85vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-[#7D735F]/10 flex items-center justify-center">
+                  {detailContact.person_type === 'company' ? <Building2 className="h-5 w-5 text-[#7D735F]" /> : <User className="h-5 w-5 text-[#7D735F]" />}
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">{detailContact.name}</h2>
+                  <p className="text-sm text-gray-500">{detailContact.company_name || detailContact.phone || detailContact.email || ''}</p>
+                </div>
+              </div>
+              <button onClick={() => setShowDetailModal(false)} className="p-2 hover:bg-gray-100 rounded-full">
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-2 px-4 pt-3 pb-2 border-b">
+              <button
+                onClick={() => setDetailTab('sales')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${
+                  detailTab === 'sales' ? 'bg-green-50 text-green-700 border-green-300' : 'bg-white text-gray-600 border-gray-200 hover:border-green-300'
+                }`}
+              >
+                <ShoppingCart className="h-3.5 w-3.5" />
+                บิลขาย ({detailOrders.length})
+              </button>
+              <button
+                onClick={() => setDetailTab('purchases')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${
+                  detailTab === 'purchases' ? 'bg-orange-50 text-orange-700 border-orange-300' : 'bg-white text-gray-600 border-gray-200 hover:border-orange-300'
+                }`}
+              >
+                <Package className="h-3.5 w-3.5" />
+                บิลซื้อ ({detailPOs.length + detailExpenses.length})
+              </button>
+              <button
+                onClick={() => setDetailTab('quotations')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${
+                  detailTab === 'quotations' ? 'bg-blue-50 text-blue-700 border-blue-300' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                }`}
+              >
+                <FileText className="h-3.5 w-3.5" />
+                ใบเสนอราคา ({detailQuotations.length})
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {detailLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
+                  <span className="ml-2 text-gray-500">กำลังโหลด...</span>
+                </div>
+              ) : (
+                <>
+                  {/* Sales Orders */}
+                  {detailTab === 'sales' && (
+                    <div>
+                      {detailOrders.length === 0 ? (
+                        <div className="text-center py-8 text-gray-400">
+                          <ShoppingCart className="h-8 w-8 mx-auto mb-2" />
+                          <p>ยังไม่มีบิลขาย</p>
+                        </div>
+                      ) : (
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-3 py-2 text-left font-medium text-gray-600">วันที่</th>
+                              <th className="px-3 py-2 text-left font-medium text-gray-600">ช่องทาง</th>
+                              <th className="px-3 py-2 text-left font-medium text-gray-600">สินค้า</th>
+                              <th className="px-3 py-2 text-right font-medium text-gray-600">ยอดรวม</th>
+                              <th className="px-3 py-2 text-left font-medium text-gray-600">ชำระ</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {detailOrders.map((order: any) => (
+                              <tr key={order.id} className="hover:bg-gray-50">
+                                <td className="px-3 py-2 whitespace-nowrap">{new Date(order.created_at).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' })}</td>
+                                <td className="px-3 py-2 whitespace-nowrap">
+                                  <span className="px-1.5 py-0.5 rounded text-xs bg-gray-100">{order.channel || 'POS'}</span>
+                                </td>
+                                <td className="px-3 py-2">
+                                  <div className="max-w-[250px] truncate">
+                                    {order.items?.map((item: any) => `${item.product_name} x${item.quantity}`).join(', ') || '-'}
+                                  </div>
+                                </td>
+                                <td className="px-3 py-2 text-right font-medium">฿{(order.total_amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</td>
+                                <td className="px-3 py-2 whitespace-nowrap">{order.payment_method || '-'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot className="bg-green-50 font-medium">
+                            <tr>
+                              <td colSpan={3} className="px-3 py-2 text-right">รวมทั้งหมด</td>
+                              <td className="px-3 py-2 text-right text-green-700">฿{detailOrders.reduce((sum: number, o: any) => sum + (o.total_amount || 0), 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</td>
+                              <td></td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Purchase Orders + Expenses */}
+                  {detailTab === 'purchases' && (
+                    <div className="space-y-4">
+                      {detailPOs.length === 0 && detailExpenses.length === 0 ? (
+                        <div className="text-center py-8 text-gray-400">
+                          <Package className="h-8 w-8 mx-auto mb-2" />
+                          <p>ยังไม่มีบิลซื้อ</p>
+                        </div>
+                      ) : (
+                        <>
+                          {/* Purchase Orders Section */}
+                          {detailPOs.length > 0 && (
+                            <div>
+                              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                <Package className="h-3.5 w-3.5" />
+                                ใบสั่งซื้อ ({detailPOs.length})
+                              </h4>
+                              <table className="w-full text-sm">
+                                <thead className="bg-gray-50">
+                                  <tr>
+                                    <th className="px-3 py-2 text-left font-medium text-gray-600">เลข PO</th>
+                                    <th className="px-3 py-2 text-left font-medium text-gray-600">วันที่สั่ง</th>
+                                    <th className="px-3 py-2 text-left font-medium text-gray-600">ซัพพลายเออร์</th>
+                                    <th className="px-3 py-2 text-right font-medium text-gray-600">ยอดรวม</th>
+                                    <th className="px-3 py-2 text-left font-medium text-gray-600">สถานะ</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                  {detailPOs.map((po: any) => (
+                                    <tr key={po.id} className="hover:bg-gray-50">
+                                      <td className="px-3 py-2 font-medium text-blue-600">{po.po_number}</td>
+                                      <td className="px-3 py-2 whitespace-nowrap">{new Date(po.order_date).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' })}</td>
+                                      <td className="px-3 py-2">{po.supplier_name}</td>
+                                      <td className="px-3 py-2 text-right font-medium">฿{(po.total_amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</td>
+                                      <td className="px-3 py-2">
+                                        <span className={`px-1.5 py-0.5 rounded text-xs ${po.status === 'received' ? 'bg-green-100 text-green-700' : po.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'}`}>
+                                          {po.status || '-'}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                                <tfoot className="bg-orange-50/50 font-medium">
+                                  <tr>
+                                    <td colSpan={3} className="px-3 py-2 text-right text-sm">รวมใบสั่งซื้อ</td>
+                                    <td className="px-3 py-2 text-right text-orange-700">฿{detailPOs.reduce((sum: number, po: any) => sum + (po.total_amount || 0), 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</td>
+                                    <td></td>
+                                  </tr>
+                                </tfoot>
+                              </table>
+                            </div>
+                          )}
+
+                          {/* Expenses Section */}
+                          {detailExpenses.length > 0 && (
+                            <div>
+                              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                <FileText className="h-3.5 w-3.5" />
+                                ค่าใช้จ่าย ({detailExpenses.length})
+                              </h4>
+                              <table className="w-full text-sm">
+                                <thead className="bg-gray-50">
+                                  <tr>
+                                    <th className="px-3 py-2 text-left font-medium text-gray-600">รายละเอียด</th>
+                                    <th className="px-3 py-2 text-left font-medium text-gray-600">วันที่</th>
+                                    <th className="px-3 py-2 text-left font-medium text-gray-600">หมวดหมู่</th>
+                                    <th className="px-3 py-2 text-right font-medium text-gray-600">จำนวนเงิน</th>
+                                    <th className="px-3 py-2 text-left font-medium text-gray-600">ชำระ</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                  {detailExpenses.map((exp: any) => (
+                                    <tr key={exp.id} className="hover:bg-gray-50">
+                                      <td className="px-3 py-2">
+                                        <div className="max-w-[200px] truncate">{exp.description || '-'}</div>
+                                      </td>
+                                      <td className="px-3 py-2 whitespace-nowrap">{new Date(exp.expense_date || exp.document_date).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' })}</td>
+                                      <td className="px-3 py-2">
+                                        <span className="px-1.5 py-0.5 rounded text-xs bg-gray-100">{exp.category || '-'}</span>
+                                      </td>
+                                      <td className="px-3 py-2 text-right font-medium">฿{(exp.amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</td>
+                                      <td className="px-3 py-2 whitespace-nowrap text-xs">{exp.payment_method || '-'}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                                <tfoot className="bg-orange-50/50 font-medium">
+                                  <tr>
+                                    <td colSpan={3} className="px-3 py-2 text-right text-sm">รวมค่าใช้จ่าย</td>
+                                    <td className="px-3 py-2 text-right text-orange-700">฿{detailExpenses.reduce((sum: number, e: any) => sum + (e.amount || 0), 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</td>
+                                    <td></td>
+                                  </tr>
+                                </tfoot>
+                              </table>
+                            </div>
+                          )}
+
+                          {/* Combined Total */}
+                          {(detailPOs.length > 0 && detailExpenses.length > 0) && (
+                            <div className="bg-orange-50 rounded-lg p-3 text-right">
+                              <span className="text-sm text-orange-700 font-bold">
+                                รวมบิลซื้อทั้งหมด: ฿{(
+                                  detailPOs.reduce((sum: number, po: any) => sum + (po.total_amount || 0), 0) +
+                                  detailExpenses.reduce((sum: number, e: any) => sum + (e.amount || 0), 0)
+                                ).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Quotations */}
+                  {detailTab === 'quotations' && (
+                    <div>
+                      {detailQuotations.length === 0 ? (
+                        <div className="text-center py-8 text-gray-400">
+                          <FileText className="h-8 w-8 mx-auto mb-2" />
+                          <p>ยังไม่มีใบเสนอราคา</p>
+                        </div>
+                      ) : (
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-3 py-2 text-left font-medium text-gray-600">เลขที่</th>
+                              <th className="px-3 py-2 text-left font-medium text-gray-600">วันที่</th>
+                              <th className="px-3 py-2 text-left font-medium text-gray-600">ชื่อผู้ติดต่อ</th>
+                              <th className="px-3 py-2 text-right font-medium text-gray-600">ยอดรวม</th>
+                              <th className="px-3 py-2 text-left font-medium text-gray-600">สถานะ</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {detailQuotations.map((q: any) => (
+                              <tr key={q.id} className="hover:bg-gray-50">
+                                <td className="px-3 py-2 font-medium text-blue-600">{q.quotation_number}</td>
+                                <td className="px-3 py-2 whitespace-nowrap">{new Date(q.created_at).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' })}</td>
+                                <td className="px-3 py-2">{q.contact_name || '-'}</td>
+                                <td className="px-3 py-2 text-right font-medium">฿{(q.grand_total || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</td>
+                                <td className="px-3 py-2">
+                                  <span className={`px-1.5 py-0.5 rounded text-xs ${q.status === 'accepted' ? 'bg-green-100 text-green-700' : q.status === 'sent' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
+                                    {q.status || 'draft'}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot className="bg-blue-50 font-medium">
+                            <tr>
+                              <td colSpan={3} className="px-3 py-2 text-right">รวมทั้งหมด</td>
+                              <td className="px-3 py-2 text-right text-blue-700">฿{detailQuotations.reduce((sum: number, q: any) => sum + (q.grand_total || 0), 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</td>
+                              <td></td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-3 border-t flex justify-end">
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
+              >
+                ปิด
+              </button>
             </div>
           </div>
         </div>

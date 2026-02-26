@@ -5,6 +5,7 @@ import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle, Percent, FileText, ShoppingCart, BookOpen, Wallet, Printer, Upload, X, CheckSquare, Square } from 'lucide-react'
 import { getExpenseCategories as getFaExpenseCategories, syncExpensesToFlowAccount, syncPurchasesToFlowAccount } from '../services/flowaccount'
+import { useLanguage } from '../contexts/LanguageContext'
 
 interface PaymentVoucher {
   id?: string
@@ -82,6 +83,7 @@ const PAYMENT_METHODS = [
 ]
 
 export default function ExpensesPage() {
+  const { t } = useLanguage()
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -1348,7 +1350,7 @@ export default function ExpensesPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Receipt className="h-7 w-7 text-[#7D735F]" />
-            เอกสาร
+            {t('page.expenses.title')}
           </h1>
           <p className="text-gray-600 mt-1">บันทึกและติดตามเอกสารต่างๆ ของร้าน</p>
         </div>

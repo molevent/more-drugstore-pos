@@ -22,21 +22,35 @@ export const useProductStore = create<ProductState>((set, get) => ({
   fetchProducts: async () => {
     set({ loading: true })
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          category:categories(id, name_th, name_en)
-        `)
-        .order('name_th')
+      // Fetch all products (Supabase defaults to 1000 row limit)
+      const allProducts: any[] = []
+      let from = 0
+      const pageSize = 1000
+      let hasMore = true
       
-      if (error) {
-        console.error('Error fetching products:', error)
-        throw error
+      while (hasMore) {
+        const { data: page, error: pageError } = await supabase
+          .from('products')
+          .select(`
+            *,
+            category:categories(id, name_th, name_en)
+          `)
+          .order('created_at', { ascending: false })
+          .range(from, from + pageSize - 1)
+        
+        if (pageError) throw pageError
+        
+        if (page && page.length > 0) {
+          allProducts.push(...page)
+          from += pageSize
+          hasMore = page.length === pageSize
+        } else {
+          hasMore = false
+        }
       }
       
-      console.log('Fetched products:', data)
-      set({ products: data || [], loading: false })
+      console.log('Fetched products:', allProducts.length)
+      set({ products: allProducts, loading: false })
     } catch (error) {
       console.error('Error fetching products:', error)
       set({ loading: false })

@@ -496,7 +496,7 @@ export default function WithholdingTaxPage() {
         <button
           onClick={handleImportFromFa}
           disabled={importing}
-          className="flex items-center gap-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 bg-white text-green-600 rounded-full border-2 border-green-400/50 hover:bg-green-50 disabled:opacity-50 text-sm font-medium transition-all shadow-sm whitespace-nowrap"
           title="ดึงจาก FlowAccount"
         >
           <Download className="h-4 w-4" />
@@ -505,7 +505,7 @@ export default function WithholdingTaxPage() {
         <button
           onClick={handleOpenSyncModal}
           disabled={syncingToFa}
-          className="flex items-center gap-1 px-4 py-2.5 bg-[#2B9CD8] hover:bg-[#2488C0] disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#2B9CD8] rounded-full border-2 border-[#2B9CD8]/50 hover:bg-[#2B9CD8]/10 disabled:opacity-50 text-sm font-medium transition-all shadow-sm whitespace-nowrap"
           title="Sync ไป FlowAccount"
         >
           <Upload className="h-4 w-4" />
