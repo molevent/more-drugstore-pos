@@ -1583,66 +1583,114 @@ export default function POSPage() {
     }
   }
 
-  const processBarcodeFromImage = async (imageData: string) => {
-    setIsProcessingBarcode(true)
-    try {
-      // Check if Barcode Detection API is supported
-      if ('BarcodeDetector' in window) {
+  const detectBarcodesFromImage = async (imageData: string): Promise<string[]> => {
+    // Try native BarcodeDetector first
+    if ('BarcodeDetector' in window) {
+      try {
         const barcodeDetector = new (window as any).BarcodeDetector({
           formats: ['code_128', 'code_39', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'qr_code']
         })
-        
-        // Create image element
         const img = new Image()
         img.src = imageData
         await new Promise((resolve, reject) => {
           img.onload = resolve
           img.onerror = reject
         })
-        
         const barcodes = await barcodeDetector.detect(img)
-        
         if (barcodes.length > 0) {
-          console.log(`Found ${barcodes.length} barcodes:`, barcodes.map((b: any) => b.rawValue))
-          
-          // Find all products matching detected barcodes
-          const foundProducts: Product[] = []
-          const uniqueBarcodes = new Set<string>()
-          
-          for (const barcode of barcodes) {
-            const code = barcode.rawValue
-            if (!uniqueBarcodes.has(code)) {
-              uniqueBarcodes.add(code)
-              
-              // Try to find product by barcode
-              const product = getProductByBarcode(code) || products.find(p => p.barcode === code)
-              if (product && !foundProducts.find(p => p.id === product.id)) {
-                foundProducts.push(product)
+          return barcodes.map((b: any) => b.rawValue as string)
+        }
+      } catch (err) {
+        console.warn('Native BarcodeDetector failed, falling back to Gemini:', err)
+      }
+    }
+
+    // Fallback: use Gemini Vision API to read barcodes
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY
+    if (!apiKey) {
+      throw new Error('NO_API_KEY')
+    }
+
+    const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '')
+    const mimeType = imageData.match(/^data:(image\/\w+);base64,/)?.[1] || 'image/jpeg'
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              {
+                inlineData: { mimeType, data: base64Data }
+              },
+              {
+                text: 'Read ALL barcodes visible in this image. Return ONLY a JSON array of barcode strings, e.g. ["8850123456789","6901234567890"]. If no barcodes found, return []. No explanation, just the JSON array.'
               }
+            ]
+          }]
+        })
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status}`)
+    }
+
+    const result = await response.json()
+    const text = result.candidates?.[0]?.content?.parts?.[0]?.text || '[]'
+    // Extract JSON array from response
+    const jsonMatch = text.match(/\[[\s\S]*?\]/)
+    if (jsonMatch) {
+      try {
+        const codes = JSON.parse(jsonMatch[0])
+        return Array.isArray(codes) ? codes.map((c: any) => String(c)) : []
+      } catch {
+        return []
+      }
+    }
+    return []
+  }
+
+  const processBarcodeFromImage = async (imageData: string) => {
+    setIsProcessingBarcode(true)
+    try {
+      const detectedCodes = await detectBarcodesFromImage(imageData)
+
+      if (detectedCodes.length > 0) {
+        console.log(`Found ${detectedCodes.length} barcodes:`, detectedCodes)
+
+        const foundProducts: Product[] = []
+        const uniqueBarcodes = new Set<string>()
+
+        for (const code of detectedCodes) {
+          if (!uniqueBarcodes.has(code)) {
+            uniqueBarcodes.add(code)
+            const product = getProductByBarcode(code) || products.find(p => p.barcode === code)
+            if (product && !foundProducts.find(p => p.id === product.id)) {
+              foundProducts.push(product)
             }
           }
-          
-          if (foundProducts.length > 0) {
-            // Show product selection view
-            setDetectedProducts(foundProducts)
-            setSelectedDetectedProducts(new Set(foundProducts.map(p => p.id)))
-            setShowDetectedProductsView(true)
-          } else {
-            alert('ไม่พบสินค้าที่ตรงกับบาร์โค้ดในรูปภาพ กรุณาลองถ่ายใหม่หรือเลือกรูปอื่น')
-            // Keep captured image visible for user to retry
-          }
+        }
+
+        if (foundProducts.length > 0) {
+          setDetectedProducts(foundProducts)
+          setSelectedDetectedProducts(new Set(foundProducts.map(p => p.id)))
+          setShowDetectedProductsView(true)
         } else {
-          alert('ไม่พบบาร์โค้ดในรูปภาพ กรุณาลองใหม่')
-          // Keep captured image visible for user to retry
+          alert(`ไม่พบสินค้าที่ตรงกับบาร์โค้ดในรูปภาพ (${detectedCodes.join(', ')}) กรุณาลองถ่ายใหม่หรือเลือกรูปอื่น`)
         }
       } else {
-        // Fallback: just show the image and let user enter barcode manually
-        alert('เบราว์เซอร์นี้ไม่รองรับการอ่านบาร์โค้ดอัตโนมัติ กรุณาดูบาร์โค้ดจากรูปแล้วกรอกด้วยตนเอง')
-        setShowCameraModal(false)
+        alert('ไม่พบบาร์โค้ดในรูปภาพ กรุณาลองใหม่')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error processing image:', error)
-      alert('เกิดข้อผิดพลาดในการประมวลผลรูปภาพ')
+      if (error?.message === 'NO_API_KEY') {
+        alert('ไม่พบ Gemini API Key กรุณาตั้งค่า VITE_GEMINI_API_KEY')
+      } else {
+        alert('เกิดข้อผิดพลาดในการประมวลผลรูปภาพ')
+      }
     } finally {
       setIsProcessingBarcode(false)
     }
