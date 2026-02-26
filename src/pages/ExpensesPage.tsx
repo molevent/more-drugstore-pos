@@ -557,7 +557,7 @@ export default function ExpensesPage() {
   const [selectedUnpaidIds, setSelectedUnpaidIds] = useState<Set<string>>(new Set())
   const [unpaidInlineEdits, setUnpaidInlineEdits] = useState<Record<string, Partial<Expense>>>({})
   const [savingUnpaid, setSavingUnpaid] = useState<string | null>(null) // expense id being saved
-  const [batchPaymentMethod, setBatchPaymentMethod] = useState('โอนเงิน')
+  const [batchPaymentMethod, setBatchPaymentMethod] = useState('โอนเงินกสิกรไทย')
   const [batchPaymentDate, setBatchPaymentDate] = useState(new Date().toISOString().split('T')[0])
   const [batchPayee, setBatchPayee] = useState('')
 
@@ -565,6 +565,7 @@ export default function ExpensesPage() {
   const [showViewVoucherModal, setShowViewVoucherModal] = useState(false)
   const [viewVoucher, setViewVoucher] = useState<PaymentVoucher | null>(null)
   const [viewVoucherCategory, setViewVoucherCategory] = useState<string>('')
+  const [viewLinkedExpenses, setViewLinkedExpenses] = useState<any[]>([])
   const [shopSettings, setShopSettings] = useState<{ name: string; logo_url: string } | null>(null)
   const printRef = useRef<HTMLDivElement>(null)
 
@@ -1014,12 +1015,12 @@ export default function ExpensesPage() {
       
       if (voucherError) throw voucherError
       
-      // Fetch associated expense to get category and document_date
-      const { data: expenseData } = await supabase
+      // Fetch ALL associated expenses (not .single()) to show 1 row per receipt
+      const { data: expensesData } = await supabase
         .from('expenses')
-        .select('category, document_date')
+        .select('id, description, amount, expense_date, document_date, receipt_number, category, vendor, vat_amount')
         .eq('payment_voucher_id', voucherId)
-        .single()
+        .order('document_date', { ascending: true })
       
       // Fetch shop settings for logo and business name
       const { data: shopData } = await supabase
@@ -1027,12 +1028,16 @@ export default function ExpensesPage() {
         .select('name, logo_url')
         .single()
       
+      const linkedExpenses = expensesData || []
+      const firstExpense = linkedExpenses[0]
+      
       if (voucherData) {
         setViewVoucher({
           ...voucherData,
-          expense_document_date: expenseData?.document_date || voucherData.voucher_date
+          expense_document_date: firstExpense?.document_date || voucherData.voucher_date
         })
-        setViewVoucherCategory(expenseData?.category || '-')
+        setViewLinkedExpenses(linkedExpenses)
+        setViewVoucherCategory(firstExpense?.category || '-')
         setShopSettings(shopData || { name: 'ห้างหุ้นส่วนจำกัด สะอางพาณิชย์', logo_url: '' })
         setShowViewVoucherModal(true)
       }
@@ -1560,22 +1565,15 @@ export default function ExpensesPage() {
         }
       `}</style>
       
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+        <div className="flex-shrink-0">
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Receipt className="h-7 w-7 text-[#7D735F]" />
             {t('page.expenses.title')}
           </h1>
           <p className="text-gray-600 mt-1">บันทึกและติดตามเอกสารต่างๆ ของร้าน</p>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
-            className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
-            title="คู่มือการใช้งาน"
-          >
-            <BookOpen className="h-5 w-5" />
-          </button>
+        <div className="flex flex-wrap gap-2 items-center justify-end">
           {/* Hidden - not used yet
           <Link 
             to="/expenses/add"
@@ -1585,49 +1583,6 @@ export default function ExpensesPage() {
             เพิ่มเอกสาร
           </Link>
           */}
-        </div>
-      </div>
-
-      {/* View Mode Tabs */}
-      <div className="flex flex-wrap gap-2 mb-6 items-center">
-        {/* Quick Links - Hidden for now
-        <Link 
-          to="/purchase-orders"
-          className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
-        >
-          <ShoppingCart className="h-5 w-5 text-gray-900" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบรับสินค้า</span>
-        </Link>
-        <Link 
-          to="/quotations"
-          className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
-        >
-          <FileText className="h-5 w-5 text-gray-900" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบเสนอราคา</span>
-        </Link>
-        <Link 
-          to="/payment-vouchers"
-          className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
-        >
-          <FileText className="h-5 w-5 text-gray-900" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">ใบสำคัญจ่าย</span>
-        </Link>
-        <Link 
-          to="/withholding-tax"
-          className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
-        >
-          <Percent className="h-5 w-5 text-gray-900" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">หัก ณ ที่จ่าย</span>
-        </Link>
-        <Link 
-          to="/petty-cash"
-          className="flex items-center gap-2 px-3 py-2 bg-[#E8F4F8] rounded-full border border-[#B8C9B8] hover:bg-[#D5EAE7] hover:shadow-md transition-all"
-        >
-          <Wallet className="h-5 w-5 text-gray-900" />
-          <span className="font-medium text-gray-900 text-sm whitespace-nowrap">เงินสดย่อย</span>
-        </Link>
-        <div className="flex-grow"></div>
-        */}
         {/* Expenses Dropdown Menu */}
         <div className="relative group">
           <button
@@ -1774,6 +1729,14 @@ export default function ExpensesPage() {
           <Wallet className="h-5 w-5 text-gray-900" />
           <span className="font-medium text-gray-900 text-sm whitespace-nowrap">เงินสดย่อย</span>
         </Link>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
+            className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
+            title="คู่มือการใช้งาน"
+          >
+            <BookOpen className="h-5 w-5" />
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards - Match Sales Page Style */}
@@ -3714,28 +3677,64 @@ export default function ExpensesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-b border-gray-300">
-                    <td className="py-2 px-2">{viewVoucher.expense_document_date}</td>
-                    <td className="py-2 px-2">{viewVoucher.description}</td>
-                    <td className="py-2 px-2">{viewVoucher.voucher_number}</td>
-                    <td className="py-2 px-2 text-right">
-                      {viewVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="py-2 px-2 text-right">0.00</td>
-                    <td className="py-2 px-2 text-right">
-                      {viewVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                    </td>
-                  </tr>
-                  <tr className="border-t-2 border-gray-800 font-medium bg-gray-50">
-                    <td className="py-2 px-2" colSpan={3}></td>
-                    <td className="py-2 px-2 text-right">
-                      {viewVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="py-2 px-2 text-right">0.00</td>
-                    <td className="py-2 px-2 text-right">
-                      {viewVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                    </td>
-                  </tr>
+                  {viewLinkedExpenses.length > 0 ? (
+                    viewLinkedExpenses.map((exp, idx) => {
+                      const vatAmt = exp.vat_amount || 0
+                      const preVat = exp.amount - vatAmt
+                      return (
+                        <tr key={idx} className="border-b border-gray-300">
+                          <td className="py-2 px-2">{exp.document_date || exp.expense_date || viewVoucher.voucher_date}</td>
+                          <td className="py-2 px-2">{exp.description}</td>
+                          <td className="py-2 px-2">{exp.receipt_number || '-'}</td>
+                          <td className="py-2 px-2 text-right">
+                            {preVat.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-2 px-2 text-right">
+                            {vatAmt.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-2 px-2 text-right">
+                            {exp.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      )
+                    })
+                  ) : (
+                    <tr className="border-b border-gray-300">
+                      <td className="py-2 px-2">{viewVoucher.expense_document_date}</td>
+                      <td className="py-2 px-2">{viewVoucher.description}</td>
+                      <td className="py-2 px-2">{viewVoucher.voucher_number}</td>
+                      <td className="py-2 px-2 text-right">
+                        {viewVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-2 px-2 text-right">0.00</td>
+                      <td className="py-2 px-2 text-right">
+                        {viewVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  )}
+                  {(() => {
+                    const totalAmt = viewLinkedExpenses.length > 0
+                      ? viewLinkedExpenses.reduce((s: number, e: any) => s + (e.amount || 0), 0)
+                      : viewVoucher.amount
+                    const totalVat = viewLinkedExpenses.length > 0
+                      ? viewLinkedExpenses.reduce((s: number, e: any) => s + (e.vat_amount || 0), 0)
+                      : 0
+                    const totalPreVat = totalAmt - totalVat
+                    return (
+                      <tr className="border-t-2 border-gray-800 font-medium bg-gray-50">
+                        <td className="py-2 px-2" colSpan={3}></td>
+                        <td className="py-2 px-2 text-right">
+                          {totalPreVat.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-2 px-2 text-right">
+                          {totalVat.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-2 px-2 text-right">
+                          {totalAmt.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    )
+                  })()}
                 </tbody>
               </table>
 
@@ -3759,22 +3758,34 @@ export default function ExpensesPage() {
 
                 {/* Right - Summary */}
                 <div className="w-1/2 pl-8">
-                  <div className="flex justify-between py-1 border-b border-gray-200">
-                    <span className="text-gray-600">รวม</span>
-                    <span>{viewVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-gray-200">
-                    <span className="text-gray-600">ภาษีหัก ณ ที่จ่าย</span>
-                    <span>0.00</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-gray-200">
-                    <span className="text-gray-600">ภาษีมูลค่าเพิ่ม</span>
-                    <span>0.00</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b-2 border-gray-800 font-medium">
-                    <span>รวมทั้งสิ้น</span>
-                    <span>{viewVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
-                  </div>
+                  {(() => {
+                    const totalAmt = viewLinkedExpenses.length > 0
+                      ? viewLinkedExpenses.reduce((s: number, e: any) => s + (e.amount || 0), 0)
+                      : viewVoucher.amount
+                    const totalVat = viewLinkedExpenses.length > 0
+                      ? viewLinkedExpenses.reduce((s: number, e: any) => s + (e.vat_amount || 0), 0)
+                      : 0
+                    return (
+                      <>
+                        <div className="flex justify-between py-1 border-b border-gray-200">
+                          <span className="text-gray-600">รวม</span>
+                          <span>{totalAmt.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex justify-between py-1 border-b border-gray-200">
+                          <span className="text-gray-600">ภาษีหัก ณ ที่จ่าย</span>
+                          <span>0.00</span>
+                        </div>
+                        <div className="flex justify-between py-1 border-b border-gray-200">
+                          <span className="text-gray-600">ภาษีมูลค่าเพิ่ม</span>
+                          <span>{totalVat.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex justify-between py-1 border-b-2 border-gray-800 font-medium">
+                          <span>รวมทั้งสิ้น</span>
+                          <span>{totalAmt.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                      </>
+                    )
+                  })()}
                 </div>
               </div>
             </div>

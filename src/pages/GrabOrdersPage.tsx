@@ -760,7 +760,7 @@ export default function GrabOrdersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-xl font-bold text-[#5D4E37]">
+          <h1 className="text-xl font-bold text-[#7D735F]">
             {viewMode === 'new' ? '📸 สแกนออเดอร์ใหม่' : viewMode === 'detail' ? `📦 ${selectedOrder?.order_number}` : '🛵 ออเดอร์ GRAB'}
           </h1>
           {viewMode === 'list' && (
@@ -771,7 +771,7 @@ export default function GrabOrdersPage() {
           {viewMode !== 'list' && (
             <Button
               onClick={() => { resetNewOrder(); setViewMode('list'); setSelectedOrder(null) }}
-              className="bg-[#5D4E37] text-white hover:bg-[#4A3D2B]"
+              className="bg-[#7D735F] text-white hover:bg-[#6B6550]"
             >
               ← กลับไปหน้าออเดอร์
             </Button>
@@ -779,7 +779,7 @@ export default function GrabOrdersPage() {
           {viewMode === 'list' && (
             <Button
               onClick={() => setViewMode('new')}
-              className="bg-[#8B6F4E] text-white hover:bg-[#7A5F3E]"
+              className="bg-[#A67B5B] text-white hover:bg-[#8C6E4A]"
             >
               <Camera className="w-4 h-4 mr-1" /> สแกนออเดอร์
             </Button>
@@ -793,7 +793,7 @@ export default function GrabOrdersPage() {
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <Card className="p-3 text-center">
-              <p className="text-2xl font-bold text-[#5D4E37]">{stats.total}</p>
+              <p className="text-2xl font-bold text-[#7D735F]">{stats.total}</p>
               <p className="text-xs text-gray-500">ออเดอร์ทั้งหมด</p>
             </Card>
             <Card className="p-3 text-center">
@@ -809,7 +809,7 @@ export default function GrabOrdersPage() {
               <p className="text-xs text-gray-500">เสร็จแล้ว</p>
             </Card>
             <Card className="p-3 text-center">
-              <p className="text-2xl font-bold text-[#8B6F4E]">฿{formatCurrency(stats.totalValue)}</p>
+              <p className="text-2xl font-bold text-[#7D735F]">฿{formatCurrency(stats.totalValue)}</p>
               <p className="text-xs text-gray-500">ยอดรวม</p>
             </Card>
           </div>
@@ -820,12 +820,12 @@ export default function GrabOrdersPage() {
               type="date"
               value={dateFilter}
               onChange={e => setDateFilter(e.target.value)}
-              className="border rounded-lg px-3 py-2 text-sm"
+              className="border border-[#B8C9B8] rounded-full px-4 py-2 text-sm bg-white focus:ring-2 focus:ring-[#7D735F]/20 focus:border-[#7D735F] outline-none"
             />
             <select
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value)}
-              className="border rounded-lg px-3 py-2 text-sm"
+              className="border border-[#B8C9B8] rounded-full px-4 py-2 text-sm bg-white focus:ring-2 focus:ring-[#7D735F]/20 focus:border-[#7D735F] outline-none"
             >
               <option value="all">ทุกสถานะ</option>
               <option value="scanned">รอหยิบของ</option>
@@ -841,10 +841,10 @@ export default function GrabOrdersPage() {
                 placeholder="ค้นหา เลขออเดอร์, ลูกค้า..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full border rounded-lg pl-9 pr-3 py-2 text-sm"
+                className="w-full border border-transparent rounded-full pl-9 pr-3 py-2 text-sm bg-[#E8EBF0] focus:bg-white focus:border-[#7D735F] focus:ring-2 focus:ring-[#7D735F]/20 outline-none transition-all"
               />
             </div>
-            <button onClick={fetchOrders} className="p-2 text-gray-500 hover:text-gray-700">
+            <button onClick={fetchOrders} className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all">
               <RefreshCw className="w-4 h-4" />
             </button>
           </div>
@@ -861,7 +861,7 @@ export default function GrabOrdersPage() {
               <p className="text-gray-400">ยังไม่มีออเดอร์วันนี้</p>
               <Button
                 onClick={() => setViewMode('new')}
-                className="mt-4 bg-[#8B6F4E] text-white hover:bg-[#7A5F3E]"
+                className="mt-4 bg-[#A67B5B] text-white hover:bg-[#8C6E4A]"
               >
                 <Camera className="w-4 h-4 mr-1" /> สแกนออเดอร์แรก
               </Button>
@@ -884,7 +884,7 @@ export default function GrabOrdersPage() {
                         <div className={`w-2 h-10 rounded-full ${platformCfg.color}`} />
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-[#5D4E37]">{order.order_number}</span>
+                            <span className="font-bold text-[#7D735F]">{order.order_number}</span>
                             <span className={`text-xs px-2 py-0.5 rounded-full ${statusCfg.color}`}>
                               <StatusIcon className="w-3 h-3 inline mr-1" />
                               {statusCfg.label}
@@ -899,7 +899,7 @@ export default function GrabOrdersPage() {
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="text-right">
-                          <p className="font-bold text-[#8B6F4E]">฿{formatCurrency(order.grand_total)}</p>
+                          <p className="font-bold text-[#7D735F]">฿{formatCurrency(order.grand_total)}</p>
                           <p className="text-xs text-gray-400">
                             {new Date(order.created_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
                           </p>
@@ -935,11 +935,11 @@ export default function GrabOrdersPage() {
               return (
                 <div key={step} className="flex items-center gap-2">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    isDone ? 'bg-green-500 text-white' : isActive ? 'bg-[#8B6F4E] text-white' : 'bg-gray-200 text-gray-500'
+                    isDone ? 'bg-green-500 text-white' : isActive ? 'bg-[#A67B5B] text-white' : 'bg-gray-200 text-gray-500'
                   }`}>
                     {isDone ? <Check className="w-4 h-4" /> : i + 1}
                   </div>
-                  <span className={`text-xs hidden sm:inline ${isActive ? 'text-[#5D4E37] font-bold' : 'text-gray-400'}`}>
+                  <span className={`text-xs hidden sm:inline ${isActive ? 'text-[#7D735F] font-bold' : 'text-gray-400'}`}>
                     {step}
                   </span>
                   {i < 2 && <div className="w-8 h-0.5 bg-gray-200" />}
@@ -954,7 +954,7 @@ export default function GrabOrdersPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Zone 1: Order photos */}
                 <div className="space-y-3">
-                  <h3 className="font-bold text-[#5D4E37] text-sm flex items-center gap-1">
+                  <h3 className="font-bold text-[#7D735F] text-sm flex items-center gap-1">
                     <FileText className="w-4 h-4" /> 1. รูปออเดอร์ <span className="text-red-500">*</span>
                   </h3>
                   <div
@@ -998,7 +998,7 @@ export default function GrabOrdersPage() {
 
                 {/* Zone 2: Pick photos */}
                 <div className="space-y-3">
-                  <h3 className="font-bold text-[#5D4E37] text-sm flex items-center gap-1">
+                  <h3 className="font-bold text-[#7D735F] text-sm flex items-center gap-1">
                     <Package className="w-4 h-4" /> 2. รูปสินค้าที่หยิบ <span className="text-xs text-gray-400">(ไม่บังคับ)</span>
                   </h3>
                   <div
@@ -1053,7 +1053,7 @@ export default function GrabOrdersPage() {
                 type="button"
                 onClick={handleScan}
                 disabled={files.length === 0 || scanning}
-                className="w-full px-4 py-3 bg-[#8B6F4E] text-white font-medium rounded-lg hover:bg-[#7A5F3E] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-[#A67B5B] text-white font-medium rounded-lg hover:bg-[#8C6E4A] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
               >
                 {scanning ? (
                   <><Loader2 className="w-5 h-5 animate-spin" /> AI กำลังประมวลผล{newPickFiles.length > 0 ? ' (อ่านออเดอร์ + เช็คสินค้า)' : ''}...</>
@@ -1073,7 +1073,7 @@ export default function GrabOrdersPage() {
           {/* Review step */}
           {scanStep === 'review' && scanResult && (
             <div className="space-y-4">
-              <h3 className="font-bold text-[#5D4E37]">ตรวจสอบข้อมูลที่สแกนได้</h3>
+              <h3 className="font-bold text-[#7D735F]">ตรวจสอบข้อมูลที่สแกนได้</h3>
 
               {/* Order info */}
               <div className="grid grid-cols-2 gap-3 text-sm">
@@ -1123,7 +1123,7 @@ export default function GrabOrdersPage() {
                     <tfoot className="bg-gray-50 font-bold">
                       <tr>
                         <td colSpan={3} className="p-2 text-right">ยอดรวม</td>
-                        <td className="p-2 text-right text-[#8B6F4E]">฿{formatCurrency(scanResult.grand_total)}</td>
+                        <td className="p-2 text-right text-[#7D735F]">฿{formatCurrency(scanResult.grand_total)}</td>
                       </tr>
                     </tfoot>
                   </table>
@@ -1190,7 +1190,7 @@ export default function GrabOrdersPage() {
                   type="button"
                   onClick={handleSaveOrder}
                   disabled={saving}
-                  className="flex-1 px-4 py-2 bg-[#8B6F4E] text-white font-medium rounded-lg hover:bg-[#7A5F3E] disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
+                  className="flex-1 px-4 py-2 bg-[#A67B5B] text-white font-medium rounded-lg hover:bg-[#8C6E4A] disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
                 >
                   {saving ? (
                     <><Loader2 className="w-4 h-4 animate-spin" /> กำลังบันทึก...</>
@@ -1261,7 +1261,7 @@ export default function GrabOrdersPage() {
               </div>
 
               <div className="text-right">
-                <p className="text-2xl font-bold text-[#8B6F4E]">฿{formatCurrency(selectedOrder.grand_total)}</p>
+                <p className="text-2xl font-bold text-[#7D735F]">฿{formatCurrency(selectedOrder.grand_total)}</p>
                 <div className="flex gap-1 mt-2">
                   {selectedOrder.order_image_url && (
                     <button
@@ -1280,7 +1280,7 @@ export default function GrabOrdersPage() {
           {/* Pick checklist */}
           <Card className="p-4">
             <div className="flex justify-between items-center mb-3">
-              <h3 className="font-bold text-[#5D4E37]">
+              <h3 className="font-bold text-[#7D735F]">
                 <Package className="w-4 h-4 inline mr-1" />
                 รายการหยิบสินค้า ({orderItems.filter(i => i.is_picked).length}/{orderItems.length})
               </h3>
@@ -1315,7 +1315,7 @@ export default function GrabOrdersPage() {
                   </button>
 
                   <div className="flex-1 min-w-0">
-                    <p className={`font-medium ${item.is_picked ? 'line-through text-gray-400' : 'text-[#5D4E37]'}`}>
+                    <p className={`font-medium ${item.is_picked ? 'line-through text-gray-400' : 'text-[#7D735F]'}`}>
                       {item.item_name}
                     </p>
                     {item.matched_product_name && (
@@ -1327,7 +1327,7 @@ export default function GrabOrdersPage() {
                   </div>
 
                   <div className="text-right flex-shrink-0">
-                    <span className="font-bold text-[#8B6F4E] text-lg">{item.quantity}</span>
+                    <span className="font-bold text-[#7D735F] text-lg">{item.quantity}</span>
                     <p className="text-xs text-gray-400">฿{formatCurrency(item.total_price)}</p>
                   </div>
                 </div>
@@ -1338,14 +1338,14 @@ export default function GrabOrdersPage() {
           {/* Pick verification */}
           {(selectedOrder.status === 'picking' || selectedOrder.status === 'scanned') && (
             <Card className="p-4">
-              <h3 className="font-bold text-[#5D4E37] mb-3">
+              <h3 className="font-bold text-[#7D735F] mb-3">
                 <Camera className="w-4 h-4 inline mr-1" />
                 ถ่ายรูปยืนยันการหยิบสินค้า
               </h3>
 
               <div className="space-y-3">
                 <div
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-[#8B6F4E]"
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-[#A67B5B]"
                   onClick={() => pickInputRef.current?.click()}
                 >
                   <Camera className="w-8 h-8 mx-auto mb-2 text-gray-400" />

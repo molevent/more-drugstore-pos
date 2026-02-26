@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { FileText, Plus, Search, Trash2, Edit2, BookOpen, Printer, Calendar as CalendarIcon, ChevronLeft, ChevronRight, ArrowLeft, AlertTriangle, Clock, CheckCircle, Upload, CheckSquare, Square } from 'lucide-react'
+import { FileText, Plus, Search, Trash2, Edit2, BookOpen, Printer, Calendar as CalendarIcon, ChevronLeft, ChevronRight, ArrowLeft, AlertTriangle, Clock, CheckCircle, Upload, CheckSquare, Square, Eye } from 'lucide-react'
 import { getExpenseCategories, syncPaymentVouchersToFlowAccount } from '../services/flowaccount'
 
 interface CreditAlert {
@@ -53,6 +53,10 @@ export default function PaymentVoucherPage() {
   const [editingVoucher, setEditingVoucher] = useState<PaymentVoucher | null>(null)
   const [showPrintModal, setShowPrintModal] = useState(false)
   const [printVoucher, setPrintVoucher] = useState<PaymentVoucher | null>(null)
+  const [printLinkedExpenses, setPrintLinkedExpenses] = useState<any[]>([])
+  const [showExpenseDetail, setShowExpenseDetail] = useState(false)
+  const [detailExpenses, setDetailExpenses] = useState<any[]>([])
+  const [detailVoucherNumber, setDetailVoucherNumber] = useState('')
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list')
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const printRef = useRef<HTMLDivElement>(null)
@@ -385,6 +389,38 @@ export default function PaymentVoucherPage() {
     }
   }
 
+  // View linked expenses for a voucher
+  const handleViewExpenses = async (voucher: PaymentVoucher) => {
+    try {
+      const { data } = await supabase
+        .from('expenses')
+        .select('id, description, amount, expense_date, document_date, receipt_number, category, vendor, vat_amount, payment_method')
+        .eq('payment_voucher_id', voucher.id)
+        .order('document_date', { ascending: true })
+      setDetailExpenses(data || [])
+      setDetailVoucherNumber(voucher.voucher_number)
+      setShowExpenseDetail(true)
+    } catch {
+      alert('ไม่สามารถโหลดรายการค่าใช้จ่ายได้')
+    }
+  }
+
+  // Fetch linked expenses for a voucher and open print modal
+  const handleOpenPrint = async (voucher: PaymentVoucher) => {
+    setPrintVoucher(voucher)
+    try {
+      const { data } = await supabase
+        .from('expenses')
+        .select('id, description, amount, expense_date, document_date, receipt_number, category, vendor, vat_amount')
+        .eq('payment_voucher_id', voucher.id)
+        .order('document_date', { ascending: true })
+      setPrintLinkedExpenses(data || [])
+    } catch {
+      setPrintLinkedExpenses([])
+    }
+    setShowPrintModal(true)
+  }
+
   const filteredVouchers = vouchers.filter(voucher =>
     voucher.voucher_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
     voucher.payee_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -647,14 +683,18 @@ export default function PaymentVoucherPage() {
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button
-                            onClick={() => {
-                              setPrintVoucher(voucher)
-                              setShowPrintModal(true)
-                            }}
+                            onClick={() => handleOpenPrint(voucher)}
                             className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                             title="พิมพ์ใบสำคัญจ่าย"
                           >
                             <Printer className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleViewExpenses(voucher)}
+                            className="p-1.5 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                            title="ดูรายการค่าใช้จ่าย"
+                          >
+                            <Eye className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleEdit(voucher)}
@@ -1063,28 +1103,64 @@ export default function PaymentVoucherPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-b border-gray-300">
-                    <td className="py-2 px-2">{printVoucher.voucher_date}</td>
-                    <td className="py-2 px-2">{printVoucher.description}</td>
-                    <td className="py-2 px-2">{printVoucher.voucher_number}</td>
-                    <td className="py-2 px-2 text-right">
-                      {printVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="py-2 px-2 text-right">0.00</td>
-                    <td className="py-2 px-2 text-right">
-                      {printVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                    </td>
-                  </tr>
-                  <tr className="border-t-2 border-gray-800 font-medium bg-gray-50">
-                    <td className="py-2 px-2" colSpan={3}></td>
-                    <td className="py-2 px-2 text-right">
-                      {printVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="py-2 px-2 text-right">0.00</td>
-                    <td className="py-2 px-2 text-right">
-                      {printVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                    </td>
-                  </tr>
+                  {printLinkedExpenses.length > 0 ? (
+                    printLinkedExpenses.map((exp, idx) => {
+                      const vatAmt = exp.vat_amount || 0
+                      const preVat = exp.amount - vatAmt
+                      return (
+                        <tr key={idx} className="border-b border-gray-300">
+                          <td className="py-2 px-2">{exp.document_date || exp.expense_date || printVoucher.voucher_date}</td>
+                          <td className="py-2 px-2">{exp.description}</td>
+                          <td className="py-2 px-2">{exp.receipt_number || '-'}</td>
+                          <td className="py-2 px-2 text-right">
+                            {preVat.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-2 px-2 text-right">
+                            {vatAmt.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-2 px-2 text-right">
+                            {exp.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      )
+                    })
+                  ) : (
+                    <tr className="border-b border-gray-300">
+                      <td className="py-2 px-2">{printVoucher.voucher_date}</td>
+                      <td className="py-2 px-2">{printVoucher.description}</td>
+                      <td className="py-2 px-2">{printVoucher.voucher_number}</td>
+                      <td className="py-2 px-2 text-right">
+                        {printVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-2 px-2 text-right">0.00</td>
+                      <td className="py-2 px-2 text-right">
+                        {printVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  )}
+                  {(() => {
+                    const totalAmt = printLinkedExpenses.length > 0
+                      ? printLinkedExpenses.reduce((s: number, e: any) => s + (e.amount || 0), 0)
+                      : printVoucher.amount
+                    const totalVat = printLinkedExpenses.length > 0
+                      ? printLinkedExpenses.reduce((s: number, e: any) => s + (e.vat_amount || 0), 0)
+                      : 0
+                    const totalPreVat = totalAmt - totalVat
+                    return (
+                      <tr className="border-t-2 border-gray-800 font-medium bg-gray-50">
+                        <td className="py-2 px-2" colSpan={3}></td>
+                        <td className="py-2 px-2 text-right">
+                          {totalPreVat.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-2 px-2 text-right">
+                          {totalVat.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-2 px-2 text-right">
+                          {totalAmt.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    )
+                  })()}
                 </tbody>
               </table>
 
@@ -1108,22 +1184,34 @@ export default function PaymentVoucherPage() {
 
                 {/* Right - Summary */}
                 <div className="w-1/2 pl-8">
-                  <div className="flex justify-between py-1 border-b border-gray-200">
-                    <span className="text-gray-600">รวม</span>
-                    <span>{printVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-gray-200">
-                    <span className="text-gray-600">ภาษีหัก ณ ที่จ่าย</span>
-                    <span>0.00</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-gray-200">
-                    <span className="text-gray-600">ภาษีมูลค่าเพิ่ม</span>
-                    <span>0.00</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b-2 border-gray-800 font-medium">
-                    <span>รวมทั้งสิ้น</span>
-                    <span>{printVoucher.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
-                  </div>
+                  {(() => {
+                    const totalAmt = printLinkedExpenses.length > 0
+                      ? printLinkedExpenses.reduce((s: number, e: any) => s + (e.amount || 0), 0)
+                      : printVoucher.amount
+                    const totalVat = printLinkedExpenses.length > 0
+                      ? printLinkedExpenses.reduce((s: number, e: any) => s + (e.vat_amount || 0), 0)
+                      : 0
+                    return (
+                      <>
+                        <div className="flex justify-between py-1 border-b border-gray-200">
+                          <span className="text-gray-600">รวม</span>
+                          <span>{totalAmt.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex justify-between py-1 border-b border-gray-200">
+                          <span className="text-gray-600">ภาษีหัก ณ ที่จ่าย</span>
+                          <span>0.00</span>
+                        </div>
+                        <div className="flex justify-between py-1 border-b border-gray-200">
+                          <span className="text-gray-600">ภาษีมูลค่าเพิ่ม</span>
+                          <span>{totalVat.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex justify-between py-1 border-b-2 border-gray-800 font-medium">
+                          <span>รวมทั้งสิ้น</span>
+                          <span>{totalAmt.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                      </>
+                    )
+                  })()}
                 </div>
               </div>
             </div>
@@ -1189,6 +1277,84 @@ export default function PaymentVoucherPage() {
                 className="flex-1 px-4 py-2 bg-[#2B9CD8] hover:bg-[#2488C0] disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
               >
                 เริ่ม Sync
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Expense Detail Modal */}
+      {showExpenseDetail && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-auto">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-[700px]">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-bold text-gray-900">
+                รายการค่าใช้จ่าย — {detailVoucherNumber}
+              </h3>
+              <button
+                onClick={() => setShowExpenseDetail(false)}
+                className="p-1 text-gray-400 hover:text-gray-600 rounded"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-4">
+              {detailExpenses.length === 0 ? (
+                <p className="text-center text-gray-500 py-6">ไม่พบรายการค่าใช้จ่ายที่เชื่อมโยง</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-medium text-gray-600">วันที่</th>
+                        <th className="px-3 py-2 text-left font-medium text-gray-600">เลขที่ใบเสร็จ</th>
+                        <th className="px-3 py-2 text-left font-medium text-gray-600">รายการ</th>
+                        <th className="px-3 py-2 text-left font-medium text-gray-600">ผู้ขาย</th>
+                        <th className="px-3 py-2 text-left font-medium text-gray-600">หมวดหมู่</th>
+                        <th className="px-3 py-2 text-right font-medium text-gray-600">จำนวนเงิน</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {detailExpenses.map((exp: any) => (
+                        <tr key={exp.id} className="hover:bg-gray-50">
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            {exp.document_date
+                              ? new Date(exp.document_date).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' })
+                              : exp.expense_date
+                              ? new Date(exp.expense_date).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' })
+                              : '-'
+                            }
+                          </td>
+                          <td className="px-3 py-2 font-mono text-xs">{exp.receipt_number || '-'}</td>
+                          <td className="px-3 py-2">{exp.description}</td>
+                          <td className="px-3 py-2 text-gray-600">{exp.vendor || '-'}</td>
+                          <td className="px-3 py-2">
+                            <span className="px-2 py-0.5 bg-gray-100 rounded-full text-xs">{exp.category || '-'}</span>
+                          </td>
+                          <td className="px-3 py-2 text-right font-medium">
+                            ฿{(exp.amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t-2 border-gray-800 font-medium bg-gray-50">
+                        <td colSpan={5} className="px-3 py-2 text-right">รวม</td>
+                        <td className="px-3 py-2 text-right">
+                          ฿{detailExpenses.reduce((s: number, e: any) => s + (e.amount || 0), 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
+            </div>
+            <div className="p-4 border-t bg-gray-50">
+              <button
+                onClick={() => setShowExpenseDetail(false)}
+                className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
+              >
+                ปิด
               </button>
             </div>
           </div>
