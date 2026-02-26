@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { supabase } from '../services/supabase'
-import { scanGrabOrder, verifyPickedItems, GrabOrderData } from '../services/grabOrderOcr'
+import { scanGrabOrder, verifyPickedItems, scanAndVerifyOrder, GrabOrderData, CombinedScanResult } from '../services/grabOrderOcr'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuthStore } from '../stores/authStore'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import { GrabOrder, GrabOrderItem } from '../types/database'
+import { zortOutService } from '../services/zortout'
+import { getAutoSyncConfig } from './FlowAccountSettingsPage'
+import { convertOrderToCashInvoice, createInvoice } from '../services/flowaccount'
 import {
   Camera, Upload, ScanLine, Check, X, Package, Loader2,
   Eye, Truck, CheckCircle2, XCircle,
@@ -74,12 +77,17 @@ export default function GrabOrdersPage() {
   const [scanStep, setScanStep] = useState<ScanStep>('upload')
   const [files, setFiles] = useState<File[]>([])
   const [previews, setPreviews] = useState<string[]>([])
+  const [newPickFiles, setNewPickFiles] = useState<File[]>([])
+  const [newPickPreviews, setNewPickPreviews] = useState<string[]>([])
   const [scanning, setScanning] = useState(false)
   const [scanResult, setScanResult] = useState<GrabOrderData | null>(null)
+  const [combinedResult, setCombinedResult] = useState<CombinedScanResult | null>(null)
   const [scanError, setScanError] = useState('')
   const [saving, setSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
+  const newPickInputRef = useRef<HTMLInputElement>(null)
+  const newPickCameraRef = useRef<HTMLInputElement>(null)
 
   // Detail / Pick state
   const [orderItems, setOrderItems] = useState<MatchedOrderItem[]>([])
@@ -89,6 +97,7 @@ export default function GrabOrdersPage() {
   const [verifying, setVerifying] = useState(false)
   const [verifyResult, setVerifyResult] = useState<any>(null)
   const pickInputRef = useRef<HTMLInputElement>(null)
+  const [imagePopup, setImagePopup] = useState<string | null>(null)
 
   // ─── Load orders ─────────────────────────────────────────
 
@@ -162,6 +171,25 @@ export default function GrabOrdersPage() {
     setPreviews(prev => prev.filter((_, i) => i !== index))
   }
 
+  const handleNewPickFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files || [])
+    if (selectedFiles.length === 0) return
+    setNewPickFiles(prev => [...prev, ...selectedFiles])
+    selectedFiles.forEach(file => {
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        setNewPickPreviews(prev => [...prev, ev.target?.result as string])
+      }
+      reader.readAsDataURL(file)
+    })
+    setScanError('')
+  }
+
+  const removeNewPickFile = (index: number) => {
+    setNewPickFiles(prev => prev.filter((_, i) => i !== index))
+    setNewPickPreviews(prev => prev.filter((_, i) => i !== index))
+  }
+
   // ─── OCR Scan ────────────────────────────────────────────
 
   const handleScan = async () => {
@@ -171,9 +199,19 @@ export default function GrabOrdersPage() {
     setScanStep('scanning')
 
     try {
-      const result = await scanGrabOrder(files)
-      setScanResult(result)
-      setScanStep('review')
+      // Combined mode: order + pick photos together
+      if (newPickFiles.length > 0) {
+        const result = await scanAndVerifyOrder(files, newPickFiles)
+        setCombinedResult(result)
+        setScanResult(result.order)
+        setScanStep('review')
+      } else {
+        // Order-only mode
+        const result = await scanGrabOrder(files)
+        setScanResult(result)
+        setCombinedResult(null)
+        setScanStep('review')
+      }
     } catch (err: any) {
       setScanError(err.message || 'เกิดข้อผิดพลาดในการสแกน')
       setScanStep('upload')
@@ -205,6 +243,25 @@ export default function GrabOrdersPage() {
         }
       }
 
+      // Upload pick image if combined mode
+      let pickImageUrl = ''
+      if (newPickFiles.length > 0) {
+        const pickFile = newPickFiles[0]
+        const pickPath = `picks/${Date.now()}_${pickFile.name}`
+        const { error: pickUploadErr } = await supabase.storage
+          .from('grab-orders')
+          .upload(pickPath, pickFile)
+        if (!pickUploadErr) {
+          const { data: pickUrlData } = supabase.storage
+            .from('grab-orders')
+            .getPublicUrl(pickPath)
+          pickImageUrl = pickUrlData.publicUrl
+        }
+      }
+
+      const hasPick = combinedResult?.verification != null
+      const isVerified = hasPick && combinedResult?.verification?.overall_match === true
+
       // Match items with products
       const matchedItems = scanResult.items.map(item => {
         const match = findBestProductMatch(item.item_name, products)
@@ -217,7 +274,7 @@ export default function GrabOrdersPage() {
           matched_product_id: match?.id || null,
           matched_product_name: match?.name_th || null,
           match_confidence: match ? match.score : 0,
-          is_picked: false,
+          is_picked: hasPick ? true : false,
         }
       })
 
@@ -240,9 +297,13 @@ export default function GrabOrdersPage() {
           platform_fee: scanResult.platform_fee || 0,
           vat: scanResult.vat || 0,
           grand_total: scanResult.grand_total || 0,
-          status: 'scanned',
+          status: isVerified ? 'verified' : hasPick ? 'picking' : 'scanned',
           order_image_url: orderImageUrl,
-          ocr_raw_json: scanResult,
+          pick_image_url: pickImageUrl || null,
+          picked_by: hasPick ? (user?.full_name || user?.email || '') : null,
+          verified_at: isVerified ? new Date().toISOString() : null,
+          verified_by: isVerified ? (user?.full_name || user?.email || '') : null,
+          ocr_raw_json: combinedResult || scanResult,
           order_date: new Date().toISOString().split('T')[0],
         })
         .select()
@@ -261,6 +322,9 @@ export default function GrabOrdersPage() {
         if (itemsError) throw itemsError
       }
 
+      // Auto-create sales order in orders/order_items table
+      await createSalesOrderFromGrab(order, matchedItems)
+
       setScanStep('saved')
       fetchOrders()
 
@@ -275,6 +339,193 @@ export default function GrabOrdersPage() {
       setScanError(err.message || 'ไม่สามารถบันทึกออเดอร์ได้')
     } finally {
       setSaving(false)
+    }
+  }
+
+  // ─── Auto-create sales order from Grab order ───────────
+
+  const createSalesOrderFromGrab = async (
+    grabOrder: any,
+    matchedItems: Array<{
+      item_name: string
+      quantity: number
+      unit_price: number
+      total_price: number
+      notes: string
+      matched_product_id: string | null
+      matched_product_name: string | null
+      match_confidence: number
+      is_picked: boolean
+    }>
+  ) => {
+    try {
+      // Only items with matched products can be inserted (product_id is NOT NULL)
+      const salesItems = matchedItems.filter(item => item.matched_product_id)
+      if (salesItems.length === 0) {
+        console.warn('[Grab→Sales] No matched products — skipping sales order creation')
+        return
+      }
+
+      const userId = (await supabase.auth.getUser()).data.user?.id
+      if (!userId) {
+        console.warn('[Grab→Sales] No auth user — skipping sales order creation')
+        return
+      }
+
+      // Lookup Grab platform ID
+      const { data: platformData } = await supabase
+        .from('platforms')
+        .select('id')
+        .eq('code', 'GRAB')
+        .single()
+
+      if (!platformData) {
+        console.warn('[Grab→Sales] GRAB platform not found in platforms table — skipping')
+        return
+      }
+
+      // Generate unique order number for sales order
+      const salesOrderNumber = `GRAB-${grabOrder.order_number || Date.now()}`
+
+      // Create sales order
+      const { data: salesOrder, error: salesOrderError } = await supabase
+        .from('orders')
+        .insert({
+          order_number: salesOrderNumber,
+          user_id: userId,
+          platform_id: platformData.id,
+          customer_name: grabOrder.customer_name || 'ลูกค้า Grab',
+          customer_phone: grabOrder.customer_phone || null,
+          subtotal: grabOrder.subtotal || grabOrder.grand_total || 0,
+          discount: grabOrder.discount || 0,
+          tax: grabOrder.vat || 0,
+          total: grabOrder.grand_total || 0,
+          payment_method: 'grab_wallet',
+          payment_status: 'paid',
+          notes: `Grab Order: ${grabOrder.order_number || ''} | Driver: ${grabOrder.driver_name || '-'}`,
+        })
+        .select()
+        .single()
+
+      if (salesOrderError) {
+        console.error('[Grab→Sales] Error creating sales order:', salesOrderError)
+        return
+      }
+
+      console.log('[Grab→Sales] Sales order created:', salesOrder.id, salesOrderNumber)
+
+      // Create order items
+      const orderItems = salesItems.map(item => ({
+        order_id: salesOrder.id,
+        product_id: item.matched_product_id!,
+        product_name: item.matched_product_name || item.item_name,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        discount: 0,
+        total_price: item.total_price,
+      }))
+
+      const { error: orderItemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems)
+
+      if (orderItemsError) {
+        console.error('[Grab→Sales] Error creating order items:', orderItemsError)
+      }
+
+      // Link grab_order to sales order
+      await supabase
+        .from('grab_orders')
+        .update({ sales_order_id: salesOrder.id })
+        .eq('id', grabOrder.id)
+
+      // ── Sync to ZortOut (async — don't block UI) ──
+      try {
+        // Get product SKUs for ZortOut sync
+        const productIds = salesItems.map(i => i.matched_product_id).filter(Boolean)
+        const { data: productDetails } = await supabase
+          .from('products')
+          .select('id, sku, barcode, name_th, base_price')
+          .in('id', productIds)
+
+        const productMap = new Map((productDetails || []).map(p => [p.id, p]))
+
+        const zortItems = salesItems.map(item => {
+          const prod = productMap.get(item.matched_product_id!)
+          return {
+            sku: prod?.sku || prod?.barcode || '',
+            name: item.matched_product_name || item.item_name,
+            quantity: item.quantity,
+            price: item.unit_price,
+          }
+        }).filter(i => i.sku) // Only items with SKU
+
+        if (zortItems.length > 0) {
+          zortOutService.syncOrderAndStockToZortOut({
+            customername: grabOrder.customer_name || 'ลูกค้า Grab',
+            items: zortItems,
+            total: grabOrder.grand_total || 0,
+            paymentmethod: 'Grab Wallet',
+            notes: `Grab Order: ${salesOrderNumber}`,
+          }).then(result => {
+            if (result.orderSuccess) {
+              console.log('[Grab→ZortOut] Order synced:', result.orderId)
+              // Update zortout_synced flag
+              supabase.from('orders').update({ zortout_synced: true, zortout_order_id: String(result.orderId) }).eq('id', salesOrder.id).then(() => {})
+            } else {
+              console.warn('[Grab→ZortOut] Sync failed:', result.error)
+            }
+          }).catch(err => console.error('[Grab→ZortOut] Error:', err))
+        }
+      } catch (zortErr) {
+        console.error('[Grab→ZortOut] Exception:', zortErr)
+      }
+
+      // ── Auto-sync to FlowAccount (async — don't block UI) ──
+      try {
+        const faAutoSync = getAutoSyncConfig()
+        if (faAutoSync.enabled) {
+          const faOrderData = convertOrderToCashInvoice({
+            order_number: salesOrderNumber,
+            customer_name: grabOrder.customer_name || 'ลูกค้า Grab',
+            total: grabOrder.grand_total || 0,
+            subtotal: grabOrder.subtotal || grabOrder.grand_total || 0,
+            discount: grabOrder.discount || 0,
+            payment_method: 'Grab Wallet',
+            created_at: new Date().toISOString(),
+            platform_name: 'GRAB',
+            items: salesItems.map(item => ({
+              product_name: item.matched_product_name || item.item_name,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              discount: 0,
+              total_price: item.total_price,
+            })),
+          })
+
+          createInvoice(faOrderData, 'cash-invoice').then((result: any) => {
+            const faId = result?.data?.recordId || result?.data?.documentId
+            console.log(`[Grab→FA] Cash invoice created for ${salesOrderNumber}, FA ID: ${faId}`)
+            if (faId) {
+              supabase
+                .from('orders')
+                .update({ flowaccount_id: faId, flowaccount_synced_at: new Date().toISOString() })
+                .eq('id', salesOrder.id)
+                .then(() => console.log(`[Grab→FA] Order updated with FA ID ${faId}`))
+            }
+          }).catch(err => {
+            console.warn(`[Grab→FA] Failed for ${salesOrderNumber}:`, err.message)
+          })
+        }
+      } catch (faErr) {
+        console.error('[Grab→FA] Exception:', faErr)
+      }
+
+      console.log('[Grab→Sales] Complete — sales order + syncs initiated for', salesOrderNumber)
+
+    } catch (err) {
+      console.error('[Grab→Sales] Unexpected error:', err)
+      // Don't throw — this is a secondary action, grab order is already saved
     }
   }
 
@@ -455,7 +706,10 @@ export default function GrabOrdersPage() {
   const resetNewOrder = () => {
     setFiles([])
     setPreviews([])
+    setNewPickFiles([])
+    setNewPickPreviews([])
     setScanResult(null)
+    setCombinedResult(null)
     setScanError('')
     setScanStep('upload')
     setViewMode('list')
@@ -484,7 +738,7 @@ export default function GrabOrdersPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
           <h1 className="text-xl font-bold text-[#5D4E37]">
-            {viewMode === 'new' ? '📸 สแกนออเดอร์ใหม่' : viewMode === 'detail' ? `📦 ${selectedOrder?.order_number}` : '🛵 ออเดอร์เดลิเวอรี่'}
+            {viewMode === 'new' ? '📸 สแกนออเดอร์ใหม่' : viewMode === 'detail' ? `📦 ${selectedOrder?.order_number}` : '🛵 ออเดอร์ GRAB'}
           </h1>
           {viewMode === 'list' && (
             <p className="text-sm text-gray-500 mt-1">ถ่ายรูปออเดอร์ → AI อ่านข้อมูล → หยิบของ → ถ่ายรูปเช็ค</p>
@@ -494,9 +748,9 @@ export default function GrabOrdersPage() {
           {viewMode !== 'list' && (
             <Button
               onClick={() => { resetNewOrder(); setViewMode('list'); setSelectedOrder(null) }}
-              className="bg-gray-200 text-gray-700 hover:bg-gray-300"
+              className="bg-[#5D4E37] text-white hover:bg-[#4A3D2B]"
             >
-              ← กลับ
+              ← กลับไปหน้าออเดอร์
             </Button>
           )}
           {viewMode === 'list' && (
@@ -640,11 +894,12 @@ export default function GrabOrdersPage() {
         <Card className="p-6">
           {/* Step indicator */}
           <div className="flex items-center justify-center gap-2 mb-6">
-            {['ถ่ายรูป', 'สแกน AI', 'ตรวจสอบ', 'บันทึก'].map((step, i) => {
-              const stepKeys: ScanStep[] = ['upload', 'scanning', 'review', 'saved']
-              const currentIdx = stepKeys.indexOf(scanStep)
-              const isActive = i === currentIdx
-              const isDone = i < currentIdx
+            {['ถ่ายรูป', 'AI ประมวลผล', 'ตรวจสอบ & บันทึก'].map((step, i) => {
+              const stepKeys: ScanStep[] = ['upload', 'scanning', 'review']
+              const currentIdx = Math.min(stepKeys.indexOf(scanStep), 2)
+              const savedIdx = scanStep === 'saved' ? 3 : currentIdx
+              const isActive = i === savedIdx || (i === 2 && scanStep === 'saved')
+              const isDone = i < savedIdx || scanStep === 'saved'
               return (
                 <div key={step} className="flex items-center gap-2">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
@@ -655,73 +910,105 @@ export default function GrabOrdersPage() {
                   <span className={`text-xs hidden sm:inline ${isActive ? 'text-[#5D4E37] font-bold' : 'text-gray-400'}`}>
                     {step}
                   </span>
-                  {i < 3 && <div className="w-8 h-0.5 bg-gray-200" />}
+                  {i < 2 && <div className="w-8 h-0.5 bg-gray-200" />}
                 </div>
               )
             })}
           </div>
 
-          {/* Upload step */}
+          {/* Upload step — 2 zones */}
           {(scanStep === 'upload' || scanStep === 'scanning') && (
             <div className="space-y-4">
-              {/* Upload area */}
-              <div
-                className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-[#8B6F4E] transition-colors cursor-pointer"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-                <p className="text-gray-600 font-medium">อัพโหลดรูปออเดอร์</p>
-                <p className="text-xs text-gray-400 mt-1">คลิกเพื่อเลือกรูป หรือถ่ายรูปจากกล้อง</p>
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Zone 1: Order photos */}
+                <div className="space-y-3">
+                  <h3 className="font-bold text-[#5D4E37] text-sm flex items-center gap-1">
+                    <FileText className="w-4 h-4" /> 1. รูปออเดอร์ <span className="text-red-500">*</span>
+                  </h3>
+                  <div
+                    className="border-2 border-dashed border-green-300 rounded-xl p-6 text-center hover:border-green-500 transition-colors cursor-pointer bg-green-50/30"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="w-8 h-8 mx-auto mb-2 text-green-400" />
+                    <p className="text-sm text-gray-600">ถ่ายรูปหน้าจอออเดอร์</p>
+                  </div>
+                  <div className="flex gap-2 justify-center">
+                    <button type="button" onClick={() => cameraInputRef.current?.click()} className="px-3 py-1.5 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 flex items-center gap-1">
+                      <Camera className="w-3.5 h-3.5" /> ถ่ายรูป
+                    </button>
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 flex items-center gap-1">
+                      <Upload className="w-3.5 h-3.5" /> เลือกรูป
+                    </button>
+                  </div>
+                  <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileSelect} />
+                  <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileSelect} />
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={handleFileSelect}
-              />
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={handleFileSelect}
-              />
-
-              <div className="flex gap-2 justify-center">
-                <Button
-                  onClick={() => cameraInputRef.current?.click()}
-                  className="bg-blue-500 text-white hover:bg-blue-600"
-                >
-                  <Camera className="w-4 h-4 mr-1" /> ถ่ายรูป
-                </Button>
-                <Button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="bg-gray-200 text-gray-700 hover:bg-gray-300"
-                >
-                  <Upload className="w-4 h-4 mr-1" /> เลือกรูป
-                </Button>
-              </div>
-
-              {/* Previews */}
-              {previews.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {previews.map((preview, i) => (
-                    <div key={i} className="relative group">
-                      <img src={preview} alt="" className="w-full h-40 object-cover rounded-lg" />
-                      <button
-                        onClick={(e) => { e.stopPropagation(); removeFile(i) }}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
+                  {previews.length > 0 && (
+                    <div className="grid grid-cols-2 gap-2">
+                      {previews.map((preview, i) => (
+                        <div key={i} className="relative group">
+                          <img src={preview} alt="" className="w-full h-28 object-cover rounded-lg border-2 border-green-200" />
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); removeFile(i) }}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-80 hover:opacity-100"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
+                  {previews.length > 0 && (
+                    <p className="text-xs text-green-600 text-center">✓ {previews.length} รูปออเดอร์</p>
+                  )}
                 </div>
-              )}
+
+                {/* Zone 2: Pick photos */}
+                <div className="space-y-3">
+                  <h3 className="font-bold text-[#5D4E37] text-sm flex items-center gap-1">
+                    <Package className="w-4 h-4" /> 2. รูปสินค้าที่หยิบ <span className="text-xs text-gray-400">(ไม่บังคับ)</span>
+                  </h3>
+                  <div
+                    className="border-2 border-dashed border-blue-300 rounded-xl p-6 text-center hover:border-blue-500 transition-colors cursor-pointer bg-blue-50/30"
+                    onClick={() => newPickInputRef.current?.click()}
+                  >
+                    <Camera className="w-8 h-8 mx-auto mb-2 text-blue-400" />
+                    <p className="text-sm text-gray-600">ถ่ายรูปสินค้าที่หยิบแล้ว</p>
+                    <p className="text-xs text-gray-400 mt-0.5">AI จะตรวจให้เลยว่าหยิบครบ</p>
+                  </div>
+                  <div className="flex gap-2 justify-center">
+                    <button type="button" onClick={() => newPickCameraRef.current?.click()} className="px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 flex items-center gap-1">
+                      <Camera className="w-3.5 h-3.5" /> ถ่ายรูป
+                    </button>
+                    <button type="button" onClick={() => newPickInputRef.current?.click()} className="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 flex items-center gap-1">
+                      <Upload className="w-3.5 h-3.5" /> เลือกรูป
+                    </button>
+                  </div>
+                  <input ref={newPickInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleNewPickFileSelect} />
+                  <input ref={newPickCameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleNewPickFileSelect} />
+
+                  {newPickPreviews.length > 0 && (
+                    <div className="grid grid-cols-2 gap-2">
+                      {newPickPreviews.map((preview, i) => (
+                        <div key={i} className="relative group">
+                          <img src={preview} alt="" className="w-full h-28 object-cover rounded-lg border-2 border-blue-200" />
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); removeNewPickFile(i) }}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-80 hover:opacity-100"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {newPickPreviews.length > 0 && (
+                    <p className="text-xs text-blue-600 text-center">✓ {newPickPreviews.length} รูปสินค้า</p>
+                  )}
+                </div>
+              </div>
 
               {scanError && (
                 <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm">
@@ -730,17 +1017,24 @@ export default function GrabOrdersPage() {
               )}
 
               {/* Scan button */}
-              <Button
+              <button
+                type="button"
                 onClick={handleScan}
                 disabled={files.length === 0 || scanning}
-                className="w-full bg-[#8B6F4E] text-white hover:bg-[#7A5F3E] disabled:opacity-50 py-3"
+                className="w-full px-4 py-3 bg-[#8B6F4E] text-white font-medium rounded-lg hover:bg-[#7A5F3E] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
               >
                 {scanning ? (
-                  <><Loader2 className="w-4 h-4 animate-spin mr-2" /> AI กำลังอ่านข้อมูล...</>
+                  <><Loader2 className="w-5 h-5 animate-spin" /> AI กำลังประมวลผล{newPickFiles.length > 0 ? ' (อ่านออเดอร์ + เช็คสินค้า)' : ''}...</>
                 ) : (
-                  <><ScanLine className="w-4 h-4 mr-2" /> สแกนด้วย AI</>
+                  <><ScanLine className="w-5 h-5" /> {newPickFiles.length > 0 ? 'สแกนออเดอร์ + ตรวจสินค้า ด้วย AI' : 'สแกนออเดอร์ด้วย AI'}</>
                 )}
-              </Button>
+              </button>
+
+              {newPickFiles.length > 0 && !scanning && (
+                <p className="text-xs text-center text-gray-400">
+                  AI จะอ่านออเดอร์ + เทียบสินค้าที่หยิบให้ในรอบเดียว ⚡
+                </p>
+              )}
             </div>
           )}
 
@@ -804,6 +1098,48 @@ export default function GrabOrdersPage() {
                 </div>
               </div>
 
+              {/* Combined verification result */}
+              {combinedResult?.verification && (
+                <div className={`p-4 rounded-lg ${combinedResult.verification.overall_match ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200'}`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    {combinedResult.verification.overall_match ? (
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                    )}
+                    <span className="font-bold">
+                      {combinedResult.verification.overall_match ? 'หยิบของครบถูกต้อง ✅' : 'พบรายการที่ไม่ตรง ⚠️'}
+                    </span>
+                    <span className="text-xs text-gray-500">ความมั่นใจ {combinedResult.verification.confidence}%</span>
+                  </div>
+
+                  {combinedResult.verification.items_found?.length > 0 && (
+                    <div className="text-sm space-y-0.5 mb-2">
+                      <p className="font-medium text-gray-600">สินค้าที่พบในรูป:</p>
+                      {combinedResult.verification.items_found.map((item, i) => (
+                        <p key={i} className="text-gray-700">
+                          ✓ {item.item_name} × {item.quantity_visible}
+                          {item.notes && <span className="text-gray-400 text-xs ml-1">({item.notes})</span>}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+
+                  {combinedResult.verification.missing_items?.length > 0 && (
+                    <div className="text-sm space-y-0.5 mb-2">
+                      <p className="font-medium text-red-600">สินค้าที่ไม่พบ:</p>
+                      {combinedResult.verification.missing_items.map((name, i) => (
+                        <p key={i} className="text-red-700">✗ {name}</p>
+                      ))}
+                    </div>
+                  )}
+
+                  {combinedResult.verification.notes && (
+                    <p className="text-xs text-gray-500 mt-1">{combinedResult.verification.notes}</p>
+                  )}
+                </div>
+              )}
+
               {scanError && (
                 <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm">
                   <AlertTriangle className="w-4 h-4 inline mr-1" /> {scanError}
@@ -811,23 +1147,25 @@ export default function GrabOrdersPage() {
               )}
 
               <div className="flex gap-2">
-                <Button
-                  onClick={() => { setScanStep('upload'); setScanResult(null) }}
-                  className="flex-1 bg-gray-200 text-gray-700 hover:bg-gray-300"
+                <button
+                  type="button"
+                  onClick={() => { setScanStep('upload'); setScanResult(null); setCombinedResult(null) }}
+                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors flex items-center justify-center gap-1"
                 >
-                  <Camera className="w-4 h-4 mr-1" /> สแกนใหม่
-                </Button>
-                <Button
+                  <Camera className="w-4 h-4" /> สแกนใหม่
+                </button>
+                <button
+                  type="button"
                   onClick={handleSaveOrder}
                   disabled={saving}
-                  className="flex-1 bg-[#8B6F4E] text-white hover:bg-[#7A5F3E] disabled:opacity-50"
+                  className="flex-1 px-4 py-2 bg-[#8B6F4E] text-white font-medium rounded-lg hover:bg-[#7A5F3E] disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
                 >
                   {saving ? (
-                    <><Loader2 className="w-4 h-4 animate-spin mr-1" /> กำลังบันทึก...</>
+                    <><Loader2 className="w-4 h-4 animate-spin" /> กำลังบันทึก...</>
                   ) : (
-                    <><Check className="w-4 h-4 mr-1" /> ยืนยันและบันทึก</>
+                    <><Check className="w-4 h-4" /> ยืนยันและบันทึก</>
                   )}
-                </Button>
+                </button>
               </div>
             </div>
           )}
@@ -837,7 +1175,11 @@ export default function GrabOrdersPage() {
             <div className="text-center py-8">
               <CheckCircle2 className="w-16 h-16 mx-auto text-green-500 mb-3" />
               <p className="text-lg font-bold text-green-700">บันทึกออเดอร์สำเร็จ!</p>
-              <p className="text-sm text-gray-500 mt-1">กำลังเปิดหน้าหยิบสินค้า...</p>
+              <p className="text-sm text-gray-500 mt-1">
+                {combinedResult?.verification?.overall_match
+                  ? 'หยิบของครบถูกต้อง — ออเดอร์พร้อมส่ง ✅'
+                  : 'กำลังเปิดรายละเอียดออเดอร์...'}
+              </p>
             </div>
           )}
         </Card>
@@ -890,9 +1232,13 @@ export default function GrabOrdersPage() {
                 <p className="text-2xl font-bold text-[#8B6F4E]">฿{formatCurrency(selectedOrder.grand_total)}</p>
                 <div className="flex gap-1 mt-2">
                   {selectedOrder.order_image_url && (
-                    <a href={selectedOrder.order_image_url} target="_blank" className="text-blue-500 text-xs flex items-center gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setImagePopup(selectedOrder.order_image_url!)}
+                      className="text-blue-500 text-xs flex items-center gap-0.5 hover:underline"
+                    >
                       <Image className="w-3 h-3" /> ดูรูปออเดอร์
-                    </a>
+                    </button>
                   )}
                 </div>
               </div>
@@ -907,12 +1253,13 @@ export default function GrabOrdersPage() {
                 รายการหยิบสินค้า ({orderItems.filter(i => i.is_picked).length}/{orderItems.length})
               </h3>
               {selectedOrder.status === 'scanned' && (
-                <Button
+                <button
+                  type="button"
                   onClick={() => updateOrderStatus('picking')}
-                  className="bg-yellow-500 text-white text-sm hover:bg-yellow-600"
+                  className="px-4 py-2 bg-yellow-500 text-white text-sm font-medium rounded-lg hover:bg-yellow-600 active:bg-yellow-700 transition-colors"
                 >
                   เริ่มหยิบของ
-                </Button>
+                </button>
               )}
             </div>
 
@@ -983,24 +1330,51 @@ export default function GrabOrdersPage() {
                 />
 
                 {pickPreviews.length > 0 && (
-                  <div className="grid grid-cols-2 gap-3">
-                    {pickPreviews.map((preview, i) => (
-                      <img key={i} src={preview} alt="" className="w-full h-32 object-cover rounded-lg" />
-                    ))}
+                  <div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {pickPreviews.map((preview, i) => (
+                        <div key={i} className="relative group">
+                          <img src={preview} alt="" className="w-full h-32 object-cover rounded-lg" />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPickFiles(prev => prev.filter((_, idx) => idx !== i))
+                              setPickPreviews(prev => prev.filter((_, idx) => idx !== i))
+                              setVerifyResult(null)
+                            }}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-80 hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPickFiles([])
+                        setPickPreviews([])
+                        setVerifyResult(null)
+                      }}
+                      className="mt-2 w-full px-3 py-1.5 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> ลบรูปทั้งหมด แล้วถ่ายใหม่
+                    </button>
                   </div>
                 )}
 
-                <Button
+                <button
+                  type="button"
                   onClick={handleVerifyPick}
                   disabled={pickFiles.length === 0 || verifying}
-                  className="w-full bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                  className="w-full px-4 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                 >
                   {verifying ? (
                     <><Loader2 className="w-4 h-4 animate-spin mr-1" /> AI กำลังตรวจสอบ...</>
                   ) : (
                     <><Eye className="w-4 h-4 mr-1" /> ตรวจสอบด้วย AI</>
                   )}
-                </Button>
+                </button>
 
                 {/* Verify result */}
                 {verifyResult && (
@@ -1043,12 +1417,13 @@ export default function GrabOrdersPage() {
                     )}
 
                     {!verifyResult.overall_match && (
-                      <Button
+                      <button
+                        type="button"
                         onClick={() => updateOrderStatus('verified')}
-                        className="mt-3 bg-green-600 text-white text-sm hover:bg-green-700"
+                        className="mt-3 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
                       >
                         ยืนยันหยิบครบแล้ว (override)
-                      </Button>
+                      </button>
                     )}
                   </div>
                 )}
@@ -1059,21 +1434,45 @@ export default function GrabOrdersPage() {
           {/* Action buttons */}
           <div className="flex gap-2">
             {selectedOrder.status === 'verified' && (
-              <Button
+              <button
+                type="button"
                 onClick={() => updateOrderStatus('completed')}
-                className="flex-1 bg-green-600 text-white hover:bg-green-700"
+                className="flex-1 px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-1"
               >
-                <Check className="w-4 h-4 mr-1" /> เสร็จสิ้น (ส่งแล้ว)
-              </Button>
+                <Check className="w-4 h-4" /> เสร็จสิ้น (ส่งแล้ว)
+              </button>
             )}
             {selectedOrder.status !== 'cancelled' && selectedOrder.status !== 'completed' && (
-              <Button
+              <button
+                type="button"
                 onClick={() => handleDeleteOrder(selectedOrder.id)}
-                className="bg-red-100 text-red-600 hover:bg-red-200"
+                className="px-4 py-2 bg-red-100 text-red-600 font-medium rounded-lg hover:bg-red-200 transition-colors flex items-center gap-1"
               >
-                <Trash2 className="w-4 h-4 mr-1" /> ลบ
-              </Button>
+                <Trash2 className="w-4 h-4" /> ลบ
+              </button>
             )}
+          </div>
+        </div>
+      )}
+      {/* Image popup modal */}
+      {imagePopup && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setImagePopup(null)}
+        >
+          <div className="relative max-w-3xl max-h-[90vh] w-full" onClick={e => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setImagePopup(null)}
+              className="absolute -top-3 -right-3 bg-white text-gray-700 rounded-full p-1.5 shadow-lg hover:bg-gray-100 z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <img
+              src={imagePopup}
+              alt="รูปออเดอร์"
+              className="w-full max-h-[85vh] object-contain rounded-lg bg-white"
+            />
           </div>
         </div>
       )}

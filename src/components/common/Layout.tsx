@@ -77,7 +77,7 @@ export default function Layout({ children }: LayoutProps) {
       items: [
         { name: t('nav.pos'), href: '/pos', icon: ShoppingCart, id: 'pos' as const },
         { name: t('nav.salesOrders'), href: '/sales-orders', icon: ListOrdered, id: 'sales' as const },
-        { name: 'ออเดอร์เดลิเวอรี่', href: '/grab-orders', icon: Truck, id: 'sales' as const },
+        { name: 'ออเดอร์ GRAB', href: '/grab-orders', icon: Truck, id: 'sales' as const },
       ].filter(item => canAccessMenu(userRole, item.id))
     },
     {

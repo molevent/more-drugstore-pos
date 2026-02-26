@@ -232,6 +232,92 @@ export async function scanGrabOrder(files: File[]): Promise<GrabOrderData> {
   return result
 }
 
+// ─── Combined: Scan Order + Verify Pick in one shot ──────────
+
+export interface CombinedScanResult {
+  order: GrabOrderData
+  verification: PickVerifyResult
+}
+
+export async function scanAndVerifyOrder(
+  orderPhotos: File[],
+  pickPhotos: File[]
+): Promise<CombinedScanResult> {
+  if (orderPhotos.length === 0) {
+    throw new Error('กรุณาถ่ายรูปออเดอร์')
+  }
+  if (pickPhotos.length === 0) {
+    throw new Error('กรุณาถ่ายรูปสินค้าที่หยิบ')
+  }
+
+  const allFiles = [...orderPhotos, ...pickPhotos]
+  const orderCount = orderPhotos.length
+  const pickCount = pickPhotos.length
+
+  const prompt = `คุณเป็นระบบ AI สำหรับร้านขายยา ทำ 2 งานพร้อมกัน:
+
+**งาน 1: อ่านออเดอร์** — รูปที่ 1-${orderCount} เป็นรูปออเดอร์จากแอป Grab/LINE MAN/Robinhood/Foodpanda
+**งาน 2: ตรวจสอบสินค้า** — รูปที่ ${orderCount + 1}-${orderCount + pickCount} เป็นรูปสินค้าที่หยิบแล้ว
+
+กรุณา:
+1. อ่านข้อมูลออเดอร์จากรูปออเดอร์
+2. เปรียบเทียบสินค้าในรูปหยิบกับรายการในออเดอร์
+3. ตรวจว่าหยิบครบถูกต้องหรือไม่
+
+ตอบเป็น JSON เท่านั้น ห้ามมีข้อความอื่น:
+{
+  "order": {
+    "order_number": "เลขออเดอร์",
+    "booking_code": "รหัสการจอง",
+    "tracking_number": "",
+    "platform": "grab/lineman/robinhood/foodpanda",
+    "customer_name": "ชื่อลูกค้า",
+    "customer_phone": "เบอร์ลูกค้า",
+    "customer_notes": "",
+    "driver_name": "ชื่อคนขับ",
+    "driver_phone": "เบอร์คนขับ",
+    "subtotal": 0.00,
+    "discount": 0.00,
+    "delivery_fee": 0.00,
+    "platform_fee": 0.00,
+    "vat": 0.00,
+    "grand_total": 0.00,
+    "items": [
+      { "item_name": "ชื่อสินค้าเต็ม", "quantity": 1, "unit_price": 0.00, "total_price": 0.00, "notes": "" }
+    ]
+  },
+  "verification": {
+    "items_found": [
+      { "item_name": "ชื่อสินค้าที่เห็นในรูปหยิบ", "quantity_visible": 1, "confidence": 90, "notes": "" }
+    ],
+    "missing_items": ["ชื่อสินค้าที่ไม่เห็นในรูปหยิบ"],
+    "extra_items": ["ชื่อสินค้าที่เห็นเกินมา"],
+    "overall_match": true,
+    "confidence": 85,
+    "notes": "สรุปผล"
+  }
+}
+
+คำแนะนำ:
+- อ่านทุกรายการสินค้า ห้ามข้าม
+- ชื่อสินค้าให้ใส่เต็ม รวมขนาด/ปริมาณ
+- เปรียบเทียบสินค้าบนกล่อง/ซอง กับรายการในออเดอร์
+- นับจำนวนชิ้นที่เห็นในรูปหยิบ
+- overall_match = true ถ้าหยิบครบทุกรายการ
+- ถ้าไม่เห็นข้อมูล ใส่ "" หรือ 0`
+
+  const response = await callGeminiVision(allFiles, prompt, 0.1)
+  console.log('Combined scan+verify response:', response.substring(0, 500))
+
+  const result = parseJsonResponse<CombinedScanResult>(response)
+
+  if (!result.order?.items || result.order.items.length === 0) {
+    console.warn('Combined scan: No order items found')
+  }
+
+  return result
+}
+
 // ─── AI: Verify Picked Items ─────────────────────────────────
 
 export async function verifyPickedItems(

@@ -2,7 +2,7 @@
 // Auto-generated from Supabase schema
 
 export type UserRole = 'owner' | 'manager' | 'pharmacist' | 'part_time' | 'accountant'
-export type PaymentMethod = 'cash' | 'transfer' | 'credit_card' | 'promptpay'
+export type PaymentMethod = 'cash' | 'transfer' | 'credit_card' | 'promptpay' | 'grab_wallet'
 export type PaymentStatus = 'pending' | 'paid' | 'refunded'
 export type AlertType = 'low' | 'out'
 
@@ -471,6 +471,7 @@ export interface GrabOrder {
   verified_at?: string
   verified_by?: string
   ocr_raw_json?: any
+  sales_order_id?: string
   order_date: string
   created_at: string
   updated_at: string
