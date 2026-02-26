@@ -23,7 +23,8 @@ import {
   Calendar,
   BookOpen,
   UserCog,
-  BarChart3
+  BarChart3,
+  Bell
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Card from '../components/common/Card'
@@ -275,6 +276,15 @@ export default function SettingsPage() {
       status: { text: t('settings.zortOutStatus'), bgColor: 'bg-[#B8C9B8]/10', textColor: 'text-[#7D735F]' },
       details: undefined,
       link: '/zortout-sync'
+    },
+    {
+      icon: Bell,
+      iconBg: 'bg-green-100',
+      iconColor: 'text-green-600',
+      title: 'LINE Notify',
+      subtitle: 'แจ้งเตือนกำหนดชำระเงินผ่าน LINE',
+      details: undefined,
+      link: '/settings/line-notify'
     },
   ]
 

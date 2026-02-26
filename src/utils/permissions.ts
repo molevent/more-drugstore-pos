@@ -122,6 +122,13 @@ export const MENU_PERMISSIONS: MenuPermission[] = [
     icon: 'AddressBook',
     path: '/contacts',
     allowedRoles: ['owner', 'manager', 'pharmacist', 'part_time']  // All roles that use POS
+  },
+  {
+    id: 'work_schedule',
+    label: 'ตารางงาน',
+    icon: 'Calendar',
+    path: '/work-schedule',
+    allowedRoles: ['owner', 'manager', 'pharmacist']
   }
 ]
 

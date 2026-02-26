@@ -21,6 +21,7 @@ import { useLanguage } from '../../contexts/LanguageContext'
 import LanguageSwitcher from './LanguageSwitcher'
 import HelpModal from './HelpModal'
 import { canAccessMenu, getRoleDisplayName } from '../../utils/permissions'
+import { autoCheckPaymentDueAlerts } from '../../services/lineService'
 import { UserRole } from '../../types'
 
 interface LayoutProps {
@@ -38,6 +39,8 @@ export default function Layout({ children }: LayoutProps) {
   useEffect(() => {
     const handleOpenHelp = () => setShowHelpModal(true)
     window.addEventListener('open-help-modal', handleOpenHelp)
+    // Auto-check payment due alerts via LINE Notify (once per day)
+    autoCheckPaymentDueAlerts().catch(err => console.warn('LINE auto-alert:', err))
     return () => window.removeEventListener('open-help-modal', handleOpenHelp)
   }, [])
   
