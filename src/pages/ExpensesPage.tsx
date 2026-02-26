@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle, Percent, FileText, ShoppingCart, BookOpen, Wallet, Printer, Upload, X, CheckSquare, Square, ScanLine } from 'lucide-react'
+import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle, Percent, FileText, ShoppingCart, BookOpen, Wallet, Printer, Upload, X, CheckSquare, Square, ScanLine, CreditCard, AlertCircle, Save } from 'lucide-react'
 import { getExpenseCategories as getFaExpenseCategories, syncExpensesToFlowAccount, syncPurchasesToFlowAccount } from '../services/flowaccount'
 import { useLanguage } from '../contexts/LanguageContext'
 
@@ -108,7 +108,7 @@ export default function ExpensesPage() {
   const [expenseFormTab, setExpenseFormTab] = useState<'basic' | 'extended'>('basic')
   
   // Google Sheets states
-  const [viewMode, setViewMode] = useState<'database' | 'sheets' | 'pending'>('database')
+  const [viewMode, setViewMode] = useState<'database' | 'sheets' | 'pending' | 'unpaid'>('database')
   const [sheetUrl, setSheetUrl] = useState('https://docs.google.com/spreadsheets/d/1XShDiX-121PdeNgpsF_dxdsjZDEQ574GUS6_yaQRnRk/edit?gid=109620470#gid=109620470')
   const [sheetData, setSheetData] = useState<any[]>([])
   const [sheetLoading, setSheetLoading] = useState(false)
@@ -553,6 +553,14 @@ export default function ExpensesPage() {
     notes: ''
   })
 
+  // Unpaid view states
+  const [selectedUnpaidIds, setSelectedUnpaidIds] = useState<Set<string>>(new Set())
+  const [unpaidInlineEdits, setUnpaidInlineEdits] = useState<Record<string, Partial<Expense>>>({})
+  const [savingUnpaid, setSavingUnpaid] = useState<string | null>(null) // expense id being saved
+  const [batchPaymentMethod, setBatchPaymentMethod] = useState('โอนเงิน')
+  const [batchPaymentDate, setBatchPaymentDate] = useState(new Date().toISOString().split('T')[0])
+  const [batchPayee, setBatchPayee] = useState('')
+
   // View Payment Voucher Print Modal states
   const [showViewVoucherModal, setShowViewVoucherModal] = useState(false)
   const [viewVoucher, setViewVoucher] = useState<PaymentVoucher | null>(null)
@@ -741,6 +749,206 @@ export default function ExpensesPage() {
     }
   }
 
+  // ─── Unpaid view handlers ─────────────────────────────────
+
+  // Get inline edit value or original value for an expense field
+  const getUnpaidValue = (expense: Expense, field: keyof Expense) => {
+    const edit = unpaidInlineEdits[expense.id]
+    if (edit && field in edit) return (edit as any)[field]
+    return (expense as any)[field]
+  }
+
+  // Update inline edit for a specific expense
+  const setUnpaidField = (expenseId: string, field: string, value: any) => {
+    setUnpaidInlineEdits(prev => ({
+      ...prev,
+      [expenseId]: { ...prev[expenseId], [field]: value }
+    }))
+  }
+
+  // Check if expense has all required fields for payment
+  const isExpensePayReady = (expense: Expense): boolean => {
+    const e = { ...expense, ...unpaidInlineEdits[expense.id] }
+    return !!(
+      e.expense_date &&
+      e.description &&
+      (e.amount && e.amount > 0) &&
+      e.payment_method &&
+      e.vendor
+    )
+  }
+
+  // Save inline edits for a single expense and auto-create voucher
+  const handleSaveUnpaidSingle = async (expense: Expense) => {
+    const edits = unpaidInlineEdits[expense.id]
+    if (!edits && isExpensePayReady(expense)) {
+      // No edits but already ready — just create voucher
+    } else if (!edits) {
+      alert('กรุณากรอกข้อมูลให้ครบก่อน')
+      return
+    }
+
+    const merged = { ...expense, ...edits }
+    if (!merged.expense_date || !merged.description || !merged.amount || merged.amount <= 0 || !merged.payment_method || !merged.vendor) {
+      alert('กรุณากรอกข้อมูลให้ครบ: วันที่, รายละเอียด, จำนวนเงิน, วิธีชำระ, ผู้ขาย')
+      return
+    }
+
+    setSavingUnpaid(expense.id)
+    try {
+      // 1. Update the expense with any inline edits
+      if (edits) {
+        const updateData: any = {}
+        if (edits.expense_date) updateData.expense_date = edits.expense_date
+        if (edits.description) updateData.description = edits.description
+        if (edits.amount !== undefined) updateData.amount = edits.amount
+        if (edits.payment_method) updateData.payment_method = edits.payment_method
+        if (edits.vendor) updateData.vendor = edits.vendor
+
+        const { error } = await supabase
+          .from('expenses')
+          .update(updateData)
+          .eq('id', expense.id)
+        if (error) throw error
+      }
+
+      // 2. Generate voucher
+      const voucherDate = merged.expense_date || new Date().toISOString().split('T')[0]
+      const voucherNumber = await generatePaymentVoucherNumber(voucherDate)
+      const voucherData = {
+        voucher_number: voucherNumber,
+        voucher_date: voucherDate,
+        description: merged.description,
+        amount: merged.amount,
+        payment_method: merged.payment_method,
+        payee_name: merged.vendor || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+
+      const { data: voucherResult, error: voucherError } = await supabase
+        .from('payment_vouchers')
+        .insert(voucherData)
+        .select('id')
+        .single()
+
+      if (voucherError) throw voucherError
+
+      // 3. Link voucher to expense
+      await supabase
+        .from('expenses')
+        .update({ payment_voucher_id: voucherResult.id })
+        .eq('id', expense.id)
+
+      // Cleanup
+      setUnpaidInlineEdits(prev => {
+        const next = { ...prev }
+        delete next[expense.id]
+        return next
+      })
+      fetchExpenses()
+      alert(`ชำระเรียบร้อย! ใบสำคัญจ่าย ${voucherNumber}`)
+    } catch (err: any) {
+      console.error('Error saving unpaid expense:', err)
+      alert('เกิดข้อผิดพลาด: ' + (err.message || 'Unknown'))
+    } finally {
+      setSavingUnpaid(null)
+    }
+  }
+
+  // Batch payment: create one voucher for all selected expenses
+  const handleBatchPayment = async () => {
+    if (selectedUnpaidIds.size === 0) {
+      alert('กรุณาเลือกรายการที่ต้องการชำระ')
+      return
+    }
+    if (!batchPaymentDate) {
+      alert('กรุณาเลือกวันที่ชำระ')
+      return
+    }
+    if (!batchPaymentMethod) {
+      alert('กรุณาเลือกวิธีชำระเงิน')
+      return
+    }
+
+    const selected = unpaidExpenses.filter(e => selectedUnpaidIds.has(e.id))
+    const totalBatch = selected.reduce((sum, e) => {
+      const amt = getUnpaidValue(e, 'amount') as number
+      return sum + (amt || e.amount || 0)
+    }, 0)
+
+    const vendorNames = [...new Set(selected.map(e => getUnpaidValue(e, 'vendor') as string || e.vendor).filter(Boolean))]
+    const payee = batchPayee || vendorNames.join(', ') || 'ผู้ขายหลายราย'
+    const descriptions = selected.map(e => getUnpaidValue(e, 'description') as string || e.description).filter(Boolean)
+
+    if (!confirm(`ต้องการสร้างใบสำคัญจ่ายรวม ${selected.length} รายการ\nยอดรวม: ฿${totalBatch.toLocaleString('th-TH', { minimumFractionDigits: 2 })}\nผู้รับเงิน: ${payee}?`)) return
+
+    setSavingUnpaid('batch')
+    try {
+      // 1. Update each expense's inline edits first
+      for (const expense of selected) {
+        const edits = unpaidInlineEdits[expense.id]
+        if (edits) {
+          const updateData: any = {}
+          if (edits.expense_date) updateData.expense_date = edits.expense_date
+          if (edits.description) updateData.description = edits.description
+          if (edits.amount !== undefined) updateData.amount = edits.amount
+          if (edits.payment_method) updateData.payment_method = edits.payment_method || batchPaymentMethod
+          if (edits.vendor) updateData.vendor = edits.vendor
+
+          await supabase.from('expenses').update(updateData).eq('id', expense.id)
+        }
+        // Also update payment_method if not set
+        if (!expense.payment_method && !unpaidInlineEdits[expense.id]?.payment_method) {
+          await supabase.from('expenses').update({ payment_method: batchPaymentMethod }).eq('id', expense.id)
+        }
+      }
+
+      // 2. Create single batch voucher
+      const voucherNumber = await generatePaymentVoucherNumber(batchPaymentDate)
+      const voucherData = {
+        voucher_number: voucherNumber,
+        voucher_date: batchPaymentDate,
+        description: descriptions.length <= 3
+          ? descriptions.join(', ')
+          : `${descriptions.slice(0, 2).join(', ')} และอีก ${descriptions.length - 2} รายการ`,
+        amount: totalBatch,
+        payment_method: batchPaymentMethod,
+        payee_name: payee,
+        notes: `ชำระรวม ${selected.length} รายการ: ${descriptions.join(', ')}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+
+      const { data: voucherResult, error: voucherError } = await supabase
+        .from('payment_vouchers')
+        .insert(voucherData)
+        .select('id')
+        .single()
+
+      if (voucherError) throw voucherError
+
+      // 3. Link voucher to all selected expenses
+      const { error: linkError } = await supabase
+        .from('expenses')
+        .update({ payment_voucher_id: voucherResult.id })
+        .in('id', selected.map(e => e.id))
+
+      if (linkError) throw linkError
+
+      // Cleanup
+      setSelectedUnpaidIds(new Set())
+      setUnpaidInlineEdits({})
+      fetchExpenses()
+      alert(`สร้างใบสำคัญจ่ายรวม ${voucherNumber} สำเร็จ!\n${selected.length} รายการ ยอด ฿${totalBatch.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`)
+    } catch (err: any) {
+      console.error('Error batch payment:', err)
+      alert('เกิดข้อผิดพลาด: ' + (err.message || 'Unknown'))
+    } finally {
+      setSavingUnpaid(null)
+    }
+  }
+
   // Handle save new contact
   const handleSaveNewContact = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -880,6 +1088,12 @@ export default function ExpensesPage() {
   const waitingPaymentExpenses = expenses.filter(e => !e.payment_voucher_id)
   const waitingPaymentCount = waitingPaymentExpenses.length
   const waitingPaymentAmount = waitingPaymentExpenses.reduce((sum, e) => sum + e.amount, 0)
+
+  // Unpaid expenses: approved but no payment_voucher_id, grouped concept
+  const unpaidExpenses = expenses.filter(e => 
+    e.status === 'approved' && !e.payment_voucher_id
+  )
+  const unpaidTotalAmount = unpaidExpenses.reduce((sum, e) => sum + e.amount, 0)
 
   // VAT and Non-VAT expenses (based on filteredExpenses)
   const vatExpenses = filteredExpenses.filter(e => (e.vat_amount ?? 0) > 0)
@@ -1447,6 +1661,16 @@ export default function ExpensesPage() {
                 <span className="text-sm font-medium">รออนุมัติ</span>
                 {pendingExpenses.length > 0 && (
                   <span className="ml-auto px-1.5 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full font-bold">{pendingExpenses.length}</span>
+                )}
+              </button>
+              <button
+                onClick={() => setViewMode('unpaid')}
+                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 text-gray-700 transition-colors"
+              >
+                <CreditCard className="h-4 w-4 text-red-500" />
+                <span className="text-sm font-medium">รอชำระ</span>
+                {unpaidExpenses.length > 0 && (
+                  <span className="ml-auto px-1.5 py-0.5 bg-red-100 text-red-700 text-xs rounded-full font-bold">{unpaidExpenses.length}</span>
                 )}
               </button>
               <button
@@ -2204,6 +2428,256 @@ export default function ExpensesPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* ═══ UNPAID VIEW ═══════════════════════════════════════ */}
+      {viewMode === 'unpaid' && (
+        <Card>
+          {loading ? (
+            <p className="text-center text-gray-600 py-8">กำลังโหลด...</p>
+          ) : unpaidExpenses.length === 0 ? (
+            <div className="text-center py-12">
+              <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-3" />
+              <p className="text-gray-600">ไม่มีรายการรอชำระ</p>
+              <p className="text-sm text-gray-500 mt-1">ค่าใช้จ่ายทั้งหมดมีใบสำคัญจ่ายแล้ว</p>
+            </div>
+          ) : (
+            <div>
+              {/* Header + Batch Controls */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+                <div>
+                  <p className="text-sm text-gray-600">
+                    พบ <span className="font-bold text-red-600">{unpaidExpenses.length}</span> รายการรอชำระ
+                  </p>
+                  <p className="text-lg font-bold text-red-600">
+                    ยอดรวม: ฿{unpaidTotalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+              </div>
+
+              {/* Batch Payment Bar */}
+              {selectedUnpaidIds.size > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                    <div className="text-sm">
+                      <span className="font-bold text-blue-700">เลือก {selectedUnpaidIds.size} รายการ</span>
+                      <span className="text-blue-600 ml-2">
+                        ยอดรวม: ฿{unpaidExpenses.filter(e => selectedUnpaidIds.has(e.id)).reduce((sum, e) => sum + ((getUnpaidValue(e, 'amount') as number) || e.amount || 0), 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 flex-1">
+                      <input
+                        type="date"
+                        value={batchPaymentDate}
+                        onChange={(e) => setBatchPaymentDate(e.target.value)}
+                        className="px-2 py-1.5 border border-blue-300 rounded text-sm focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      <select
+                        value={batchPaymentMethod}
+                        onChange={(e) => setBatchPaymentMethod(e.target.value)}
+                        className="px-2 py-1.5 border border-blue-300 rounded text-sm focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        {(paymentMethods.length > 0 ? paymentMethods : PAYMENT_METHODS).map(pm => (
+                          <option key={pm} value={pm}>{pm}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="text"
+                        value={batchPayee}
+                        onChange={(e) => setBatchPayee(e.target.value)}
+                        placeholder="ผู้รับเงิน (ถ้าต่างจากผู้ขายในบิล)"
+                        className="px-2 py-1.5 border border-blue-300 rounded text-sm flex-1 min-w-[160px] focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      <button
+                        onClick={handleBatchPayment}
+                        disabled={savingUnpaid === 'batch'}
+                        className="px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1"
+                      >
+                        <CreditCard className="h-4 w-4" />
+                        {savingUnpaid === 'batch' ? 'กำลังสร้าง...' : 'ชำระรวม'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-red-50">
+                    <tr>
+                      <th className="px-3 py-3 text-center w-10">
+                        <input
+                          type="checkbox"
+                          checked={selectedUnpaidIds.size === unpaidExpenses.length && unpaidExpenses.length > 0}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedUnpaidIds(new Set(unpaidExpenses.map(exp => exp.id)))
+                            } else {
+                              setSelectedUnpaidIds(new Set())
+                            }
+                          }}
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                        />
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-600 uppercase">วันที่ตามเอกสาร</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-600 uppercase">รายการ</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-600 uppercase">ผู้ขาย</th>
+                      <th className="px-3 py-3 text-right text-xs font-medium text-gray-600 uppercase">จำนวนเงิน</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-600 uppercase">วันที่ชำระ</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-600 uppercase">วิธีชำระ</th>
+                      <th className="px-3 py-3 text-center text-xs font-medium text-gray-600 uppercase w-20">จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {unpaidExpenses.map((expense) => {
+                      const ready = isExpensePayReady(expense)
+                      const isSaving = savingUnpaid === expense.id
+                      const missingFields: string[] = []
+                      if (!getUnpaidValue(expense, 'expense_date')) missingFields.push('วันที่')
+                      if (!getUnpaidValue(expense, 'description')) missingFields.push('รายละเอียด')
+                      if (!getUnpaidValue(expense, 'amount') || (getUnpaidValue(expense, 'amount') as number) <= 0) missingFields.push('จำนวนเงิน')
+                      if (!getUnpaidValue(expense, 'payment_method')) missingFields.push('วิธีชำระ')
+                      if (!getUnpaidValue(expense, 'vendor')) missingFields.push('ผู้ขาย')
+
+                      return (
+                        <tr key={expense.id} className={`hover:bg-red-50/30 ${selectedUnpaidIds.has(expense.id) ? 'bg-blue-50/50' : ''}`}>
+                          <td className="px-3 py-2 text-center">
+                            <input
+                              type="checkbox"
+                              checked={selectedUnpaidIds.has(expense.id)}
+                              onChange={(e) => {
+                                const next = new Set(selectedUnpaidIds)
+                                if (e.target.checked) next.add(expense.id)
+                                else next.delete(expense.id)
+                                setSelectedUnpaidIds(next)
+                              }}
+                              className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                            />
+                          </td>
+                          {/* วันที่ตามเอกสาร (read-only) */}
+                          <td className="px-3 py-2 text-sm text-gray-700 whitespace-nowrap">
+                            {expense.document_date
+                              ? new Date(expense.document_date).toLocaleDateString('th-TH', { day: '2-digit', month: 'short' })
+                              : <span className="text-gray-400">-</span>
+                            }
+                          </td>
+                          {/* รายการ */}
+                          <td className="px-3 py-2">
+                            {expense.description ? (
+                              <div>
+                                <span className="text-sm text-gray-900">{expense.description}</span>
+                                <span className="ml-1 text-xs text-gray-400">({expense.category})</span>
+                              </div>
+                            ) : (
+                              <input
+                                type="text"
+                                value={(getUnpaidValue(expense, 'description') as string) || ''}
+                                onChange={(e) => setUnpaidField(expense.id, 'description', e.target.value)}
+                                placeholder="รายละเอียด"
+                                className="w-full px-2 py-1 border border-orange-300 rounded text-sm bg-orange-50 focus:ring-orange-500 focus:border-orange-500"
+                              />
+                            )}
+                          </td>
+                          {/* ผู้ขาย */}
+                          <td className="px-3 py-2">
+                            {expense.vendor ? (
+                              <span className="text-sm text-gray-700">{expense.vendor}</span>
+                            ) : (
+                              <select
+                                value={(getUnpaidValue(expense, 'vendor') as string) || ''}
+                                onChange={(e) => setUnpaidField(expense.id, 'vendor', e.target.value)}
+                                className="w-full px-2 py-1 border border-orange-300 rounded text-sm bg-orange-50 focus:ring-orange-500 focus:border-orange-500"
+                              >
+                                <option value="">เลือกผู้ขาย</option>
+                                {contacts.map(c => (
+                                  <option key={c.id} value={c.name}>{c.name}</option>
+                                ))}
+                              </select>
+                            )}
+                          </td>
+                          {/* จำนวนเงิน */}
+                          <td className="px-3 py-2 text-right">
+                            {expense.amount && expense.amount > 0 ? (
+                              <span className="text-sm font-medium text-gray-900">฿{expense.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
+                            ) : (
+                              <input
+                                type="number"
+                                value={(getUnpaidValue(expense, 'amount') as number) || ''}
+                                onChange={(e) => setUnpaidField(expense.id, 'amount', parseFloat(e.target.value) || 0)}
+                                placeholder="0.00"
+                                className="w-24 px-2 py-1 border border-orange-300 rounded text-sm text-right bg-orange-50 focus:ring-orange-500 focus:border-orange-500"
+                              />
+                            )}
+                          </td>
+                          {/* วันที่ชำระ (editable) */}
+                          <td className="px-3 py-2">
+                            <input
+                              type="date"
+                              value={(getUnpaidValue(expense, 'expense_date') as string) || ''}
+                              onChange={(e) => setUnpaidField(expense.id, 'expense_date', e.target.value)}
+                              className={`w-full px-2 py-1 border rounded text-sm focus:ring-blue-500 focus:border-blue-500 ${
+                                expense.expense_date ? 'border-gray-300' : 'border-orange-300 bg-orange-50'
+                              }`}
+                            />
+                          </td>
+                          {/* วิธีชำระ */}
+                          <td className="px-3 py-2">
+                            <select
+                              value={(getUnpaidValue(expense, 'payment_method') as string) || ''}
+                              onChange={(e) => setUnpaidField(expense.id, 'payment_method', e.target.value)}
+                              className={`w-full px-2 py-1 border rounded text-sm focus:ring-blue-500 focus:border-blue-500 ${
+                                expense.payment_method ? 'border-gray-300' : 'border-orange-300 bg-orange-50'
+                              }`}
+                            >
+                              <option value="">เลือก</option>
+                              {(paymentMethods.length > 0 ? paymentMethods : PAYMENT_METHODS).map(pm => (
+                                <option key={pm} value={pm}>{pm}</option>
+                              ))}
+                            </select>
+                          </td>
+                          {/* Actions */}
+                          <td className="px-3 py-2 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {ready ? (
+                                <button
+                                  onClick={() => handleSaveUnpaidSingle(expense)}
+                                  disabled={isSaving}
+                                  className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                  title="ชำระ + สร้างใบสำคัญจ่าย"
+                                >
+                                  {isSaving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                                </button>
+                              ) : (
+                                <span className="p-1.5" title={`ข้อมูลไม่ครบ: ${missingFields.join(', ')}`}>
+                                  <AlertCircle className="h-4 w-4 text-orange-400" />
+                                </span>
+                              )}
+                              <button
+                                onClick={() => handleEdit(expense)}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="แก้ไขรายละเอียด"
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Legend */}
+              <div className="mt-3 px-3 py-2 bg-gray-50 rounded-lg text-xs text-gray-500 flex flex-wrap gap-4">
+                <span className="flex items-center gap-1"><AlertCircle className="h-3 w-3 text-orange-400" /> ข้อมูลไม่ครบ (กรอกในช่องสีส้ม)</span>
+                <span className="flex items-center gap-1"><Save className="h-3 w-3 text-green-600" /> พร้อมชำระ (กดเพื่อสร้างใบสำคัญจ่าย)</span>
+                <span className="flex items-center gap-1"><CreditCard className="h-3 w-3 text-blue-600" /> เลือกหลายรายการแล้วกด "ชำระรวม" สำหรับจ่ายเป็นก้อน</span>
               </div>
             </div>
           )}
