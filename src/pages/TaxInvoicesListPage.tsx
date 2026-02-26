@@ -18,10 +18,14 @@ import {
   ArrowUpRight,
   Edit,
   RefreshCw,
-  Calendar
+  Calendar,
+  Upload,
+  CheckSquare,
+  Square
 } from 'lucide-react'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
+import { syncTaxInvoicesToFlowAccount } from '../services/flowaccount'
 
 interface TaxInvoice {
   id: string
@@ -35,6 +39,8 @@ interface TaxInvoice {
   vat_amount: number
   created_at: string
   updated_at: string
+  flowaccount_id?: number
+  flowaccount_synced_at?: string
 }
 
 interface OrderItem {
@@ -90,6 +96,11 @@ export default function TaxInvoicesListPage() {
     customer_address: ''
   })
 
+  // FA Sync states
+  const [syncingToFa, setSyncingToFa] = useState(false)
+  const [syncProgress, setSyncProgress] = useState('')
+  const [selectedSyncIds, setSelectedSyncIds] = useState<Set<string>>(new Set())
+
   const fetchTaxInvoices = async () => {
     try {
       setLoading(true)
@@ -129,6 +140,89 @@ export default function TaxInvoicesListPage() {
     ti.tax_invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
     ti.customer_name.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  // Toggle select for sync
+  const toggleSyncSelect = (id: string) => {
+    setSelectedSyncIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedSyncIds.size === filteredTaxInvoices.length) {
+      setSelectedSyncIds(new Set())
+    } else {
+      setSelectedSyncIds(new Set(filteredTaxInvoices.map(ti => ti.id)))
+    }
+  }
+
+  // Sync selected tax invoices to FlowAccount
+  const handleSyncToFa = async () => {
+    const toSync = filteredTaxInvoices.filter(ti => selectedSyncIds.has(ti.id))
+    if (toSync.length === 0) {
+      alert('กรุณาเลือกรายการใบกำกับภาษีที่ต้องการ sync')
+      return
+    }
+    if (!confirm(`ต้องการ sync ${toSync.length} ใบกำกับภาษี ไปยัง FlowAccount?`)) return
+
+    setSyncingToFa(true)
+    setSyncProgress('กำลังเตรียมข้อมูล...')
+
+    try {
+      // Fetch order items for each tax invoice
+      const invoicesWithItems = await Promise.all(
+        toSync.map(async (ti) => {
+          const itemsTable = ti.order_source === 'web' ? 'web_order_items' : 'order_items'
+          const { data: items } = await supabase
+            .from(itemsTable)
+            .select('product_name, quantity, unit_price, total_price')
+            .eq('order_id', ti.order_id)
+
+          return {
+            ...ti,
+            order_items: (items || []).map((item: any) => ({
+              product_name: item.product_name || 'สินค้า',
+              quantity: item.quantity || 1,
+              unit_price: item.unit_price || 0,
+              total_price: item.total_price || 0
+            }))
+          }
+        })
+      )
+
+      const result = await syncTaxInvoicesToFlowAccount(
+        invoicesWithItems,
+        (_current, _total, action) => setSyncProgress(action)
+      )
+
+      // Update local records with FA IDs
+      for (const r of result.results) {
+        if (r.faId) {
+          await supabase
+            .from('tax_invoices')
+            .update({
+              flowaccount_id: r.faId,
+              flowaccount_synced_at: new Date().toISOString()
+            })
+            .eq('id', r.localId)
+        }
+      }
+
+      setSyncProgress('')
+      alert(`Sync ใบกำกับภาษีเสร็จสิ้น!\n\n✅ สร้างใหม่: ${result.created}\n📝 อัปเดต: ${result.updated}\n❌ ล้มเหลว: ${result.failed}`)
+      setSelectedSyncIds(new Set())
+      fetchTaxInvoices()
+    } catch (err: any) {
+      console.error('Sync error:', err)
+      alert('เกิดข้อผิดพลาดในการ sync: ' + err.message)
+    } finally {
+      setSyncingToFa(false)
+      setSyncProgress('')
+    }
+  }
 
 
   const formatDateTime = (date: string) => {
@@ -595,6 +689,15 @@ export default function TaxInvoicesListPage() {
           >
             <RefreshCw className="h-4 w-4" />
           </Button>
+          <button
+            onClick={handleSyncToFa}
+            disabled={syncingToFa || selectedSyncIds.size === 0}
+            className="flex items-center gap-1 px-3 py-2 bg-[#2B9CD8] hover:bg-[#2488C0] disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+            title="Sync ใบกำกับภาษีไป FlowAccount"
+          >
+            <Upload className="h-4 w-4" />
+            {syncingToFa ? syncProgress || 'กำลัง sync...' : `Sync FA${selectedSyncIds.size > 0 ? ` (${selectedSyncIds.size})` : ''}`}
+          </button>
         </div>
       </div>
 
@@ -692,6 +795,13 @@ export default function TaxInvoicesListPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-[#F5EFE6]">
               <tr>
+                <th className="px-2 py-3 text-center w-10">
+                  <button onClick={toggleSelectAll} className="p-1 hover:bg-gray-200 rounded">
+                    {selectedSyncIds.size === filteredTaxInvoices.length && filteredTaxInvoices.length > 0
+                      ? <CheckSquare className="h-4 w-4 text-[#2B9CD8]" />
+                      : <Square className="h-4 w-4 text-gray-400" />}
+                  </button>
+                </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   เลขที่ใบกำกับภาษี
                 </th>
@@ -714,11 +824,23 @@ export default function TaxInvoicesListPage() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredTaxInvoices.map((invoice) => (
-                <tr key={invoice.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={invoice.id} className={`hover:bg-gray-50 transition-colors ${selectedSyncIds.has(invoice.id) ? 'bg-blue-50' : ''}`}>
+                  <td className="px-2 py-4 text-center w-10">
+                    <button onClick={() => toggleSyncSelect(invoice.id)} className="p-1 hover:bg-gray-200 rounded">
+                      {selectedSyncIds.has(invoice.id)
+                        ? <CheckSquare className="h-4 w-4 text-[#2B9CD8]" />
+                        : <Square className="h-4 w-4 text-gray-400" />}
+                    </button>
+                  </td>
                   <td className="px-4 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <FileText className="h-4 w-4 text-[#7D735F]" />
                       <span className="font-medium text-gray-900">{invoice.tax_invoice_number}</span>
+                      {invoice.flowaccount_id && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700" title={`FA ID: ${invoice.flowaccount_id}`}>
+                          FA ✓
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 ml-6 mt-1">
                       <span className="text-xs text-gray-500">

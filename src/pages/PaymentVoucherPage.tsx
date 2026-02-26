@@ -2,7 +2,26 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { FileText, Plus, Search, Trash2, Edit2, BookOpen, Printer, Calendar as CalendarIcon, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react'
+import { FileText, Plus, Search, Trash2, Edit2, BookOpen, Printer, Calendar as CalendarIcon, ChevronLeft, ChevronRight, ArrowLeft, AlertTriangle, Clock, CheckCircle, Upload, CheckSquare, Square } from 'lucide-react'
+import { getExpenseCategories, syncPaymentVouchersToFlowAccount } from '../services/flowaccount'
+
+interface CreditAlert {
+  id: string
+  vendor: string
+  expense_date: string
+  document_date?: string
+  amount: number
+  description: string
+  due_date: string
+  days_remaining: number
+  is_overdue: boolean
+  is_paid: boolean
+}
+
+// Credit term rules per supplier
+const CREDIT_TERMS: { vendor_match: string; days: number }[] = [
+  { vendor_match: 'ฟาร์มาแคร์', days: 7 },
+]
 
 interface PaymentVoucher {
   id: string
@@ -21,6 +40,8 @@ interface PaymentVoucher {
   notes?: string
   created_at: string
   updated_at: string
+  flowaccount_id?: number
+  flowaccount_synced_at?: string
 }
 
 export default function PaymentVoucherPage() {
@@ -52,8 +73,20 @@ export default function PaymentVoucherPage() {
     notes: ''
   })
 
+  const [creditAlerts, setCreditAlerts] = useState<CreditAlert[]>([])
+
+  // FA Sync states
+  const [syncingToFa, setSyncingToFa] = useState(false)
+  const [syncProgress, setSyncProgress] = useState('')
+  const [selectedSyncIds, setSelectedSyncIds] = useState<Set<string>>(new Set())
+  const [faCategories, setFaCategories] = useState<any[]>([])
+  const [selectedFaCategory, setSelectedFaCategory] = useState<any>(null)
+  const [showSyncModal, setShowSyncModal] = useState(false)
+  const [loadingFaCategories, setLoadingFaCategories] = useState(false)
+
   useEffect(() => {
     fetchVouchers()
+    fetchCreditAlerts()
   }, [])
 
   const fetchVouchers = async () => {
@@ -72,6 +105,61 @@ export default function PaymentVoucherPage() {
       setError('ไม่สามารถโหลดข้อมูลใบสำคัญจ่ายได้')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchCreditAlerts = async () => {
+    try {
+      // Fetch recent expenses (last 60 days) that might have credit terms
+      const sixtyDaysAgo = new Date()
+      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60)
+      const { data: expenses, error } = await supabase
+        .from('expenses')
+        .select('id, vendor, expense_date, document_date, amount, description, payment_voucher_id')
+        .gte('expense_date', sixtyDaysAgo.toISOString().split('T')[0])
+        .order('expense_date', { ascending: false })
+
+      if (error) throw error
+
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      const alerts: CreditAlert[] = []
+      for (const exp of (expenses || [])) {
+        if (!exp.vendor) continue
+        const rule = CREDIT_TERMS.find(r => exp.vendor.includes(r.vendor_match))
+        if (!rule) continue
+
+        const baseDate = new Date(exp.document_date || exp.expense_date)
+        const dueDate = new Date(baseDate)
+        dueDate.setDate(dueDate.getDate() + rule.days)
+        dueDate.setHours(0, 0, 0, 0)
+
+        const diffTime = dueDate.getTime() - today.getTime()
+        const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+        alerts.push({
+          id: exp.id,
+          vendor: exp.vendor,
+          expense_date: exp.document_date || exp.expense_date,
+          amount: exp.amount,
+          description: exp.description,
+          due_date: dueDate.toISOString().split('T')[0],
+          days_remaining: daysRemaining,
+          is_overdue: daysRemaining < 0,
+          is_paid: !!exp.payment_voucher_id,
+        })
+      }
+
+      // Sort: overdue first, then by days remaining ascending
+      alerts.sort((a, b) => {
+        if (a.is_paid !== b.is_paid) return a.is_paid ? 1 : -1
+        return a.days_remaining - b.days_remaining
+      })
+
+      setCreditAlerts(alerts)
+    } catch (err) {
+      console.error('Error fetching credit alerts:', err)
     }
   }
 
@@ -185,6 +273,118 @@ export default function PaymentVoucherPage() {
     setEditingVoucher(null)
   }
 
+  // FA Sync helpers
+  const toggleSyncSelect = (id: string) => {
+    setSelectedSyncIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedSyncIds.size === filteredVouchers.length) {
+      setSelectedSyncIds(new Set())
+    } else {
+      setSelectedSyncIds(new Set(filteredVouchers.map(v => v.id)))
+    }
+  }
+
+  const fetchFaCategories = async () => {
+    setLoadingFaCategories(true)
+    try {
+      const result = await getExpenseCategories()
+      const cats: any[] = []
+      const processCat = (cat: any) => {
+        cats.push({
+          systemCode: cat.systemCode || '',
+          categoryId: cat.categoryId || cat.id || '',
+          creditId: cat.creditId || '',
+          debitId: cat.debitId || '',
+          nameLocal: cat.nameLocal || cat.name || '',
+          nameForeign: cat.nameForeign || '',
+          chart_of_accounts_code: cat.chart_of_accounts_code || ''
+        })
+        if (cat.children) cat.children.forEach((c: any) => processCat(c))
+      }
+      if (Array.isArray(result)) {
+        result.forEach((cat: any) => processCat(cat))
+      } else if (result?.data) {
+        const rawCats = result.data.list || result.data || []
+        if (Array.isArray(rawCats)) rawCats.forEach((cat: any) => processCat(cat))
+      }
+      setFaCategories(cats)
+      const defaultCat = cats.find(c => c.nameForeign === 'General expenses') || cats[0]
+      if (defaultCat) setSelectedFaCategory(defaultCat)
+    } catch (err) {
+      console.error('Error fetching FA categories:', err)
+      alert('ดึงหมวดหมู่ค่าใช้จ่ายจาก FlowAccount ล้มเหลว: ' + (err as Error).message)
+    } finally {
+      setLoadingFaCategories(false)
+    }
+  }
+
+  const handleOpenSyncModal = () => {
+    const toSync = filteredVouchers.filter(v => selectedSyncIds.has(v.id))
+    if (toSync.length === 0) {
+      alert('กรุณาเลือกรายการใบสำคัญจ่ายที่ต้องการ sync')
+      return
+    }
+    fetchFaCategories()
+    setShowSyncModal(true)
+  }
+
+  const handleSyncToFa = async () => {
+    if (!selectedFaCategory) {
+      alert('กรุณาเลือกหมวดหมู่ค่าใช้จ่ายใน FlowAccount')
+      return
+    }
+    const toSync = filteredVouchers.filter(v => selectedSyncIds.has(v.id))
+    if (toSync.length === 0) return
+    if (!confirm(`ต้องการ sync ${toSync.length} ใบสำคัญจ่ายไปยัง FlowAccount?`)) return
+
+    setShowSyncModal(false)
+    setSyncingToFa(true)
+    setSyncProgress('กำลังเตรียมข้อมูล...')
+
+    try {
+      const result = await syncPaymentVouchersToFlowAccount(
+        toSync,
+        {
+          systemCode: selectedFaCategory.systemCode,
+          categoryId: selectedFaCategory.categoryId,
+          creditId: selectedFaCategory.creditId,
+          debitId: selectedFaCategory.debitId
+        },
+        (_current, _total, action) => setSyncProgress(action)
+      )
+
+      for (const r of result.results) {
+        if (r.faId) {
+          await supabase
+            .from('payment_vouchers')
+            .update({
+              flowaccount_id: r.faId,
+              flowaccount_synced_at: new Date().toISOString()
+            })
+            .eq('id', r.localId)
+        }
+      }
+
+      setSyncProgress('')
+      alert(`Sync ใบสำคัญจ่ายเสร็จสิ้น!\n\n✅ สร้างใหม่: ${result.created}\n📝 อัปเดต: ${result.updated}\n❌ ล้มเหลว: ${result.failed}`)
+      setSelectedSyncIds(new Set())
+      fetchVouchers()
+    } catch (err: any) {
+      console.error('Sync error:', err)
+      alert('เกิดข้อผิดพลาดในการ sync: ' + err.message)
+    } finally {
+      setSyncingToFa(false)
+      setSyncProgress('')
+    }
+  }
+
   const filteredVouchers = vouchers.filter(voucher =>
     voucher.voucher_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
     voucher.payee_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -212,13 +412,22 @@ export default function PaymentVoucherPage() {
             <p className="text-gray-600 mt-1">บันทึกและจัดการใบสำคัญจ่าย</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('open-help-modal'))}
             className="p-2 text-gray-400 hover:text-[#7D735F] hover:bg-[#F5F0E6] rounded-full transition-all"
             title="คู่มือการใช้งาน"
           >
             <BookOpen className="h-5 w-5" />
+          </button>
+          <button
+            onClick={handleOpenSyncModal}
+            disabled={syncingToFa || selectedSyncIds.size === 0}
+            className="flex items-center gap-1 px-3 py-2 bg-[#2B9CD8] hover:bg-[#2488C0] disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+            title="Sync ใบสำคัญจ่ายไป FlowAccount"
+          >
+            <Upload className="h-4 w-4" />
+            {syncingToFa ? syncProgress || 'กำลัง sync...' : `Sync FA${selectedSyncIds.size > 0 ? ` (${selectedSyncIds.size})` : ''}`}
           </button>
         </div>
       </div>
@@ -238,6 +447,77 @@ export default function PaymentVoucherPage() {
           </div>
         </div>
       </Card>
+
+      {/* Credit Term Alerts */}
+      {creditAlerts.filter(a => !a.is_paid).length > 0 && (
+        <Card className="mb-6 border-amber-200 bg-amber-50/50">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600" />
+            <h3 className="font-semibold text-amber-800">แจ้งเตือนเครดิต - รายการที่ยังไม่ชำระ</h3>
+          </div>
+          <div className="space-y-2">
+            {creditAlerts.filter(a => !a.is_paid).map(alert => {
+              const isOverdue = alert.is_overdue
+              const isDueSoon = !isOverdue && alert.days_remaining <= 2
+              const isDueToday = alert.days_remaining === 0
+
+              return (
+                <div
+                  key={alert.id}
+                  className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm ${
+                    isOverdue
+                      ? 'bg-red-100 border border-red-200'
+                      : isDueToday
+                      ? 'bg-orange-100 border border-orange-200'
+                      : isDueSoon
+                      ? 'bg-amber-100 border border-amber-200'
+                      : 'bg-white border border-gray-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Clock className={`h-4 w-4 flex-shrink-0 ${
+                      isOverdue ? 'text-red-600' : isDueSoon || isDueToday ? 'text-amber-600' : 'text-gray-500'
+                    }`} />
+                    <span className="font-medium truncate">{alert.vendor}</span>
+                    <span className="text-gray-500 hidden sm:inline">—</span>
+                    <span className="text-gray-600 truncate hidden sm:inline">{alert.description}</span>
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0 pl-6 sm:pl-0">
+                    <span className="text-gray-700 font-medium">฿{alert.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-xs text-gray-500">
+                      วันที่เอกสาร: {new Date(alert.expense_date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold whitespace-nowrap ${
+                      isOverdue
+                        ? 'bg-red-600 text-white'
+                        : isDueToday
+                        ? 'bg-orange-500 text-white'
+                        : isDueSoon
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-gray-200 text-gray-700'
+                    }`}>
+                      {isOverdue
+                        ? `เกินกำหนด ${Math.abs(alert.days_remaining)} วัน`
+                        : isDueToday
+                        ? 'ครบกำหนดวันนี้!'
+                        : `อีก ${alert.days_remaining} วัน (${new Date(alert.due_date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })})`
+                      }
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          {creditAlerts.filter(a => a.is_paid).length > 0 && (
+            <div className="mt-3 pt-3 border-t border-amber-200">
+              <p className="text-xs text-gray-500 flex items-center gap-1">
+                <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                ชำระแล้ว {creditAlerts.filter(a => a.is_paid).length} รายการ
+              </p>
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Actions Bar */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -316,6 +596,13 @@ export default function PaymentVoucherPage() {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="px-2 py-3 text-center w-10">
+                      <button onClick={toggleSelectAll} className="p-1 hover:bg-gray-200 rounded">
+                        {selectedSyncIds.size === filteredVouchers.length && filteredVouchers.length > 0
+                          ? <CheckSquare className="h-4 w-4 text-[#2B9CD8]" />
+                          : <Square className="h-4 w-4 text-gray-400" />}
+                      </button>
+                    </th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">เลขที่</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">วันที่</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">ผู้รับเงิน</th>
@@ -328,9 +615,23 @@ export default function PaymentVoucherPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredVouchers.map((voucher) => (
-                    <tr key={voucher.id} className="hover:bg-gray-50">
+                    <tr key={voucher.id} className={`hover:bg-gray-50 ${selectedSyncIds.has(voucher.id) ? 'bg-blue-50' : ''}`}>
+                      <td className="px-2 py-3 text-center w-10">
+                        <button onClick={() => toggleSyncSelect(voucher.id)} className="p-1 hover:bg-gray-200 rounded">
+                          {selectedSyncIds.has(voucher.id)
+                            ? <CheckSquare className="h-4 w-4 text-[#2B9CD8]" />
+                            : <Square className="h-4 w-4 text-gray-400" />}
+                        </button>
+                      </td>
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                        {voucher.voucher_number}
+                        <div className="flex items-center gap-1">
+                          {voucher.voucher_number}
+                          {voucher.flowaccount_id && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700" title={`FA ID: ${voucher.flowaccount_id}`}>
+                              FA ✓
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
                         {new Date(voucher.voucher_date).toLocaleDateString('th-TH')}
@@ -841,6 +1142,53 @@ export default function PaymentVoucherPage() {
                 className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
               >
                 ปิด
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FA Sync Category Modal */}
+      {showSyncModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Sync ใบสำคัญจ่ายไป FlowAccount</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              เลือกหมวดหมู่ค่าใช้จ่ายใน FlowAccount สำหรับ {selectedSyncIds.size} รายการ
+            </p>
+            {loadingFaCategories ? (
+              <p className="text-center text-gray-500 py-4">กำลังโหลดหมวดหมู่...</p>
+            ) : faCategories.length === 0 ? (
+              <p className="text-center text-red-500 py-4">ไม่พบหมวดหมู่จาก FlowAccount</p>
+            ) : (
+              <select
+                value={selectedFaCategory?.categoryId || ''}
+                onChange={(e) => {
+                  const cat = faCategories.find(c => c.categoryId === e.target.value)
+                  setSelectedFaCategory(cat)
+                }}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-4"
+              >
+                {faCategories.map((cat, idx) => (
+                  <option key={idx} value={cat.categoryId}>
+                    {cat.nameLocal || cat.nameForeign || cat.categoryId}
+                  </option>
+                ))}
+              </select>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowSyncModal(false)}
+                className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors"
+              >
+                ยกเลิก
+              </button>
+              <button
+                onClick={handleSyncToFa}
+                disabled={!selectedFaCategory || loadingFaCategories}
+                className="flex-1 px-4 py-2 bg-[#2B9CD8] hover:bg-[#2488C0] disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
+              >
+                เริ่ม Sync
               </button>
             </div>
           </div>

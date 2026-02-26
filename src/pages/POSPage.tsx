@@ -13,6 +13,8 @@ import type { Product } from '../types/database'
 import { supabase } from '../services/supabase'
 import { useLanguage } from '../contexts/LanguageContext'
 import { zortOutService } from '../services/zortout'
+import { getAutoSyncConfig } from './FlowAccountSettingsPage'
+import { convertOrderToCashInvoice, createInvoice } from '../services/flowaccount'
 
 interface SavedOrder {
   id: string
@@ -907,6 +909,56 @@ export default function POSPage() {
             })
           } catch (syncError) {
             console.error('Exception during ZortOut sync:', syncError)
+          }
+
+          // Auto-sync Cash Invoice to FlowAccount (async - don't block UI)
+          try {
+            const faAutoSync = getAutoSyncConfig()
+            if (faAutoSync.enabled) {
+              const channelMatch = faAutoSync.channels.length === 0 || faAutoSync.channels.includes(salesChannel)
+              const paymentMatch = faAutoSync.paymentMethods.length === 0 || faAutoSync.paymentMethods.includes(paymentMethodEnum)
+              
+              if (channelMatch && paymentMatch) {
+                const channelDisplayName = salesChannels.find(c => c.id === salesChannel)?.name || salesChannel
+                const faOrderData = convertOrderToCashInvoice({
+                  order_number: orderNumber,
+                  customer_name: selectedCustomer?.name || 'ลูกค้าทั่วไป',
+                  total: getTotal(),
+                  subtotal: getSubtotal(),
+                  discount: getTotalDiscount(),
+                  payment_method: paymentMethodName,
+                  created_at: new Date().toISOString(),
+                  platform_name: channelDisplayName,
+                  items: items.map(item => {
+                    const sellingPrice = item.custom_price ?? getProductPriceForChannel(item.product, salesChannel as SalesChannel)
+                    return {
+                      product_name: item.product.name_th,
+                      quantity: item.quantity,
+                      unit_price: sellingPrice,
+                      discount: item.discount || 0,
+                      total_price: sellingPrice * item.quantity - (item.discount || 0)
+                    }
+                  })
+                })
+
+                createInvoice(faOrderData, 'cash-invoice').then((result: any) => {
+                  const faId = result?.data?.recordId || result?.data?.documentId
+                  console.log(`[FA Auto-Sync] Cash invoice created for ${orderNumber}, FA ID: ${faId}`)
+                  // Save FA ID back to order
+                  if (faId && orderData?.id) {
+                    supabase
+                      .from('orders')
+                      .update({ flowaccount_id: faId, flowaccount_synced_at: new Date().toISOString() })
+                      .eq('id', orderData.id)
+                      .then(() => console.log(`[FA Auto-Sync] Order ${orderNumber} updated with FA ID ${faId}`))
+                  }
+                }).catch(err => {
+                  console.warn(`[FA Auto-Sync] Failed for ${orderNumber}:`, err.message)
+                })
+              }
+            }
+          } catch (autoSyncError) {
+            console.error('[FA Auto-Sync] Exception:', autoSyncError)
           }
 
           // Auto-generate simplified tax invoice for Grab and Lazada channels

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
-import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle, Percent, FileText, ShoppingCart, BookOpen, Wallet, Printer, Upload, X, CheckSquare, Square } from 'lucide-react'
+import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle, Percent, FileText, ShoppingCart, BookOpen, Wallet, Printer, Upload, X, CheckSquare, Square, ScanLine } from 'lucide-react'
 import { getExpenseCategories as getFaExpenseCategories, syncExpensesToFlowAccount, syncPurchasesToFlowAccount } from '../services/flowaccount'
 import { useLanguage } from '../contexts/LanguageContext'
 
@@ -1425,6 +1425,13 @@ export default function ExpensesPage() {
           <Database className="h-4 w-4" />
           ค่าใช้จ่าย
         </button>
+        <Link
+          to="/bill-scan"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+        >
+          <ScanLine className="h-4 w-4" />
+          สแกนบิล OCR
+        </Link>
         <button
           onClick={() => setViewMode('pending')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${

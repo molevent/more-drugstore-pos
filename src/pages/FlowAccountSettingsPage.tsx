@@ -5,8 +5,11 @@ import {
   AlertCircle, 
   RefreshCw,
   ExternalLink,
-  Database
+  Database,
+  Zap,
+  Save
 } from 'lucide-react';
+import { supabase } from '../services/supabase';
 import { 
   testConnection, 
   clearToken 
@@ -19,6 +22,26 @@ import {
   isSandboxMode
 } from '../services/flowaccount/config';
 
+interface AutoSyncConfig {
+  enabled: boolean;
+  channels: string[];       // e.g. ['walk-in','grab','shopee']
+  paymentMethods: string[]; // e.g. ['cash','transfer','promptpay']
+}
+
+const DEFAULT_AUTO_SYNC: AutoSyncConfig = {
+  enabled: false,
+  channels: [],
+  paymentMethods: []
+};
+
+export const getAutoSyncConfig = (): AutoSyncConfig => {
+  try {
+    const saved = localStorage.getItem('fa_auto_sync_cash_invoice');
+    if (saved) return { ...DEFAULT_AUTO_SYNC, ...JSON.parse(saved) };
+  } catch {}
+  return DEFAULT_AUTO_SYNC;
+};
+
 export default function FlowAccountSettingsPage() {
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<boolean | null>(null);
@@ -26,11 +49,53 @@ export default function FlowAccountSettingsPage() {
   const [isSandbox, setIsSandbox] = useState(isSandboxMode());
   const [showCredentials, setShowCredentials] = useState(false);
 
+  // Auto-sync settings
+  const [autoSync, setAutoSync] = useState<AutoSyncConfig>(getAutoSyncConfig());
+  const [salesChannels, setSalesChannels] = useState<Array<{id: string; name: string}>>([]);
+  const [paymentMethodsList, setPaymentMethodsList] = useState<Array<{id: string; name: string}>>([]);
+  const [autoSyncSaved, setAutoSyncSaved] = useState(false);
+
   useEffect(() => {
     // Check current config on mount
     const current = getFlowAccountConfig();
     setConfig(current);
     setIsSandbox(isSandboxMode());
+
+    // Load sales channels
+    const savedChannels = localStorage.getItem('pos_sales_channels');
+    if (savedChannels) {
+      try {
+        setSalesChannels(JSON.parse(savedChannels).map((c: any) => ({ id: c.id, name: c.name })));
+      } catch {}
+    }
+    if (salesChannels.length === 0) {
+      setSalesChannels([
+        { id: 'walk-in', name: 'หน้าร้าน' },
+        { id: 'grab', name: 'GRAB' },
+        { id: 'shopee', name: 'SHOPEE' },
+        { id: 'lineman', name: 'LINEMAN' },
+        { id: 'lazada', name: 'LAZADA' }
+      ]);
+    }
+
+    // Load payment methods from Supabase
+    supabase
+      .from('payment_methods')
+      .select('id, name')
+      .eq('is_active', true)
+      .order('name')
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setPaymentMethodsList(data);
+        } else {
+          setPaymentMethodsList([
+            { id: 'cash', name: 'เงินสด' },
+            { id: 'transfer', name: 'โอนเงิน' },
+            { id: 'credit_card', name: 'บัตรเครดิต' },
+            { id: 'promptpay', name: 'พร้อมเพย์' }
+          ]);
+        }
+      });
   }, []);
 
   const handleTestConnection = async () => {
@@ -74,6 +139,31 @@ export default function FlowAccountSettingsPage() {
     
     setTestResult(null);
     alert('บันทึกการตั้งค่าเรียบร้อย');
+  };
+
+  // Auto-sync helpers
+  const toggleAutoSyncChannel = (channelId: string) => {
+    setAutoSync(prev => {
+      const channels = prev.channels.includes(channelId)
+        ? prev.channels.filter(c => c !== channelId)
+        : [...prev.channels, channelId];
+      return { ...prev, channels };
+    });
+  };
+
+  const toggleAutoSyncPayment = (methodId: string) => {
+    setAutoSync(prev => {
+      const paymentMethods = prev.paymentMethods.includes(methodId)
+        ? prev.paymentMethods.filter(m => m !== methodId)
+        : [...prev.paymentMethods, methodId];
+      return { ...prev, paymentMethods };
+    });
+  };
+
+  const handleSaveAutoSync = () => {
+    localStorage.setItem('fa_auto_sync_cash_invoice', JSON.stringify(autoSync));
+    setAutoSyncSaved(true);
+    setTimeout(() => setAutoSyncSaved(false), 2000);
   };
 
   return (
@@ -257,6 +347,106 @@ export default function FlowAccountSettingsPage() {
             </div>
           </div>
         )}
+
+        {/* Auto-Sync Cash Invoice Settings */}
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-amber-500" />
+              <h2 className="text-lg font-semibold text-gray-900">Auto-Sync Cash Invoice</h2>
+            </div>
+            <div className="flex items-center gap-3">
+              {autoSyncSaved && (
+                <span className="text-sm text-green-600 flex items-center gap-1">
+                  <Check className="h-4 w-4" /> บันทึกแล้ว
+                </span>
+              )}
+              <button
+                onClick={handleSaveAutoSync}
+                className="flex items-center gap-1 px-4 py-2 bg-[#4A90A4] text-white rounded-lg hover:bg-[#3A8094] transition-colors text-sm font-medium"
+              >
+                <Save className="h-4 w-4" />
+                บันทึก
+              </button>
+            </div>
+          </div>
+
+          <p className="text-sm text-gray-500 mb-4">
+            เมื่อเปิดใช้งาน ระบบจะ sync ใบเสร็จ (Cash Invoice) ไปยัง FlowAccount โดยอัตโนมัติทุกครั้งที่ขายสำเร็จ
+            ตามช่องทางและวิธีชำระเงินที่เลือกไว้
+          </p>
+
+          {/* Master Toggle */}
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-4">
+            <span className="font-medium text-gray-800">เปิดใช้งาน Auto-Sync</span>
+            <button
+              onClick={() => setAutoSync(prev => ({ ...prev, enabled: !prev.enabled }))}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                autoSync.enabled ? 'bg-[#4A90A4]' : 'bg-gray-300'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                autoSync.enabled ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
+
+          {autoSync.enabled && (
+            <div className="space-y-4">
+              {/* Channels */}
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">ช่องทางการขายที่ sync อัตโนมัติ</h3>
+                <p className="text-xs text-gray-400 mb-2">เลือกอย่างน้อย 1 ช่องทาง — ถ้าไม่เลือก จะ sync ทุกช่องทาง</p>
+                <div className="flex flex-wrap gap-2">
+                  {salesChannels.map(ch => (
+                    <button
+                      key={ch.id}
+                      onClick={() => toggleAutoSyncChannel(ch.id)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition-all ${
+                        autoSync.channels.includes(ch.id)
+                          ? 'border-[#4A90A4] bg-[#4A90A4]/10 text-[#4A90A4]'
+                          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                      }`}
+                    >
+                      {autoSync.channels.includes(ch.id) && <Check className="h-3 w-3 inline mr-1" />}
+                      {ch.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Payment Methods */}
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">วิธีชำระเงินที่ sync อัตโนมัติ</h3>
+                <p className="text-xs text-gray-400 mb-2">เลือกอย่างน้อย 1 วิธี — ถ้าไม่เลือก จะ sync ทุกวิธีชำระเงิน</p>
+                <div className="flex flex-wrap gap-2">
+                  {paymentMethodsList.map(pm => (
+                    <button
+                      key={pm.id}
+                      onClick={() => toggleAutoSyncPayment(pm.id)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition-all ${
+                        autoSync.paymentMethods.includes(pm.id)
+                          ? 'border-[#4A90A4] bg-[#4A90A4]/10 text-[#4A90A4]'
+                          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                      }`}
+                    >
+                      {autoSync.paymentMethods.includes(pm.id) && <Check className="h-3 w-3 inline mr-1" />}
+                      {pm.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Summary */}
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                <strong>สรุป:</strong> sync อัตโนมัติสำหรับ{' '}
+                {autoSync.channels.length === 0 ? 'ทุกช่องทาง' : autoSync.channels.map(c => salesChannels.find(s => s.id === c)?.name || c).join(', ')}
+                {' '}เมื่อชำระด้วย{' '}
+                {autoSync.paymentMethods.length === 0 ? 'ทุกวิธี' : autoSync.paymentMethods.map(m => paymentMethodsList.find(p => p.id === m)?.name || m).join(', ')}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Features Info */}
         <div className="bg-white rounded-lg shadow-sm p-6">

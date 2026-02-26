@@ -13,7 +13,6 @@ import {
   Calendar,
   Globe,
   Receipt,
-  ScanLine,
   Store,
   ArrowLeftRight
 } from 'lucide-react'
@@ -95,7 +94,6 @@ export default function Layout({ children }: LayoutProps) {
       title: t('nav.section.documents'),
       items: [
         { name: t('nav.documents'), href: '/expenses', icon: Wallet, id: 'documents' as const },
-        { name: t('nav.billScan'), href: '/bill-scan', icon: ScanLine, id: 'documents' as const },
         { name: t('nav.taxInvoices'), href: '/tax-invoices', icon: Receipt, id: 'tax_invoices' as const },
         { name: t('nav.workSchedule'), href: '/work-schedule', icon: Calendar, id: 'work_schedule' as const },
       ].filter(item => canAccessMenu(userRole, item.id))

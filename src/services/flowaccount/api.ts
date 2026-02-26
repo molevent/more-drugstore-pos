@@ -1115,6 +1115,278 @@ export const syncWhtToFlowAccount = async (
 };
 
 /**
+ * Convert local PaymentVoucher to FlowAccount expense format
+ * Payment vouchers are synced as FA expenses (ค่าใช้จ่าย)
+ */
+export const convertPaymentVoucherToFA = (
+  voucher: {
+    voucher_number: string;
+    voucher_date: string;
+    payee_name: string;
+    payee_tax_id?: string;
+    amount: number;
+    description: string;
+    payment_method: string;
+    notes?: string;
+  },
+  faCategory: {
+    systemCode: string;
+    categoryId: string;
+    creditId: string;
+    debitId: string;
+  }
+): any => {
+  const total = voucher.amount;
+  const publishedOn = voucher.voucher_date;
+
+  return {
+    contactName: voucher.payee_name || '',
+    contactTaxId: voucher.payee_tax_id || '',
+    publishedOn,
+    creditType: 3,
+    creditDays: 0,
+    dueDate: publishedOn,
+    isVat: false,
+    isVatInclusive: false,
+    subTotal: total,
+    discountPercentage: 0,
+    discountAmount: 0,
+    totalAfterDiscount: total,
+    vatAmount: 0,
+    grandTotal: total,
+    remarks: [
+      voucher.voucher_number ? `ใบสำคัญจ่าย: ${voucher.voucher_number}` : '',
+      voucher.payment_method ? `ชำระโดย: ${voucher.payment_method}` : '',
+      voucher.notes || ''
+    ].filter(Boolean).join('\n'),
+    internalNotes: `PV: ${voucher.voucher_number}`,
+    items: [{
+      description: voucher.description || 'ใบสำคัญจ่าย',
+      quantity: 1,
+      pricePerUnit: total,
+      total: total,
+      systemCode: faCategory.systemCode,
+      categoryId: faCategory.categoryId,
+      creditId: faCategory.creditId,
+      debitId: faCategory.debitId
+    }]
+  };
+};
+
+/**
+ * Sync payment vouchers to FlowAccount as expenses
+ */
+export const syncPaymentVouchersToFlowAccount = async (
+  vouchers: Array<{
+    id: string;
+    voucher_number: string;
+    voucher_date: string;
+    payee_name: string;
+    payee_tax_id?: string;
+    amount: number;
+    description: string;
+    payment_method: string;
+    notes?: string;
+    flowaccount_id?: number;
+  }>,
+  faCategory: {
+    systemCode: string;
+    categoryId: string;
+    creditId: string;
+    debitId: string;
+  },
+  onProgress?: (current: number, total: number, action: string) => void
+): Promise<{
+  created: number;
+  updated: number;
+  skipped: number;
+  failed: number;
+  results: Array<{ localId: string; faId?: number; action: string; error?: string }>;
+}> => {
+  const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+  let created = 0, updated = 0, skipped = 0, failed = 0;
+  const results: Array<{ localId: string; faId?: number; action: string; error?: string }> = [];
+
+  for (let i = 0; i < vouchers.length; i++) {
+    const voucher = vouchers[i];
+    const label = `${voucher.voucher_number} - ${voucher.payee_name}`;
+    onProgress?.(i + 1, vouchers.length, `${i + 1}/${vouchers.length} ${label}`);
+
+    try {
+      const faData = convertPaymentVoucherToFA(voucher, faCategory);
+
+      if (voucher.flowaccount_id) {
+        const result = await updateExpense(voucher.flowaccount_id, faData);
+        const updatedId = result?.data?.recordId || voucher.flowaccount_id;
+        updated++;
+        results.push({ localId: voucher.id, faId: updatedId, action: 'updated' });
+      } else {
+        const result = await createExpense(faData);
+        const newId = result?.data?.recordId || result?.data?.documentId;
+        created++;
+        results.push({ localId: voucher.id, faId: newId, action: 'created' });
+      }
+    } catch (err: any) {
+      failed++;
+      results.push({ localId: voucher.id, action: 'failed', error: err.message });
+      console.warn(`PV sync failed [${i + 1}/${vouchers.length}] ${label}:`, err.message);
+    }
+
+    if (i < vouchers.length - 1) await delay(100);
+  }
+
+  return { created, updated, skipped, failed, results };
+};
+
+/**
+ * Tax Invoices API (ใบกำกับภาษี/ใบเสร็จรับเงิน - FlowAccount uses /tax-invoices endpoint)
+ */
+export const getTaxInvoices = async (page: number = 1, limit: number = 50): Promise<any> => {
+  return apiRequest<any>(`tax-invoices?currentPage=${page}&pageSize=${limit}&sortBy=&filter=`);
+};
+
+export const getTaxInvoiceById = async (id: number): Promise<any> => {
+  return apiRequest<any>(`tax-invoices/${id}`);
+};
+
+export const createTaxInvoice = async (taxInvoice: any): Promise<any> => {
+  return apiRequest<any>('tax-invoices', {
+    method: 'POST',
+    body: JSON.stringify(taxInvoice)
+  });
+};
+
+export const updateTaxInvoice = async (id: number, taxInvoice: any): Promise<any> => {
+  return apiRequest<any>(`tax-invoices/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(taxInvoice)
+  });
+};
+
+/**
+ * Convert local tax invoice + order data to FlowAccount tax invoice format
+ */
+export const convertLocalTaxInvoiceToFA = (
+  taxInvoice: {
+    tax_invoice_number: string;
+    customer_name: string;
+    customer_tax_id?: string;
+    customer_address?: string;
+    total_amount: number;
+    vat_amount: number;
+    created_at: string;
+  },
+  orderItems: Array<{
+    product_name: string;
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+  }>
+): any => {
+  const totalAmount = taxInvoice.total_amount || 0;
+  const vatAmount = taxInvoice.vat_amount || (totalAmount * 0.07 / 1.07);
+  const baseAmount = totalAmount - vatAmount;
+  const publishedOn = taxInvoice.created_at ? taxInvoice.created_at.split('T')[0] : new Date().toISOString().split('T')[0];
+
+  const items = orderItems.map(item => ({
+    name: item.product_name || 'สินค้า',
+    description: '',
+    quantity: item.quantity,
+    unitName: 'ชิ้น',
+    pricePerUnit: item.unit_price,
+    discount: 0,
+    total: item.total_price
+  }));
+
+  return {
+    contactName: taxInvoice.customer_name || 'ลูกค้าทั่วไป',
+    contactAddress: taxInvoice.customer_address || '',
+    contactTaxId: taxInvoice.customer_tax_id || '',
+    publishedOn,
+    creditType: 3,
+    creditDays: 0,
+    dueDate: publishedOn,
+    isVat: true,
+    isVatInclusive: true,
+    subTotal: baseAmount,
+    discountPercentage: 0,
+    discountAmount: 0,
+    totalAfterDiscount: baseAmount,
+    vatAmount: vatAmount,
+    grandTotal: totalAmount,
+    remarks: '',
+    internalNotes: `เลขที่ใบกำกับภาษี: ${taxInvoice.tax_invoice_number}`,
+    items
+  };
+};
+
+/**
+ * Sync local tax invoices to FlowAccount
+ */
+export const syncTaxInvoicesToFlowAccount = async (
+  invoices: Array<{
+    id: string;
+    tax_invoice_number: string;
+    customer_name: string;
+    customer_tax_id?: string;
+    customer_address?: string;
+    total_amount: number;
+    vat_amount: number;
+    created_at: string;
+    flowaccount_id?: number;
+    order_items: Array<{
+      product_name: string;
+      quantity: number;
+      unit_price: number;
+      total_price: number;
+    }>;
+  }>,
+  onProgress?: (current: number, total: number, action: string) => void
+): Promise<{
+  created: number;
+  updated: number;
+  skipped: number;
+  failed: number;
+  results: Array<{ localId: string; faId?: number; action: string; error?: string }>;
+}> => {
+  const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+  let created = 0, updated = 0, skipped = 0, failed = 0;
+  const results: Array<{ localId: string; faId?: number; action: string; error?: string }> = [];
+
+  for (let i = 0; i < invoices.length; i++) {
+    const inv = invoices[i];
+    const label = `${inv.tax_invoice_number} - ${inv.customer_name}`;
+    onProgress?.(i + 1, invoices.length, `${i + 1}/${invoices.length} ${label}`);
+
+    try {
+      const faData = convertLocalTaxInvoiceToFA(inv, inv.order_items);
+
+      if (inv.flowaccount_id) {
+        const result = await updateTaxInvoice(inv.flowaccount_id, faData);
+        const updatedId = result?.data?.recordId || inv.flowaccount_id;
+        updated++;
+        results.push({ localId: inv.id, faId: updatedId, action: 'updated' });
+      } else {
+        const result = await createTaxInvoice(faData);
+        const newId = result?.data?.recordId || result?.data?.documentId;
+        created++;
+        results.push({ localId: inv.id, faId: newId, action: 'created' });
+      }
+    } catch (err: any) {
+      failed++;
+      results.push({ localId: inv.id, action: 'failed', error: err.message });
+      console.warn(`Tax invoice sync failed [${i + 1}/${invoices.length}] ${label}:`, err.message);
+    }
+
+    if (i < invoices.length - 1) await delay(100);
+  }
+
+  return { created, updated, skipped, failed, results };
+};
+
+/**
  * Invoices API
  */
 export const getInvoices = async (
