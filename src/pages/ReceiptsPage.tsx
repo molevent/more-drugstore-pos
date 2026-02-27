@@ -376,31 +376,30 @@ export default function ReceiptsPage() {
 
       const receiptDate = new Date(receipt.receipt_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })
 
-      // Build items rows
+      // Build items rows — horizontal lines only, no vertical borders
       let itemsHtml = ''
       if (receiptItems.length > 0) {
         itemsHtml = receiptItems.map((item, idx) => `
           <tr>
-            <td style="border: 1px solid #333; padding: 6px; text-align: center; font-size: 12px;">${idx + 1}</td>
-            <td style="border: 1px solid #333; padding: 6px; font-size: 12px;">${item.description || '-'}</td>
-            <td style="border: 1px solid #333; padding: 6px; text-align: center; font-size: 12px;">1</td>
-            <td style="border: 1px solid #333; padding: 6px; text-align: center; font-size: 12px;">รายการ</td>
-            <td style="border: 1px solid #333; padding: 6px; text-align: right; font-size: 12px;">${(item.amount || 0).toFixed(2)}</td>
-            <td style="border: 1px solid #333; padding: 6px; text-align: right; font-size: 12px;">-</td>
-            <td style="border: 1px solid #333; padding: 6px; text-align: right; font-size: 12px;">${(item.total || 0).toFixed(2)}</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px; text-align: center; font-size: 12px; color: #888;">${idx + 1}</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px; font-size: 12px; color: #222;">${item.description || '-'}</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px; text-align: center; font-size: 12px;">1</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px; text-align: center; font-size: 12px;">รายการ</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px; text-align: right; font-size: 12px;">${(item.amount || 0).toFixed(2)}</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px; text-align: right; font-size: 12px; color: #aaa;">-</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px; text-align: right; font-size: 12px; font-weight: 600;">${(item.total || 0).toFixed(2)}</td>
           </tr>
         `).join('')
       } else {
-        // If no items, show a single line from the receipt itself
         itemsHtml = `
           <tr>
-            <td style="border: 1px solid #333; padding: 6px; text-align: center; font-size: 12px;">1</td>
-            <td style="border: 1px solid #333; padding: 6px; font-size: 12px;">${receipt.description || 'รับชำระเงิน'}</td>
-            <td style="border: 1px solid #333; padding: 6px; text-align: center; font-size: 12px;">1</td>
-            <td style="border: 1px solid #333; padding: 6px; text-align: center; font-size: 12px;">รายการ</td>
-            <td style="border: 1px solid #333; padding: 6px; text-align: right; font-size: 12px;">${baseAmount.toFixed(2)}</td>
-            <td style="border: 1px solid #333; padding: 6px; text-align: right; font-size: 12px;">-</td>
-            <td style="border: 1px solid #333; padding: 6px; text-align: right; font-size: 12px;">${baseAmount.toFixed(2)}</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px; text-align: center; font-size: 12px; color: #888;">1</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px; font-size: 12px; color: #222;">${receipt.description || 'รับชำระเงิน'}</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px; text-align: center; font-size: 12px;">1</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px; text-align: center; font-size: 12px;">รายการ</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px; text-align: right; font-size: 12px;">${baseAmount.toFixed(2)}</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px; text-align: right; font-size: 12px; color: #aaa;">-</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px; text-align: right; font-size: 12px; font-weight: 600;">${baseAmount.toFixed(2)}</td>
           </tr>
         `
       }
@@ -410,50 +409,49 @@ export default function ReceiptsPage() {
       for (let i = currentRows; i < 8; i++) {
         itemsHtml += `
           <tr>
-            <td style="border: 1px solid #333; padding: 6px; text-align: center; font-size: 12px;">&nbsp;</td>
-            <td style="border: 1px solid #333; padding: 6px; font-size: 12px;">&nbsp;</td>
-            <td style="border: 1px solid #333; padding: 6px; text-align: center; font-size: 12px;">&nbsp;</td>
-            <td style="border: 1px solid #333; padding: 6px; text-align: center; font-size: 12px;">&nbsp;</td>
-            <td style="border: 1px solid #333; padding: 6px; text-align: right; font-size: 12px;">&nbsp;</td>
-            <td style="border: 1px solid #333; padding: 6px; text-align: right; font-size: 12px;">&nbsp;</td>
-            <td style="border: 1px solid #333; padding: 6px; text-align: right; font-size: 12px;">&nbsp;</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px;">&nbsp;</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px;">&nbsp;</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px;">&nbsp;</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px;">&nbsp;</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px;">&nbsp;</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px;">&nbsp;</td>
+            <td style="border-bottom: 1px solid #e5e5e5; padding: 7px 6px;">&nbsp;</td>
           </tr>
         `
       }
 
-      // Payment method checkboxes
+      // Payment method checkboxes — B&W
       const payMethods = ['เงินสด', 'เช็ค', 'โอนเงิน', 'บัตรเครดิต']
       const paymentCheckboxes = payMethods.map(m => {
         const checked = receipt.payment_method === m
-        return `<span style="margin-right: 15px;"><span style="border: 1px solid #333; display: inline-block; width: 12px; height: 12px; margin-right: 3px; vertical-align: middle; text-align: center; font-size: 10px; line-height: 12px;">${checked ? '✓' : ''}</span> ${m}</span>`
+        return `<span style="margin-right: 16px; font-size: 12px;"><span style="border: 1.5px solid #333; display: inline-block; width: 12px; height: 12px; margin-right: 4px; vertical-align: middle; text-align: center; font-size: 10px; line-height: 12px;">${checked ? '✓' : ''}</span> ${m}</span>`
       }).join('')
 
       const printContent = `
-        <div style="font-family: 'TH Sarabun New', 'Angsana New', sans-serif; width: 210mm; min-height: 297mm; padding: 15px; font-size: 14px; box-sizing: border-box;">
+        <div style="font-family: 'Sarabun', 'TH Sarabun New', 'Helvetica Neue', sans-serif; width: 210mm; min-height: 297mm; padding: 20mm 18mm; font-size: 13px; box-sizing: border-box; color: #222;">
+
           <!-- Header Section -->
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 18px;">
             <tr>
-              <!-- Logo/Company Info -->
-              <td style="width: 60%; vertical-align: top;">
-                ${logoUrl ? `<img src="${logoUrl}" alt="Logo" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px;" />` : `<div style="border: 2px solid #333; border-radius: 50%; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;"><span style="font-size: 12px; text-align: center; color: #666;">Logo</span></div>`}
-                <p style="margin: 3px 0; font-size: 13px; font-weight: bold;">${shopName}</p>
-                <p style="margin: 3px 0; font-size: 12px;">${shopAddress}</p>
-                <p style="margin: 3px 0; font-size: 12px;">เลขประจำตัวผู้เสียภาษี: ${shopTaxId}</p>
-                <p style="margin: 3px 0; font-size: 12px;">โทร: ${shopPhone}</p>
+              <td style="width: 55%; vertical-align: top;">
+                ${logoUrl ? `<img src="${logoUrl}" alt="Logo" style="width: 68px; height: 68px; object-fit: contain; margin-bottom: 10px;" />` : `<div style="width: 68px; height: 68px; border: 1.5px solid #ccc; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;"><span style="font-size: 11px; color: #999;">Logo</span></div>`}
+                <p style="margin: 3px 0; font-size: 15px; font-weight: 700;">${shopName}</p>
+                <p style="margin: 2px 0; font-size: 11px; color: #666;">${shopAddress}</p>
+                <p style="margin: 2px 0; font-size: 11px; color: #666;">เลขประจำตัวผู้เสียภาษี: ${shopTaxId}</p>
+                <p style="margin: 2px 0; font-size: 11px; color: #666;">โทร: ${shopPhone}</p>
               </td>
-              <!-- Receipt Details -->
-              <td style="width: 40%; vertical-align: top; text-align: right;">
+              <td style="width: 45%; vertical-align: top; text-align: right;">
                 ${copyText}
-                <h2 style="margin: 0 0 10px 0; font-size: 20px; font-weight: bold;">ใบเสร็จรับเงิน</h2>
-                <p style="margin: 3px 0; font-size: 18px; font-weight: bold; color: #333;">RECEIPT</p>
-                <p style="margin: 3px 0; font-size: 11px; color: #666;">${copyLabel} (เอกสารออกเป็นคู่ฉบับ)</p>
-                <table style="width: 100%; margin-top: 10px; font-size: 12px;">
+                <p style="margin: 0; font-size: 22px; font-weight: 700; color: #000; letter-spacing: -0.5px;">ใบเสร็จรับเงิน</p>
+                <p style="margin: 2px 0 4px 0; font-size: 12px; font-weight: 500; color: #999; letter-spacing: 2px; text-transform: uppercase;">RECEIPT</p>
+                <p style="margin: 0 0 10px 0; font-size: 10px; color: #aaa;">${copyLabel} (เอกสารออกเป็นคู่ฉบับ)</p>
+                <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
                   <tr>
-                    <td style="text-align: left; padding: 2px 0;">เลขที่</td>
-                    <td style="text-align: right; padding: 2px 0; font-weight: bold;">${receipt.receipt_number}</td>
+                    <td style="text-align: left; padding: 2px 0; color: #888;">เลขที่</td>
+                    <td style="text-align: right; padding: 2px 0; font-weight: 700;">${receipt.receipt_number}</td>
                   </tr>
                   <tr>
-                    <td style="text-align: left; padding: 2px 0;">วันที่</td>
+                    <td style="text-align: left; padding: 2px 0; color: #888;">วันที่</td>
                     <td style="text-align: right; padding: 2px 0;">${receiptDate}</td>
                   </tr>
                 </table>
@@ -461,33 +459,38 @@ export default function ReceiptsPage() {
             </tr>
           </table>
 
-          <!-- Customer Section -->
-          <table style="width: 100%; border: 1px solid #333; border-collapse: collapse; margin-bottom: 15px;">
+          <!-- Divider -->
+          <div style="border-top: 2px solid #222; margin-bottom: 14px;"></div>
+
+          <!-- Customer Section — no box border, just bottom divider -->
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 14px;">
             <tr>
-              <td style="padding: 10px; vertical-align: top; width: 50%; border-right: 1px solid #333;">
-                <p style="margin: 3px 0; font-size: 12px; color: #666;">ได้รับเงินจาก / Received from</p>
-                <p style="margin: 5px 0; font-size: 13px; font-weight: bold;">${receipt.customer_name || 'ลูกค้าทั่วไป'}</p>
-                <p style="margin: 3px 0; font-size: 12px;">${receipt.customer_address || '-'}</p>
-                <p style="margin: 3px 0; font-size: 12px;">เลขประจำตัวผู้เสียภาษี: ${receipt.customer_tax_id || '-'}</p>
+              <td style="padding: 0 0 12px 0; vertical-align: top; width: 50%;">
+                <p style="margin: 0 0 4px 0; font-size: 10px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px;">ได้รับเงินจาก / Received from</p>
+                <p style="margin: 0 0 3px 0; font-size: 13px; font-weight: 700;">${receipt.customer_name || 'ลูกค้าทั่วไป'}</p>
+                <p style="margin: 1px 0; font-size: 11px; color: #555;">${receipt.customer_address || '-'}</p>
+                <p style="margin: 1px 0; font-size: 11px; color: #888;">เลขประจำตัวผู้เสียภาษี: ${receipt.customer_tax_id || '-'}</p>
               </td>
-              <td style="padding: 10px; vertical-align: top; width: 50%;">
-                <p style="margin: 3px 0; font-size: 12px; color: #666;">เรื่อง / Subject</p>
-                <p style="margin: 5px 0; font-size: 13px;">${receipt.receipt_type === 'from_tax_invoice' ? 'ชำระค่าสินค้าตามใบกำกับภาษี' : (receipt.description || 'รับชำระเงิน')}</p>
+              <td style="padding: 0 0 12px 20px; vertical-align: top; width: 50%;">
+                <p style="margin: 0 0 4px 0; font-size: 10px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px;">เรื่อง / Subject</p>
+                <p style="margin: 0; font-size: 13px;">${receipt.receipt_type === 'from_tax_invoice' ? 'ชำระค่าสินค้าตามใบกำกับภาษี' : (receipt.description || 'รับชำระเงิน')}</p>
               </td>
             </tr>
           </table>
 
-          <!-- Items Table -->
-          <table style="width: 100%; border: 1px solid #333; border-collapse: collapse; margin-bottom: 0;">
+          <div style="border-top: 1px solid #ddd; margin-bottom: 2px;"></div>
+
+          <!-- Items Table — horizontal lines only -->
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 0;">
             <thead>
-              <tr style="background-color: #f5f5f5;">
-                <th style="border: 1px solid #333; padding: 8px; text-align: center; width: 5%; font-size: 12px;">#</th>
-                <th style="border: 1px solid #333; padding: 8px; text-align: left; width: 35%; font-size: 12px;">รายละเอียด</th>
-                <th style="border: 1px solid #333; padding: 8px; text-align: center; width: 10%; font-size: 12px;">จำนวน</th>
-                <th style="border: 1px solid #333; padding: 8px; text-align: center; width: 10%; font-size: 12px;">หน่วย</th>
-                <th style="border: 1px solid #333; padding: 8px; text-align: right; width: 15%; font-size: 12px;">ราคาต่อหน่วย</th>
-                <th style="border: 1px solid #333; padding: 8px; text-align: right; width: 12%; font-size: 12px;">ส่วนลด</th>
-                <th style="border: 1px solid #333; padding: 8px; text-align: right; width: 13%; font-size: 12px;">จำนวนเงิน</th>
+              <tr>
+                <th style="border-bottom: 2px solid #222; padding: 8px 6px; text-align: center; width: 5%; font-size: 11px; font-weight: 700;">#</th>
+                <th style="border-bottom: 2px solid #222; padding: 8px 6px; text-align: left; width: 35%; font-size: 11px; font-weight: 700;">รายละเอียด</th>
+                <th style="border-bottom: 2px solid #222; padding: 8px 6px; text-align: center; width: 10%; font-size: 11px; font-weight: 700;">จำนวน</th>
+                <th style="border-bottom: 2px solid #222; padding: 8px 6px; text-align: center; width: 10%; font-size: 11px; font-weight: 700;">หน่วย</th>
+                <th style="border-bottom: 2px solid #222; padding: 8px 6px; text-align: right; width: 15%; font-size: 11px; font-weight: 700;">ราคาต่อหน่วย</th>
+                <th style="border-bottom: 2px solid #222; padding: 8px 6px; text-align: right; width: 12%; font-size: 11px; font-weight: 700;">ส่วนลด</th>
+                <th style="border-bottom: 2px solid #222; padding: 8px 6px; text-align: right; width: 13%; font-size: 11px; font-weight: 700;">จำนวนเงิน</th>
               </tr>
             </thead>
             <tbody>
@@ -496,83 +499,89 @@ export default function ReceiptsPage() {
           </table>
 
           <!-- Totals Section -->
-          <table style="width: 100%; border: 1px solid #333; border-collapse: collapse; border-top: none;">
+          <table style="width: 100%; border-collapse: collapse; border-top: 2px solid #222;">
             <tr>
-              <td style="width: 50%; border-right: 1px solid #333; padding: 10px; vertical-align: top; font-size: 11px;">
-                <p style="margin: 3px 0;">(${numberToThaiText(totalAmount)})</p>
-                <p style="margin: 10px 0 3px 0; font-weight: bold;">หมายเหตุ</p>
-                <p style="margin: 3px 0;">${receipt.notes || '-'}</p>
+              <td style="width: 50%; padding: 12px 6px; vertical-align: top;">
+                <p style="margin: 0 0 3px 0; font-size: 12px; font-style: italic; color: #555;">(${numberToThaiText(totalAmount)})</p>
+                <p style="margin: 10px 0 3px 0; font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px;">หมายเหตุ</p>
+                <p style="margin: 0; font-size: 11px; color: #555;">${receipt.notes || '-'}</p>
               </td>
               <td style="width: 50%; padding: 0; vertical-align: top;">
                 <table style="width: 100%; border-collapse: collapse;">
                   <tr>
-                    <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #ddd;">รวมเป็นเงิน</td>
-                    <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #ddd; width: 120px;">${baseAmount.toFixed(2)} บาท</td>
+                    <td style="padding: 7px 10px; text-align: right; font-size: 12px; color: #666; border-bottom: 1px solid #eee;">รวมเป็นเงิน</td>
+                    <td style="padding: 7px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #eee; width: 110px;">${baseAmount.toFixed(2)}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #ddd;">ภาษีมูลค่าเพิ่ม 7%</td>
-                    <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #ddd;">${vatAmount.toFixed(2)} บาท</td>
+                    <td style="padding: 7px 10px; text-align: right; font-size: 12px; color: #666; border-bottom: 1px solid #eee;">ภาษีมูลค่าเพิ่ม 7%</td>
+                    <td style="padding: 7px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #eee;">${vatAmount.toFixed(2)}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #ddd;">ราคาไม่รวมภาษีมูลค่าเพิ่ม</td>
-                    <td style="padding: 6px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #ddd;">${baseAmount.toFixed(2)} บาท</td>
+                    <td style="padding: 7px 10px; text-align: right; font-size: 12px; color: #666; border-bottom: 1px solid #eee;">ราคาไม่รวมภาษีมูลค่าเพิ่ม</td>
+                    <td style="padding: 7px 10px; text-align: right; font-size: 12px; border-bottom: 1px solid #eee;">${baseAmount.toFixed(2)}</td>
                   </tr>
-                  <tr style="background-color: #f5f5f5;">
-                    <td style="padding: 8px 10px; text-align: right; font-size: 13px; font-weight: bold; border-top: 2px solid #333;">จำนวนเงินรวมทั้งสิ้น</td>
-                    <td style="padding: 8px 10px; text-align: right; font-size: 13px; font-weight: bold; border-top: 2px solid #333;">${totalAmount.toFixed(2)} บาท</td>
+                  <tr>
+                    <td style="padding: 9px 10px; text-align: right; font-size: 14px; font-weight: 700; border-top: 2px solid #222;">จำนวนเงินรวมทั้งสิ้น</td>
+                    <td style="padding: 9px 10px; text-align: right; font-size: 14px; font-weight: 700; border-top: 2px solid #222;">${totalAmount.toFixed(2)} บาท</td>
                   </tr>
                 </table>
               </td>
             </tr>
           </table>
 
-          <!-- Payment Section -->
-          <table style="width: 100%; border: 1px solid #333; border-collapse: collapse; margin-top: 15px;">
+          <!-- Payment Section — minimal border -->
+          <div style="border-top: 1px solid #ddd; margin-top: 16px; padding-top: 14px;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="vertical-align: top; width: 58%;">
+                  <p style="margin: 0 0 8px 0; font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px;">ชำระเงินโดย</p>
+                  <div style="font-size: 12px;">
+                    ${paymentCheckboxes}
+                  </div>
+                  <table style="width: 100%; margin-top: 10px; font-size: 11px; border-collapse: collapse;">
+                    <tr>
+                      <td style="padding: 5px 6px; border-bottom: 1px solid #ddd; width: 28%; font-weight: 600; color: #888;">ธนาคาร</td>
+                      <td style="padding: 5px 6px; border-bottom: 1px solid #ddd; font-weight: 600; color: #888;">เลขที่</td>
+                      <td style="padding: 5px 6px; border-bottom: 1px solid #ddd; width: 22%; font-weight: 600; color: #888;">วันที่</td>
+                      <td style="padding: 5px 6px; border-bottom: 1px solid #ddd; width: 22%; font-weight: 600; color: #888;">จำนวนเงิน</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 5px 6px; border-bottom: 1px solid #eee;">&nbsp;</td>
+                      <td style="padding: 5px 6px; border-bottom: 1px solid #eee;">&nbsp;</td>
+                      <td style="padding: 5px 6px; border-bottom: 1px solid #eee;">&nbsp;</td>
+                      <td style="padding: 5px 6px; border-bottom: 1px solid #eee;">&nbsp;</td>
+                    </tr>
+                  </table>
+                </td>
+                <td style="vertical-align: top; width: 42%; text-align: center;">
+                  <p style="margin: 0 0 5px 0; font-size: 10px; color: #aaa;">ขอแสดงความนับถือ</p>
+                  <div style="margin-top: 44px;">
+                    <div style="width: 150px; border-bottom: 1px dotted #999; margin: 0 auto;"></div>
+                    <p style="margin: 5px 0 0 0; font-size: 12px;">ผู้จ่ายเงิน</p>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Footer Signatures -->
+          <table style="width: 100%; margin-top: 30px; border-collapse: collapse;">
             <tr>
-              <td style="padding: 10px; vertical-align: top; width: 60%;">
-                <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: bold;">ชำระเงินโดย:</p>
-                <div style="font-size: 12px;">
-                  ${paymentCheckboxes}
-                </div>
-                <table style="width: 100%; margin-top: 10px; font-size: 11px; border-collapse: collapse;">
-                  <tr>
-                    <td style="padding: 4px; border: 1px solid #ddd; width: 30%;">ธนาคาร</td>
-                    <td style="padding: 4px; border: 1px solid #ddd;">เลขที่</td>
-                    <td style="padding: 4px; border: 1px solid #ddd; width: 25%;">วันที่</td>
-                    <td style="padding: 4px; border: 1px solid #ddd; width: 25%;">จำนวนเงิน</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 4px; border: 1px solid #ddd;">&nbsp;</td>
-                    <td style="padding: 4px; border: 1px solid #ddd;">&nbsp;</td>
-                    <td style="padding: 4px; border: 1px solid #ddd;">&nbsp;</td>
-                    <td style="padding: 4px; border: 1px solid #ddd;">&nbsp;</td>
-                  </tr>
-                </table>
-              </td>
-              <td style="padding: 10px; vertical-align: top; width: 40%; text-align: center;">
-                <p style="margin: 0 0 5px 0; font-size: 11px; color: #666;">ขอแสดงความนับถือ</p>
-                <div style="margin-top: 40px;">
-                  <p style="margin: 0; font-size: 12px;">_____________________</p>
+              <td style="width: 33%; text-align: center; vertical-align: top; padding: 10px;">
+                <div style="margin-top: 30px;">
+                  <div style="width: 150px; border-bottom: 1px dotted #999; margin: 0 auto;"></div>
                   <p style="margin: 5px 0 0 0; font-size: 12px;">ผู้จ่ายเงิน</p>
                 </div>
               </td>
-            </tr>
-          </table>
-
-          <!-- Footer Signatures -->
-          <table style="width: 100%; margin-top: 20px; border-collapse: collapse;">
-            <tr>
-              <td style="width: 35%; text-align: center; vertical-align: top; padding: 10px;">
-                <p style="margin: 0; font-size: 12px;">_____________________</p>
-                <p style="margin: 5px 0 0 0; font-size: 12px;">ผู้จ่ายเงิน</p>
+              <td style="width: 34%; text-align: center; vertical-align: middle; padding: 10px;">
+                ${stampUrl ? `<img src="${stampUrl}" alt="Stamp" style="width: 85px; height: 85px; object-fit: contain;" />` : `<div style="border: 1.5px solid #999; border-radius: 50%; width: 85px; height: 85px; margin: 0 auto; display: flex; align-items: center; justify-content: center;"><span style="font-size: 11px; text-align: center; color: #999; font-weight: 600;">ตราบริษัท</span></div>`}
               </td>
-              <td style="width: 30%; text-align: center; vertical-align: middle; padding: 10px;">
-                ${stampUrl ? `<img src="${stampUrl}" alt="Stamp" style="width: 100px; height: 100px; object-fit: contain;" />` : `<div style="border: 2px solid #0066cc; border-radius: 50%; width: 100px; height: 100px; margin: 0 auto; display: flex; align-items: center; justify-content: center; color: #0066cc; font-weight: bold;"><span style="font-size: 11px; text-align: center;">ตราบริษัท</span></div>`}
-              </td>
-              <td style="width: 35%; text-align: center; vertical-align: top; padding: 10px;">
-                ${signatureUrl ? `<img src="${signatureUrl}" alt="Signature" style="max-width: 120px; max-height: 60px; object-fit: contain; margin-bottom: 5px;" /><br/>` : `<p style="margin: 0; font-size: 12px;">_____________________</p>`}
-                <p style="margin: 5px 0 0 0; font-size: 12px;">ผู้รับเงิน</p>
-                <p style="margin: 3px 0 0 0; font-size: 11px; color: #666;">${receiptDate}</p>
+              <td style="width: 33%; text-align: center; vertical-align: top; padding: 10px;">
+                <div style="margin-top: 10px;">
+                  ${signatureUrl ? `<img src="${signatureUrl}" alt="Signature" style="max-width: 120px; max-height: 50px; object-fit: contain; margin-bottom: 5px;" /><br/>` : `<div style="margin-top: 20px; width: 150px; border-bottom: 1px dotted #999; margin: 20px auto 0;"></div>`}
+                  <p style="margin: 5px 0 0 0; font-size: 12px;">ผู้รับเงิน</p>
+                  <p style="margin: 3px 0 0 0; font-size: 10px; color: #aaa;">${receiptDate}</p>
+                </div>
               </td>
             </tr>
           </table>
@@ -585,10 +594,12 @@ export default function ReceiptsPage() {
           <html>
             <head>
               <title>ใบเสร็จรับเงิน - ${receipt.receipt_number}</title>
+              <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
               <style>
+                body { margin: 0; background: #fff; }
                 @media print {
                   body { margin: 0; }
-                  * { -webkit-print-color-adjust: exact !important; }
+                  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                 }
               </style>
             </head>
@@ -596,7 +607,7 @@ export default function ReceiptsPage() {
           </html>
         `)
         printWindow.document.close()
-        printWindow.print()
+        setTimeout(() => printWindow.print(), 300)
       }
     } catch (error) {
       console.error('Error printing receipt:', error)

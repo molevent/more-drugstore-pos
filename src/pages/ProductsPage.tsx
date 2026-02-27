@@ -1754,114 +1754,88 @@ export default function ProductsPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Tab 0: Dashboard */}
               {activeTab === 'dashboard' && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Dashboard สินค้า (Product Overview)</h3>
-                  
-                  {/* Product Image and Basic Info */}
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    {/* Image Section */}
+                <div className="space-y-5">
+                  {/* Product Header — image + name + codes inline */}
+                  <div className="flex flex-col sm:flex-row gap-5 items-start">
                     <div className="flex-shrink-0">
                       {imagePreviews[0] ? (
                         <img
                           src={imagePreviews[0]}
                           alt={formData.name_th}
-                          className="h-32 w-32 object-cover rounded-xl border-2 border-gray-200 shadow-sm"
+                          className="h-24 w-24 object-cover rounded-2xl bg-gray-50"
                         />
                       ) : (
-                        <div className="h-32 w-32 bg-gray-100 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center">
-                          <Package className="h-12 w-12 text-gray-400" />
+                        <div className="h-24 w-24 bg-gray-50 rounded-2xl flex items-center justify-center">
+                          <Package className="h-10 w-10 text-gray-300" />
                         </div>
                       )}
                     </div>
                     
-                    {/* Basic Info */}
-                    <div className="flex-1 space-y-2">
-                      <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                        <div className="text-xs text-gray-500 uppercase tracking-wide">ชื่อสินค้า</div>
-                        <div className="text-lg font-bold text-gray-900">{formData.name_th || '-'}</div>
-                        {formData.name_en && (
-                          <div className="text-sm text-gray-600">{formData.name_en}</div>
-                        )}
-                        {/* Active Ingredient - ตัวยาสำคัญ */}
-                        {formData.active_ingredient && (
-                          <div className="mt-2 text-sm font-medium text-gray-700 bg-gray-100 px-2 py-1 rounded inline-block">
-                            ตัวยาสำคัญ: {formData.active_ingredient}
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="bg-gray-50 rounded-lg p-2 border border-gray-100">
-                          <div className="text-xs text-gray-500">Barcode</div>
-                          <div className="text-sm font-medium text-gray-900 font-mono">{formData.barcode || '-'}</div>
-                        </div>
-                        <div className="bg-gray-50 rounded-lg p-2 border border-gray-100">
-                          <div className="text-xs text-gray-500">SKU</div>
-                          <div className="text-sm font-medium text-gray-900">{formData.sku || '-'}</div>
-                        </div>
-                      </div>
-                      
-                      {formData.brand && (
-                        <div className="bg-gray-50 rounded-lg p-2 border border-gray-100">
-                          <div className="text-xs text-gray-500">ยี่ห้อ</div>
-                          <div className="text-sm font-medium text-gray-900">{formData.brand}</div>
-                        </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-xl font-bold text-gray-900 leading-tight">{formData.name_th || '-'}</h3>
+                      {formData.name_en && (
+                        <p className="text-sm text-gray-400 mt-0.5">{formData.name_en}</p>
                       )}
+                      {formData.active_ingredient && (
+                        <p className="text-xs text-gray-500 mt-1.5">ตัวยาสำคัญ: <span className="font-medium text-gray-700">{formData.active_ingredient}</span></p>
+                      )}
+                      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-3 text-xs text-gray-400">
+                        <span>Barcode <span className="font-mono text-gray-600 ml-1">{formData.barcode || '-'}</span></span>
+                        <span>SKU <span className="font-medium text-gray-600 ml-1">{formData.sku || '-'}</span></span>
+                        {formData.brand && <span>ยี่ห้อ <span className="font-medium text-gray-600 ml-1">{formData.brand}</span></span>}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Key Stats Grid - Cleaner Design */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {/* Price */}
-                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <div className="text-xs text-gray-500 font-medium">ราคาขาย (รวม VAT)</div>
-                      <div className="text-xl font-bold text-gray-800">
+                  {/* Key Stats — 4 columns, borderless cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div className="space-y-1">
+                      <div className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">ราคาขาย</div>
+                      <div className="text-2xl font-bold text-gray-900 tabular-nums">
                         ฿{formData.selling_price_incl_vat > 0 ? formData.selling_price_incl_vat.toFixed(2) : formData.base_price.toFixed(2)}
                       </div>
                     </div>
                     
-                    {/* Stock */}
-                    <div className={`rounded-lg p-3 border ${formData.stock_quantity <= formData.min_stock_level ? 'bg-gray-100 border-gray-300' : 'bg-gray-50 border-gray-200'}`}>
-                      <div className="text-xs font-medium text-gray-500">
-                        สต็อกคงเหลือ
-                      </div>
-                      <div className={`text-xl font-bold ${formData.stock_quantity <= formData.min_stock_level ? 'text-red-600' : 'text-gray-800'}`}>
-                        {formData.stock_quantity} {formData.unit}
+                    <div className="space-y-1">
+                      <div className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">สต็อกคงเหลือ</div>
+                      <div className={`text-2xl font-bold tabular-nums ${formData.stock_quantity <= formData.min_stock_level ? 'text-red-600' : 'text-gray-900'}`}>
+                        {formData.stock_quantity} <span className="text-sm font-normal text-gray-400">{formData.unit}</span>
                       </div>
                       {formData.stock_quantity <= formData.min_stock_level && (
-                        <div className="text-xs text-red-500">ใกล้หมด</div>
+                        <div className="text-[11px] text-red-500 font-medium">ใกล้หมด</div>
                       )}
                     </div>
                     
-                    {/* Category */}
-                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <div className="text-xs text-gray-500 font-medium">หมวดหมู่</div>
-                      <div className="text-sm font-bold text-gray-800">
-                        {categories.find(c => c.id === formData.category_id)?.name_th || 'ไม่ระบุ'}
+                    <div className="space-y-1">
+                      <div className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">หมวดหมู่</div>
+                      <div className="text-sm font-semibold text-gray-900">
+                        {categories.find(c => c.id === formData.category_id)?.name_th || <span className="text-gray-300">ไม่ระบุ</span>}
                       </div>
                     </div>
                     
-                    {/* Expiry */}
-                    <div className={`rounded-lg p-3 border ${formData.expiry_date && new Date(formData.expiry_date) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'bg-gray-100 border-gray-300' : 'bg-gray-50 border-gray-200'}`}>
-                      <div className={`text-xs font-medium ${formData.expiry_date && new Date(formData.expiry_date) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'text-orange-600' : 'text-gray-500'}`}>
+                    <div className="space-y-1">
+                      <div className={`text-[11px] font-medium uppercase tracking-wider ${formData.expiry_date && new Date(formData.expiry_date) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'text-orange-500' : 'text-gray-400'}`}>
                         วันหมดอายุ
                       </div>
-                      <div className={`text-sm font-bold ${formData.expiry_date && new Date(formData.expiry_date) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'text-orange-700' : 'text-gray-800'}`}>
-                        {formData.expiry_date ? new Date(formData.expiry_date).toLocaleDateString('th-TH') : '-'}
+                      <div className={`text-sm font-semibold ${formData.expiry_date && new Date(formData.expiry_date) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'text-orange-600' : 'text-gray-900'}`}>
+                        {formData.expiry_date ? new Date(formData.expiry_date).toLocaleDateString('th-TH') : <span className="text-gray-300">-</span>}
                       </div>
                       {formData.expiry_date && new Date(formData.expiry_date) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && (
-                        <div className="text-xs text-orange-500">ใกล้หมดอายุ</div>
+                        <div className="text-[11px] text-orange-500 font-medium">ใกล้หมดอายุ</div>
                       )}
                     </div>
                   </div>
 
+                  {/* Divider */}
+                  <div className="border-t border-gray-100" />
+
                   {/* Tags */}
                   {formData.tags && (
-                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <div className="text-xs text-gray-500 mb-1">Tag สินค้า</div>
-                      <div className="flex flex-wrap gap-1">
+                    <div>
+                      <div className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mb-2">Tag</div>
+                      <div className="flex flex-wrap gap-1.5">
                         {formData.tags.split(',').map((tag, idx) => (
-                          <span key={idx} className="px-2 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full">
+                          <span key={idx} className="px-2.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
                             {tag.trim()}
                           </span>
                         ))}
@@ -1870,59 +1844,61 @@ export default function ProductsPage() {
                   )}
 
                   {/* Indications & Usage */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {formData.indications && (
-                      <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                        <div className="text-xs text-gray-600 font-medium mb-1">สรรพคุณ / ข้อบ่งใช้</div>
-                        <div className="text-sm text-gray-700">{formData.indications}</div>
-                      </div>
-                    )}
-                    {formData.usage_instructions && (
-                      <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                        <div className="text-xs text-gray-600 font-medium mb-1">คำแนะนำเพิ่มเติม</div>
-                        <div className="text-sm text-gray-700">{formData.usage_instructions}</div>
-                      </div>
-                    )}
-                  </div>
+                  {(formData.indications || formData.usage_instructions) && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {formData.indications && (
+                        <div>
+                          <div className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mb-1">สรรพคุณ / ข้อบ่งใช้</div>
+                          <p className="text-sm text-gray-600 leading-relaxed">{formData.indications}</p>
+                        </div>
+                      )}
+                      {formData.usage_instructions && (
+                        <div>
+                          <div className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mb-1">คำแนะนำเพิ่มเติม</div>
+                          <p className="text-sm text-gray-600 leading-relaxed">{formData.usage_instructions}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
-                  {/* Sales Channels Icons - Muted Colors */}
-                  <div className="bg-white rounded-lg p-2 border border-gray-200">
-                    <div className="text-xs text-gray-500 mb-1">ช่องทางการขาย</div>
-                    <div className="flex flex-nowrap gap-1.5 overflow-x-auto">
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_pos ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
-                        <Store className="h-3.5 w-3.5" />
+                  {/* Sales Channels — compact pills, only show active ones prominently */}
+                  <div>
+                    <div className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mb-2">ช่องทางการขาย</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${formData.sell_on_pos ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-300'}`}>
+                        <Store className="h-3 w-3" />
                         <span>หน้าร้าน</span>
                       </div>
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_grab ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
-                        <ShoppingCart className="h-3.5 w-3.5" />
+                      <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${formData.sell_on_grab ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-300'}`}>
+                        <ShoppingCart className="h-3 w-3" />
                         <span>Grab</span>
                       </div>
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_lineman ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
-                        <Truck className="h-3.5 w-3.5" />
+                      <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${formData.sell_on_lineman ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-300'}`}>
+                        <Truck className="h-3 w-3" />
                         <span>Lineman</span>
                       </div>
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_lazada ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
-                        <Globe className="h-3.5 w-3.5" />
+                      <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${formData.sell_on_lazada ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-300'}`}>
+                        <Globe className="h-3 w-3" />
                         <span>Lazada</span>
                       </div>
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_shopee ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
-                        <ShoppingCart className="h-3.5 w-3.5" />
+                      <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${formData.sell_on_shopee ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-300'}`}>
+                        <ShoppingCart className="h-3 w-3" />
                         <span>Shopee</span>
                       </div>
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_line_shopping ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
-                        <MessageCircle className="h-3.5 w-3.5" />
+                      <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${formData.sell_on_line_shopping ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-300'}`}>
+                        <MessageCircle className="h-3 w-3" />
                         <span>LINE</span>
                       </div>
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_tiktok ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
-                        <Video className="h-3.5 w-3.5" />
+                      <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${formData.sell_on_tiktok ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-300'}`}>
+                        <Video className="h-3 w-3" />
                         <span>TikTok</span>
                       </div>
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_consignment ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
-                        <ShoppingCart className="h-3.5 w-3.5" />
+                      <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${formData.sell_on_consignment ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-300'}`}>
+                        <ShoppingCart className="h-3 w-3" />
                         <span>ฝากขาย</span>
                       </div>
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${formData.sell_on_website ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-400'}`}>
-                        <Globe className="h-3.5 w-3.5" />
+                      <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${formData.sell_on_website ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-300'}`}>
+                        <Globe className="h-3 w-3" />
                         <span>Website</span>
                       </div>
                     </div>
@@ -1930,21 +1906,19 @@ export default function ProductsPage() {
 
                   {/* Custom Alert Display */}
                   {formData.alert_custom && formData.alert_custom_title && (
-                    <div className="bg-red-50 rounded-lg p-4 border-2 border-red-300">
+                    <div className="bg-red-50 rounded-xl p-4 border border-red-100">
                       <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0">
-                          <Bell className="h-6 w-6 text-red-600" />
-                        </div>
+                        <Bell className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
                         <div className="flex-1">
-                          <h4 className="font-bold text-red-800 mb-1">
+                          <h4 className="font-semibold text-red-800 text-sm">
                             {formData.alert_custom_title}
                           </h4>
                           {formData.alert_custom_message && (
-                            <p className="text-red-700 text-sm">
+                            <p className="text-red-600 text-sm mt-0.5">
                               {formData.alert_custom_message}
                             </p>
                           )}
-                          <p className="text-xs text-red-500 mt-2">
+                          <p className="text-[11px] text-red-400 mt-1.5">
                             แจ้งเตือนนี้จะแสดงเมื่อขายสินค้า (POS)
                           </p>
                         </div>
@@ -1953,8 +1927,8 @@ export default function ProductsPage() {
                   )}
 
                   {/* Status and Print Label */}
-                  <div className="flex items-center gap-3">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${formData.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  <div className="flex items-center gap-3 pt-1">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${formData.is_active ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
                       {formData.is_active ? '✓ Active (ขาย)' : '✗ Inactive (ระงับ)'}
                     </span>
                     <Button

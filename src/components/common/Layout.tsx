@@ -14,7 +14,8 @@ import {
   Globe,
   Receipt,
   ArrowLeftRight,
-  Truck
+  Truck,
+  Wrench
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useState } from 'react'
@@ -100,6 +101,7 @@ export default function Layout({ children }: LayoutProps) {
         { name: 'เงินสดย่อย', href: '/petty-cash', icon: Wallet, id: 'documents' as const },
         { name: t('nav.taxInvoices'), href: '/tax-invoices', icon: Receipt, id: 'tax_invoices' as const },
         { name: t('nav.workSchedule'), href: '/work-schedule', icon: Calendar, id: 'work_schedule' as const },
+        { name: 'บำรุงรักษาร้าน', href: '/maintenance', icon: Wrench, id: 'work_schedule' as const },
       ].filter(item => canAccessMenu(userRole, item.id))
     },
     {

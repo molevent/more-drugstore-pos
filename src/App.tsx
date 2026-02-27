@@ -65,6 +65,7 @@ import LineNotifySettingsPage from './pages/LineNotifySettingsPage'
 import GrabOrdersPage from './pages/GrabOrdersPage'
 import OnlineOrdersPage from './pages/OnlineOrdersPage'
 import ReceiptsPage from './pages/ReceiptsPage'
+import MaintenancePage from './pages/MaintenancePage'
 import AuthGuard from './components/auth/AuthGuard'
 import Layout from './components/common/Layout'
 import { LanguageProvider } from './contexts/LanguageContext'
@@ -152,6 +153,7 @@ function App() {
                     <Route path="/cross-channel-stock" element={<CrossChannelStockReportPage />} />
                     <Route path="/settings/line-notify" element={<LineNotifySettingsPage />} />
                     <Route path="/grab-orders" element={<GrabOrdersPage />} />
+                    <Route path="/maintenance" element={<MaintenancePage />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   </Routes>
                 </Layout>
