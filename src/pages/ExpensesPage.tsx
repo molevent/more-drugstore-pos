@@ -4,7 +4,7 @@ import { supabase } from '../services/supabase'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import { Receipt, Plus, Search, Trash2, Edit2, Sheet, RefreshCw, Settings, Database, Clock, CheckCircle, XCircle, Percent, FileText, ShoppingCart, BookOpen, Printer, Upload, X, CheckSquare, Square, ScanLine, CreditCard, AlertCircle, Save } from 'lucide-react'
-import { getExpenseCategories as getFaExpenseCategories, syncExpensesToFlowAccount, syncPurchasesToFlowAccount } from '../services/flowaccount'
+import { getExpenseCategories as getFaExpenseCategories, syncExpensesToFlowAccount, syncPurchasesToFlowAccount, shareWithholdingTaxDocument } from '../services/flowaccount'
 import { useLanguage } from '../contexts/LanguageContext'
 
 interface PaymentVoucher {
@@ -1830,7 +1830,7 @@ export default function ExpensesPage() {
           <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
             <div className="py-1">
               <Link
-                to="/purchase-orders"
+                to="/online-orders"
                 className="flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 text-gray-700 transition-colors"
               >
                 <FileText className="h-4 w-4 text-blue-600" />
@@ -2565,13 +2565,31 @@ export default function ExpensesPage() {
                             </Link>
                           )}
                           {doc.doc_type === 'withholding_tax' && (
-                            <Link
-                              to="/withholding-tax"
+                            <button
+                              onClick={async () => {
+                                const faId = doc.raw?.flowaccount_id
+                                if (faId) {
+                                  try {
+                                    const result = await shareWithholdingTaxDocument(faId)
+                                    const link = result?.data?.link
+                                    if (link) {
+                                      window.open(link, '_blank')
+                                    } else {
+                                      alert('ไม่สามารถดึงลิงก์เอกสารได้')
+                                    }
+                                  } catch (err) {
+                                    console.error('Error sharing WHT doc:', err)
+                                    alert('เกิดข้อผิดพลาด: ' + (err as Error).message)
+                                  }
+                                } else {
+                                  window.location.href = '/withholding-tax'
+                                }
+                              }}
                               className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
                               title="ดูใบหัก ณ ที่จ่าย"
                             >
                               <Percent className="h-4 w-4" />
-                            </Link>
+                            </button>
                           )}
                         </div>
                       </td>
@@ -3360,7 +3378,7 @@ export default function ExpensesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">เลขที่ใบส่งของ</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">เลขที่ใบส่งของ/เลขที่ใบสั่งซื้อ</label>
                   <input
                     type="text"
                     value={formData.delivery_number}

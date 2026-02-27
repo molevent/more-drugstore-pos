@@ -655,7 +655,7 @@ export default function AddExpensePage() {
                   )}
                   {showField('delivery_number') && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">เลขที่ใบส่งของ</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">เลขที่ใบส่งของ/เลขที่ใบสั่งซื้อ</label>
                       <input
                         type="text"
                         value={formData.delivery_number}

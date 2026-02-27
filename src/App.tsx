@@ -63,6 +63,8 @@ import PlatformManagementPage from './pages/PlatformManagementPage'
 import CrossChannelStockReportPage from './pages/CrossChannelStockReportPage'
 import LineNotifySettingsPage from './pages/LineNotifySettingsPage'
 import GrabOrdersPage from './pages/GrabOrdersPage'
+import OnlineOrdersPage from './pages/OnlineOrdersPage'
+import ReceiptsPage from './pages/ReceiptsPage'
 import AuthGuard from './components/auth/AuthGuard'
 import Layout from './components/common/Layout'
 import { LanguageProvider } from './contexts/LanguageContext'
@@ -98,6 +100,8 @@ function App() {
                     <Route path="/inventory" element={<InventoryPage />} />
                     <Route path="/warehouse-management" element={<WarehouseManagementPage />} />
                     <Route path="/purchase-orders" element={<PurchaseOrderPage />} />
+                    <Route path="/online-orders" element={<OnlineOrdersPage />} />
+                    <Route path="/receipts" element={<ReceiptsPage />} />
                     <Route path="/bill-scan" element={<BillScanPage />} />
                     <Route path="/payment-vouchers" element={<PaymentVoucherPage />} />
                     <Route path="/payment-methods" element={<PaymentMethodsPage />} />
